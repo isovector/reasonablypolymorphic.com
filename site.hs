@@ -11,6 +11,12 @@ main = hakyll $ do
         route   idRoute
         compile copyFileCompiler
 
+    match "style.scss" $ do
+        route   $ setExtension "css"
+        compile $ getResourceString
+            >>= withItemBody (unixFilter "sass" ["-s", "--scss"])
+            >>= return . fmap compressCss
+
     match "css/*" $ do
         route   idRoute
         compile compressCssCompiler
@@ -25,6 +31,7 @@ main = hakyll $ do
         route $ setExtension "html"
         compile $ pandocCompiler
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
+            >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/default.html" postCtx
             >>= relativizeUrls
 
@@ -58,6 +65,27 @@ main = hakyll $ do
                 >>= relativizeUrls
 
     match "templates/*" $ compile templateCompiler
+
+    create ["atom.xml"] $ feedRoute renderAtom
+    create ["feed.rss"] $ feedRoute renderRss
+
+feedRoute render = do
+    route idRoute
+    compile $ do
+        let feedCtx = postCtx `mappend` bodyField "description"
+        posts <- fmap (take 10) . recentFirst =<<
+            loadAllSnapshots "posts/*" "content"
+        render feedConfiguration feedCtx posts
+
+
+feedConfiguration :: FeedConfiguration
+feedConfiguration = FeedConfiguration
+    { feedTitle       = "We Can Solve This"
+    , feedDescription = "Musings on effective life strategies"
+    , feedAuthorName  = "Sandy Maguire"
+    , feedAuthorEmail = "sandy@sandymaguire.me"
+    , feedRoot        = "http://sandymaguire.me/"
+    }
 
 
 --------------------------------------------------------------------------------
