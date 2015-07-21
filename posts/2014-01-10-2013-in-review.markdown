@@ -1,0 +1,128 @@
+---
+layout: post
+title: "2013: Doing Something With My Life"
+date: 2014-01-10 09:54
+comments: true
+categories: postmortem life reflection
+---
+
+Kind of late to the party on this one -- writing it took many moons longer than expected, and so the tenses probably don't make a lot of sense or have any sense of coherency to them. I'm okay with that though, because I have a bet with a coworker that if I don't get this post out by tomorrow I'll owe him $50. Onwards.
+
+### I. Melodrama
+
+Being home for the holidays is a strange experience, made especially so since it's the first time I've been back in two years.
+
+Terrace, BC feels like it is stuck in suspended animation -- things are almost exactly how they were two years ago. There are a few new shops on the object level, but the metalevel is almost terrifyingly stagnant.
+
+The pace of life here is slow, almost unbearably so. I remember (and still hold the notion) that life in Ontario is too fast for me, but it seems that I have adjusted without realizing it.
+
+Things happen here because that's the way they've always happened. It's a startling example of the status quo. But perhaps the worst part is that nobody here seems to challenge their beliefs, nor make any attempt to better themselves.
+
+If you know me even a little bit, you'll realize how frustrating I find such things.
+
+And yet I can find myself getting wrapped up in this place. The zeitgeist of stagnancy has been clutching at me for my time here, and I can feel myself giving in to it. Old, bad habits of mine have returned, in what I consider to be a case of revertigo, and it's absolutely terrifying. I've always said that if you don't get out of this city fast enough, you never will, and I think this fact is a potent reminder.
+
+To those of my friends who live here, but dream of bigger things, take my word for it. Get out of here, as soon as you can, because you won't be able to if you let it get ahold.
+
+Anyway, all melodrama aside, it is officially the New Year. 2014 for anyone who is counting (except for antiquity, but that doesn't really *count*, right?).
+
+In an attempt to boost my spirits and fight back against Terrace's aura, I'm writing a blog post on my last year (almost entirely devoid of Terrace!) and all of the super cool things that happened in it. I entirely consider 2013 to have been my best year yet, and I'm making every effort to ensure the trend doesn't stop here.
+
+So indulge me in my reflection. Let's look at what was accomplished, how my views on life changed, some of the neat things I read, and finally, things that /didn't/ work very well. Let's go!
+
+### II. Object
+
+First up, I want to take a look at object level things. These are projects and accomplishments in the last year that are easily quantifiable and correspond to things in real life (as opposed to meta level things in the next section).
+
+In **January**, I attended [CFAR]'s Applied Rationality Workshop and it really and truly changed my life, in every sense of the phrase. For the better, in case you were wondering. The workshop taught me lots of cool things (like pinning down my beliefs, beating procrastination, estimating relative value of projects, etc), but, by and large, I find that I don't use these techniques anymore. What I consider to be the most beneficial aspect of the workshop was meeting ~50 extremely fantastic people...
+
+[CFAR]: http://rationality.org
+
+...and finding myself coming up wonting in comparison to them. Here were living and breathing examples of people who had sat down and consciously made something of themselves. CFAR was entirely responsible for framing the rest of my year in such a positive way, but I'll talk more about why when we get to the meta level section.
+
+Also at the workshop (but not as a part of it), I ran into [Josh Kaufman], who sat me down and debugged my beliefs about money, name that it isn't evil in and of itself. Looking at money as a substitute for utility is a helpful mindset, and directly lead me to a raise and having no qualms about being paid for valuable services which I am good at providing.
+
+[Josh Kaufman]: http://joshkaufman.net/
+
+In **February**, as an initial part of debugging my mind, I sat down and forced myself to eat vegetables. This might sound weird to you normal people, but I had never gotten out of my childhood hatred of vegetables and would avoid them at any cost necessary. I'm still not great at eating them, but at least I don't run out of the room screaming anymore (less of a hyperbole than you might expect).
+
+Continuing on with my mental debugging, I convinced two of my fashionable friends to take me out shopping and give me a makeover. The result was startling, and my self-confidence soared well beyond anything I could remember experiencing.
+
+I purchased a banjo in **May** as a direct result of [goal factoring] and with the intent of challenging [the first 20 hours]. The results were pretty impressive, but I've hit a dip as of late.
+
+In **June** I found myself begin programming again for fun, something I hadn't done in years.
+
+The summer was spent working, bonding with family I had never really had a chance to, and reading books on psychology and neuroscience. I was really interested in learning how my brain worked, and, more imporantly, how it didn't. My productivity *soared* as a result.
+
+In **August** I found myself somewhat disappointed with the path my career was taking, and so I decided to do something about it. I sat down and spent more time on my resume than I had in totality over my lifetime. I deliberately practiced my interviewing skills, and subsequently through the interviews to some companies that I had always wanted to work for, but to which had been too afraid to apply.
+
+After months of growing uneasiness about owning a mobile phone, in **October** I threw it into the depths of a lake, never to be found again. Environmentally friendly? Probably not, but it's remarkable how much happier I am now that I'm not a slave to it. [at time of editing, I have a new work phone and it sucks to be back into the swing of things]
+
+**November** came and went with such rapidity that I can't remember much about it, and that's because I spent all of it [writing a novel]. I had attempted [Nanowrimo] once before, last year, and only made it a little more than 20%, despite having fewer time commitments. I wouldn't describe it as a good novel, but hey, it's something.
+
+[writing a novel]: http://sandymaguire.me/blog/nanowrimo-postmortem/
+[Nanowrimo]: http://nanowrimo.org/
+
+As the year came to a close, in mid-**December** I attempted to free myself of most of my posessions. Due to my school's co-op program, I move every four months and it was becoming ever increasingly difficult to do so, and especially stupid when I realized I had been moving three boxes around without ever looking in them or even knowing what was inside. My possession count isn't yet finalized, but I would estimate that it's somewhere around *110*, including individual articles of clothing. [edit: the number is actually *107*]
+
+### III. Meta
+
+As cool as all of these successes are, 2013 was bigger than their sum. The theme of the year was the knowledge that I could actually *do something with my life* rather than just *live it*. It was incubated by seeing firsthand at CFAR how relatively-little work could result in huge gains.
+
+I realized that most people don't work any harder than they need to, which means that a little effort will give you huge comparative advantage, to say nothing of the gains of a large effort. To that end, I spent the year making an effort to improve.
+
+I systematically identified areas in my life where I didn't know very much and could gain a lot from knowing a little bit more. Picking low hanging fruit was definitely another theme of the year. In this respect, non-fiction will go a very long way.
+
+Finally, I also realized the value of eliminating cognitive burdens. I made a move to David Allen's [Getting Things Done], attempted to automate as many things as I could, and made some other improvements along these lines. In particular I realized that maintaining relationships is a cognitive burden, and that I shouldn't hold on to relationships with people I didn't expect to be useful or whose company I didn't genuinely enjoy. Lots of people are in both categories, but it was surprising how many were in neither.
+
+[Getting Things Done]: http://www.davidco.com/
+
+### IV. Books
+
+In 2013 I reinstalled my reading habit, and read about 3x more books than I did the year previous. Lots of these books were good, some of them were bad, but a few in particular were so good that I would be doing you a disservice to reflect on my year and not tell you about them.
+
+Daniel Kahneman's book, [Thinking Fast and Slow] describes your brain and breaks down the myth that humans are the "rational animal". In particular, it addresses when we can and cannot trust our instincts, and surprising evidence about how we model our happiness. I found myself amazed at the insight-density of it, approximately two times every page I would stop and find it necessary to think about the implications of something Kahneman had just said. Any synopsis of the book I can give is necessarily doing a disservice to it, so please, just go read it for yourself.
+
+[Thinking Fast and Slow]: http://www.amazon.com/Thinking-Fast-Slow-Daniel-Kahneman/dp/0374533555
+
+[Your Brain at Work], by David Rock, is in a similar vein to Thinking Fast and Slow, but focuses more on the limitations of your mind and proven strategies to work around these limitations. Each chapter begins with two fictional characters living their everyday lives in a way that seems reasonable, and then follows up with /what they did wrong and why/. Time after time I found myself surprised at how wrong my strategies were after being corrected.
+
+[Your Brain at Work]: http://www.amazon.com/Your-Brain-Work-Strategies-Distraction/dp/0061771295
+
+[Mark Manson]'s [Models: Attract Women Through Honesty] is one of a very few number of books which I wish I had read much sooner than I did. Manson debunks all-too-common mindsets towards dating and proposes a much better alternative. My love life skyrocketed after reading this book, and I found that the lessons in it generalized well beyond the realm of dating.
+
+[Mark Manson]: http://markmanson.net/
+[Models: Attract Women Through Honesty]: http://www.amazon.com/Models-Attract-Women-Through-Honesty/dp/1463750358
+
+In [So Good They Can't Ignore You], [Cal Newport] makes a very convincing argument that it's not what you do that matters, but how you do it. Tearing apart the myth that you should "do what you love", Newport presents a convincing argument that instead of asking "what am I good at?" you should ask "what would I be willing to be good at?". This book convinced me to strive harder in my career, and within a month I had landed with an internship at Facebook -- not too shabby for a few weeks' worth.
+
+[Cal Newport]: http://calnewport.com/
+[So Good They Can't Ignore You]: http://www.amazon.com/Good-They-Cant-Ignore-You/dp/1455509124
+
+[Moonwalking with Einstein] made this list not because I am in love with it, but because I think the book has extremely high value for most people. It's the true story of a man who accidentally bumps into the field of competitive memory, and his training over the next year to win in the national championship. I didn't enjoy the story very much, but now that I am attempting to practice daily the exercises in the book, my memory is significantly better.
+
+[Moonwalking with Einstein]: http://www.amazon.com/Moonwalking-Einstein-Science-Remembering-Everything/dp/1594135312
+
+### V. Fails
+
+These are all awesome results to the year, but it wasn't as good as I've let you come to believe. So, in the pursuit of transparency and in the spirit of publishing negative results, let's take some time to look at the other things that I tried this year, to varying degress of success.
+
+Over reading week in **February**, I started a [polyphasic sleep] regiment. For those with strong google-fu, there exist journals of the time period, which on good authority, I have heard are quite funny.  Around the end of April I had mostly adjusted, and, with some rather tumultuous results, managed to maintain it until **July**.
+
+[polyphasic sleep]: http://sandymaguire.me/blog/polyphasing/
+
+But then diaster struck and I couldn't find anywhere to nap at work. I made do by going outside and sleeping on the lawn, but after I was told off by a security guard, I began missing naps. Missing naps is a bad thing when you are polyphasic, as it is the equivalent of missing a night of sleep for regular people. The whole thing ended poorly.
+
+Due to CFAR's influence, I started following Getting Things Done -- essentially keeping track of eveything I need to do and figuring out effective ways of doing it. While I kept up the facade of using GTD, by early **June** my heart was no longer set on it, and by October I wouldn't use it whatsoever. Somehow I had trained the bad habit of *not listening to it*, which kind of defeats the whole point.
+
+(caveat: I have reinstalled the habit and the first three weeks of it have been going spectacularly. This will be something to look back on next year for another postmortem.)
+
+Along the same lines, I was in love with Beeminder last year, but kind of fell off the horse when I learned the hard way that it doesn't seem to scale well to large numbers of goals. When I had <7 it would be hugely successful and always keep me motivated, but as I basked in the success of this, I often found myself with 25 goals that I was attempting to juggle simultaneously, many of which I don't think I had my heart set on.
+
+This is a bad thing, and as I inevitably began failing my goals, I learned that failing them wasn't all that bad, and I have been failing them ever since. I'm attempting to hack my old mindset back by focusing on managing a small number of goals, and this is working pretty well.
+
+Waterloo's own local LessWrong meetup group also kind of fell apart last year, but that is more than I want to write about here. Expect a forthcoming proper postmortem on that topic. Including it just to be complete.
+
+So that's it, that's 2013 in some amount of words. It was a fantastic year, but I'm pretty sure this one is going to be better. By far.
+
+What's yours going to look like?
