@@ -1,0 +1,8 @@
+/.cabal*
+/.stack-work/
+/cabal.sandbox.config
+/_cache/
+/_site/
+*.o
+*.hi
+/site
