@@ -1,8 +1,12 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
+import qualified Data.Set as S
 import           Hakyll
+import           Text.Pandoc.Options
 
+(<+>) :: Routes -> Routes -> Routes
+(<+>) = composeRoutes
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -11,8 +15,12 @@ main = hakyll $ do
         route   idRoute
         compile copyFileCompiler
 
+    match "js/*" $ do
+        route   idRoute
+        compile copyFileCompiler
+
     match "style.scss" $ do
-        route   $ setExtension "css"
+        route   $ constRoute "css/style.css"
         compile $ getResourceString
             >>= withItemBody (unixFilter "sass" ["-s", "--scss"])
             >>= return . fmap compressCss
@@ -23,13 +31,13 @@ main = hakyll $ do
 
     match (fromList ["about.rst", "contact.markdown"]) $ do
         route   $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ pandocMathCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
     match "posts/*" $ do
-        route $ setExtension "html"
-        compile $ pandocCompiler
+        route $ gsubRoute "posts/" (const "blog/") <+> gsubRoute "[0-9]{4}-(.*)" id <+> cruftlessRoute
+        compile $ pandocMathCompiler
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/default.html" postCtx
@@ -87,6 +95,23 @@ feedConfiguration = FeedConfiguration
     , feedRoot        = "http://sandymaguire.me/"
     }
 
+
+pandocMathCompiler =
+    let mathExtensions = [Ext_tex_math_dollars, Ext_tex_math_double_backslash,
+                          Ext_latex_macros]
+        defaultExtensions = writerExtensions defaultHakyllWriterOptions
+        newExtensions = foldr S.insert defaultExtensions mathExtensions
+        writerOptions = defaultHakyllWriterOptions {
+                          writerExtensions = newExtensions,
+                          writerHTMLMathMethod = MathJax ""
+                        }
+    in pandocCompilerWith defaultHakyllReaderOptions writerOptions
+
+
+----
+
+cruftlessRoute :: Routes
+cruftlessRoute = setExtension "html" <+> gsubRoute ".html" (const "/index.html")
 
 --------------------------------------------------------------------------------
 postCtx :: Context String
