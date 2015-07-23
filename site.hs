@@ -17,7 +17,7 @@ main = hakyll $ do
     tags <- buildTags "posts/*" (fromCapture "tags/*.html")
     let postCtxTags = postCtxWithTags tags
 
-    match "images/*" $ do
+    match "images/**" $ do
         route   idRoute
         compile copyFileCompiler
 
