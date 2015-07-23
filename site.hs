@@ -1,9 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 import           Data.Monoid (mappend)
 import           Hakyll.Web.Tags
 import qualified Data.Set as S
 import           Hakyll
 import           Text.Pandoc.Options
+import          Control.Applicative ((<$>))
 
 (<+>) :: Routes -> Routes -> Routes
 (<+>) = composeRoutes
@@ -69,16 +70,8 @@ main = hakyll $ do
     match "index.html" $ do
         route idRoute
         compile $ do
-            posts <- recentFirst =<< loadAll "posts/*"
-            let indexCtx =
-                    listField "posts" postCtxTags (return posts) `mappend`
-                    constField "title" "Home"                `mappend`
-                    defaultContext
-
-            getResourceBody
-                >>= applyAsTemplate indexCtx
-                >>= loadAndApplyTemplate "templates/default.html" indexCtx
-                >>= relativizeUrls
+            posts :: [Item String] <- recentFirst =<< loadAll "posts/*"
+            makeItem . itemBody $ head posts
 
     match "templates/*" $ compile templateCompiler
 
