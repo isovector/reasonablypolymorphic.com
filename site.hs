@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
+import           Hakyll.Web.Tags
 import qualified Data.Set as S
 import           Hakyll
 import           Text.Pandoc.Options
@@ -9,8 +10,15 @@ import           Text.Pandoc.Options
 (<+>) = composeRoutes
 
 --------------------------------------------------------------------------------
+
+postCtxWithTags :: Tags -> Context String
+postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
+
 main :: IO ()
 main = hakyll $ do
+    tags <- buildTags "posts/*" (fromCapture "tags/*.html")
+    let postCtxTags = postCtxWithTags tags
+
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -38,9 +46,9 @@ main = hakyll $ do
     match "posts/*" $ do
         route $ gsubRoute "posts/" (const "blog/") <+> gsubRoute "[0-9]{4}-(.*)" id <+> cruftlessRoute
         compile $ pandocMathCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    postCtx
+            >>= loadAndApplyTemplate "templates/post.html"    postCtxTags
             >>= saveSnapshot "content"
-            >>= loadAndApplyTemplate "templates/default.html" postCtx
+            >>= loadAndApplyTemplate "templates/default.html" postCtxTags
             >>= relativizeUrls
 
     create ["archive.html"] $ do
@@ -48,7 +56,7 @@ main = hakyll $ do
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
             let archiveCtx =
-                    listField "posts" postCtx (return posts) `mappend`
+                    listField "posts" postCtxTags (return posts) `mappend`
                     constField "title" "Archives"            `mappend`
                     defaultContext
 
@@ -63,7 +71,7 @@ main = hakyll $ do
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
             let indexCtx =
-                    listField "posts" postCtx (return posts) `mappend`
+                    listField "posts" postCtxTags (return posts) `mappend`
                     constField "title" "Home"                `mappend`
                     defaultContext
 
@@ -73,6 +81,20 @@ main = hakyll $ do
                 >>= relativizeUrls
 
     match "templates/*" $ compile templateCompiler
+
+    tagsRules tags $ \tag pattern -> do
+        let title = "Posts tagged \"" ++ tag ++ "\""
+        route idRoute
+        compile $ do
+            posts <- recentFirst =<< loadAll pattern
+            let ctx = constField "title" title
+                        `mappend` listField "posts" postCtx (return posts)
+                        `mappend` defaultContext
+
+            makeItem ""
+                >>= loadAndApplyTemplate "templates/tag.html" ctx
+                >>= loadAndApplyTemplate "templates/default.html" ctx
+                >>= relativizeUrls
 
     create ["atom.xml"] $ feedRoute renderAtom
     create ["feed.rss"] $ feedRoute renderRss
