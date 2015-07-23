@@ -29,7 +29,7 @@ blockquote {
     margin: 0 1.5em 1.2500em 1.5em;
 }
 
-strong, em {
+strong, em, del {
     vertical-align: top;
 }
 
@@ -39,7 +39,11 @@ p > code {
 }
 
 .math {
-    display: none;
+    font-family: monospace, monospace;
+    vertical-align: top;
+    font-size: 15px;
+    line-height: 1.1500em; /* 20px */
+    padding: 0;
 }
 
 pre, code, kbd, samp, tt, textarea, span {
@@ -68,7 +72,7 @@ article {
     margin-right: 240px;
     padding: 0 48px 20px;
     background-color: #FAFAFA;
-    /*background: #fff url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=); /* */
+    background: #fff url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=); /* */
 }
 
 sub{
@@ -141,15 +145,17 @@ header h1 {
   font-size: 2.7500em; /* 44px */
   line-height: 1.3636em; /* 60px */
   margin-top: 0.4545em;  margin-bottom: 0.0000em;
+    font-weight: normal;
 }
 
-h4 {
-    font-size: 1.9375em; /* 31px */
-    line-height: 1.2903em; /* 40px */
-    margin-top: 0.6452em;  margin-bottom: 0.0000em;
+h3 {
+    font-size: 1.2500em; /* 20px */
+  line-height: 1.0000em; /* 20px */
+  margin-top: 1.0000em;  margin-bottom: 0.0000em;
+    font-weight: normal;
 }
 
-h2 {
+h2, .content > h1 {
     font-size: 1.3750em; /* 22px */
     line-height: 1.8182em; /* 40px */
     margin-top: 0.9091em;  margin-bottom: 0.0000em;

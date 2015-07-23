@@ -3,7 +3,7 @@ layout: post
 title: "Of Ideas and Men"
 date: 2015-07-07 17:16
 comments: true
-categories: haskell technical
+tags: haskell, technical
 ---
 
 ## I

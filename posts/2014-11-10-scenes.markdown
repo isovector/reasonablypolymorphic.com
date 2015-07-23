@@ -4,6 +4,7 @@ title: "Scenes"
 date: 2014-11-10 00:05
 comments: true
 categories: introspection rationality
+tags: rationality
 ---
 
 {% previous building-over-the-abyss %}
@@ -94,13 +95,13 @@ in my favor to realize that most of the time, I didn't notice failing a scene.
 To be fair, I hadn't really noticed the successes either, though this seems of
 less significance.
 
-<del>I'm really really hoping that my failure to notice was a product of "not yet
+<p><del>I'm really really hoping that my failure to notice was a product of "not yet
 having the mental technology to think my thoughts[^1]". The good news is,
 there's a way of seeing if this is so: namely, empiricism. Now that I *do* have
 the technology, I hereby commit to write a follow-up post to this essay by July
 1, 2015. To this end, I will also [precommit to give $200][nanowrimo] to the
-first person who calls me out on it, should I not.</del> **Update:** I failed to
-write a follow-up, and [Malcolm][ocean] called me on it.
+first person who calls me out on it, should I not</del>. **Update:** I failed to
+write a follow-up, and [Malcolm][ocean] called me on it.</p>
 
 [ocean]: http://malcolmocean.com/
 
