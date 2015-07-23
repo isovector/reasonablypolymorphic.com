@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Insatiable Hunger"
+title: Insatiable Hunger
 date: 2014-04-20 11:09
 comments: true
-categories: sequence thinking art philosophy evolution science
+tags: pedagogy, abstraction
 ---
 
 {% previous painting-with-paint %}
@@ -13,7 +13,7 @@ categories: sequence thinking art philosophy evolution science
 > write in the near future. Seriously--I'd recommend clicking on that link
 > riiiiight... wait for it... **now**!
 
-[subscribe]: http://sandymaguire.me/blog/atom.xml
+[subscribe]: http://sandymaguire.me/atom.xml
 
 
 
@@ -51,7 +51,7 @@ wrong*.
 Take a second to consider why this act of necessary proving is important.
 Throughout all of human history that we know of, two things have invariantly
 been true. 1) We assumed we had an accurate model of the world. 2) We were
-wrong. 
+wrong.
 
 Mythology, geocentricism, flat-earth, spontaneous generation and phlogiston are
 a few examples that I just came up with off the top of my head.
@@ -103,7 +103,9 @@ Clearly, if there were an art to thinking, this was not what it looked like. If
 you can immediately dismiss ideas without knowing anything about them, unless
 your current beliefs are perfectly accurate, your beliefs are going to be wrong.
 
-[^1]: Really super duper quick turbo introduction: uncertainty exists only as a property of the human mind. Reality itself is never surprising--only relative to incorrect human models about how it *should* work.
+[^1]: Really super duper quick turbo introduction: uncertainty exists only as a
+property of the human mind. Reality itself is never surprising--only relative to
+incorrect human models about how it *should* work.
 
 
 
@@ -123,7 +125,7 @@ Music works because of how harmonics combine and how humans experience sound on
 a psychological level. Fiction works because characters are believable and the
 make-believe worlds have verisimilitude. I'm not quite ready to talk about what
 the artistic autonomy of Painting with Thoughts is, but astute readers probably
-already know the answer. If not, just hold tight. We'll get there. 
+already know the answer. If not, just hold tight. We'll get there.
 
 I'm not saying that the rules of music theory should never be broken (and
 likewise, the artistic autonomy of thinking), but I am saying that if you plan
@@ -146,8 +148,9 @@ promise that there will be opportunities to develop your own personal style of
 Painting with Thoughts, but a little patience is required lest we all look like
 cheap hacks.
 
-[liszt]: http://www.youtube.com/watch?v=7H99FM6S8rU
 [^2]: Which, contrary to popular belief, is *not* bliss.
+
+[liszt]: http://www.youtube.com/watch?v=7H99FM6S8rU
 [433]: http://www.youtube.com/watch?v=zY7UK-6aaNA
 [dreams]: http://www.youtube.com/watch?v=ExUosomc8Uc
 
@@ -169,14 +172,15 @@ line between popular music and empty calories. Sure, it will fill you up when
 you're hungry, but there's no real nutrients or sustenance to it. It feels like
 it's filling a need, but it's not really. Popular music is made to be consumed,
 rather than cherished. Sure it's kind of fun and catchy, but in 20 years nobody
-is going to be studying how great a song "Call Me Maybe[^3]" was. In fact, I suspect
-in 20 years, nobody who wasn't alive in 2012 will know what "Call Me Maybe" is.
+is going to be studying how great a song "Call Me Maybe[^3]" was. In fact, I
+suspect in 20 years, nobody who wasn't alive in 2012 will know what "Call Me
+Maybe" is.
 
 I'm not trying to beat up poor Carly Rae here, no, actually I think her music is
 kind of fun and exactly what I need sometimes. What I'm trying to beat up is
-traditional philosophy, which, despite having been studied for approximately 2500
-years in its current form, hasn't grown in its entire lifetime anywhere close to
-how much *any other subject* has grown in the last 50 years.
+traditional philosophy, which, despite having been studied for approximately
+2500 years in its current form, hasn't grown in its entire lifetime anywhere
+close to how much *any other subject* has grown in the last 50 years.
 
 To me, this implies a fatal flaw. Surely after *all* this time, *someone* must
 have gotten *somewhere*?
@@ -212,11 +216,12 @@ adult lives. Creativity in any form should be applauded.
 But if you feel like I feel, if you have the hunger to create, the need to
 self-express and the insatiable urge to understand all that can be understood,
 then these empty calories will not, no, **can not** be enough to gratify our
-curiosities. 
+curiosities.
 
 It is for this reason, and this reason alone, that we must take on the colossal
 task of reinventing normative human thought. If nothing will sate our hunger,
 we will need to do it ourselves.
 
-[^3]: Oh my god, was this song actually released two years ago? I couldn't think of any music more contemporary, which might be my point exactly.
+[^3]: Oh my god, was this song actually released two years ago? I couldn't think
+of any music more contemporary, which might be my point exactly.
 

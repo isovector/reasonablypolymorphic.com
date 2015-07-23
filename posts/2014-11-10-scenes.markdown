@@ -1,10 +1,10 @@
 ---
 layout: post
-title: "Scenes"
+title: Scenes
 date: 2014-11-10 00:05
 comments: true
 categories: introspection rationality
-tags: rationality
+tags: philosophy, feels, challenge
 ---
 
 {% previous building-over-the-abyss %}
@@ -95,8 +95,8 @@ in my favor to realize that most of the time, I didn't notice failing a scene.
 To be fair, I hadn't really noticed the successes either, though this seems of
 less significance.
 
-<p><del>I'm really really hoping that my failure to notice was a product of "not yet
-having the mental technology to think my thoughts[^1]". The good news is,
+<p><del>I'm really really hoping that my failure to notice was a product of "not
+yet having the mental technology to think my thoughts[^1]". The good news is,
 there's a way of seeing if this is so: namely, empiricism. Now that I *do* have
 the technology, I hereby commit to write a follow-up post to this essay by July
 1, 2015. To this end, I will also [precommit to give $200][nanowrimo] to the
@@ -114,5 +114,6 @@ making the *same mistake* over and over is inexcusable. This is my first step.
 [abyss]: http://sandymaguire.me/blog/building-over-the-abyss/
 [nanowrimo]: http://sandymaguire.me/blog/nanowrimo/
 
-[^1]: This is something I've been spending a lot of time thinking about lately. Expect it to be a big upcoming topic on We Can Solve This.
+[^1]: This is something I've been spending a lot of time thinking about lately.
+Expect it to be a big upcoming topic on We Can Solve This.
 

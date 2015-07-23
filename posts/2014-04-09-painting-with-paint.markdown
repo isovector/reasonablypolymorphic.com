@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Painting with Paint"
+title: Painting with Paint
 date: 2014-04-09 06:00
 comments: true
-categories: paint thought ocean wizard sequence
+tags: pedagogy, abstraction
 ---
 
 > Apologies. This post isn't about abstracting better and harder and more
@@ -44,7 +44,7 @@ Painting, for the most part, isn't expected to be directly beneficial to the
 world, but millions of painters dedicate their entire lives to it, risking
 financial debt and potentially living a life shrouded in the fringes of bohemian
 obscurity and misunderstanding from the public at large. They know this, and
-they've explicitly accepted it. 
+they've explicitly accepted it.
 
 But, most of them told me, painting is unique as a form of self-expression. It
 has the ability to make people feel; it's an intimate bond with someone you
@@ -131,7 +131,7 @@ Except for one thing, they all seemed to have been taken already. Except maybe
 for **thoughts**. "Painting with **thoughts**". Yup, that sounds like exactly
 the kind of thing I'd go for.
 
-[ssc]: http://slatestarcodex.com/2014/03/17/what-universal-human-experiences-are-you-missing-without-realizing-it/ 
+[ssc]: http://slatestarcodex.com/2014/03/17/what-universal-human-experiences-are-you-missing-without-realizing-it/
 [goodreads]: https://www.goodreads.com/review/list/14945161
 [nanowrimo]: http://sandymaguire.me/blog/nanowrimo-postmortem/
 [blog]: http://sandymaguire.me/blog/blog/archives/
@@ -141,7 +141,7 @@ the kind of thing I'd go for.
 ## II: The Ocean of Infinity
 
 Imagine with me for a second that you are on a beach. On an island. In the
-middle of the ocean. Sounds nice and relaxing, doesn't it? 
+middle of the ocean. Sounds nice and relaxing, doesn't it?
 
 Oh, does it? I guess I forgot to mention: it's a beach made out of boulders. And
 you're stranded, all alone. You have no idea how you ended up here. You can't
@@ -158,7 +158,7 @@ your body. Kind of like in [Star Wars][yoda], but, y'know, more... wizard...-y.
 Assuming that you're a shit engineer (because really, why would a wizard need to
 be a good engineer?), how do you go about getting off the island? Assume you
 have all the time in the world, and don't get hungry. And that *the ocean isn't
-very deep*. 
+very deep*.
 
 That part is key.
 
@@ -237,7 +237,7 @@ not how curiosity works! After you've learned whatever it was that you had set
 out for, you suddenly become aware of neighboring questions, all of which demand
 answers. The initial curiosity has left for the night, but not before inviting
 all of its friends from down the way to the educational kegger you're throwing
-in your brain's backyard. 
+in your brain's backyard.
 
 Maybe that metaphor got away from me a little bit. Let's try another one
 instead.

@@ -1,15 +1,15 @@
 ---
 layout: post
-title: "Introduction to Concept Space"
+title: Introduction to Concept Space
 date: 2014-07-14 20:17
 comments: true
-categories: sequence concept-space epistemically-cloudy algebra
+tags: science, philosophy
 ---
 
 ## Maps and Metaphors
 
 I'm currently reading a book called [Metaphors we Live By][mwlb] by Lakoff and
-Johnson, and it's probably one of my favorite things I've read 
+Johnson, and it's probably one of my favorite things I've read
 [all year][books]. I've been working through it for a few weeks now, and while
 it's not a hard book, I find myself needing to go *really slowly*, namely
 because it has a super-high insight-density and I need to keep stopping and
@@ -34,8 +34,8 @@ set of axioms.
 If this seems counterintuitive to you, think about it like this: each of the
 axioms is defined in terms of the other axioms. The notion will probably make
 more sense if we stop thinking of the axioms as theorem-components and instead
-as the basis of a vector space. If you've forgotten, a vector space (very loosely)
-generalizes coordinates. 
+as the basis of a vector space. If you've forgotten, a vector space (very
+loosely) generalizes coordinates.
 
 As a quick example, imagine a map of the world. It's obvious that we have only
 two dimensions on this map -- the X and the Y coordinates. Furthermore, we also
@@ -92,7 +92,7 @@ example to knock out some of the more subtle details.
 
 If you are not American, you will be very familiar with the metric system. If
 you *are* American, you should consider switching, because your system is
-stupid. 
+stupid.
 
 At its core, the metric system is composed of seven fundamental units: mass
 (*kg*), time (*s*), distance (*m*), count (*mol*), electrical current (*A*),
@@ -185,6 +185,7 @@ groups of similar ideas.
 [first20]: http://sandymaguire.me/blog/first-20-recursive-bees/
 [philohate]: http://sandymaguire.me/blog/ethics-crasher/
 [mspace]: http://en.wikipedia.org/wiki/Metric_space
+
 [^1]: Well, not really, but for our purposes let's just pretend.
 
 

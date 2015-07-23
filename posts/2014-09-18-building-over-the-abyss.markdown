@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Building Across the Abyss"
+title: Building Across the Abyss
 date: 2014-09-18 02:34
 comments: true
-categories: rationality self-improvement manifesto
+tags: feels, effectiveness
 ---
 
 ## I

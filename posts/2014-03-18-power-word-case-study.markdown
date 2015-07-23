@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Power Word: Case Study"
+title: Power Word: Case Study
 date: 2014-03-18 07:36
 comments: true
-categories: brainhacking dark-arts
+tags: crazy, science
 ---
 
 **Heads up! I'm talking about the *dark arts of the mind* in this post. Continue
@@ -19,21 +19,22 @@ event-party. People have some interesting answers, and my friend at the time did
 too, but I can't remember what she said because I was too excited about my own
 idea.
 
-Here's what I wanted for a magic spell: *Power Word: Trust*. If you're not familiar
-with Power Words, they're a concept fro Dungeons and Dragons which are words so
-powerful that their mere utterance can change the fabric of reality. Personally,
-I wasn't allowed to change the fabric of reality, but I was allowed to change
-people's minds. *Power Word: Trust* would be a word that I could use to make
-someone trust my line of argument. My reasoning is often seemingly [much more rigorous][sequences] than my peers', and too often I get bogged down trying
+Here's what I wanted for a magic spell: *Power Word: Trust*. If you're not
+familiar with Power Words, they're a concept fro Dungeons and Dragons which are
+words so powerful that their mere utterance can change the fabric of reality.
+Personally, I wasn't allowed to change the fabric of reality, but I was allowed
+to change people's minds. *Power Word: Trust* would be a word that I could use
+to make someone trust my line of argument. My reasoning is often seemingly [much
+more rigorous][sequences] than my peers', and too often I get bogged down trying
 to cross the [inferential distance] rather than the point I'd prefer to be
 making. And so I thought it'd be really nice to just have the ability to
 convince people that I know what I'm talking about. If they have their doubts
-still, I would provide citations to encourage [others to level-up as well][along for the
-ride]. And of course, I would only use my powers for good.
+still, I would provide citations to encourage [others to level-up as well][along
+for the ride]. And of course, I would only use my powers for good.
 
-Of course, calling it "*Power Word: Trust*" is just [rule of cool], but saying
-a single word would certainly be logistically easier than needing to draw
-circles in blood and chant incessantly.
+Of course, calling it "*Power Word: Trust*" is just [rule of cool], but saying a
+single word would certainly be logistically easier than needing to draw circles
+in blood and chant incessantly.
 
 <!--more-->
 
@@ -89,16 +90,16 @@ came up with &#8485;[^1], which of course is pronounced "*Power Word: Believe*".
 So I grabbed my notebook, and ran a bath in which I sat, meditating
 analytically, looking for a way of sneaking this idea into my mind.
 Occasionally I would write something that looked like [modal logic] in my
-notebook. I had looked up what [Lob's theorem][lob] looks like in modal logic, and I
-was trying to generalize it so I could install anything. This turns out to not
-be possible (or else you could prove everything), but I wanted it to be so. At
-least, in the context of my mind. [I really, really wanted it to be so][bottom
-line].
+notebook. I had looked up what [Lob's theorem][lob] looks like in modal logic,
+and I was trying to generalize it so I could install anything. This turns out to
+not be possible (or else you could prove everything), but I wanted it to be so.
+At least, in the context of my mind. [I really, really wanted it to be
+so][bottom line].
 
 I tried relentlessly to hook this belief into my mind, but it was no use. I knew
 that [wanting to believe] is an error in thinking, and I've spent the last six
 years attempting to identify when I'm making errors in my thinking so that I
-will hopefully *stop*. And here I was, wanting to believe. 
+will hopefully *stop*. And here I was, wanting to believe.
 
 It was **uncomfortable**, and rightfully so. I actually gave out a cry of
 anguish at 4am in the morning as I made a little ground. It felt like splitting
@@ -110,12 +111,13 @@ My last attempt in this session was to derive what I wanted out of Lob's theorem
 directly. Recasting the necessity operator (&#9633;) as "known to be true" and
 the possibility operator (&#9671;) as "believed to be true", I derived my own
 version of [doxastic logic], though I was not very rigorous in doing so. I've
-never been all that good at math. One of my axioms was that
-&#9671; &#9671; p = &#9671; p, which is to say, "believing that you believe
-something" is the same as "believing something". I believed that I had read this
-on LessWrong, since I remembered an article called "[Belief in Belief]", and
-remembered that our thoughts on how we see the world are in fact our thoughts on
-our thoughts on how we see the world. There's always an [invisible level of indirection][no idea] when talking about beliefs.
+never been all that good at math. One of my axioms was that &#9671; &#9671; p =
+&#9671; p, which is to say, "believing that you believe something" is the same
+as "believing something". I believed that I had read this on LessWrong, since I
+remembered an article called "[Belief in Belief]", and remembered that our
+thoughts on how we see the world are in fact our thoughts on our thoughts on how
+we see the world. There's always an [invisible level of indirection][no idea]
+when talking about beliefs.
 
 Anyway, this axiom turns out to be 100% false. Bad. Very bad. Don't try to do
 mathematics with wrong axioms. Like a sports car, it might get you places, but
@@ -129,8 +131,8 @@ an example of it working in the real world AND SO the only thing that was
 holding me back must have been my own mind. And I'll be damned if I'm going to
 accept arbitrary barriers from my damn self. My first thought was psychedelic
 drugs. Maybe I could get into a weird state of mind where I would believe
-&#8485; temporarily, and then use on itself to install it temporarily 
-[ &#8485;<sub>drugs</sub>(&#8485;<sub>permanent</sub>) &rarr;
+&#8485; temporarily, and then use on itself to install it temporarily [
+&#8485;<sub>drugs</sub>(&#8485;<sub>permanent</sub>) &rarr;
 &#8485;<sub>permanent</sub> ]. This is what I like to call, "thinking outside of
 the box". Unfortunately(?) I did not have any psychedelic drugs on hand, and so
 I did not pursue this train of thought any further.
@@ -179,7 +181,7 @@ kind of induction).
 And so I started. I imagined myself being unable to speak to an attractive girl
 at a bus stop, and then &#8485; escaped from my lips (as a glyph, no less!), and
 suddenly I could talk to this woman, and she was rapt with attention and we hit
-it off exceptionally well. 
+it off exceptionally well.
 
 And then I stopped. There was a flaw in my plan. I could feel it there, but I
 couldn't place where exactly. Something felt wrong. I was missing a piece of
@@ -197,12 +199,12 @@ ensure that it won't work.
 This is to say that we can't front-end load the work on this. We can't construct
 the spell in advance. We can't craft a general purpose spell that will let us
 believe useful things. We need to craft the spell each and every time. Luckily,
-we have a spell sketch (draw parallels to a proof sketch -- we know how to 
+we have a spell sketch (draw parallels to a proof sketch -- we know how to
 construct it but we can't generalize the procedure).
 
 Brienne actually touches on this in her blog post when she mentions the [miracle
 question], and while she talks a fair amount about it, mentioning that it started
-her along the path to her solution, I feel like she is missing the trees for the 
+her along the path to her solution, I feel like she is missing the trees for the
 forest. The miracle question didn't help her find the solution, the miracle
 question *is* the solution! The miracle question forces you to sit down and
 constrain your anticipations to your belief. It acts as the spell sketch.
@@ -215,7 +217,9 @@ and realizing that we've got the ability to make it exist.
 
 Bam. Mafuckin' wizardry, yo.
 
-[^1]: This is 100% not the glyph I used in my notebook, but after hours of searching for the one I did use, I had no luck and so am instead going with the relatively arcane symbol for a strange system of measurement called the "ounce".
+[^1]: This is 100% not the glyph I used in my notebook, but after hours of
+searching for the one I did use, I had no luck and so am instead going with the
+relatively arcane symbol for a strange system of measurement called the "ounce".
 
 [modal logic]: http://en.wikipedia.org/wiki/Modal_logic
 [lob]: http://en.wikipedia.org/wiki/Löb's_theorem
@@ -233,12 +237,13 @@ Bam. Mafuckin' wizardry, yo.
 ## Power Word: Cause
 
 I've realized what was wrong with my initial stipulation: I don't want to
-believe things; I want to cause things. My (meta) beliefs about beliefs are useless,
-but my (object) beliefs about the world are actionable. &#8485; is thus not to
-be pronounced "*Power Word: Believe*", but instead "*Power Word: **Cause** *".
-Belief has nothing to do with it. This change in framing I think implies that
-I've successfully installed &#8485;. It no longer changes my mind. It now makes
-things happen, and that's what really I had set out to do all along.
+believe things; I want to cause things. My (meta) beliefs about beliefs are
+useless, but my (object) beliefs about the world are actionable. &#8485; is thus
+not to be pronounced "*Power Word: Believe*", but instead "*Power Word:
+**Cause** *".  Belief has nothing to do with it. This change in framing I think
+implies that I've successfully installed &#8485;. It no longer changes my mind.
+It now makes things happen, and that's what really I had set out to do all
+along.
 
 Brains are surprisingly finicky about framing.
 
@@ -258,15 +263,16 @@ magic spell to self-destruct, and it seems too valuable to subject to such
 risks.
 
 But what's truly holding me back is that dark arts mind hacking is scary. It's
-scary as hell. Like [Moldbug says][UR], it's "a lot like 
-do-it-yourself brain surgery. It requires patience, tolerance, a high pain 
-threshold, and very steady hands". I am not going to start casting &#8485;
-willy-nilly, because I'm afraid of corrupting my brain. The benefits of it need to
-very probably outweigh the unknown risk of unforeseen interactions with other
-beliefs currently tenants of my mind.
+scary as hell. Like [Moldbug says][UR], it's "a lot like do-it-yourself brain
+surgery. It requires patience, tolerance, a high pain threshold, and very steady
+hands". I am not going to start casting &#8485; willy-nilly, because I'm afraid
+of corrupting my brain. The benefits of it need to very probably outweigh the
+unknown risk of unforeseen interactions with other beliefs currently tenants of
+my mind.
 
 I'll find a use for this spell, but with great power comes great responsibility.
 But still, in the meantime, being a wizard is *pretty frickin' cool*.
 
 [compartmentalize]: http://lesswrong.com/lw/jhs/dark_arts_of_rationality/#intentionalcompartmentalization
 [UR]: http://unqualified-reservations.blogspot.com/2007_04_01_archive.html
+

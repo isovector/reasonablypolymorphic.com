@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Generalization as a Means of  Intelligence Amplification"
+title: Generalization as a Means of Intelligence Amplification
 date: 2014-04-01 07:53
 comments: true
-categories: framework, generalization, intelligence-amplification 
+tags: pedagogy, abstraction
 ---
 
 I realized recently that my blog posts might seem a little further off the wall
@@ -28,7 +28,7 @@ A new friend of mine posted on Facebook the other day: "everything is hard until
 someone makes it easy". This is a sentiment which resonates with me, and
 (because I had previously been thinking about this blog post), I realized that
 a big part of making things easy is having concepts and words which allow you to
-succinctly reason about it. 
+succinctly reason about it.
 
 Visualize with me for a second, the true story of a friend of mine, an amateur
 musician with a knack for gnarly guitar solos. Unfortunately, he grew up in
@@ -95,7 +95,7 @@ mostly-correct.
 > lifetime gets this task wrong. Not only does it get it wrong, but it butchers
 > all of the usefulness out of it. Remember, you're trying to find a list of
 > features that seem to uniquely identify a vehicle from a non-vehicle. What you
-> are **not** trying to do is impose lots of words defining what a vehicle is, 
+> are **not** trying to do is impose lots of words defining what a vehicle is,
 > and then write a treatise on it and fight tooth and nail to tell other people
 > why what they call a vehicle is *wrong*. No! We just want to know what kinds
 > of things a vehicle is or does.
@@ -109,7 +109,7 @@ like, book-smarts, this is the characteristic that separates us from animals.
 (Which is not to say that humans are Aristotle's "rational animal"). This
 ability to abstract is what gave humanity agriculture, industry, science,
 politics and technology. We're able to stop and look at the useful parts of
-something, and separate the wheat from the chaff. 
+something, and separate the wheat from the chaff.
 
 Please take a second to realize the gravitas of this. It's an incredibly useful
 skill, and it turns out that, like any other skill (can you see me generalizing
@@ -155,7 +155,7 @@ teaching by rote and didn't actually know what mathematics were either.
 I used to be of the same mindset as you, and I didn't know what mathematics were
 either, despite *majoring in the faculty of math at a prestigious university for
 three years*. If you're interested in what mathematics is really like, from the
-eyes of a mathematician, I would highly recommend 
+eyes of a mathematician, I would highly recommend
 [A Mathematician's Lament][lament]. It changed my mind.
 
 Anyway, the point to which I'm laboriously trying to get is that the entire
@@ -237,4 +237,8 @@ more *usefully*. It will be less mathy, I promise. Get hype.
 
 [lament]: http://www.maa.org/sites/default/files/pdf/devlin/LockhartsLament.pdf
 [theory]: http://www.amazon.com/Probability-Theory-The-Logic-Science/dp/0521592712
-[^1]: One could make an argument that truly no numbers exist, and they're just generalizations of structures in the universe, but this wouldn't be a useful exercise in "trying to find abstractions", now would it? Don't be that guy.
+
+[^1]: One could make an argument that truly no numbers exist, and they're just
+generalizations of structures in the universe, but this wouldn't be a useful
+exercise in "trying to find abstractions", now would it? Don't be that guy.
+

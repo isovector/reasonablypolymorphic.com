@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "2014: Building Infrastructure"
+title: 2014: Building Infrastructure
 date: 2015-01-01 10:24
 comments: true
-categories: life postmortem reflection
+tags: life, results, analytics, science
 ---
 
 {% previous 2013-in-review %}
@@ -152,7 +152,8 @@ Distance (car):     2,081km<br/>
 Distance (ferry):   600km<br/>
 Distance (total):   49,651km
 
-[^2]: This excludes getting around cities internally, because I didn't track that and estimating it would be too difficult.
+[^2]: This excludes getting around cities internally, because I didn't track
+that and estimating it would be too difficult.
 
 
 
@@ -164,7 +165,8 @@ Keystrokes:                      350,281[^3]<br/>
 Clicks:                          34,835<br/>
 API calls to generate analytics: 6,612
 
-[^3]: These numbers are impossibly wrong; the software tracking them is rarely ever running. I find this amazing because these numbers are still REALLY BIG.
+[^3]: These numbers are impossibly wrong; the software tracking them is rarely
+ever running. I find this amazing because these numbers are still REALLY BIG.
 
 
 
@@ -190,7 +192,9 @@ Total time watching youtube: 557.8h (avg: 1.5/day, 13.6m/video)
 Beers[^4]:  316 (avg: 2.6/day)<br/>
 Liquor: 97 (avg: 0.81/day)<br/>
 
-[^4]: I only began tracking this metric in late August, but these numbers are not representative of the year as a whole. Backpacking in Europe was a major benefactor.
+[^4]: I only began tracking this metric in late August, but these numbers are
+not representative of the year as a whole. Backpacking in Europe was a major
+benefactor.
 
 
 
@@ -225,3 +229,4 @@ from last as 2013 was from 2012, but that's to be expected when 2013 was focused
 on finding low-hanging fruit. Subjectively I would rank 2014 as marginally
 better from 2013, and as my best year to date. Let's hope this trend continues
 next year too!
+

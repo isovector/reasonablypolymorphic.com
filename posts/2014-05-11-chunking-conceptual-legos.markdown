@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Chunking with Conceptual LEGOs"
+title: Chunking with Conceptual LEGOs
 date: 2014-05-11 08:55
 comments: true
-categories: sequence chunking abstraction programming 
+tags: pedagogy, abstraction, feels
 ---
 
 {% previous affording-ascendancy %}
@@ -20,7 +20,7 @@ If you want the most bang for your Ascendancy buck, there are two main
 considerations. The first is how much of it you possess, and the second is how
 wisely you spend it. I've got a lot of topics to cover in the next year, so
 we're only going to focus on how to get as much of it as possible; my argument
-being it's more useful to have lots of money than to spend little money. 
+being it's more useful to have lots of money than to spend little money.
 
 <!--more-->
 
@@ -91,7 +91,7 @@ slightest disturbance can destroy the entire effort.
 
 A human brain can only really pay attention to a few things simultaneously. The
 actual number is different for everyone, but it's usually somewhere in the range
-between four and ten. This attention span is known as your 
+between four and ten. This attention span is known as your
 [working memory][memory], and it's a pretty serious limitation in all
 intellectual pursuits.
 
@@ -123,7 +123,7 @@ working through the instruction manual.
 
 To drive the analogy a littler further home, when you're drawing people, you can
 either study lots of anatomy textbooks and then attempt to rotate the image of
-the human body around in your mind, or you can just just go buy one of those 
+the human body around in your mind, or you can just just go buy one of those
 [little wooden people][poser], pose the damn thing, and draw what you see in
 front of you. Bam! All of human still-motion has been chunked into one object.
 
@@ -137,7 +137,7 @@ front of you. Bam! All of human still-motion has been chunked into one object.
 ## The View From Way Up There
 
 Returning to the photo of that precarious LEGO tower above, we are afforded
-the ability to explore possible routes of abstraction. Starting from our 
+the ability to explore possible routes of abstraction. Starting from our
 precarious tower, what's a related topic that loses some details? An obvious
 next step is to think about *unstable towers in general*. To abstract again, we
 can consider *unstable buildings*, and again, *instability itself*.

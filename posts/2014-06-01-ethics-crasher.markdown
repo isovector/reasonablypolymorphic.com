@@ -1,16 +1,17 @@
 ---
 layout: post
-title: "The Curious Case of Lecture Crashing"
+title: The Curious Case of Lecture Crashing
 date: 2014-06-01 03:24
 comments: true
-categories: sequence philosophy ethics utility
+tags: pedagogy, refuted, results
 ---
 
-> **EDIT 2014-06-12:** This post turned out significantly worse than I was hoping
-> -- the point is not to beat up on arts students but instead to show how we can
-> reason better about complicated-seeming things. Apparently there is more inferential
-> distance to be convered before jumping to my main points. Let's consider this
-> a failed experiment, but we will leave it up for historical reasons.
+> **EDIT 2014-06-12:** This post turned out significantly worse than I was
+> hoping -- the point is not to beat up on arts students but instead to show how
+> we can reason better about complicated-seeming things. Apparently there is
+> more inferential distance to be convered before jumping to my main points.
+> Let's consider this a failed experiment, but we will leave it up for
+> historical reasons.
 
 {% previous painting-with-paint chunking-conceptual-legos %}
 
@@ -63,7 +64,7 @@ One of the rooms had some interesting looking people, evidently waiting for
 their lecture to begin. I snuck in and quietly asked what lecture this was --
 pretending that maybe I was just confused and couldn't keep track of what day it
 was. Another course code was rattled off at me. Having learned my lesson from
-the last time, I asked if there was a colloquial name for the course. 
+the last time, I asked if there was a colloquial name for the course.
 
 There was. "Ethics". Oh, this was going to be fun.
 
@@ -73,7 +74,7 @@ smiled when I told her about my lecture crashing plans.
 
 She lied. The professor took attendance, but graciously didn't say anything.
 Maybe she didn't want to start any trouble. Maybe it wasn't worth her time.
-Maybe she didn't care. Maybe it wouldn't have been ethical to kick me out? 
+Maybe she didn't care. Maybe it wouldn't have been ethical to kick me out?
 
 Who can say.
 
@@ -93,7 +94,7 @@ The second-most disturbing vibe of the lecture was that it didn't seem to be
 much of a lecture whatsoever. The professor would bring up points, and ask the
 class what they thought about it. Discussion would occur. Why was this
 a disturbing vibe? I can have conversations with people who don't know what
-they're talking about on my own for less than $1400 per semester. That's just
+they're talking about on my own for less than \$1400 per semester. That's just
 good economics! The cynic in me decided this was just a good tactic for padding
 out fluffy lectures, so we can't deduct too many points for solid strategy.
 
@@ -132,7 +133,7 @@ Let's take a second to think about what that would mean. To say nothing of the
 numerously huge and terrifying claims about epistemology, it would imply that
 each and every person in the room were wasting their time by attempting to study
 it. If there are no possible patterns of ethics to be recognized, then you might
-as well take your $1400 and set it on fire as soon as possible. 
+as well take your \$1400 and set it on fire as soon as possible.
 
 What's the point of anything if you're just going to give up that easily?
 
@@ -148,7 +149,7 @@ solve their mysteries. Totally different!
 This mindset of hitting a hard problem and instantly assuming it is
 Fundamentally Unsolvable strikes me as being unnervingly common. It's absolutely
 terrifying because there are *[all of these][warming]
-[hard problems that][nukes] [need to be solved][poverty]* and that's only going 
+[hard problems that][nukes] [need to be solved][poverty]* and that's only going
 to happen if we actually try to solve them. The correct follow-up thought to
 "this model doesn't do what we want it to do" is **not** "all models are
 broken", but rather "**we have the wrong model**".
@@ -293,7 +294,7 @@ emotional burden.
 > This is why science and math words become so foreign sounding -- we just keep
 > making things up so that we don't get confused about what we're talking about.
 > But we don't call it "making things up" we hide it behind the euphemism "being
-> rigorous with technical language". 
+> rigorous with technical language".
 
 Instead of all of this mumbo-jumbo about best interests, let's make up some
 words. We will define a "utility function" which is a computer that, given all
@@ -322,7 +323,7 @@ care about different things*. We're [chunking][lego] all human desires into one
 concept, and not worrying about the nitty gritty details.
 
 And, for good form, we'll write ourselves a note on the side of the box saying
-"figure this part out later". 
+"figure this part out later".
 
 The bonus of this strategy is twin fold: we don't get stuck on hard problems in
 the pursuit of easy questions, and we put all of the things we don't understand
@@ -392,13 +393,13 @@ obvious questions of ethics, both questions are answered the same (try it!),
 which is a promising sign. If that weren't the case, we'd have made some serious
 errors. We want our models to tell us the things we already know for sure (or
 else it's wrong), but we *also* want it to tell us about the things we **don't**
-know for sure (or else it's useless). 
+know for sure (or else it's useless).
 
 But, all of a sudden, our reframing grants us some new insight-fuel: if we're
 just trying to make our utility function spit out bigger numbers, all of
 a sudden being ethical is not a yes-no kind of answer, but rather it's
 a continuum. Rather than "*is* this ethical?" we should be asking "*how* ethical
-is this?". 
+is this?".
 
 This result generalizes entirely. All the way up to "truth" being a continuum.
 Instead of asking whether or not our model is true, we can ask *how* true is our
@@ -407,7 +408,7 @@ lack of model we started with.
 
 When viewed through these lenses, a lot of philosophical debates around ethics
 are instantly resolved. There is no longer only one ethical solution to the
-[trolley problem][trolley], just better and worse solutions. 
+[trolley problem][trolley], just better and worse solutions.
 
 This is the power of Painting with Thoughts. It's the profound clarity of mind
 to notice when you're the wrong questions, and to have the strength to steer

@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Affording Ascendancy"
+title: Affording Ascendancy
 date: 2014-05-07 21:53
 comments: true
-categories: ascendancy philosophy thinking art sequence 
+tags: pedagogy, abstraction
 ---
 
 {% previous not-for-its-own-sake insatiable-hunger %}
@@ -37,7 +37,7 @@ what to do.
 
 I call my solution "**Ascending**", not only because it's an appropriate label,
 but also because it sounds frickin' awesome. Ascending is the process of
-leveling-up when you're not otherwise occupied. 
+leveling-up when you're not otherwise occupied.
 
 It goes a little like this.
 
@@ -141,7 +141,7 @@ To introduce a lemma (an idea which is not very useful by itself, but which
 *affords* bigger ideas), I want to define a new conceptual resource for you to
 keep in mind. This resource is called "**Ascendancy**", and it is the money of
 affordances. Ascendancy is a currency you can spend to purchase affordances that
-you wouldn't otherwise have. 
+you wouldn't otherwise have.
 
 Our problem of finding affordances to acquire more affordances suddenly reduces
 to *collecting as much Ascendancy as possible*. Just like how survival in
@@ -181,7 +181,7 @@ sufficient for our purposes.
 
 It's not a difficult concept, but it's mad useful. Once you get the hang of
 finding good trades between forms of Ascendancy, you can start leveling-up in
-life *crazy fast*. This is the entire mechanic behind my 
+life *crazy fast*. This is the entire mechanic behind my
 [success in 2013][2013]. Ascendancy is the scaffolding that allows you to reach
 the great heights necessary for big goals.
 
@@ -198,4 +198,5 @@ acquiring Ascendancy* doesn't mean you can't start collecting it in the
 meantime.
 
 [2013]: http://sandymaguire.me/blog/2013-in-review/
-[painting]: http://sandymaguire.me/blog/painting-with-paint/ 
+[painting]: http://sandymaguire.me/blog/painting-with-paint/
+

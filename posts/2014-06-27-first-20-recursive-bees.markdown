@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "The First 20 Recursive Bees"
+title: The First 20 Recursive Bees
 date: 2014-06-27 04:26
 comments: true
-categories: sequence beeminder reflexivity goals
+tags: effectiveness, pedagogy, philosophy
 ---
 
 {% previous not-for-its-own-sake power-word-case-study %}
@@ -51,7 +51,7 @@ To get back to my point, there is clearly a relationship between the objects
 {snow is white} and {"snow is white"}. If {snow is white} were false, we
 probably wouldn't ever say the sentence {"snow is white"}, just like we never
 say the sentence {"snow is orange"}. However, the converse isn't true. {Snow is
-white} isn't true just because we say {"snow is white"}. 
+white} isn't true just because we say {"snow is white"}.
 
 For the most part, saying things are true doesn't actually make them true. But
 let's not get ahead of ourselves just yet.
@@ -77,7 +77,7 @@ Ocean][malcolm] to help, and he came up with these three constructs:
 
 They're not a fantastically joyous set of thoughts, but I'm sure you or someone
 you know has at one point or another known the inside of a depression loop not
-unlike this one. 
+unlike this one.
 
 This depression spiral is a type of **convergent** feedback. Each of the
 sentences feeds off of the previous one in a big circle, and they all point in
@@ -86,6 +86,7 @@ were to follow this chain of reasoning all the way to the bottom... well, your
 head would probably also explode, though for entirely different reasons.
 
 [^1]: Just kidding!
+
 [amplification]: http://sandymaguire.me/blog/generalization-as-intelligence-amplification/
 [malcolm]: http://malcolmocean.com/
 
@@ -142,14 +143,14 @@ The secret is essentially this: do some research on what you want to learn, get
 a clear picture of what "being good" means to you, and then practice it
 intelligently for 20 hours. That's it! That's the whole book, but described in
 much more detail and with lots of case studies of cool things Josh learned by
-this method[^2]. 
+this method[^2].
 
 Why does this work? Well, for the most part, people don't do things at which
 they're not very good. Most people give up on things immediately if they aren't
 very good at them. By precommitting to practice for 20 hours, you're ensuring
 that you have 20 hours more experience than most people at whatever you're
 trying to learn. That turns out to be a surprising amount of time to practice
-things. 
+things.
 
 The research beforehand is to ensure that you know how to critique your
 own efforts, so that all of your deliberate practice isn't for naught. Pretty
@@ -159,24 +160,22 @@ Unfortunately, there is a large subset of people who all reply along the same
 lines when I'm done pitching the book at them. Negatively. The most common
 replies are:
 
-
-> **Unbeliever:** "No way. It takes 10,000 hours to get good at something. Everybody knows that.
-> What, are you stupid or something?"
+> **Unbeliever:** "No way. It takes 10,000 hours to get good at something.
+> Everybody knows that.  What, are you stupid or something?"
 
 *Response:* Usually taking the [inside view][inside] leads to faulty reasoning,
 but it actually saves the day here. Think about all of the things you're good
 at. Have you spent 10,000 hours of any of them? Probably not.
 
 
-> **Unbeliever:** "Well, maybe. Some skills are learnable, but there is no way to get good at
-> *X* in 20 hours."
+> **Unbeliever:** "Well, maybe. Some skills are learnable, but there is no way
+> to get good at *X* in 20 hours."
 
 *Response:* You might be right about that, but remember, we're not trying to get
 good at things. We're trying to get "good" at things, which is to say, on
 a subjective bar set by us!
 
 My favorite response of all time, however, was:
-
 
 > **Believer:** "Okay, I'm in! Let's try it!"
 
@@ -219,6 +218,7 @@ even be bothered to do the motions whatsoever.
 [inside]: http://en.wikipedia.org/wiki/Reference_class_forecasting
 [lor]: http://lesswrong.com/lw/o4/leave_a_line_of_retreat/
 [trying]: http://lesswrong.com/lw/uh/trying_to_try/
+
 [^2]: Programming, playing go, windsurfing, ukulele, yoga, touch typing
 
 
@@ -249,7 +249,7 @@ sorrow)
 
 If you think about this for like a second, what these people are saying is that
 they don't expect the things the goals they profess to have to be
-accomplishable. If you aren't willing to put $5 on the line as a bet to yourself
+accomplishable. If you aren't willing to put \$5 on the line as a bet to yourself
 that you're going to do the things you say you're going to do, your prospects
 aren't looking that great.
 

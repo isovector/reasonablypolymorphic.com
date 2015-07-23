@@ -1,17 +1,17 @@
 ---
 layout: post
-title: "Comfort Zones"
+title: Comfort Zones
 date: 2014-10-22 17:28
 comments: true
-categories: rationality policy-mode
+tags: effectiveness, philosophy
 ---
 
 # I
 
-Last spring I found myself driving to another city's mall with two guys
-I didn't know very well, but considered friends nevertheless. Our city has
-a mall, but we didn't want to go there. Not because our mall was missing some
-shopping opportunity, but because at our mall someone might have *recognized us*.
+Last spring I found myself driving to another city's mall with two guys I didn't
+know very well, but considered friends nevertheless. Our city has a mall, but we
+didn't want to go there. Not because our mall was missing some shopping
+opportunity, but because at our mall someone might have *recognized us*.
 
 We didn't want that to happen.
 
@@ -37,8 +37,8 @@ It was only going to be *uncomfortable*.
 "Only."
 
 And so that's how I found myself wandering around the mall, offering high-fives
-to people as I walked by, posing like Superman (and singing the theme song) as
-I rode the elevators. I got some weird looks, sure, but that was to be expected.
+to people as I walked by, posing like Superman (and singing the theme song) as I
+rode the elevators. I got some weird looks, sure, but that was to be expected.
 Honestly, I'm pretty good at being ridiculous at public; this was just getting
 warmed up.
 
@@ -49,8 +49,8 @@ Mind you, not "try to free-style rap" or even "free-style rap at as many people
 as possible". Those both have loopholes. No, my success for the day would be
 evaluated entirely on whether or not I free-style rapped at anyone.
 
-After asking a few people whether or not I could (they all said no), and after
-a few other false starts, I managed it. I cornered some people behind me on the
+After asking a few people whether or not I could (they all said no), and after a
+few other false starts, I managed it. I cornered some people behind me on the
 escalator and just *did it*.
 
 They laughed at me. It sucked both as a rap and as an experience. I've never
@@ -84,9 +84,9 @@ comfortable *considering doing* any of the best human experiences.
 
 Following through on the logical implications of this, it's pretty likely to
 find better things than you already know about with just a little bit of
-exploration; it is an acknowledgment of this point that my friends and
-I were out in that mall doing weird things. We were attempting to systematically
-expand our comfort zones, in a desperate search to enrich our lives.
+exploration; it is an acknowledgment of this point that my friends and I were
+out in that mall doing weird things. We were attempting to systematically expand
+our comfort zones, in a desperate search to enrich our lives.
 
 There is a poor argument to be made here, something along the lines of "but I've
 already looked around, and the things I do now are the best, so there's no
@@ -121,5 +121,6 @@ One thing out of every two.
 
 [limit]: http://lesswrong.com/lw/mp/0_and_1_are_not_probabilities/
 [people]: http://www.prb.org/Publications/Articles/2002/HowManyPeopleHaveEverLivedonEarth.aspx
+
 [^1]: If our numbers are close to a lower bound, which I'd doubt very much.
 

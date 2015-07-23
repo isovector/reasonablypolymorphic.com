@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Outside the Friend-crush"
+title: Outside the Friend-crush
 date: 2014-10-29 09:56
 comments: true
-categories: rationality policy-mode
+tags: effectiveness
 ---
 
 {% previous comfort-zones %}
