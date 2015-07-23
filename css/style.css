@@ -6,16 +6,45 @@ body {
     font-size: 16px;
 }
 
-p {
+p, pre {
     font-size: 1em; /* 16px */
     line-height: 1.2500em; /* 20px */
     margin: 0 0 1.2500em 0;
+}
+
+code {
+      font-size: 0.7500em; /* 12px */
+  line-height: 1.6667em; /* 20px */
+  margin-top: 1.6667em;  margin-bottom: 0.0000em;
+}
+
+hr {
+    margin-top: -1px;
+    margin-bottom: 19px;
 }
 
 blockquote {
     font-size: 1em; /* 16px */
     line-height: 1.2500em; /* 20px */
     margin: 0 1.5em 1.2500em 1.5em;
+}
+
+strong, em {
+    vertical-align: top;
+}
+
+p > code {
+    border: 1px dotted #aaa;
+    padding: 1px 0.5em;
+}
+
+.math {
+    display: none;
+}
+
+pre, code, kbd, samp, tt, textarea, span {
+    font-family: monospace, monospace;
+    vertical-align: top;
 }
 
 a {
@@ -40,6 +69,16 @@ article {
     padding: 0 48px 20px;
     background-color: #FAFAFA;
     /*background: #fff url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=); /* */
+}
+
+sub{
+    font-size: 0.7em;
+    vertical-align: bottom;
+}
+
+sup{
+    font-size: 0.7em;
+    vertical-align: top;
 }
 
 nav {
