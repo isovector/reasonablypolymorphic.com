@@ -1,10 +1,10 @@
 <html>
 <head>
-<link href='http://fonts.googleapis.com/css?family=Halant|Crimson+Text|Amiri|Muli' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css'>
 <style type="text/css">
 
 body {
-    background-color: #687E85;
+    background-color: #11212e;
     padding: 0;
     margin: 0;
     font-family: 'Amiri', serif;
@@ -17,8 +17,14 @@ p {
   margin: 0 0 1.2500em 0;
 }
 
+blockquote {
+  font-size: 1em; /* 16px */
+  line-height: 1.2500em; /* 20px */
+  margin: 0 1.5em 1.2500em 1.5em;
+}
+
 a {
-    color: #D15D1A;
+    color: #c9173c;
     text-decoration: none;
 }
 
@@ -48,7 +54,7 @@ nav {
     margin-top: 0;
     padding: 0 20px 16px 20px;
     width: 200px;
-    color: #FAFAFA;
+    color: #cec0c3;
 
     font-size: 14px;
     font-family: 'Muli', sans-serif;
@@ -58,7 +64,7 @@ nav {
 }
 
 nav a {
-    color: #E7D17A;
+    color: #d15771;
 }
 
 nav h1 {
@@ -89,8 +95,6 @@ nav ul {
     padding-left: 24px;
       font-size: 1em; /* 14px */
   line-height: 1.1429em; /* 16px */
-      font-size: 1em; /* 14px */
-  line-height: 1.1429em; /* 16px */
   margin: 0 0 1.1429em 0;
 }
 
@@ -105,6 +109,7 @@ header h1 {
     vertical-align: middle;
     padding-top: 50px;
     height: 200px;
+    font-weight: normal;
 
       font-size: 2.7500em; /* 44px */
   line-height: 1.3636em; /* 60px */
@@ -121,6 +126,7 @@ h2 {
       font-size: 1.3750em; /* 22px */
   line-height: 1.8182em; /* 40px */
   margin-top: 0.9091em;  margin-bottom: 0.0000em;
+  font-weight: normal;
 }
 
 ul {
@@ -130,16 +136,6 @@ ul {
 
 .content {
     text-align: justify;
-}
-
-#panel {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    width: 500px;
-    background-color: #fff;
-    padding: 2em;
-    display: none;
 }
 
 @media (max-width: 1000px) {
@@ -152,15 +148,6 @@ ul {
     }
 }
 </style>
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script>
-<link href="http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.0/css/smoothness/jquery-ui-1.10.0.custom.min.css" rel="stylesheet">
-
-<script src="http://c0bra.github.io/color-scheme-js/lib/color-scheme.min.js"></script>
-<script type="text/javascript">
-// HERE IT COMES
-</script>
 
 </head>
 <body>
@@ -176,52 +163,9 @@ ul {
                 </p>
         <div class="content">
 
-<div id="panel">
-<div>
-<div class="span12"><strong class="span1 pull-left">Hue</strong>
-                <div id="hue-slider" class="span5"></div>
-                <div id="hue-box" style="background-color: #ffffff" class="color middle"></div>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-            <div class="row">
-              <div class="span12"><strong class="span1">Scheme</strong>
-                <div data-toggle="buttons-radio" class="btn-group">
-                  <button type="button" data-toggle="button" onclick="setScheme(&quot;monochromatic&quot;)" class="btn active">Monochromatic</button>
-                  <button type="button" data-toggle="button" onclick="setScheme(&quot;contrast&quot;)" class="btn">Contrast</button>
-                  <button type="button" data-toggle="button" onclick="setScheme(&quot;triade&quot;)" class="btn">Triade</button>
-                  <button type="button" data-toggle="button" onclick="setScheme(&quot;tetrade&quot;)" class="btn">Tetrade</button>
-                  <button type="button" data-toggle="button" onclick="setScheme(&quot;analogic&quot;)" class="btn">Analogic</button>
-                </div>
-                <button id="add-complement" type="button" data-toggle="button" class="btn hide">Add Complement</button>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-            <div class="row">
-              <div class="span12"><strong class="span1 pull-left">Distance</strong>
-                <div id="distance-slider" class="span5"> </div><span id="distance"></span><small style="padding-left: 20px">(won't affect mono or contrast)</small>
-              </div>
-            </div>
-            <div class="row">&nbsp;</div>
-            <div class="row">
-              <div class="span12"><strong class="span1 pull-left">Variation</strong>
-                <div data-toggle="buttons-radio" class="btn-group">
-                  <button type="button" data-toggle="button" onclick="setVariation(&quot;default&quot;)" class="btn active">Default</button>
-                  <button type="button" data-toggle="button" onclick="setVariation(&quot;pastel&quot;)" class="btn">Pastel</button>
-                  <button type="button" data-toggle="button" onclick="setVariation(&quot;soft&quot;)" class="btn">Soft</button>
-                  <button type="button" data-toggle="button" onclick="setVariation(&quot;light&quot;)" class="btn">Light</button>
-                  <button type="button" data-toggle="button" onclick="setVariation(&quot;hard&quot;)" class="btn">Hard</button>
-                  <button type="button" data-toggle="button" onclick="setVariation(&quot;pale&quot;)" class="btn">Pale</button>
-                </div>
-              </div>
-            </div>
-        </div>
-
-
-
             <h2 id="moving-along">Moving Along</h2>
             <p>Last week we talked about the concept of Ascendancy: the conceptual currency that lets us buy options to help accomplish our goals. It's a generalization of money for achievements. It's a powerful concept, especially when you realize that because it's a currency, we can apply traditional economic theory to it. And people have been working on traditional economic theory for a long time.</p>
-            <p>If you want the most bang for your Ascendancy buck, there are two main considerations. The first is how much of it you possess, and the second is how wisely you spend it. I've got a lot of topics to cover in the next year, so we're only going to focus on how to get as much of it as possible; my argument being it's more useful to have lots of money than to spend little money.</p>
+            <blockquote>If you want the most bang for your Ascendancy buck, there are two main considerations. The first is how much of it you possess, and the second is how wisely you spend it. I've got a lot of topics to cover in the next year, so we're only going to focus on how to get as much of it as possible; my argument being it's more useful to have lots of money than to spend little money.</blockquote>
             <!--more-->
             <p>That being said, if you're interested, conceptually the website <a href="http://lesswrong.com">LessWrong</a> is almost entirely focused on how to efficiently spend the information (read: a form of Ascendancy) you have in your possession. Fair warning: there is a lot of math, because that's what budgeting is.</p>
             <p>So, for our purposes we will only be looking at how to acquire lots of Ascendancy. Because Ascendancy is ethereal and doesn't exist without a medium in which it can be transmitted, we are required to find a specific form of it to accumulate (remember, there are lots to choose from: money, power, influence, etc). I'd argue that information is the best candidate as a way of generating Ascendancy, mainly because we can copy it without being arrested. We can generate information for free with no concerns of inflating the economy.</p>
@@ -266,30 +210,27 @@ ul {
         <h1>WE CAN<br/>SOLVE THIS</h1>
         <p>&nbsp;</p>
         <p>&nbsp;</p>
-        <p>&nbsp;<br/>&nbsp;<br/></p>
+        <p>&nbsp;<br/></p>
         <p>
         Hi there. I'm Sandy. By trade I'm a programmer, but my interests lie more in the field of strategic self-improvement (on which I maintain a blog). I attempt to think and act at every level, everywhere, always, but cogency of meta-levels is where I find most of the value in life.</p>
 
 <p>One ideal I put above all others is that of transparency, and as such, I attempt to live as open a life as possible. To this extent, I quantify lots about my life, with the belief that more data is better than less data:</p>
 
 
-<h2>ELSEWHERE</h2>
+<h2>PRODUCER OF</h2>
 <ul>
-      <li>Code at <a href="http://github.com/munificent">github</a></li>
-      <li>Code at <a href="http://bitbucket.org/munificent">bitbucket</a></li>
-      <li>Tweets at <a href="http://twitter.com/munificentbob">twitter</a></li>
-      <li>Photos at <a href="http://www.flickr.com/photos/bobisbob/">flickr</a></li>
-      <li>Video at <a href="http://vimeo.com/bobisbob">vimeo</a></li>
-      <li>Posts at <a href="http://plus.google.com/100798142896685420545">google+</a></li>
+      <li>Code on <a href="http://github.com/munificent">github</a></li>
+      <li>Essays at <a href="http://bitbucket.org/munificent">here</a></li>
+      <li>Tips and tricks at <a href="http://bitbucket.org/munificent">here</a></li>
+      <li>Mathematics at <a href="http://twitter.com/munificentbob">twitter</a></li>
+      <li>Book archive at <a href="http://twitter.com/munificentbob">twitter</a></li>
     </ul>
-<h2>ELSEWHERE</h2>
+
+<h2>CONSUMER OF</h2>
 <ul>
-      <li>Code at <a href="http://github.com/munificent">github</a></li>
-      <li>Code at <a href="http://bitbucket.org/munificent">bitbucket</a></li>
-      <li>Tweets at <a href="http://twitter.com/munificentbob">twitter</a></li>
-      <li>Photos at <a href="http://www.flickr.com/photos/bobisbob/">flickr</a></li>
-      <li>Video at <a href="http://vimeo.com/bobisbob">vimeo</a></li>
-      <li>Posts at <a href="http://plus.google.com/100798142896685420545">google+</a></li>
+      <li>Music at <a href="http://github.com/isovector">last.fm</a></li>
+      <li>Books at <a href="http://github.com/isovector">goodreads</a></li>
+      <li>Papers at <a href="http://github.com/isovector">mendeley</a></li>
     </ul>
 
 
@@ -298,104 +239,6 @@ ul {
 
 
 
-
-  <script>
-    //- console.log("C", ColorScheme);
-    var scheme = null;
-    $(document).ready(function(){
-      $("#hue-slider").slider({
-        min: 0,
-        max: 360,
-        slide: function(e, ui) {
-          // ui.value has the number
-          setHue(ui.value)
-        }
-      });
-
-      $('#hex').change(function(){
-        setHex( $('#hex').val() );
-      });
-
-      $('#set-hex').click(function(){
-        setHex( $('#hex').val() );
-      });
-
-      $("#distance-slider").slider({
-        min: 0,
-        max: 1,
-        value: 0.5,
-        step: 0.01,
-        slide: function(e, ui) {
-          // ui.value has the number
-          setDistance(ui.value)
-        }
-      });
-
-      /*scheme = new ColorScheme;
-      setHue(0);
-      generateColors();*/
-
-      $('#add-complement').click(addComplement);
-    });
-
-    function generateColors() {
-      $('#colors').html('');
-      var colors = scheme.colors();
-      $('body').css('background-color', '#' + colors[0]);
-      $('nav').css('color', '#' + colors[2]);
-      $('a').css('color', '#' + colors[4]);
-      //$('article').css('background-color', '#' + colors[1]);
-
-    }
-
-    function setHue(hue) {
-      scheme.from_hue(hue);
-
-      generateColors();
-    }
-
-    function setScheme(newScheme) {
-      if (newScheme == 'analogic') {
-        $('#add-complement').show();
-      }
-      else {
-       $('#add-complement').hide();
-      }
-      scheme.scheme(newScheme);
-      generateColors();
-    }
-
-    function addComplement() {
-      if ( $('#add-complement').hasClass('active') ) {
-        scheme.add_complement(false);
-      }
-      else {
-        scheme.add_complement(true);
-      }
-      generateColors();
-    }
-
-    function setDistance(distance) {
-      scheme.distance(distance);
-      generateColors();
-    }
-
-    function setVariation(variation) {
-      scheme.variation(variation);
-      generateColors();
-    }
-
-    function setWebSafe(websafe) {
-      scheme.web_safe(websafe);
-      generateColors();
-    }
-
-    function randomHue() {
-      var h = Math.round(Math.random() * 360);
-      scheme.from_hue(h);
-      generateColors();
-    }
-  </script>
 
 
 </body>
