@@ -43,6 +43,14 @@ main = hakyll $ do
             >>= loadAndApplyTemplate "templates/default.html" postCtxTags
             >>= relativizeUrls
 
+    -- TODO: make this run octo-clip-it
+    match "books/*.markdown" $ do
+        route $ setExtension "html"
+        compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/post.html"    defaultContext
+            >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= relativizeUrls
+
     create ["archive.html"] $ do
         route idRoute
         compile $ do
