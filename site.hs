@@ -1,4 +1,3 @@
---------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend)
 import           Hakyll.Web.Tags
@@ -9,7 +8,6 @@ import           Text.Pandoc.Options
 (<+>) :: Routes -> Routes -> Routes
 (<+>) = composeRoutes
 
---------------------------------------------------------------------------------
 
 postCtxWithTags :: Tags -> Context String
 postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
@@ -27,12 +25,6 @@ main = hakyll $ do
         route   idRoute
         compile copyFileCompiler
 
-    match "style.scss" $ do
-        route   $ constRoute "css/style.css"
-        compile $ getResourceString
-            >>= withItemBody (unixFilter "sass" ["-s", "--scss"])
-            >>= return . fmap compressCss
-
     match "css/*" $ do
         route   idRoute
         compile compressCssCompiler
@@ -44,7 +36,7 @@ main = hakyll $ do
             >>= relativizeUrls
 
     match "posts/*" $ do
-        route $ gsubRoute "posts/" (const "blog/") <+> gsubRoute "[0-9]{4}-(.*)" id <+> cruftlessRoute
+        route $ gsubRoute "posts/" (const "blog/") <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/") <+> cruftlessRoute
         compile $ pandocMathCompiler
             >>= loadAndApplyTemplate "templates/post.html"    postCtxTags
             >>= saveSnapshot "content"
