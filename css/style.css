@@ -13,6 +13,12 @@ p, pre, .content > ul, .content > ol, .footnotes {
     margin: 0 0 1.2500em 0;
 }
 
+.content > pre {
+    margin: -2px 0 20px 2em;
+    border: 1px dotted #aaa;
+    padding: 0 0.5em;
+}
+
 code {
     font-size: 0.7500em; /* 12px */
     line-height: 1.6667em; /* 20px */
