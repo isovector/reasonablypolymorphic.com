@@ -6,7 +6,7 @@ body {
     font-size: 16px;
 }
 
-p, pre {
+p, pre, .content > ul, .content > ol, .footnotes {
     font-size: 1em; /* 16px */
     line-height: 1.2500em; /* 20px */
     margin: 0 0 1.2500em 0;
@@ -24,8 +24,6 @@ hr {
 }
 
 blockquote {
-    font-size: 1em; /* 16px */
-    line-height: 1.2500em; /* 20px */
     margin: 0 1.5em 1.2500em 1.5em;
 }
 
