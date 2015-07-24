@@ -180,7 +180,7 @@ pandocMathCompiler =
 ----
 
 cruftlessRoute :: Routes
-cruftlessRoute = setExtension "html" <+> gsubRoute ".html" (const "/index.html")
+cruftlessRoute = setExtension ""
 
 --------------------------------------------------------------------------------
 postCtx :: Context String

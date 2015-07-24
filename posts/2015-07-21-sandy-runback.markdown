@@ -46,11 +46,11 @@ fantastic eyebrows.
 It seemed like a fitting name. So I pressed *Enter* and made it official. I was
 now Sandy Maguire. That was the easy part.
 
-Changing your identity is *hard*^&#91;citation needed&#93;^, but I'm pretty sure
-it's **much harder** to do it in a small town where you know or have heard an
-embarrassing story about *literally* everyone your age. I had changed my name on
-Facebook, but that day I learned that just because it's on Facebook doesn't make
-it true.
+Changing your identity is *hard*<sup>&#91;citation needed&#93;</sup>, but I'm
+pretty sure it's **much harder** to do it in a small town where you know or have
+heard an embarrassing story about *literally* everyone your age. I had changed
+my name on Facebook, but that day I learned that just because it's on Facebook
+doesn't make it true.
 
 It was weird. Most people simply **refused** to call me Sandy. "It's just a
 phase," they'd say. "Fuck you," I'd reply, but quietly. I couldn't understand
