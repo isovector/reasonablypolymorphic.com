@@ -132,11 +132,19 @@ nav h1 {
 
 }
 
+.prev, .next {
+    margin-top: -1px;
+    font-size: 2em;
+}
+
 .prev {
     float: left;
     margin-left: -26px;
-    margin-top: -1px;
-    font-size: 2em;
+}
+
+.next {
+    float: right;
+    margin-right: -26px;
 }
 
 nav h1 a {

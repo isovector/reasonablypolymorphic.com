@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
-import           Data.Monoid (mappend)
+import           Data.Monoid (mappend, mconcat)
 import           Hakyll.Web.Tags
 import qualified Data.Set as S
 import           Hakyll
@@ -8,10 +8,9 @@ import          Control.Applicative ((<$>))
 import          Debug.Trace (trace)
 import Control.Applicative (Alternative (..))
 
+
 import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy)
 import System.FilePath (takeFileName)
-
-
 
 import Data.Time.Format (parseTime)
 import System.Locale (defaultTimeLocale)
@@ -25,11 +24,11 @@ import Data.Time.Clock (UTCTime)
 postCtxWithTags :: Tags -> Context String
 postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
 
-getPrev :: Item String -> Compiler String
-getPrev me = do
+getPrev :: ([Identifier] -> [Identifier] -> [(Identifier,Identifier)]) -> Item String -> Compiler String
+getPrev f me = do
     posts <- getMatches "posts/*"
     let ids = sortIdentifiersByDate posts
-    case lookup (itemIdentifier me) $ zip ids (tail ids) of
+    case lookup (itemIdentifier me) $ f ids (tail ids) of
       Just i  -> (fmap (maybe empty $ toUrl) . getRoute) i
       Nothing -> empty
 
@@ -44,8 +43,13 @@ sortIdentifiersByDate identifiers =
                 in compare ((parseTime' fn1) :: Maybe UTCTime) ((parseTime' fn2) :: Maybe UTCTime)
 
 
-setLast :: Context String -> Context String
-setLast ctx = field "last" getPrev `mappend` ctx
+setNextPrev :: Context String -> Context String
+setNextPrev ctx =
+    mconcat
+        [ field "prev" $ getPrev zip
+        , field "next" $ getPrev (flip zip)
+        , ctx
+        ]
 
 
 
@@ -75,10 +79,12 @@ main = hakyll $ do
         compile compressCssCompiler
 
     match "posts/*" $ do
-        route $ gsubRoute "posts/" (const "blog/") <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/") <+> cruftlessRoute
+        route $ gsubRoute "posts/" (const "blog/")
+            <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
+            <+> cruftlessRoute
         compile $ do
             pandocMathCompiler
-                >>= (loadAndApplyTemplate "templates/post.html" $ setLast postCtxTags)
+                >>= loadAndApplyTemplate "templates/post.html" (setNextPrev postCtxTags)
                 >>= saveSnapshot "content"
                 >>= loadAndApplyTemplate "templates/default.html" postCtxTags
                 >>= relativizeUrls
@@ -91,7 +97,7 @@ main = hakyll $ do
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
-    create ["archive.html"] $ do
+    create ["blog/archive.html"] $ do
         route idRoute
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
@@ -110,7 +116,7 @@ main = hakyll $ do
         route idRoute
         compile $ do
             posts :: [Item String] <- recentFirst =<< loadAll "posts/*"
-            makeItem . itemBody $ head posts
+            makeItem (itemBody $ head posts)
 
     match "templates/*" $ compile templateCompiler
 
@@ -155,10 +161,10 @@ pandocMathCompiler =
                           Ext_latex_macros]
         defaultExtensions = writerExtensions defaultHakyllWriterOptions
         newExtensions = foldr S.insert defaultExtensions mathExtensions
-        writerOptions = defaultHakyllWriterOptions {
-                          writerExtensions = newExtensions,
-                          writerHTMLMathMethod = MathJax ""
-                        }
+        writerOptions = defaultHakyllWriterOptions
+                          { writerExtensions = newExtensions
+                          , writerHTMLMathMethod = MathJax ""
+                          }
     in pandocCompilerWith defaultHakyllReaderOptions writerOptions
 
 
