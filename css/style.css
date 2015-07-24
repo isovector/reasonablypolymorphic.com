@@ -132,6 +132,17 @@ nav h1 {
 
 }
 
+.prev {
+    float: left;
+    margin-left: -26px;
+    margin-top: -1px;
+    font-size: 2em;
+}
+
+nav h1 a {
+    color: #cec0c3;
+}
+
 nav p {
     font-size: 1em; /* 14px */
     line-height: 1.1429em; /* 16px */

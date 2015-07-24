@@ -5,6 +5,18 @@ import qualified Data.Set as S
 import           Hakyll
 import           Text.Pandoc.Options
 import          Control.Applicative ((<$>))
+import          Debug.Trace (trace)
+import Control.Applicative (Alternative (..))
+
+import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy)
+import System.FilePath (takeFileName)
+
+
+
+import Data.Time.Format (parseTime)
+import System.Locale (defaultTimeLocale)
+import Data.Time.Clock (UTCTime)
+
 
 (<+>) :: Routes -> Routes -> Routes
 (<+>) = composeRoutes
@@ -12,6 +24,38 @@ import          Control.Applicative ((<$>))
 
 postCtxWithTags :: Tags -> Context String
 postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
+
+getPrev :: Item String -> Compiler String
+getPrev me = do
+    posts <- getMatches "posts/*"
+    let ids = sortIdentifiersByDate posts
+    case lookup (itemIdentifier me) $ zip ids (tail ids) of
+      Just i  -> (fmap (maybe empty $ toUrl) . getRoute) i
+      Nothing -> empty
+
+sortIdentifiersByDate :: [Identifier] -> [Identifier]
+sortIdentifiersByDate identifiers =
+    reverse $ sortBy byDate identifiers
+        where
+            byDate id1 id2 =
+                let fn1 = takeFileName $ toFilePath id1
+                    fn2 = takeFileName $ toFilePath id2
+                    parseTime' fn = parseTime defaultTimeLocale "%Y-%m-%d" $ intercalate "-" $ take 3 $ splitAll "-" fn
+                in compare ((parseTime' fn1) :: Maybe UTCTime) ((parseTime' fn2) :: Maybe UTCTime)
+
+
+setLast :: Context String -> Context String
+setLast ctx = field "last" getPrev `mappend` ctx
+
+
+
+
+headMay :: [a] -> Maybe a
+headMay []    = Nothing
+headMay (a:_) = Just a
+
+showTrace :: (Show a) => a -> a
+showTrace = trace =<< show
 
 main :: IO ()
 main = hakyll $ do
@@ -30,19 +74,14 @@ main = hakyll $ do
         route   idRoute
         compile compressCssCompiler
 
-    match (fromList ["about.rst", "contact.markdown"]) $ do
-        route   $ setExtension "html"
-        compile $ pandocMathCompiler
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
-            >>= relativizeUrls
-
     match "posts/*" $ do
         route $ gsubRoute "posts/" (const "blog/") <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/") <+> cruftlessRoute
-        compile $ pandocMathCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    postCtxTags
-            >>= saveSnapshot "content"
-            >>= loadAndApplyTemplate "templates/default.html" postCtxTags
-            >>= relativizeUrls
+        compile $ do
+            pandocMathCompiler
+                >>= (loadAndApplyTemplate "templates/post.html" $ setLast postCtxTags)
+                >>= saveSnapshot "content"
+                >>= loadAndApplyTemplate "templates/default.html" postCtxTags
+                >>= relativizeUrls
 
     -- TODO: make this run octo-clip-it
     match "books/*.markdown" $ do
@@ -67,7 +106,7 @@ main = hakyll $ do
                 >>= relativizeUrls
 
 
-    match "index.html" $ do
+    create ["index.html"] $ do
         route idRoute
         compile $ do
             posts :: [Item String] <- recentFirst =<< loadAll "posts/*"

@@ -1,1 +1,15 @@
-$partial("templates/post-list.html")$
+<article>
+<header>
+    <h1><a href="$url$">$title$</a></h1>
+</header>
+<p class="meta">
+    $if(tags)$
+        <span class="tags">
+        $tags$
+        </span>
+    $endif$
+</p>
+<div class="content">
+    $partial("templates/post-list.html")$
+</div>
+</article>

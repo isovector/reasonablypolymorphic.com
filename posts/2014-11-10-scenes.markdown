@@ -3,7 +3,6 @@ layout: post
 title: Scenes
 date: 2014-11-10 00:05
 comments: true
-categories: introspection rationality
 tags: philosophy, feels, challenge
 ---
 

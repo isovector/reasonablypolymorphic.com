@@ -3,7 +3,7 @@ layout: post
 title: Not For Its Own Sake
 date: 2013-08-22 06:33
 comments: true
-categories: rebuttal, philosophy
+tags: rebuttal, philosophy
 ---
 
 > "I'm more interested in improving the world around me than self-improving and

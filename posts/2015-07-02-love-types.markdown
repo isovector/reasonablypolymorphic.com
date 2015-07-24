@@ -3,7 +3,7 @@ layout: post
 title: How I Learned to Stop Worrying and Love the Type System
 date: 2015-07-02 10:47
 comments: true
-categories: haskell, technical
+tags: haskell, technical
 ---
 
 > This post marks my intended shift to more technical topics; the target
