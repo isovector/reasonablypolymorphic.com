@@ -216,6 +216,13 @@ ul {
     text-transform: uppercase;
 }
 
+.date {
+    float: right;
+    font-size: 14px;
+    font-family: 'Muli', sans-serif;
+    color: #888;
+}
+
 
 .content {
     text-align: justify;
