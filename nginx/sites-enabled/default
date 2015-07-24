@@ -1,0 +1,18 @@
+server {
+listen 80;
+
+location / {
+if ( $host ~ "serenade.sandymaguire.me" ) {
+proxy_pass http://localhost:2222;
+}
+
+if ( $host ~ "location.sandymaguire.me" ) {
+proxy_pass http://localhost:8000;
+}
+
+
+autoindex on;
+root  /mnt/octopress/public;
+}
+}
+
