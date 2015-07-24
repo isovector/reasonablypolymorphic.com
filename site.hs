@@ -111,12 +111,21 @@ main = hakyll $ do
                 >>= loadAndApplyTemplate "templates/default.html" archiveCtx
                 >>= relativizeUrls
 
-
     create ["index.html"] $ do
         route idRoute
         compile $ do
-            posts :: [Item String] <- recentFirst =<< loadAll "posts/*"
-            makeItem (itemBody $ head posts)
+            posts <- recentFirst =<< loadAll "posts/*"
+            let indexCtx = mconcat
+                    [ listField "posts" postCtxTags (return $ take 1 posts)
+                    , constField "title" "Home"
+                    , defaultContext
+                    ]
+
+            makeItem ""
+                >>= loadAndApplyTemplate "templates/index.html" indexCtx
+                >>= loadAndApplyTemplate "templates/default.html" indexCtx
+                >>= relativizeUrls
+
 
     match "templates/*" $ compile templateCompiler
 
