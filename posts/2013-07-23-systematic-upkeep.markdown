@@ -47,8 +47,8 @@ long a time to spend to you, you might want to consider performing a [value of
 information] calculation on it. This is left as an exercise to the reader, but I
 guarantee you that it will be worth it.
 
-[value of information]: http://sandymaguire.me/blog/time-compression/
-[polyphasing]: http://sandymaguire.me/blog/polyphasing/
+[value of information]: /blog/time-compression
+[polyphasing]: /blog/polyphasing
 
 
 ## Building the Infrastructure

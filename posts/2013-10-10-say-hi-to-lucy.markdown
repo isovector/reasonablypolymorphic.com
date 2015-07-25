@@ -30,7 +30,7 @@ I'm not okay with that. If there is something about your life that you don't
 like, [do something about it][happy]. Complaining about it isn't going to do you
 or anyone else any favors.
 
-[happy]: http://sandymaguire.me/blog/the-secret-of-happinesstm/
+[happy]: /blog/the-secret-of-happinesstm
 
 Anyway, back to Lucy.
 
@@ -68,7 +68,7 @@ messages, but as we've previously discovered, [conventional wisdom is often
 wrong][learned]. In his book, [So Good They Can't Ignore You], [Cal Newport]
 makes a pretty convincing argument about why.
 
-[learned]: http://sandymaguire.me/blog/a-lesson-learned/
+[learned]: /blog/a-lesson-learned
 
 In fact, his argument is so good that I was just going to point people there
 instead of writing this post. My friends, however, erroneously seem to be more

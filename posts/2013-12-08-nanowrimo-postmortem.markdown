@@ -85,7 +85,7 @@ Oh, and by the time the month closed, I was writing at an average of **2100
 words/hour** -- almost double my initial speed. And it was higher quality, too.
 
 [The First 20 Hours]: http://www.amazon.com/The-First-20-Hours-Anything/dp/1591845556
-[nanowrimo manifesto]: http://sandymaguire.me/blog/nanowrimo/
+[nanowrimo manifesto]: /blog/nanowrimo
 [beeminder]: http://beeminder.com
 [pomodoros]: http://pomodorotechnique.com
 [deliberate practice]: http://en.wikipedia.org/wiki/Practice_(learning_method)#Deliberate_practice

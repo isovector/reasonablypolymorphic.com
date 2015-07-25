@@ -182,7 +182,7 @@ Onwards, with gusto.
 [warming]: http://en.wikipedia.org/wiki/Global_warming
 [nukes]: http://en.wikipedia.org/wiki/Nuclear_warfare
 [poverty]: http://en.wikipedia.org/wiki/Poverty
-[paint]: /blog/2014/04/09/painting-with-paint/
+[paint]: /blog/painting-with-paint
 [salty]: http://www.urbandictionary.com/define.php?term=salty&defid=3003930
 
 
@@ -336,8 +336,8 @@ a new word that has *only one meaning*. Take all of the parts you don't
 understand, put them in a box, and write yourself a note to figure out that box
 later.
 
-[ascendancy]: /blog/2014/05/07/affording-ascendancy/
-[lego]: /blog/2014/05/11/chunking-conceptual-legos/
+[ascendancy]: /blog/affording-ascendancy
+[lego]: /blog/chunking-conceptual-legos
 
 
 ### Step 4: Look For Existing Solutions

@@ -131,7 +131,7 @@ The way to only win is to not play very hard.
 
 [airports]: http://www.nzherald.co.nz/travel/news/article.cfm?c_id=7&objectid=11275580
 [dostoevsky]: http://paamayim.github.io/stories/andrea/
-[get girl]: http://sandymaguire.me/blog/get-the-girl/
+[get girl]: /blog/get-the-girl
 
 
 
@@ -178,8 +178,8 @@ you're working towards something. Impacting is *actually getting there*.
 Except, there's a problem. When you jump out of an airplane, the absolute last
 thing you want is *impact*.
 
-[2013]: http://sandymaguire.me/blog/2013-in-review/
-[books]: http://sandymaguire.me/blog/books/sebastian-marshall-ikigai.html
+[2013]: /blog/2013-in-review/
+[books]: /books/sebastian-marshall-ikigai.html
 
 
 
@@ -222,8 +222,8 @@ like becoming the Dice Man, there is no way to proceed safely. As
 I like my soul, thank-you-very-much, but the promise of the grail is too strong
 to ignore. Still though, you can understand my hesitance.
 
-[lesson]: http://sandymaguire.me/blog/a-lesson-learned/
-[murder]: http://sandymaguire.me/blog/sad-murder-gandhi/
+[lesson]: /blog/a-lesson-learned
+[murder]: /blog/sad-murder-gandhi
 [dark arts]: http://mindingourway.com/dark-arts-of-rationality/
 [yvain]: http://slatestarcodex.com/about/
 [moloch]: http://slatestarcodex.com/2014/07/30/meditations-on-moloch/
@@ -275,5 +275,5 @@ towards. But I can't do it yet.
 I'm not yet strong enough. But I will be, and, as I've decided, it's going to be
 sooner than later.
 
-[goals]: http://sandymaguire.me/blog/systematic-upkeep/
+[goals]: /blog/systematic-upkeep
 

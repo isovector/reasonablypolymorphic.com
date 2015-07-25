@@ -107,7 +107,7 @@ start and a stop time. I'm calling it "ute: the unified tracker", and if you're
 interested, you can find it [here][ute].
 
 [mint]: http://mint.com
-[2014]: http://sandymaguire.me/blog/2014-postmortem/
+[2014]: /blog/2014-postmortem
 [heartbleed]: http://en.wikipedia.org/wiki/Heartbleed
 [ute]: https://github.com/Paamayim/ute
 [qs]: http://quantifiedself.com

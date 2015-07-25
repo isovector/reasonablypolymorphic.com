@@ -197,6 +197,6 @@ Painting with Thoughts, but just because we haven't developed our *best means of
 acquiring Ascendancy* doesn't mean you can't start collecting it in the
 meantime.
 
-[2013]: http://sandymaguire.me/blog/2013-in-review/
-[painting]: http://sandymaguire.me/blog/painting-with-paint/
+[2013]: /blog/2013-in-review
+[painting]: /blog/painting-with-paint
 

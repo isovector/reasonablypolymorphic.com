@@ -129,7 +129,7 @@ it, and that's because I spent all of it [writing a novel]. I had attempted
 despite having fewer time commitments. I wouldn't describe it as a good novel,
 but hey, it's something.
 
-[writing a novel]: http://sandymaguire.me/blog/nanowrimo-postmortem/
+[writing a novel]: /blog/nanowrimo-postmortem
 [Nanowrimo]: http://nanowrimo.org/
 
 As the year came to a close, in mid-**December** I attempted to free myself of
@@ -236,7 +236,7 @@ good authority, I have heard are quite funny.  Around the end of April I had
 mostly adjusted, and, with some rather tumultuous results, managed to maintain
 it until **July**.
 
-[polyphasic sleep]: http://sandymaguire.me/blog/polyphasing/
+[polyphasic sleep]: /blog/polyphasing
 
 But then diaster struck and I couldn't find anywhere to nap at work. I made do
 by going outside and sleeping on the lawn, but after I was told off by a

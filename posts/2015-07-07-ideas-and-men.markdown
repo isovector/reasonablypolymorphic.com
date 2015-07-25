@@ -200,7 +200,7 @@ If you've [been paying attention][types], you might have noticed I've been
 talking about Haskell lately, and you've probably guessed what abstraction I'm
 alluding to.
 
-[types]: http://sandymaguire.me/blog/love-types/
+[types]: /blog/love-types
 
 That's right.
 

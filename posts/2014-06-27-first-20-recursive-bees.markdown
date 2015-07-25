@@ -87,7 +87,7 @@ head would probably also explode, though for entirely different reasons.
 
 [^1]: Just kidding!
 
-[amplification]: http://sandymaguire.me/blog/generalization-as-intelligence-amplification/
+[amplification]: /blog/generalization-as-intelligence-amplification
 [malcolm]: http://malcolmocean.com/
 
 
@@ -125,7 +125,7 @@ Another way of putting that is that the reflexivity of X is a measure of how
 strong a feedback loop exists between {X} and {"X"}, and *wow* does it seemingly
 pop up everywhere. But again, let's not jump ahead too quickly.
 
-[lego]: http://sandymaguire.me/blog/chunking-conceptual-legos/
+[lego]: /blog/chunking-conceptual-legos
 [lob]: http://en.wikipedia.org/wiki/Löb's_theorem
 
 

@@ -68,7 +68,7 @@ to believe.
 
 [sequences]: http://wiki.lesswrong.com/wiki/Sequences
 [inferential distance]: http://wiki.lesswrong.com/wiki/Inferential_distance
-[along for the ride]: http://sandymaguire.me/blog/along-for-the-ride/
+[along for the ride]: /blog/along-for-the-ride
 [rule of cool]: http://tvtropes.org/pmwiki/pmwiki.php/Main/RuleOfCool
 [brienne]: http://enterthoughts.blogspot.com/
 [hacking-lob]: http://enterthoughts.blogspot.com/2014/02/lobs-theorem-cured-my-social-anxiety.html

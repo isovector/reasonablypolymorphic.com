@@ -133,8 +133,8 @@ the kind of thing I'd go for.
 
 [ssc]: http://slatestarcodex.com/2014/03/17/what-universal-human-experiences-are-you-missing-without-realizing-it/
 [goodreads]: https://www.goodreads.com/review/list/14945161
-[nanowrimo]: http://sandymaguire.me/blog/nanowrimo-postmortem/
-[blog]: http://sandymaguire.me/blog/blog/archives/
+[nanowrimo]: /blog/nanowrimo-postmortem
+[blog]: /blog/archive.html
 
 
 
@@ -212,9 +212,9 @@ beautiful images or inspiring poems or delightful songs; no, that's not the
 point. Instead you Paints with Thoughts to satisfy your curiosity. That's all,
 and that's beautiful in and of itself.
 
-[math]: http://sandymaguire.me/blog/generalization-as-intelligence-amplification/
+[math]: /blog/generalization-as-intelligence-amplification
 [ud]: http://www.urbandictionary.com/define.php?term=try-hard&defid=2639394
-[girls]: http://sandymaguire.me/blog/get-the-girl/
+[girls]: /blog/get-the-girl
 
 
 

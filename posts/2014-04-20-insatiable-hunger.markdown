@@ -65,8 +65,8 @@ Personally, I would bet on that proverbial snowball in hell before considering
 that *no seriously you guys, this time we've **totally** got it right*. But
 maybe that's just me.
 
-[lob]: http://sandymaguire.me/blog/power-word-case-study/
-[paint]: http://sandymaguire.me/blog/painting-with-paint/
+[lob]: /blog/power-word-case-study
+[paint]: /blog/painting-with-paint
 [meme]: http://en.wikipedia.org/wiki/Meme
 
 

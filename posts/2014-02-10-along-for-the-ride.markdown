@@ -84,12 +84,12 @@ me you're probably in the way, so come along for the ride. It'll be worth it.  I
 promise.
 
 [CFAR]: http://rationality.org
-[goal factoring]: http://sandymaguire.me/blog/systematic-upkeep/
-[agile love]: http://sandymaguire.me/blog/agile-love/
-[VOI]: http://sandymaguire.me/blog/time-compression/
-[future]: http://sandymaguire.me/blog/not-for-its-own-sake/
+[goal factoring]: /blog/systematic-upkeep
+[agile love]: /blog/agile-love
+[VOI]: /blog/time-compression
+[future]: /blog/not-for-its-own-sake
 [something else]: http://beeminder.com
 [Eliezer Yudkowsky]: http://yudkowsky.net
 [lesswrong]: http://lesswrong.com
-[last year]: http://sandymaguire.me/blog/2013-in-review/
+[last year]: /blog/2013-in-review
 

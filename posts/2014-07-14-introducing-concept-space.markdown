@@ -182,8 +182,8 @@ aggregate form what is known as a cluster -- clusters in concept-space are
 groups of similar ideas.
 
 [w2v]: http://code.google.com/p/word2vec/
-[first20]: http://sandymaguire.me/blog/first-20-recursive-bees/
-[philohate]: http://sandymaguire.me/blog/ethics-crasher/
+[first20]: /blog/first-20-recursive-bees
+[philohate]: /blog/ethics-crasher
 [mspace]: http://en.wikipedia.org/wiki/Metric_space
 
 [^1]: Well, not really, but for our purposes let's just pretend.
@@ -304,7 +304,7 @@ It is an open question whether or not the eigenprior is effectively installable
 onto human-mindware (let alone if this question is even *meaningful*).
 
 [fail2update]: http://sitemaker.umich.edu/norbert.schwarz/files/lewandowsky_et_al_misinformation_pspi_ip.pdf
-[affords]: http://sandymaguire.me/blog/affording-ascendancy/
+[affords]: /blog/affording-ascendancy
 [cantor]: https://www.youtube.com/watch?v=elvOZm0d4H0
 [bayes]: http://lesswrong.com
 [evo]: http://en.wikipedia.org/wiki/Applications_of_evolution

@@ -110,8 +110,8 @@ making the *same mistake* over and over is inexcusable. This is my first step.
 [tetris]: http://en.wikipedia.org/wiki/Tetris_effect
 [trope]: http://tvtropes.org/pmwiki/pmwiki.php/Main/TropeNamers
 [skyline]: https://www.google.com/search?q=skyline+tetris&source=lnms&tbm=isch&sa=X&ei=421gVJGSDpHSiQKVpIHYCA&ved=0CAgQ_AUoAQ&biw=1600&bih=840
-[abyss]: http://sandymaguire.me/blog/building-over-the-abyss/
-[nanowrimo]: http://sandymaguire.me/blog/nanowrimo/
+[abyss]: /blog/building-over-the-abyss
+[nanowrimo]: /blog/nanowrimo
 
 [^1]: This is something I've been spending a lot of time thinking about lately.
 Expect it to be a big upcoming topic on We Can Solve This.

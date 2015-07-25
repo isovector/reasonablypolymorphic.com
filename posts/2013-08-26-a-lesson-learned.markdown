@@ -80,7 +80,7 @@ later date.
 Seriously. It sounds silly, but this stuff actually works. Priming effects are
 unbelievably powerful.
 
-[Murder Gandhi]: http://sandymaguire.me/blog/sad-murder-gandhi/
+[Murder Gandhi]: /blog/sad-murder-gandhi
 [incompleteness theorem]: http://en.wikipedia.org/wiki/Godel's_incompleteness_theorems
 [fixed mindset]: http://en.wikipedia.org/wiki/Mindset#Fixed_mindset_and_growth_mindset
 [psychology]: http://www.tiltfactor.org/wp-content/uploads2/Kaufman_Libby2012_JPSPadvanceonlinepublication.pdf

@@ -66,7 +66,7 @@ ever made, and I learned more about myself in those ten weeks than I did in all
 of 2012. I have lots more to say on my eurotrip, but it's relatively off-topic
 for the purposes of this post.
 
-[2013]: http://sandymaguire.me/blog/2013-in-review/
+[2013]: /blog/2013-in-review
 [books]: https://www.goodreads.com/user_challenges/1183394
 [earning]: http://en.wikipedia.org/wiki/Earning_to_give
 

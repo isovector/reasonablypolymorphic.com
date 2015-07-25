@@ -163,7 +163,7 @@ these things.
 
 Humans, huh?
 
-[comfort]: http://sandymaguire.me/blog/comfort-zones/
+[comfort]: /blog/comfort-zones
 [illusory]: http://en.wikipedia.org/wiki/Illusory_superiority
 
 
@@ -205,5 +205,5 @@ Progress. Slowly, but surely.
 
 And that's what counts. Progress.
 
-[archive]: http://sandymaguire.me/blog/archives/
+[archive]: /blog/archive.html
 
