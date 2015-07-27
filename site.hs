@@ -16,6 +16,8 @@ import Data.Time.Format (parseTime)
 import System.Locale (defaultTimeLocale)
 import Data.Time.Clock (UTCTime)
 
+import ClipIt (Clipping (..), parseClippings)
+
 
 (<+>) :: Routes -> Routes -> Routes
 (<+>) = composeRoutes
@@ -62,7 +64,32 @@ showTrace :: (Show a) => a -> a
 showTrace = trace =<< show
 
 main :: IO ()
-main = hakyll $ do
+main = putStrLn
+     $ show
+     $ parseClippings
+     $ unlines
+        [ "I Will Teach You to Be Rich (Sethi Ramit)"
+        , "- Highlight on Page 10 | Loc. 153-54  | Added on Sunday, March 29, 2015, 04:11 PM"
+        , ""
+        , "Who wins at the end of the day? The self-satisfied people who heatedly debate some obscure details? Or the people who sidestep the entire debate and get started?"
+        , "=========="
+        , "I Will Teach You to Be Rich (Sethi Ramit)"
+        , "- Highlight on Page 13 | Loc. 188-89  | Added on Sunday, March 29, 2015, 04:13 PM"
+        , ""
+        , "“Our education system doesn’t teach this,” people whine. It’s easy for people in their twenties to wish that their colleges had offered some personal-finance training. Guess what? Most colleges do offer those classes. You just didn’t attend!"
+        , "=========="
+        , "I Will Teach You to Be Rich (Sethi Ramit)"
+        , "- Highlight on Page 14 | Loc. 204-5  | Added on Sunday, March 29, 2015, 04:14 PM"
+        , ""
+        , "Listen up, crybabies: This isn’t your grandma’s house and I’m not going to bake you cookies and coddle you. A lot of your financial problems are caused by one person: you."
+        , "=========="
+        , "I Will Teach You to Be Rich (Sethi Ramit)"
+        , "- Highlight on Page 15 | Loc. 229-30  | Added on Sunday, March 29, 2015, 04:16 PM"
+        , ""
+        , "Getting started is more important than becoming an expert."
+        , "=========="
+        ]
+        {-hakyll $ do
     tags <- buildTags "posts/*" (fromCapture "tags/*.html")
     let postCtxTags = postCtxWithTags tags
 
@@ -145,6 +172,7 @@ main = hakyll $ do
 
     create ["atom.xml"] $ feedRoute renderAtom
     create ["feed.rss"] $ feedRoute renderRss
+    -- -}
 
 feedRoute render = do
     route idRoute
