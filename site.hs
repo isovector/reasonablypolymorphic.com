@@ -84,7 +84,7 @@ main = putStrLn
         , "Listen up, crybabies: This isn’t your grandma’s house and I’m not going to bake you cookies and coddle you. A lot of your financial problems are caused by one person: you."
         , "=========="
         , "I Will Teach You to Be Rich (Sethi Ramit)"
-        , "- Highlight on Page 15 | Loc. 229-30  | Added on Sunday, March 29, 2015, 04:16 PM"
+        , "- Highlight on Page 15 | Loc. 229  | Added on Sunday, March 29, 2015, 04:16 PM"
         , ""
         , "Getting started is more important than becoming an expert."
         , "=========="

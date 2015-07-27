@@ -11,5 +11,6 @@ executable site
                   , parsec == 3.1.*
                   , pandoc == 1.13.2.*
                   , strptime == 1.0.*
+                  , time == 1.4.*
   ghc-options:      -threaded
   default-language: Haskell2010

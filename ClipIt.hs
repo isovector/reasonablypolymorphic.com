@@ -1,10 +1,13 @@
 module ClipIt where
 
+import Control.Arrow ((***))
 import Control.Applicative ((<$>))
 import Data.DateTime
+import Data.Time.Clock
+import Data.Time.LocalTime (localTimeToUTC, utc)
 import Text.ParserCombinators.Parsec
 import Debug.Trace (trace, traceM)
-import Control.Monad (liftM)
+import Control.Monad (liftM, join)
 import Data.Time.Parse (strptime)
 
 data Clipping =
@@ -71,29 +74,28 @@ clipping =
             -- , typeof
             , page = cPage
             , location = cLoc
-            , added = Nothing
+            , added = time
             , contents = cContents
             }
 
 parseTime :: String -> Maybe UTCTime
-parseTime = fmap (localTimeToUTC utc . fst) $ strptime "%A, %B %e, %Y, %I:%M %p"
+parseTime = fmap (localTimeToUTC utc . fst) . strptime "%A, %B %e, %Y, %I:%M %p"
 
 loc :: GenParser Char st (Int, Int)
 loc =
     do
         string "Loc. "
-        range <- choice
-            [ do
-                start <- many digit
+        start <- many digit
+        endMaybe <- optionMaybe $
+            do
                 char '-'
-                end <- many digit
-                return (read start, read end)
-            , do
-                start <- many digit
-                return (read start, read start)
-            ]
+                many digit
         many space
-        return range
+        return . join (***) read $ case endMaybe of
+            Just end ->
+                let prefix = take (length start - length end) start
+                 in (start, prefix ++ end)
+            Nothing  -> (start, start)
 
 
 -- The end of line character is \n
