@@ -16,6 +16,8 @@ import Site.Compilers
 import Site.Constants
 import Site.Contexts
 
+(<+>) :: Routes -> Routes -> Routes
+(<+>) = composeRoutes
 
 main :: IO ()
 main = hakyll $ do
@@ -47,9 +49,9 @@ main = hakyll $ do
 
     match postsDir $ do
         postMatches <- getMatches postsDir
-        route $  gsubRoute (show postsDir) (const "blog/")
-              <> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
-              <> cruftlessRoute
+        route $   gsubRoute (show postsDir) (const "blog/")
+              <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
+              <+> cruftlessRoute
         compile $ do
             pandocMathCompiler
                 >>= loadAndApplyTemplate "templates/post.html"
