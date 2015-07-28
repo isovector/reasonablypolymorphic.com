@@ -1,0 +1,105 @@
+---
+layout: post
+title: A Nerd-Snipe of Epic Proportions
+date: 2015-07-28 18:38
+comments: true
+tags: site, technical, haskell, vim
+---
+
+So last week as I was writing a [blog post][ideas], I found myself switching
+back and forth between two buffers in [vim][vim]. A lot. So much that my hands
+started hurting, actually, and I realized something: `:4b&#9166;` is *five*
+keystrokes; way too many for something I do all the time.
+
+[ideas]: /
+[vim]:
+
+Clearly something had to change. Because I had just finished reading [Learn
+Vimscript the Hard Way][vimscript], I put my writing on hold, and switched to
+`.vimrc` where I hacked together a little something. After lots of research and
+false starts, I got `4t` to switch to buffer 4, but for `tx` to work like usual
+and move to the next occurrence of 'x'. This was implemented with some magic
+trickery by checking what the number prefix had been set to, and to use the
+default implementation when that number was 1.
+
+[vimscript]:
+
+(I don't have enough patience to count more than 1 for move-aheads, so this
+behavior is OK by me.)
+
+This lead to an unfortunate situation where buffer 1 couldn't be switched to via
+my lovely new method. A discrepancy! Since there's no way to renumber buffers, I
+decided just to make buffer 1 get destroyed by default. It's a kinda shitty
+solution, but poorly hacking things together is oddly cathartic.
+
+Here's what I ended up dumping into `.vimrc` by the time all was said and done:
+
+```php
+function! s:bufSwitch(count)
+    if count ># 1
+        return ":\<C-U>" . count . "b\<CR>"
+    endif
+    return 't'
+endfunction
+nnoremap <expr> t <SID>bufSwitch(v:count1)
+
+au VimEnter * if v:progname ==# "gvim" && expand('%') ==# "" |
+                \ execute "normal! ihello\<Esc>:bw!\<CR>"    |
+                \ endif
+```
+
+In my excitement, I wanted to post this fantastic solution on my blog to share
+with all of the world. But there was a problem: I didn't want to post it in the
+*main* section of my blog[^1], since my usual readership has plummeted over the
+last few technical posts, and it's probably not a very good idea to alienate
+most of ones readers. It seemed like a good idea to separate out the technical
+content into a new mostly-independent blog.
+
+[^1]: I realize the irony, thank you.
+
+One would expect this to be a relatively simple job. But it wasn't. My blog used
+to run on [Octopress][op], which is pretty cool if you want something to Just
+Work(TM). Unfortunately, it is written in Ruby, and like most things written in
+Ruby, the whole thing runs on magic. Running on magic is good if you want things
+to happen, but it is *not very good whatsoever* if you want to change things.
+
+And I wanted to change things.
+
+And I'm pretty sure it's impossible to change.
+
+After three hours of fighting with the damn thing, I decided just to port the
+whole mess over to [Hakyll][hakyll] -- a spiritual relative of Octopress, but
+written in Haskell and, more importantly, not completely shit.
+
+Since I didn't really know how the Octopress stuff worked, porting the site
+as-was turned out to be more work than I cared for, so I decided that I might as
+well just do an entire redesign while I was at it. The old templates had all
+sorts of weird things that I couldn't account for: random whitespace, a million
+files that never seemed to actually be used, and the weirdest CSS pipeline in
+existence.
+
+I nuked the whole thing from orbit.
+
+Starting entirely from scratch, I coded up the first HTML document I've done in
+years. I don't know exactly how Web 2.0(TM) Ready it is -- there is a lot of
+new technology these days that I'd never heard of -- but hey, it works. And it
+doesn't have a single &lt;table&gt; tag. Good enough for me.
+
+<script type="text/javascript">
+var toggled = false;
+function toggleLines() {
+    toggled = !toggled;
+    if (toggled) {
+        $('article').css('background-image', 'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=)');
+        $('nav').css('background-image', 'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAQCAYAAAA8qK60AAAAF0lEQVQIW2NkgALGgWWUl5f/7+zsZAQAGOgEEZMPrH4AAAAASUVORK5CYII=)');
+    } else {
+        $('article').css('background-image', 'none');
+        $('nav').css('background-image', 'none');
+    }
+}
+</script>
+
+Click <a onclick="toggleLines();" href="#">here</a> to see how beautiful my typography is!
+
+[op]:
+[hakyll]:
