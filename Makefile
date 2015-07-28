@@ -4,10 +4,7 @@ test:
 	wcst watch
 
 deploy:
-	git pull origin master
-	stack install
-	wcst clean
-	wcst build
+	@./scripts/deploy.sh
 
 newpost:
 	@./scripts/newpost.sh
