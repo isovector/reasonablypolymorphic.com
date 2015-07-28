@@ -132,8 +132,7 @@ main = hakyll $ do
     match "templates/*" $ compile templateCompiler
 
     forM_ clipBooks $ \book -> do
-        traceM $ bookName $ head book
-        create [fromFilePath $ "book/" ++ (bookName $ head book)] $ do
+        create [fromFilePath $ "books/" ++ (bookName $ head book)] $ do
             route $ setExtension "html"
             compile $ do
                 makeItem . show $ length book

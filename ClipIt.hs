@@ -148,9 +148,14 @@ eol = oneOf "\n"
 line :: GenParser Char st String
 line = many $ noneOf "\n"
 
+parseFile :: GenParser Char st [Clipping]
+parseFile = do
+    optional $ string "\xBB\xEF"
+    many clipping
+
 
 parseClippings :: String -> Either ParseError [Clipping]
-parseClippings input = parse (many clipping) "(unknown)" input
+parseClippings input = parse parseFile "(unknown)" input
 
 getBooks :: Either ParseError [Clipping] -> [(String, String)]
 getBooks (Left _) = []
