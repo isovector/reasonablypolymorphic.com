@@ -74,7 +74,7 @@ a {
     text-decoration: none;
 }
 
-h1 a {
+h1 a, h2 a {
     color: #191919;
 }
 
@@ -91,6 +91,7 @@ article {
     padding: 0 48px 20px;
     background-color: #FAFAFA;
     /*background: #fff url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=); /* */
+    min-height: 97vh;
 }
 
 sub{
@@ -230,7 +231,8 @@ ul {
 
 .tags {
     float: right;
-    font-size: 0.875em;
+    font-size: 12px;
+    font-family: 'Muli', sans-serif;
 }
 
 @media (max-width: 1000px) {

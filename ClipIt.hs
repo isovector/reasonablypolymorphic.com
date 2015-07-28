@@ -27,7 +27,7 @@ data Clipping =
     , location :: (Int, Int)
     , added    :: Maybe DateTime
     , contents :: String
-    } deriving Show
+    } deriving (Show, Eq)
 
 -- I Will Teach You to Be Rich (Sethi Ramit)
 -- - Highlight on Page 10 | Loc. 153-54  | Added on Sunday, March 29, 2015, 04:11 PM
