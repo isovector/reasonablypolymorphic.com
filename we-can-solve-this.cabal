@@ -3,8 +3,16 @@ version:            0.1.0.0
 build-type:         Simple
 cabal-version:      >= 1.10
 
+homepage:           http://sandymaguire.me
+license:            BSD3
+license-file:       LICENSE
+author:             Sandy Maguire
+maintainer:         sandy@sandymaguire.me
+
+category:           Web
+
 executable site
-  main-is:          site.hs
+  main-is:          Main.hs
   build-depends:    base == 4.*
                   , hakyll == 4.6.*
                   , datetime == 0.3.*
@@ -17,4 +25,5 @@ executable site
                   , old-locale == 1.0.0.*
                   , regex-compat == 0.*
   ghc-options:      -threaded
+  hs-source-dirs:   src
   default-language: Haskell2010

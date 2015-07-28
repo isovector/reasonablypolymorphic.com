@@ -1,73 +1,21 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
-import Data.Monoid (mappend, mconcat, (<>))
-import Hakyll.Web.Tags
-import qualified Data.Set as S
-import qualified Data.Map as M
-import Hakyll
-import Text.Pandoc.Options
-import Control.Applicative ((<$>))
-import Control.Applicative (Alternative (..))
-import Debug.Trace (trace, traceM)
+module Main where
 
-import Control.Monad (forM, forM_, mapM_, liftM, liftM2)
+import Control.Applicative ((<$>))
+import Control.Monad (forM_, liftM2)
+import Data.Function (on)
+import Data.List (isPrefixOf, sortBy, groupBy, nubBy)
+import Data.Monoid (mconcat, (<>))
+import Data.Ord (comparing)
 import System.IO.Unsafe (unsafePerformIO)
 
-import Data.Ord (comparing)
-import Data.Function (on)
-import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy, groupBy, nubBy)
-import Data.Sequence (dropWhileR)
-import System.FilePath (takeFileName)
-
-import Data.Time.Format (parseTime, formatTime)
-import System.Locale (defaultTimeLocale)
-
-import Data.Time.Clock (UTCTime)
-
 import ClipIt (Clipping (..), getClippings, canonicalName)
+import Hakyll
+import Hakyll.Web.Tags
+import Site.Compilers
+import Site.Constants
+import Site.Contexts
 
-
-dateFormat = "%B %e, %Y"
-postsDir = "posts/*"
-
-postCtxWithTags :: Tags -> Context String
-postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
-
-getPrev :: [Identifier]
-        -> ([Identifier] -> [Identifier] -> [(Identifier,Identifier)])
-        -> Item String
-        -> Compiler String
-getPrev posts f me = do
-    let ids = sortIdentifiersByDate posts
-    case lookup (itemIdentifier me) $ f ids (tail ids) of
-      Just i  -> (fmap (maybe empty $ toUrl) . getRoute) i
-      Nothing -> empty
-
-
-sortIdentifiersByDate :: [Identifier] -> [Identifier]
-sortIdentifiersByDate identifiers =
-    reverse $ sortBy byDate identifiers
-        where
-            byDate id1 id2 =
-                let fn1 = takeFileName $ toFilePath id1
-                    fn2 = takeFileName $ toFilePath id2
-                    parseTime' fn = parseTime defaultTimeLocale "%Y-%m-%d"
-                                  . intercalate "-"
-                                  . take 3
-                                  $ splitAll "-" fn
-                in compare ((parseTime' fn1) :: Maybe UTCTime) ((parseTime' fn2) :: Maybe UTCTime)
-
-
-setNextPrev :: [Identifier] -> Context String -> Context String
-setNextPrev posts ctx =
-    mconcat
-        [ field "prev" $ getPrev posts zip
-        , field "next" $ getPrev posts (flip zip)
-        , ctx
-        ]
-
-
-showTrace :: (Show a) => a -> a
-showTrace = trace =<< show
 
 main :: IO ()
 main = hakyll $ do
@@ -199,34 +147,12 @@ main = hakyll $ do
 feedRoute render = do
     route idRoute
     compile $ do
-        let feedCtx = postCtx `mappend` bodyField "description"
+        let feedCtx = postCtx <> bodyField "description"
         posts <- fmap (take 10) . recentFirst =<<
             loadAllSnapshots postsDir "content"
         render feedConfiguration feedCtx posts
 
 
-feedConfiguration :: FeedConfiguration
-feedConfiguration = FeedConfiguration
-    { feedTitle       = "We Can Solve This"
-    , feedDescription = "Musings on effective life strategies"
-    , feedAuthorName  = "Sandy Maguire"
-    , feedAuthorEmail = "sandy@sandymaguire.me"
-    , feedRoot        = "http://sandymaguire.me/"
-    }
-
-
-pandocMathCompiler =
-    let mathExtensions = [ Ext_tex_math_dollars
-                         , Ext_tex_math_double_backslash
-                         , Ext_latex_macros
-                         ]
-        defaultExtensions = writerExtensions defaultHakyllWriterOptions
-        newExtensions = foldr S.insert defaultExtensions mathExtensions
-        writerOptions = defaultHakyllWriterOptions
-                          { writerExtensions = newExtensions
-                          , writerHTMLMathMethod = MathJax ""
-                          }
-    in pandocCompilerWith defaultHakyllReaderOptions writerOptions
 
 
 ----
@@ -235,39 +161,6 @@ cruftlessRoute :: Routes
 cruftlessRoute = setExtension ""
 
 --------------------------------------------------------------------------------
-
-optionalConstField :: String -> Maybe String -> Context a
-optionalConstField key Nothing =  field key $ return empty
-optionalConstField key (Just x) = field key . const $ return x
-
-optionalField
-    :: String
-    -> (Item a -> Maybe (Compiler String))
-    -> Context a
-optionalField key f = field key $ \i ->
-    case f i of
-    Nothing    -> empty
-    Just value -> value
-
-liftClip :: (Clipping -> String) -> Item Clipping -> Compiler String
-liftClip f = return . f . itemBody
-
-clippingCtx :: Context Clipping
-clippingCtx = mconcat
-    [ field "body" $ liftClip contents
-    , field "url"  $ liftClip canonicalName
-    , field "author"  $ liftClip author
-    , field "bookName"  $ liftClip bookName
-    ]
-
-postCtx :: Context String
-postCtx = mconcat
-    [ dateField "date" dateFormat
-    , defaultContext
-    ]
-
-showTime ::  UTCTime -> String
-showTime = formatTime defaultTimeLocale dateFormat
 
 titleCompare :: String -> String
 titleCompare s =
