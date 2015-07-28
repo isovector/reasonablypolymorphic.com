@@ -134,7 +134,7 @@ the kind of thing I'd go for.
 [ssc]: http://slatestarcodex.com/2014/03/17/what-universal-human-experiences-are-you-missing-without-realizing-it/
 [goodreads]: https://www.goodreads.com/review/list/14945161
 [nanowrimo]: /blog/nanowrimo-postmortem
-[blog]: /blog/archive.html
+[blog]: /blog/archives/
 
 
 

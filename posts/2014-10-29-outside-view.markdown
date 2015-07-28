@@ -205,5 +205,5 @@ Progress. Slowly, but surely.
 
 And that's what counts. Progress.
 
-[archive]: /blog/archive.html
+[archive]: /blog/archives/
 

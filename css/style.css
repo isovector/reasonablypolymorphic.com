@@ -206,6 +206,7 @@ h3 {
 
 ul {
     margin-top: 10px;
+    list-style-type: square;
 }
 
 .meta {
