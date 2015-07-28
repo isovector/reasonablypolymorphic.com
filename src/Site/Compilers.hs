@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module Site.Compilers where
 
 import Data.Set (insert)
@@ -5,6 +6,12 @@ import Text.Pandoc.Options
 
 import Hakyll
 
+
+contentCompiler :: Identifier -> Context String -> Compiler (Item String)
+contentCompiler t c =   makeItem ""
+                    >>= loadAndApplyTemplate t c
+                    >>= loadAndApplyTemplate "templates/default.html" c
+                    >>= relativizeUrls
 
 pandocMathCompiler :: Compiler (Item String)
 pandocMathCompiler =

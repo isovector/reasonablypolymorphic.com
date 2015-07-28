@@ -21,28 +21,35 @@ main :: IO ()
 main = hakyll $ do
     tags <- buildTags postsDir (fromCapture "tags/*.html")
     clipFiles <- fmap toFilePath <$> getMatches "clippings/*"
+
     let clippings = unsafePerformIO $ getClippings clipFiles
         clipBooks = groupBy ((==) `on` bookName) clippings
-
         postCtxTags = postCtxWithTags tags
+
+
+    -- ROUTES BEGIN HERE --
+
 
     match "images/**" $ do
         route   idRoute
         compile copyFileCompiler
 
+
     match "js/*" $ do
         route   idRoute
         compile copyFileCompiler
+
 
     match "css/*" $ do
         route   idRoute
         compile compressCssCompiler
 
+
     match postsDir $ do
         postMatches <- getMatches postsDir
-        route $ gsubRoute (show postsDir) (const "blog/")
-            <> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
-            <> cruftlessRoute
+        route $  gsubRoute (show postsDir) (const "blog/")
+              <> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
+              <> cruftlessRoute
         compile $ do
             pandocMathCompiler
                 >>= loadAndApplyTemplate "templates/post.html"
@@ -50,6 +57,7 @@ main = hakyll $ do
                 >>= saveSnapshot "content"
                 >>= loadAndApplyTemplate "templates/default.html" postCtxTags
                 >>= relativizeUrls
+
 
     create ["blog/archives/index.html"] $ do
         route idRoute
@@ -60,11 +68,8 @@ main = hakyll $ do
                     , constField "title" "Archives"
                     , defaultContext
                     ]
+            contentCompiler "templates/archive.html" archiveCtx
 
-            makeItem ""
-                >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
-                >>= loadAndApplyTemplate "templates/default.html" archiveCtx
-                >>= relativizeUrls
 
     create ["index.html"] $ do
         route idRoute
@@ -75,14 +80,8 @@ main = hakyll $ do
                     , constField "title" "Home"
                     , defaultContext
                     ]
+            contentCompiler "templates/index.html" indexCtx
 
-            makeItem ""
-                >>= loadAndApplyTemplate "templates/index.html" indexCtx
-                >>= loadAndApplyTemplate "templates/default.html" indexCtx
-                >>= relativizeUrls
-
-
-    match "templates/*" $ compile templateCompiler
 
     forM_ clipBooks $ \book -> do
         let clipItems = sortBy (comparing added) book
@@ -92,19 +91,19 @@ main = hakyll $ do
         create [fromFilePath $ "books/" ++ name] $ do
             route $ setExtension "html"
             compile $ do
-                let ctx = mconcat
-                        [ constField "title" $ bookName curBook
-                        , optionalConstField "started" . fmap showTime $ added curBook
-                        , optionalConstField "finished" . fmap showTime . added $ last book
-                        , constField "author" $ author curBook
-                        , listField "clippings" clippingCtx (mapM makeItem clipItems)
+                let timeField name book = optionalConstField name
+                                        . fmap showTime
+                                        $ added book
+                    ctx = mconcat
+                        [ constField "title"    $ bookName curBook
+                        , constField "author"   $ author curBook
+                        , timeField "started"   $ curBook
+                        , timeField "finished"  $ last book
+                        , listField "clippings"   clippingCtx (mapM makeItem clipItems)
                         , defaultContext
                         ]
+                contentCompiler "templates/book.html" ctx
 
-                makeItem ""
-                    >>= loadAndApplyTemplate "templates/book.html" ctx
-                    >>= loadAndApplyTemplate "templates/default.html" ctx
-                    >>= relativizeUrls
 
     create ["books/index.html"] $ do
         route $ idRoute
@@ -118,12 +117,17 @@ main = hakyll $ do
                     , constField "title" "Index of Book Quotes"
                     , defaultContext
                     ]
+            contentCompiler "templates/book-index.html" ctx
 
-            makeItem ""
-                >>= loadAndApplyTemplate "templates/book-index.html" ctx
-                >>= loadAndApplyTemplate "templates/default.html" ctx
-                >>= relativizeUrls
 
+    create ["atom.xml"] $ feedRoute renderAtom
+    create ["feed.rss"] $ feedRoute renderRss
+
+
+    -- ROUTES END HERE --
+
+
+    match "templates/*" $ compile templateCompiler
 
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged \"" ++ tag ++ "\""
@@ -135,14 +139,7 @@ main = hakyll $ do
                     , listField "posts" postCtx (return posts)
                     , defaultContext
                     ]
-
-            makeItem ""
-                >>= loadAndApplyTemplate "templates/tag.html" ctx
-                >>= loadAndApplyTemplate "templates/default.html" ctx
-                >>= relativizeUrls
-
-    create ["atom.xml"] $ feedRoute renderAtom
-    create ["feed.rss"] $ feedRoute renderRss
+            contentCompiler "templates/tag.html" ctx
 
 feedRoute render = do
     route idRoute
@@ -153,14 +150,10 @@ feedRoute render = do
         render feedConfiguration feedCtx posts
 
 
-
-
-----
+--------------------------------------------------------------------------------
 
 cruftlessRoute :: Routes
 cruftlessRoute = setExtension ""
-
---------------------------------------------------------------------------------
 
 titleCompare :: String -> String
 titleCompare s =
