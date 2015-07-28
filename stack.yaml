@@ -7,4 +7,5 @@ extra-deps:
 - pandoc-1.13.2.1
 - parsec-3.1.9
 - strptime-1.0.10
+- regex-compat-0.92
 resolver: lts-2.17

@@ -2,24 +2,27 @@ module ClipIt
     ( Clipping (..)
     , getClippings
     , parseClippings
+    , getBooks
     ) where
 
 import Control.Arrow ((***))
 import Control.Applicative ((<$>))
 import Data.DateTime
 import Data.Either (rights)
+import Data.List (nub)
+import Text.Regex
 import Data.Time.Clock
 import Data.Time.LocalTime (localTimeToUTC, utc)
 import Text.ParserCombinators.Parsec
 import Debug.Trace (trace, traceM)
-import Control.Monad (liftM, join)
+import Control.Monad (liftM, liftM2, join)
 import Data.Time.Parse (strptime)
 
 data Clipping =
     Clipping
-    { book     :: String
+    { bookName :: String
     , author   :: String
-    , page     :: Int
+    , page     :: Maybe Int
     , location :: (Int, Int)
     , added    :: Maybe DateTime
     , contents :: String
@@ -33,11 +36,29 @@ data Clipping =
 -- and get started?
 -- ==========
 
+authorWord :: GenParser Char st String
+authorWord =
+    do
+        spaces
+        result <- choice
+            [ do
+                char '('
+                result <- many $ noneOf ")"
+                char ')'
+                return result
+            , do
+                char '-'
+                spaces
+                line
+            ]
+        eol
+        return result
+
 
 titleWord :: GenParser Char st String
 titleWord =
     do
-        many (noneOf "()")
+        manyTill anyChar (try $ lookAhead authorWord)
 
 typeof :: GenParser Char st String
 typeof =
@@ -49,35 +70,49 @@ showTrace :: (Show a) => a -> a
 showTrace t = trace (show t) t
 
 getClippings :: [FilePath] -> IO [Clipping]
-getClippings = fmap (join . rights) . sequence . map (fmap parseClippings . readFile)
+getClippings = fmap (filter (("" /=) . author))
+             . fmap (join . rights)
+             . sequence
+             . map (fmap parseClippings . readFile)
 
 
--- Each line contains 1 or more cells, separated by a comma
+onPage :: GenParser Char st (Maybe Int)
+onPage = optionMaybe $ do
+    string "on Page "
+    cPage <- read <$> many digit
+    string " |"
+    spaces
+    return cPage
+
 clipping :: GenParser Char st Clipping
 clipping =
     do
-        bookName <- titleWord
-        char '('
-        authorName <- titleWord
-        char ')'
-        traceM bookName
+        meta <- line
+        let regex = mkRegex "^(.*?) \\(([^)]*)\\)$|^(.*?) \\- (.*)$"
+            matches = matchRegex regex meta
+            (book, authorName) =
+                case matches of
+                    Just xs -> case xs !! 0 of
+                        ""    -> (xs !! 2, xs !! 3)
+                        name  -> (name, xs !! 1)
+                    Nothing -> ("", "")
+
         eol
         string "- "
         ctype <- typeof
-        string " on Page "
-        cPage <- read <$> many digit
-        string " | "
+        spaces
+        cPage <- onPage
         cLoc <- loc
         string "|"
         string " Added on "
-        time <- parseTime <$> many (noneOf "\n")
+        time <- parseTime <$> line
         many eol                       -- end of line
-        cContents <- many (noneOf "\n")
+        cContents <- line
         eol
         many $ char '='
         eol
         return Clipping
-            { book = bookName
+            { bookName = book
             , author = authorName
             -- , typeof
             , page = cPage
@@ -98,7 +133,7 @@ loc =
             do
                 char '-'
                 many digit
-        many space
+        spaces
         return . join (***) read $ case endMaybe of
             Just end ->
                 let prefix = take (length start - length end) start
@@ -108,7 +143,16 @@ loc =
 
 -- The end of line character is \n
 eol :: GenParser Char st Char
-eol = char '\n'
+eol = oneOf "\n"
+
+line :: GenParser Char st String
+line = many $ noneOf "\n"
+
 
 parseClippings :: String -> Either ParseError [Clipping]
 parseClippings input = parse (many clipping) "(unknown)" input
+
+getBooks :: Either ParseError [Clipping] -> [(String, String)]
+getBooks (Left _) = []
+getBooks (Right bs) = nub $ map (liftM2 (,) bookName author) bs
+

@@ -5,11 +5,10 @@ import qualified Data.Set as S
 import           Hakyll
 import           Text.Pandoc.Options
 import          Control.Applicative ((<$>))
-import          Debug.Trace (trace)
 import Control.Applicative (Alternative (..))
 import Debug.Trace (trace, traceM)
 
-import Control.Monad (forM, mapM_)
+import Control.Monad (forM, forM_, mapM_)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Data.Function (on)
@@ -71,9 +70,8 @@ main :: IO ()
 main = hakyll $ do
     tags <- buildTags postsDir (fromCapture "tags/*.html")
     clipFiles <- fmap toFilePath <$> getMatches "clippings/*"
-    mapM_ traceM clipFiles
     let clippings = unsafePerformIO $ getClippings clipFiles
-        clipBooks = groupBy ((==) `on` book) clippings
+        clipBooks = groupBy ((==) `on` bookName) clippings
 
         postCtxTags = postCtxWithTags tags
 
@@ -88,12 +86,6 @@ main = hakyll $ do
     match "css/*" $ do
         route   idRoute
         compile compressCssCompiler
-
-    forM clipBooks $ \books ->
-        create [fromFilePath $ "book/" ++ (book $ head books)] $ do
-            route $ setExtension "html"
-            compile $ do
-                makeItem . show $ length books
 
     match postsDir $ do
         postMatches <- getMatches postsDir
@@ -138,6 +130,13 @@ main = hakyll $ do
 
 
     match "templates/*" $ compile templateCompiler
+
+    forM_ clipBooks $ \book -> do
+        traceM $ bookName $ head book
+        create [fromFilePath $ "book/" ++ (bookName $ head book)] $ do
+            route $ setExtension "html"
+            compile $ do
+                makeItem . show $ length book
 
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged \"" ++ tag ++ "\""
