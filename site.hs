@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
-import           Data.Monoid (mappend, mconcat)
-import           Hakyll.Web.Tags
+import Data.Monoid (mappend, mconcat, (<>))
+import Hakyll.Web.Tags
 import qualified Data.Set as S
 import qualified Data.Map as M
-import           Hakyll
-import           Text.Pandoc.Options
-import          Control.Applicative ((<$>))
+import Hakyll
+import Text.Pandoc.Options
+import Control.Applicative ((<$>))
 import Control.Applicative (Alternative (..))
 import Debug.Trace (trace, traceM)
 
@@ -13,9 +13,8 @@ import Control.Monad (forM, forM_, mapM_, liftM, liftM2)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Data.Ord (comparing)
-import Data.Char (toLower, isAlphaNum, isSpace)
 import Data.Function (on)
-import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy, groupBy)
+import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy, groupBy, nubBy)
 import Data.Sequence (dropWhileR)
 import System.FilePath (takeFileName)
 
@@ -24,11 +23,8 @@ import System.Locale (defaultTimeLocale)
 
 import Data.Time.Clock (UTCTime)
 
-import ClipIt (Clipping (..), getClippings)
+import ClipIt (Clipping (..), getClippings, canonicalName)
 
-
-(<+>) :: Routes -> Routes -> Routes
-(<+>) = composeRoutes
 
 dateFormat = "%B %e, %Y"
 postsDir = "posts/*"
@@ -97,8 +93,8 @@ main = hakyll $ do
     match postsDir $ do
         postMatches <- getMatches postsDir
         route $ gsubRoute (show postsDir) (const "blog/")
-            <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
-            <+> cruftlessRoute
+            <> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
+            <> cruftlessRoute
         compile $ do
             pandocMathCompiler
                 >>= loadAndApplyTemplate "templates/post.html"
@@ -142,16 +138,11 @@ main = hakyll $ do
 
     forM_ clipBooks $ \book -> do
         let clipItems = sortBy (comparing added) book
-            spaceConcat a b = a ++ " " ++ b
             curBook = head book
-            name = reverse . dropWhile (== ' ') . reverse
-                 . filter (liftM2 (||) isAlphaNum isSpace)
-                 . fmap toLower
-                 . liftM2 spaceConcat author bookName
-                 $ head book
+            name = canonicalName curBook
 
         create [fromFilePath $ "books/" ++ name] $ do
-            route $ gsubRoute " |--+" (const "-") <+> setExtension "html"
+            route $ setExtension "html"
             compile $ do
                 let ctx = mconcat
                         [ constField "title" $ bookName curBook
@@ -166,6 +157,25 @@ main = hakyll $ do
                     >>= loadAndApplyTemplate "templates/book.html" ctx
                     >>= loadAndApplyTemplate "templates/default.html" ctx
                     >>= relativizeUrls
+
+    create ["books/index.html"] $ do
+        route $ idRoute
+        compile $ do
+            let ctx = mconcat
+                    [ listField "books" clippingCtx
+                        . mapM makeItem
+                        . nubBy ((==) `on` liftM2 (,) bookName author)
+                        . sortBy (comparing $ titleCompare . bookName)
+                        $ map head clipBooks
+                    , constField "title" "Index of Book Quotes"
+                    , defaultContext
+                    ]
+
+            makeItem ""
+                >>= loadAndApplyTemplate "templates/book-index.html" ctx
+                >>= loadAndApplyTemplate "templates/default.html" ctx
+                >>= relativizeUrls
+
 
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged \"" ++ tag ++ "\""
@@ -206,8 +216,10 @@ feedConfiguration = FeedConfiguration
 
 
 pandocMathCompiler =
-    let mathExtensions = [Ext_tex_math_dollars, Ext_tex_math_double_backslash,
-                          Ext_latex_macros]
+    let mathExtensions = [ Ext_tex_math_dollars
+                         , Ext_tex_math_double_backslash
+                         , Ext_latex_macros
+                         ]
         defaultExtensions = writerExtensions defaultHakyllWriterOptions
         newExtensions = foldr S.insert defaultExtensions mathExtensions
         writerOptions = defaultHakyllWriterOptions
@@ -243,8 +255,10 @@ liftClip f = return . f . itemBody
 clippingCtx :: Context Clipping
 clippingCtx = mconcat
     [ field "body" $ liftClip contents
+    , field "url"  $ liftClip canonicalName
+    , field "author"  $ liftClip author
+    , field "bookName"  $ liftClip bookName
     ]
-
 
 postCtx :: Context String
 postCtx = mconcat
@@ -254,3 +268,10 @@ postCtx = mconcat
 
 showTime ::  UTCTime -> String
 showTime = formatTime defaultTimeLocale dateFormat
+
+titleCompare :: String -> String
+titleCompare s =
+    if isPrefixOf "The " s
+       then drop 4 s
+       else s
+

@@ -3,10 +3,12 @@ module ClipIt
     , getClippings
     , parseClippings
     , getBooks
+    , canonicalName
     ) where
 
 import Control.Arrow ((***))
 import Control.Applicative ((<$>))
+import Data.Char (toLower, isAlphaNum, isSpace)
 import Data.DateTime
 import Data.Either (rights)
 import Data.List (nub)
@@ -170,4 +172,14 @@ parseClippings input = parse parseFile "(unknown)" input
 getBooks :: Either ParseError [Clipping] -> [(String, String)]
 getBooks (Left _) = []
 getBooks (Right bs) = nub $ map (liftM2 (,) bookName author) bs
+
+canonicalName :: Clipping -> String
+canonicalName = replace ' ' '-'
+              . reverse . dropWhile (== ' ') . reverse
+              . filter (liftM2 (||) isAlphaNum isSpace)
+              . fmap toLower
+              . liftM2 spaceConcat author bookName
+  where spaceConcat a b = a ++ " " ++ b
+        replace a b = map $ \c -> if (c == a) then b else c
+
 
