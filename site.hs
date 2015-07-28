@@ -30,7 +30,10 @@ postsDir = "posts/*"
 postCtxWithTags :: Tags -> Context String
 postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
 
-getPrev :: [Identifier] -> ([Identifier] -> [Identifier] -> [(Identifier,Identifier)]) -> Item String -> Compiler String
+getPrev :: [Identifier]
+        -> ([Identifier] -> [Identifier] -> [(Identifier,Identifier)])
+        -> Item String
+        -> Compiler String
 getPrev posts f me = do
     let ids = sortIdentifiersByDate posts
     case lookup (itemIdentifier me) $ f ids (tail ids) of
@@ -44,7 +47,10 @@ sortIdentifiersByDate identifiers =
             byDate id1 id2 =
                 let fn1 = takeFileName $ toFilePath id1
                     fn2 = takeFileName $ toFilePath id2
-                    parseTime' fn = parseTime defaultTimeLocale "%Y-%m-%d" $ intercalate "-" $ take 3 $ splitAll "-" fn
+                    parseTime' fn = parseTime defaultTimeLocale "%Y-%m-%d"
+                                  . intercalate "-"
+                                  . take 3
+                                  $ splitAll "-" fn
                 in compare ((parseTime' fn1) :: Maybe UTCTime) ((parseTime' fn2) :: Maybe UTCTime)
 
 
@@ -56,12 +62,6 @@ setNextPrev posts ctx =
         , ctx
         ]
 
-
-
-
-headMay :: [a] -> Maybe a
-headMay []    = Nothing
-headMay (a:_) = Just a
 
 showTrace :: (Show a) => a -> a
 showTrace = trace =<< show
@@ -94,7 +94,8 @@ main = hakyll $ do
             <+> cruftlessRoute
         compile $ do
             pandocMathCompiler
-                >>= loadAndApplyTemplate "templates/post.html" (setNextPrev postMatches postCtxTags)
+                >>= loadAndApplyTemplate "templates/post.html"
+                    (setNextPrev postMatches postCtxTags)
                 >>= saveSnapshot "content"
                 >>= loadAndApplyTemplate "templates/default.html" postCtxTags
                 >>= relativizeUrls
@@ -103,10 +104,11 @@ main = hakyll $ do
         route idRoute
         compile $ do
             posts <- recentFirst =<< loadAll postsDir
-            let archiveCtx =
-                    listField "posts" postCtxTags (return posts) `mappend`
-                    constField "title" "Archives"            `mappend`
-                    defaultContext
+            let archiveCtx = mconcat
+                    [ listField "posts" postCtxTags (return posts)
+                    , constField "title" "Archives"
+                    , defaultContext
+                    ]
 
             makeItem ""
                 >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
@@ -142,9 +144,11 @@ main = hakyll $ do
         route idRoute
         compile $ do
             posts <- recentFirst =<< loadAll pattern
-            let ctx = constField "title" title
-                        `mappend` listField "posts" postCtx (return posts)
-                        `mappend` defaultContext
+            let ctx = mconcat
+                    [ constField "title" title
+                    , listField "posts" postCtx (return posts)
+                    , defaultContext
+                    ]
 
             makeItem ""
                 >>= loadAndApplyTemplate "templates/tag.html" ctx

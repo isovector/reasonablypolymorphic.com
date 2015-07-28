@@ -21,6 +21,7 @@ import Data.Time.Parse (strptime)
 data Clipping =
     Clipping
     { bookName :: String
+    , subtitle :: Maybe String
     , author   :: String
     , page     :: Maybe Int
     , location :: (Int, Int)
@@ -84,22 +85,31 @@ onPage = optionMaybe $ do
     spaces
     return cPage
 
+parseSubtitle :: String -> (String, Maybe String)
+parseSubtitle l =
+    case matchRegex regex l of
+        Just xs -> (xs !! 0, Nothing)
+        Nothing -> (l, Nothing)
+  where
+      regex = mkRegex "^([^:(]*)"
+
+
 clipping :: GenParser Char st Clipping
 clipping =
     do
         meta <- line
         let regex = mkRegex "^(.*?) \\(([^)]*)\\)$|^(.*?) \\- (.*)$"
             matches = matchRegex regex meta
-            (book, authorName) =
+            ((book, cSub), authorName) =
                 case matches of
                     Just xs -> case xs !! 0 of
-                        ""    -> (xs !! 2, xs !! 3)
-                        name  -> (name, xs !! 1)
-                    Nothing -> ("", "")
+                        ""    -> (parseSubtitle $ xs !! 2, xs !! 3)
+                        name  -> (parseSubtitle name, xs !! 1)
+                    Nothing -> (("", Nothing), "")
 
         eol
         string "- "
-        ctype <- typeof
+        typeof
         spaces
         cPage <- onPage
         cLoc <- loc
@@ -113,8 +123,8 @@ clipping =
         eol
         return Clipping
             { bookName = book
+            , subtitle = cSub
             , author = authorName
-            -- , typeof
             , page = cPage
             , location = cLoc
             , added = time
