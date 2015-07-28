@@ -1,8 +1,13 @@
-module ClipIt where
+module ClipIt
+    ( Clipping (..)
+    , getClippings
+    , parseClippings
+    ) where
 
 import Control.Arrow ((***))
 import Control.Applicative ((<$>))
 import Data.DateTime
+import Data.Either (rights)
 import Data.Time.Clock
 import Data.Time.LocalTime (localTimeToUTC, utc)
 import Text.ParserCombinators.Parsec
@@ -23,7 +28,9 @@ data Clipping =
 -- I Will Teach You to Be Rich (Sethi Ramit)
 -- - Highlight on Page 10 | Loc. 153-54  | Added on Sunday, March 29, 2015, 04:11 PM
 
--- Who wins at the end of the day? The self-satisfied people who heatedly debate some obscure details? Or the people who sidestep the entire debate and get started?
+-- Who wins at the end of the day? The self-satisfied people who heatedly
+-- debate some obscure details? Or the people who sidestep the entire debate
+-- and get started?
 -- ==========
 
 
@@ -41,8 +48,9 @@ typeof =
 showTrace :: (Show a) => a -> a
 showTrace t = trace (show t) t
 
+getClippings :: [FilePath] -> IO [Clipping]
+getClippings = fmap (join . rights) . sequence . map (fmap parseClippings . readFile)
 
--- ishowTrace€ü ::€ü (Show a) => a-=ashowTrace t = trace (sohw €kb€kb€kb€kbhow t) t{oimport€ü Data.Trace (trace)bbbbbcwDebug}
 
 -- Each line contains 1 or more cells, separated by a comma
 clipping :: GenParser Char st Clipping

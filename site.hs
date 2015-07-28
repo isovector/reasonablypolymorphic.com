@@ -7,28 +7,32 @@ import           Text.Pandoc.Options
 import          Control.Applicative ((<$>))
 import          Debug.Trace (trace)
 import Control.Applicative (Alternative (..))
+import Debug.Trace (trace, traceM)
 
+import Control.Monad (forM, mapM_)
+import System.IO.Unsafe (unsafePerformIO)
 
-import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy)
+import Data.Function (on)
+import Data.List (isPrefixOf, tails, findIndex, intercalate, sortBy, groupBy)
 import System.FilePath (takeFileName)
 
 import Data.Time.Format (parseTime)
 import System.Locale (defaultTimeLocale)
 import Data.Time.Clock (UTCTime)
 
-import ClipIt (Clipping (..), parseClippings)
+import ClipIt (Clipping (..), getClippings)
 
 
 (<+>) :: Routes -> Routes -> Routes
 (<+>) = composeRoutes
 
+postsDir = "posts/*"
 
 postCtxWithTags :: Tags -> Context String
 postCtxWithTags tags = tagsField "tags" tags `mappend` postCtx
 
-getPrev :: ([Identifier] -> [Identifier] -> [(Identifier,Identifier)]) -> Item String -> Compiler String
-getPrev f me = do
-    posts <- getMatches "posts/*"
+getPrev :: [Identifier] -> ([Identifier] -> [Identifier] -> [(Identifier,Identifier)]) -> Item String -> Compiler String
+getPrev posts f me = do
     let ids = sortIdentifiersByDate posts
     case lookup (itemIdentifier me) $ f ids (tail ids) of
       Just i  -> (fmap (maybe empty $ toUrl) . getRoute) i
@@ -45,11 +49,11 @@ sortIdentifiersByDate identifiers =
                 in compare ((parseTime' fn1) :: Maybe UTCTime) ((parseTime' fn2) :: Maybe UTCTime)
 
 
-setNextPrev :: Context String -> Context String
-setNextPrev ctx =
+setNextPrev :: [Identifier] -> Context String -> Context String
+setNextPrev posts ctx =
     mconcat
-        [ field "prev" $ getPrev zip
-        , field "next" $ getPrev (flip zip)
+        [ field "prev" $ getPrev posts zip
+        , field "next" $ getPrev posts (flip zip)
         , ctx
         ]
 
@@ -64,34 +68,14 @@ showTrace :: (Show a) => a -> a
 showTrace = trace =<< show
 
 main :: IO ()
-main = putStrLn
-     $ show
-     $ parseClippings
-     $ unlines
-        [ "I Will Teach You to Be Rich (Sethi Ramit)"
-        , "- Highlight on Page 10 | Loc. 153-54  | Added on Sunday, March 29, 2015, 04:11 PM"
-        , ""
-        , "Who wins at the end of the day? The self-satisfied people who heatedly debate some obscure details? Or the people who sidestep the entire debate and get started?"
-        , "=========="
-        , "I Will Teach You to Be Rich (Sethi Ramit)"
-        , "- Highlight on Page 13 | Loc. 188-89  | Added on Sunday, March 29, 2015, 04:13 PM"
-        , ""
-        , "“Our education system doesn’t teach this,” people whine. It’s easy for people in their twenties to wish that their colleges had offered some personal-finance training. Guess what? Most colleges do offer those classes. You just didn’t attend!"
-        , "=========="
-        , "I Will Teach You to Be Rich (Sethi Ramit)"
-        , "- Highlight on Page 14 | Loc. 204-5  | Added on Sunday, March 29, 2015, 04:14 PM"
-        , ""
-        , "Listen up, crybabies: This isn’t your grandma’s house and I’m not going to bake you cookies and coddle you. A lot of your financial problems are caused by one person: you."
-        , "=========="
-        , "I Will Teach You to Be Rich (Sethi Ramit)"
-        , "- Highlight on Page 15 | Loc. 229  | Added on Sunday, March 29, 2015, 04:16 PM"
-        , ""
-        , "Getting started is more important than becoming an expert."
-        , "=========="
-        ]
-        {-hakyll $ do
-    tags <- buildTags "posts/*" (fromCapture "tags/*.html")
-    let postCtxTags = postCtxWithTags tags
+main = hakyll $ do
+    tags <- buildTags postsDir (fromCapture "tags/*.html")
+    clipFiles <- fmap toFilePath <$> getMatches "clippings/*"
+    mapM_ traceM clipFiles
+    let clippings = unsafePerformIO $ getClippings clipFiles
+        clipBooks = groupBy ((==) `on` book) clippings
+
+        postCtxTags = postCtxWithTags tags
 
     match "images/**" $ do
         route   idRoute
@@ -105,29 +89,28 @@ main = putStrLn
         route   idRoute
         compile compressCssCompiler
 
-    match "posts/*" $ do
-        route $ gsubRoute "posts/" (const "blog/")
+    forM clipBooks $ \books ->
+        create [fromFilePath $ "book/" ++ (book $ head books)] $ do
+            route $ setExtension "html"
+            compile $ do
+                makeItem . show $ length books
+
+    match postsDir $ do
+        postMatches <- getMatches postsDir
+        route $ gsubRoute (show postsDir) (const "blog/")
             <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
             <+> cruftlessRoute
         compile $ do
             pandocMathCompiler
-                >>= loadAndApplyTemplate "templates/post.html" (setNextPrev postCtxTags)
+                >>= loadAndApplyTemplate "templates/post.html" (setNextPrev postMatches postCtxTags)
                 >>= saveSnapshot "content"
                 >>= loadAndApplyTemplate "templates/default.html" postCtxTags
                 >>= relativizeUrls
 
-    -- TODO: make this run octo-clip-it
-    match "books/*.markdown" $ do
-        route $ setExtension "html"
-        compile $ pandocCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    defaultContext
-            >>= loadAndApplyTemplate "templates/default.html" defaultContext
-            >>= relativizeUrls
-
     create ["blog/archive.html"] $ do
         route idRoute
         compile $ do
-            posts <- recentFirst =<< loadAll "posts/*"
+            posts <- recentFirst =<< loadAll postsDir
             let archiveCtx =
                     listField "posts" postCtxTags (return posts) `mappend`
                     constField "title" "Archives"            `mappend`
@@ -141,7 +124,7 @@ main = putStrLn
     create ["index.html"] $ do
         route idRoute
         compile $ do
-            posts <- recentFirst =<< loadAll "posts/*"
+            posts <- recentFirst =<< loadAll postsDir
             let indexCtx = mconcat
                     [ listField "posts" postCtxTags (return $ take 1 posts)
                     , constField "title" "Home"
@@ -172,14 +155,14 @@ main = putStrLn
 
     create ["atom.xml"] $ feedRoute renderAtom
     create ["feed.rss"] $ feedRoute renderRss
-    -- -}
+
 
 feedRoute render = do
     route idRoute
     compile $ do
         let feedCtx = postCtx `mappend` bodyField "description"
         posts <- fmap (take 10) . recentFirst =<<
-            loadAllSnapshots "posts/*" "content"
+            loadAllSnapshots postsDir "content"
         render feedConfiguration feedCtx posts
 
 
@@ -215,3 +198,4 @@ postCtx :: Context String
 postCtx =
     dateField "date" "%B %e, %Y" `mappend`
     defaultContext
+
