@@ -8,6 +8,6 @@ if [ "$(whoami)" ==  "ubuntu" ]; then
     /data/local/bin/wcst build
 else
     echo "deploying on server..."
-    ssh -i ~/.ssh/santino.pem ubuntu@52.7.77.9 'bash -s' < $0
+    ssh -i ~/.ssh/santino.pem ubuntu@$SERENADE 'bash -s' < $0
 fi
 
