@@ -49,7 +49,7 @@ main = hakyll $ do
 
     match postsDir $ do
         postMatches <- getMatches postsDir
-        route $   gsubRoute (show postsDir) (const "blog/")
+        route $   gsubRoute "posts/" (const "blog/")
               <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
               <+> cruftlessRoute
         compile $ do
