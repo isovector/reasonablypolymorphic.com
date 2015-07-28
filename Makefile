@@ -9,5 +9,8 @@ deploy:
 	wcst clean
 	wcst build
 
-.PHONY: deploy test
+newpost:
+	@./scripts/newpost.sh
+
+.PHONY: deploy test newpost
 
