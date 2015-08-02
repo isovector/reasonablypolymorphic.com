@@ -7,6 +7,7 @@ if [ "$(whoami)" ==  "ubuntu" ]; then
     /data/local/bin/wcst clean
     /data/local/bin/wcst build
 else
+    git push
     echo "deploying on server..."
     ssh -i ~/.ssh/santino.pem ubuntu@$SERENADE 'bash -s' < $0
 fi
