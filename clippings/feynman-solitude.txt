@@ -328,82 +328,82 @@ One Hundred Years of Solitude (Gabriel Garcia Marquez)
 
 She realized that Colonel Aureliano Buendía had not lost his love for the family because he had been hardened by the war, as she had thought before, but that he had never loved anyone, not even his wife Remedios or the countless one-night women who had passed through his life, and much less his sons.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 119 | Loc. 1825  | Added on Saturday, July 25, 2015, 11:46 PM
 
 := Print the total number of lines.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 156 | Loc. 2382-84  | Added on Sunday, July 26, 2015, 12:04 AM
 
 :set edcompatible and after that, subsequent substitute commands will be global. Despite the name, no known version of Unix ed actually works this way.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 160 | Loc. 2451-57  | Added on Sunday, July 26, 2015, 12:07 AM
 
 Suppose that you decide to move DESCRIPTION above the SYNTAX paragraph. With pattern matching, you can move blocks of text on all 150 pages with one command! :g /SYNTAX/.,/DESCRIPTION/-1 move /PARAMETERS/-1 This command works as follows. First, ex finds and marks each line that matches the first pattern (i.e., that contains the word SYNTAX). Second, for each marked line, it sets . (dot, the current line) to that line, and executes the command. Using the move command, the command moves the block of lines from the current line (dot) to the line before the one containing the word DESCRIPTION (/DESCRIPTION/-1) to just before the line containing PARAMETERS (/PARAMETERS/-1).
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 161 | Loc. 2463-65  | Added on Sunday, July 26, 2015, 12:08 AM
 
 This very powerful kind of change is implicit in ex’s line addressing syntax, but it is not readily apparent even to experienced users. For this reason, whenever you are faced with a complex, repetitive editing task, take the time to analyze the problem and find out if you can apply pattern-matching tools to get the job done.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 271 | Loc. 4150-52  | Added on Sunday, July 26, 2015, 10:29 AM
 
 We don’t know whether it was an article of faith by Bram that processor and memory speeds would improve enough to catch up with Vim’s demands, but fortunately, modern processors and computers handle even the toughest Vim tasks well.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 340 | Loc. 5204-8  | Added on Sunday, July 26, 2015, 10:45 AM
 
 As an example of :windo in action, suppose you are editing a suite of Java files and for some reason you have a class name that is improperly capitalized. You need to repair this by changing every occurrence of myPoorlyCapitalizedClass to MyPoorlyCapitalizedClass. With :windo you can do that with: :windo %s/myPoorlyCapitalizedClass/MyPoorlyCapitalizedClass/g
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 340 | Loc. 5209-11  | Added on Sunday, July 26, 2015, 10:45 AM
 
 bufdo[!] cmd This is analogous to windo but operates on all of the buffers in your editing session, not just visible buffers in the current tab.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 352 | Loc. 5388-92  | Added on Sunday, July 26, 2015, 10:49 AM
 
 One of the authors likes to divide the day into four partitions, each with its own dedicated color scheme: darkblue Midnight to 6 a.m. morning 6 a.m. to noon shine Noon to 6 p.m. evening 6 p.m. to midnight
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 430 | Loc. 6590-93  | Added on Sunday, July 26, 2015, 11:16 AM
 
 indentexpr Lets you define your own expression, which Vim evaluates in the context of each new line you begin. With this feature, you write your own rules. We refer you to the discussions of scripting and functions in this book and to the Vim documentation for details. If the other three options don’t give you enough flexibility for automatic indentation, indentexpr certainly will.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 449 | Loc. 6870-71  | Added on Sunday, July 26, 2015, 11:32 AM
 
 CTRL-XCTRL-T searches forward through the files defined by the thesaurus option for keywords that match the keyword in front of the cursor.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 447 | Loc. 6849-50  | Added on Sunday, July 26, 2015, 11:33 AM
 
 Completion by keyword in file CTRL-XCTRL-N searches forward through the current file for keywords matching the keyword in front of the cursor.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 451 | Loc. 6910-11  | Added on Sunday, July 26, 2015, 11:33 AM
 
 CTRL-XCTRL-] searches forward through the current file and included files for keywords matching tags.
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 453 | Loc. 6934-38  | Added on Sunday, July 26, 2015, 11:34 AM
 
 This is the most generic option, invoked through CTRL-N, and lets you combine all the other searches into one. For many users, this may be the most satisfactory because it requires little understanding of the nuances of the more specific methods. Define where and how this completion acts by setting the comma-separated list of available sources in the complete option. Each available source is denoted by a single character. The choices include:
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 479 | Loc. 7336-39  | Added on Sunday, July 26, 2015, 11:40 AM
 
 errorformat An option defining a format that Vim matches to find errors returned from a compile. Vim’s built-in documentation gives much more detailed information on how this is defined, but the default almost always works. If you need to tune the option, view its details with: :help errorformat
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 488 | Loc. 7472  | Added on Sunday, July 26, 2015, 12:38 PM
 
 $vim scp://ehannah@mozart:122//home/ehannah/.vimrc
 ==========
-Learning the vi and Vim Editors (Arnold, Hannah, Elbert, Lamb, Linda Robbins, Elbert Hannah and Linda Lamb)
+Learning the vi and Vim Editors (Elbert Hannah and Linda Lamb)
 - Highlight on Page 499 | Loc. 7637-40  | Added on Sunday, July 26, 2015, 12:41 PM
 
 Vim defines that point in the change history as a branch from which different paths of changes occur. With that path you can now move back and forth chronologically, with the added twist that at a branch point you can move forward along any of the different paths of recorded changes. For more complete descriptions of how to navigate changes as a tree, use Vim’s help command: :help usr_32.txt
