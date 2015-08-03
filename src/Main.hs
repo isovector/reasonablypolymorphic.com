@@ -15,6 +15,7 @@ import Hakyll.Web.Tags
 import Site.Compilers
 import Site.Constants
 import Site.Contexts
+import Utils
 
 (<+>) :: Routes -> Routes -> Routes
 (<+>) = composeRoutes
@@ -25,7 +26,7 @@ main = hakyll $ do
     clipFiles <- fmap toFilePath <$> getMatches "clippings/*"
 
     let clippings = unsafePerformIO $ getClippings clipFiles
-        clipBooks = groupBy ((==) `on` bookName) clippings
+        clipBooks = sortAndGroup bookName clippings
         postCtxTags = postCtxWithTags tags
 
 
