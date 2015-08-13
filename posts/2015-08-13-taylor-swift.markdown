@@ -127,7 +127,7 @@ Swift, and this might be an artifact of letting computers do our math for us.
 There is another interpretation, however: this is the *outer* radius of the
 enclosure. In the concert case, the outer radius is $r_c = 10.8 \text{m}$, but
 the shell is $s_c = 9.0 \text{m}$ thick, which means the living space on the
-inside is about a measly $10 \text{m^2}$. This sonuds not terrible, until you
+inside is about a measly $10 \text{m^2}$. This sounds not terrible, until you
 remember it's inside of a dome -- which excludes a lot of your living space from
 area you can do things with.
 
