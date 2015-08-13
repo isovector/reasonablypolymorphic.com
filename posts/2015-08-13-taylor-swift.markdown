@@ -59,7 +59,7 @@ $$
 v = \frac{4 \pi \left(r^3 - (r-s)^3\right)}{6} + \pi s (r - s)^2
 $$
 
-I don't know much about sound attenuation, but according to [atten][this page],
+I don't know much about sound attenuation, but according to [this page][atten],
 sound dissipates according to the law:
 
 [atten]: https://www.nde-ed.org/EducationResources/CommunityCollege/Ultrasonics/Physics/attenuation.htm
