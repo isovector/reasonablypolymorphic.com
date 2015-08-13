@@ -167,7 +167,7 @@ Success! If you want to silence just Taylor Swift, your enclosure can be $4.7
 \text{m}$ in radius, and to silence her concert, you lose less than a meter in
 total radius. Which is super cool, and actually pretty surprising. So, if paper
 attenuates like snow, you *can* enclose Taylor Swift in her own money and have
-her play a concert that no one will ever here.
+her play a concert that no one will ever hear.
 
 Marvelous.
 
