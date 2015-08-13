@@ -71,7 +71,7 @@ floor's enclosure is:
 
 $$
 \int_0^s \pi \left(s \sin{\frac{l}{s}}\right)^2 dl = - \frac{1}{4} \pi s^3
-\left(sin(2) - 2\right)
+\left(\sin 2 - 2\right)
 $$
 
 Add this to our hemisphere, and the total volume of our enclosure is thus:
@@ -79,7 +79,7 @@ Add this to our hemisphere, and the total volume of our enclosure is thus:
 
 $$
 v = \frac{\pi}{12} \Big(8 \left(r^3 - (r-s)^3\right) - 3  s^3
-\left(sin(2) - 2\right) \Big)
+\left(\sin 2 - 2\right) \Big)
 $$
 
 Not the prettiest thing, and I wouldn't want to evaluate it by hand, but luckily
