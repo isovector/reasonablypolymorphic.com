@@ -25,8 +25,13 @@ Great question. Let's see if we can figure it out.
 A [quick google search][netwo] indicates that Taylor Swift's net worth is
 &#36;240 million USD. WolframAlpha, the source of all sorts of fantastic and
 weird mathematical facts, [states][bill] the volume of a &#36;20 USD bill is
-$1138 \text{mm}^3$, which gives us an easy $2.4\cdot 10^8 \text{USD} \times 1138
-\text{mm}^3\text{/ USD} = 2731 \text{m}^3$ of building material to work with.
+$1138 \text{mm}^3$, which gives us an easy $2.4\cdot 10^8 \text{USD} \div 20
+\times 1138 \text{mm}^3\text{/ USD} = 136.5 \text{m}^3$ of building material to
+work with[^1].
+
+[^1]: The original version of this post accidentally calculated this in terms of
+&#36;1 USD bills, so this number was off by a factor of $20$. Thanks to James
+Barton for spotting this error.
 
 [netwo]: https://www.google.com/search?q=net%20worth%20of%20taylor%20swift
 [bill]: http://www.wolframalpha.com/input/?i=volume+of+a+%2420+USD+bill
@@ -52,12 +57,33 @@ $$
 
 where $s$ is now the shell thickness, and $r$ is the outer radius.
 
-To this, we'll add a cylinder of radius $r_i = r - s$ and height $s$ to pad the
-floor. The total volume of our enclosure solid is thus:
+We now need to add the floor of the enclosure, and since hemispherical shells
+with a floor aren't very popular, we'll need to do the mathematics ourselves. We
+can model the floor as a bunch of infinitesimally thin of cylinders of varying
+radii:[^2]
+
+[^2]: The original version of this post approximated this floor as a single
+cylinder, which is a good approximation only for small $s$. Thanks to Marius van
+Voorden for spotting this error.
+
+Let $l$ be the total height of the stacked cylinders, and thus volume of our
+floor's enclosure is:
 
 $$
-v = \frac{4 \pi \left(r^3 - (r-s)^3\right)}{6} + \pi s (r - s)^2
+\int_0^s \pi \left(s \sin{\frac{l}{s}}\right)^2 dl = - \frac{1}{4} \pi s^3
+\left(sin(2) - 2\right)
 $$
+
+Add this to our hemisphere, and the total volume of our enclosure is thus:
+
+
+$$
+v = \frac{\pi}{12} \Big(8 \left(r^3 - (r-s)^3\right) - 3  s^3
+\left(sin(2) - 2\right) \Big)
+$$
+
+Not the prettiest thing, and I wouldn't want to evaluate it by hand, but luckily
+we have computers for that kind of thing.
 
 I don't know much about sound attenuation, but according to [this page][atten],
 sound dissipates according to the law:
@@ -113,23 +139,31 @@ silence her concert.
 Because doing math is hard, we'll use WolframAlpha [to do the remaining
 calculations for us][answer]:
 
-[answer]: http://www.wolframalpha.com/input/?i=solve+%282731+%3D+%284+*+pi+*+%28r%5E3+-+%28r-s%29%5E3%29%29%2F6+%2B+2+*+pi+*+s+*+%28r+-+s%29%5E2+with+s+%3D+4.6%29+for+r
+[answer]: http://www.wolframalpha.com/input/?i=solve+%28136.5+%3D+%5Cfrac%7B%5Cpi%7D%7B12%7D+%5CBig%288+%5Cleft%28r%5E3+-+%28r-s%29%5E3%5Cright%29+-+3++s%5E3+%5Cleft%28sin%282%29+-+2%5Cright%29+%5CBig%29+with+s+%3D+4.6%29+for+r
+
+...which gives us $r = 2.02$ and $r = 2.57$ for the speaking case. Since these
+are both smaller than $s_t$, we conclude that such an enclosure can't actually
+be constructed. Shame.
+
+**But wait!** We totally fudged that $\alpha = 0.15$ number for cork. But maybe
+paper attenuates more like snow? Maybe not, but hey, we've got nothing to work
+with otherwise. We recompute $s_t$, $s_c$:
 
 $$
-r_t = 10.9 \text{m} \\\\
-r_c = 10.8 \text{m}
+s_t = \frac{\ln{60}-\ln{30}}{0.75} = 0.92 \text{m}  \\\\
+s_c = \frac{\ln{115}-\ln{30}}{0.75} = 1.8 \text{m} \\\\
 $$
 
-This is a little surprising, that the maximum size of our enclosure for a
-sound-proofed concert would be larger than the enclosure to silence Taylor
-Swift, and this might be an artifact of letting computers do our math for us.
+and again run them through WolframAlpha. This time things look better, we get:
 
-There is another interpretation, however: this is the *outer* radius of the
-enclosure. In the concert case, the outer radius is $r_c = 10.8 \text{m}$, but
-the shell is $s_c = 9.0 \text{m}$ thick, which means the living space on the
-inside is about a measly $10 \text{m^2}$. This sounds not terrible, until you
-remember it's inside of a dome -- which excludes a lot of your living space from
-area you can do things with.
+$$
+r_t = 5.3 \text{m} \\\\
+r_c = 4.3 \text{m}
+$$
+
+Success! If you want to silence just Taylor Swift, your enclosure can be $5.3
+\text{m}$ in radius, and to silence her concert, you lose only $1.0 \text{m}$ in
+radius. Which is cool that it works...
 
 But it's definitely not enough room to play a concert.
 
