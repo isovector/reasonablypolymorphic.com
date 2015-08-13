@@ -163,7 +163,7 @@ r_t = 4.7 \text{m} \\\\
 r_c = 4.3 \text{m}
 $$
 
-Success! If you want to silence just Taylor Swift, your enclosure can be $5.3
+Success! If you want to silence just Taylor Swift, your enclosure can be $4.7
 \text{m}$ in radius, and to silence her concert, you lose less than a meter in
 total radius. Which is super cool, and actually pretty surprising. So, if paper
 attenuates like snow, you *can* enclose Taylor Swift in her own money and have
