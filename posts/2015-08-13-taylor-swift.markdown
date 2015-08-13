@@ -141,7 +141,7 @@ silence her concert.
 Because doing math is hard, we'll use WolframAlpha [to do the remaining
 calculations for us][answer]:
 
-[answer]: http://www.wolframalpha.com/input/?i=solve+%28136.5+%3D+%5Cfrac%7B%5Cpi%7D%7B12%7D+%5CBig%288+%5Cleft%28r%5E3+-+%28r-s%29%5E3%5Cright%29+-+3++s%5E3+%5Cleft%28sin%282%29+-+2%5Cright%29+%5CBig%29+with+s+%3D+4.6%29+for+r
+[answer]: http://www.wolframalpha.com/input/?i=solve+%28136.5+%3D+%5Cfrac%7B%5Cpi%7D%7B12%7D+%5CBig%288+%5Cleft%28r%5E3+-+%28r-s%29%5E3%5Cright%29+-+3++s%5E3+%5Cleft%28sin%282%29+-+2%5Cright%29+%5CBig%29+with+s+%3D+6.4%29+for+r
 
 ...which gives us imaginary radii for the speaking case. Since these are
 physically impossible, we conclude that such an enclosure can't actually
