@@ -25,8 +25,8 @@ Great question. Let's see if we can figure it out.
 A [quick google search][netwo] indicates that Taylor Swift's net worth is
 &#36;240 million USD. WolframAlpha, the source of all sorts of fantastic and
 weird mathematical facts, [states][bill] the volume of a &#36;20 USD bill is
-$1138 \text{mm}^3$, which gives us an easy $240,000,000 \text{USD} \times 1138
-\text{mm}^3 / \text{USD} = 2731 \text{m}^3$ of building material to work with.
+$1138 \text{mm}^3$, which gives us an easy $2.4\cdot 10^8 \text{USD} \times 1138
+\text{mm}^3\text{/ USD} = 2731 \text{m}^3$ of building material to work with.
 
 [netwo]: https://www.google.com/search?q=net%20worth%20of%20taylor%20swift
 [bill]: http://www.wolframalpha.com/input/?i=volume+of+a+%2420+USD+bill
@@ -96,7 +96,8 @@ which is probably cork.
 [coeff]: http://www.engineeringtoolbox.com/accoustic-sound-absorption-d_68.html
 
 If you were going to *actually build* this enclosure around poor Taylor, you
-would probably want to experimentally find a value for this, but we'll assume
+would probably want to experimentally find a value for this (and have some
+*really* good lawyers), but we'll assume
 cork is close enough to paper to continue our analysis.
 
 Substituting in $\alpha = 0.15$, the mean coefficient listed for cork, we get:
