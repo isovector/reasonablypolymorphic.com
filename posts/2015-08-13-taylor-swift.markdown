@@ -99,12 +99,14 @@ the attenuation coefficient of the material, and $x$ is the distance the
 sound travels through the material.
 
 The initial question doesn't state if we're trying to sound-proof Taylor Swift
-or *a Taylor Swift concert*, so let's try doing both. [Regular human
-speech][loudn] is $A_0 = 60 \text{dB}$, and a rock concert (we're being generous,
-here) is approximately $A_0 = 115 \text{dB}$. We assume dampening the sound down to
-the loudness of a whisper is acceptable, so this gives us $A = 30 \text{dB}$.
+or *a Taylor Swift concert*, so let's try doing both. We assume Taylor will be
+shouting, so [we'll aim to sound-proof her up to][loudn2] $A_0 = 78 \text{dB}$ A
+rock (we're being generous, here) [concert is approximately][loudn] $A_0 = 115
+\text{dB}$. We assume dampening the sound down to the loudness of a whisper is
+acceptable, so this gives us $A = 30 \text{dB}$.
 
 [loudn]: http://www.gcaudio.com/resources/howtos/loudness.html
+[loudn2]: http://www.engineeringtoolbox.com/voice-level-d_938.html
 
 Solving our attenuation for $x$ (which is $s$, the necessary width of our shell
 to achieve sound dampening), we get:
@@ -129,7 +131,7 @@ cork is close enough to paper to continue our analysis.
 Substituting in $\alpha = 0.15$, the mean coefficient listed for cork, we get:
 
 $$
-s_t = \frac{\ln{60}-\ln{30}}{0.15} = 4.6 \text{m}  \\\\
+s_t = \frac{\ln{78}-\ln{30}}{0.15} = 6.4 \text{m}  \\\\
 s_c = \frac{\ln{115}-\ln{30}}{0.15} = 9.0 \text{m} \\\\
 $$
 
@@ -141,8 +143,8 @@ calculations for us][answer]:
 
 [answer]: http://www.wolframalpha.com/input/?i=solve+%28136.5+%3D+%5Cfrac%7B%5Cpi%7D%7B12%7D+%5CBig%288+%5Cleft%28r%5E3+-+%28r-s%29%5E3%5Cright%29+-+3++s%5E3+%5Cleft%28sin%282%29+-+2%5Cright%29+%5CBig%29+with+s+%3D+4.6%29+for+r
 
-...which gives us $r = 2.02$ and $r = 2.57$ for the speaking case. Since these
-are both smaller than $s_t$, we conclude that such an enclosure can't actually
+...which gives us imaginary radii for the speaking case. Since these are
+physically impossible, we conclude that such an enclosure can't actually
 be constructed. Shame.
 
 **But wait!** We totally fudged that $\alpha = 0.15$ number for cork. But maybe
@@ -150,20 +152,22 @@ paper attenuates more like snow? Maybe not, but hey, we've got nothing to work
 with otherwise. We recompute $s_t$, $s_c$:
 
 $$
-s_t = \frac{\ln{60}-\ln{30}}{0.75} = 0.92 \text{m}  \\\\
+s_t = \frac{\ln{78}-\ln{30}}{0.75} = 1.3 \text{m}  \\\\
 s_c = \frac{\ln{115}-\ln{30}}{0.75} = 1.8 \text{m} \\\\
 $$
 
 and again run them through WolframAlpha. This time things look better, we get:
 
 $$
-r_t = 5.3 \text{m} \\\\
+r_t = 4.7 \text{m} \\\\
 r_c = 4.3 \text{m}
 $$
 
 Success! If you want to silence just Taylor Swift, your enclosure can be $5.3
-\text{m}$ in radius, and to silence her concert, you lose only $1.0 \text{m}$ in
-radius. Which is cool that it works...
+\text{m}$ in radius, and to silence her concert, you lose less than a meter in
+total radius. Which is super cool, and actually pretty surprising. So, if paper
+attenuates like snow, you *can* enclose Taylor Swift in her own money and have
+her play a concert that no one will ever here.
 
-But it's definitely not enough room to play a concert.
+Marvelous.
 
