@@ -88,7 +88,7 @@ main = hakyll $ do
 
     forM_ clipBooks $ \book -> do
         let clipItems = sortBy (comparing added) book
-            curBook = head book
+            curBook = head clipItems
             name = canonicalName curBook
 
         create [fromFilePath $ "books/" ++ name] $ do
@@ -101,7 +101,7 @@ main = hakyll $ do
                         [ constField "title"    $ bookName curBook
                         , constField "author"   $ author curBook
                         , timeField "started"   $ curBook
-                        , timeField "finished"  $ last book
+                        , timeField "finished"  $ last clipItems
                         , listField "clippings"   clippingCtx (mapM makeItem clipItems)
                         , defaultContext
                         ]
