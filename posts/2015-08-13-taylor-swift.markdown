@@ -70,23 +70,19 @@ Let $l$ be the total height of the stacked cylinders, and thus volume of our
 floor's enclosure is:
 
 $$
-\int_0^s \pi \left(s \sin{\frac{l}{s}}\right)^2 dl = - \frac{1}{4} \pi s^3
-\left(\sin 2 - 2\right)
+\int_0^s \pi \left((r-s) \sqrt{1 - \left(\frac{l}{r-s}\right)^2}\right)^2 dl =
+\frac{1}{3} \pi s \left(3r^2 - 6rs + 2s^2\right)
 $$
 
-Add this to our hemisphere, and the total volume of our enclosure is thus:
-
+Add this to our hemisphere, and the total volume of our enclosure, after
+simplifying, is thus:
 
 $$
-v = \frac{\pi}{12} \Big(8 \left(r^3 - (r-s)^3\right) - 3  s^3
-\left(\sin 2 - 2\right) \Big)
+v = \frac{1}{3} \pi s \left(2s - 3r\right)^2
 $$
 
-Not the prettiest thing, and I wouldn't want to evaluate it by hand, but luckily
-we have computers for that kind of thing.
-
-I don't know much about sound attenuation, but according to [this page][atten],
-sound dissipates according to the law:
+Onwards. I don't know much about sound attenuation, but according to [this
+page][atten], sound dissipates according to the law:
 
 [atten]: https://www.nde-ed.org/EducationResources/CommunityCollege/Ultrasonics/Physics/attenuation.htm
 
@@ -141,11 +137,11 @@ silence her concert.
 Because doing math is hard, we'll use WolframAlpha [to do the remaining
 calculations for us][answer]:
 
-[answer]: http://www.wolframalpha.com/input/?i=solve+%28136.5+%3D+%5Cfrac%7B%5Cpi%7D%7B12%7D+%5CBig%288+%5Cleft%28r%5E3+-+%28r-s%29%5E3%5Cright%29+-+3++s%5E3+%5Cleft%28sin%282%29+-+2%5Cright%29+%5CBig%29+with+s+%3D+6.4%29+for+r
+[answer]: http://www.wolframalpha.com/input/?i=solve+%28136.5+%3D+1%2F3+pi+s+%282+s-3+r%29%5E2+with+s+%3D+6.4%29+for+r
 
-...which gives us imaginary radii for the speaking case. Since these are
-physically impossible, we conclude that such an enclosure can't actually
-be constructed. Shame.
+...which gives us radii smaller than the necessary shell width for the speaking
+case. Since this is physically impossible, we conclude that such an enclosure
+can't actually be constructed. Shame.
 
 **But wait!** We totally fudged that $\alpha = 0.15$ number for cork. But maybe
 paper attenuates more like snow? Maybe not, but hey, we've got nothing to work
@@ -159,11 +155,11 @@ $$
 and again run them through WolframAlpha. This time things look better, we get:
 
 $$
-r_t = 4.7 \text{m} \\\\
-r_c = 4.3 \text{m}
+r_t = 4.2 \text{m} \\\\
+r_c = 4.0 \text{m}
 $$
 
-Success! If you want to silence just Taylor Swift, your enclosure can be $4.7
+Success! If you want to silence just Taylor Swift, your enclosure can be $4.2
 \text{m}$ in radius, and to silence her concert, you lose less than a meter in
 total radius. Which is super cool, and actually pretty surprising. So, if paper
 attenuates like snow, you *can* enclose Taylor Swift in her own money and have
