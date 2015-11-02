@@ -51,7 +51,7 @@ strong, em, del {
     vertical-align: top;
 }
 
-p > code {
+p > code, li > code, a > code {
     border: 1px dotted #aaa;
     padding: 1px 0.5em;
 }
