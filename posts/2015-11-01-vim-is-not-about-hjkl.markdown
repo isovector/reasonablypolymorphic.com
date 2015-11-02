@@ -3,7 +3,7 @@ layout: post
 title: vim Is Not About hjkl
 date: 2015-11-01 19:26
 comments: true
-tags: vim
+tags: vim, november
 ---
 
 Every once in a while, people make a pained kind of face when I tell them I do
@@ -15,14 +15,14 @@ saying "oh, that's cute." When they ask me why I don't use, for example,
 [sublime]: http://www.sublimetext.com/
 
 "But there are vim bindings for Sublime Text," they respond, confused. "Why not
-just use those?"
+just use those? It's just like vim, but better."
 
 Herein lies a misconception that seems to bite even advanced vim users; *vim is
 not about hjkl*, by which I mean, it's not the keybindings that make vim great.
 Don't get me wrong, vim's mnemonic bindings are *really, really good*. Being
-able to type `dap` to `d`elete `a` `p`aragraph is pretty clever, and is probably
-in line with what is going through your head when you actually want to delete a
-paragraph.
+able to type `dap` to **d**elete **a** **p**aragraph is pretty clever, and is
+probably in line with what is going through your head when you actually want to
+delete a paragraph.
 
 Yes, using vim bindings will make you a faster programmer. Probably
 significantly, if you're using some other defaults in your text editor. But
@@ -49,7 +49,7 @@ more challenging puzzle: the `:normal` command. Normal is the command that
 presses keys for you. Try it! Typing `:norm gg` will bring you to the top line
 of your file, because when it runs it just presses `gg` *for you*. But notice
 that you still had to type it out, plus a few keystrokes for "normal", so we're
-not really that far ahead.
+not really ahead.
 
 Figured out why this might be useful, yet?
 
@@ -148,9 +148,10 @@ You're right. But I know something you don't. I've got this in my .vimrc:
 nnoremap <leader>ev :e ~/.vimrc<CR>
 ```
 
-Now `<leader>ev` (mnemonic: **e**dit **v**imrc) fires up .vimrc to be edited.
-But there's still some boilerplate to actually reload .vimrc (since it is not
-automatically updated). So I automated that too:
+Now `<leader>ev` (mnemonic: **e**dit **v**imrc) fires up .vimrc to be edited, by
+typing out `:e`, the path to my .vimrc, and then pressing Enter (known in vim as
+*carriage return*).  But there's still some boilerplate to actually reload
+.vimrc (since it is not automatically updated). So I automated that too:
 
 ```viml
 augroup automaticallySourceVimrc
@@ -169,13 +170,13 @@ is to minimize the friction between things you find annoying in vim, and the
 time it takes you to fix them. I make at least four changes to my .vimrc every
 day, and I can afford to do this because it's easy and quick.
 
-vim is not about hjkl. It is even really about the ability to compose commands
-together[^4]. vim is about being a language for editing. Actually that's not
-entirely true either; vim is about being *your* language for editing. What
-you're really trying to accomplish is to write your own editing language, one
-that is perfectly in sync with the way you think about editing code. If you can
-minimize the difference between what you think and what you need to type to make
-it happen, *you win*.
+vim is not about hjkl. It isn't even really about the ability to compose
+commands together[^4]. vim is about being a language for editing. Actually
+that's not entirely true either; vim is about being *your* language for editing.
+What you're really trying to accomplish is to write your own editing language,
+one that is perfectly in sync with the way you think about editing code. If you
+can minimize the difference between what you think and what you need to type to
+make it happen, *you win*.
 
 [^4]: I was lying to you earlier.
 
@@ -238,14 +239,14 @@ They're in no particular order.
 - [Changed capslock to `<ESC>`][vim-esc]. This one is kind of a cheat, because
     it's actually xmodmap and not vim. But hey, it's awesome anyway.
 
-[vim-todos]: https://github.com/isovector/tino/blob/master/.vimrc#L126
-[vim-cr]: https://github.com/isovector/tino/blob/master/.vimrc#L214
-[vim-newlines]: https://github.com/isovector/tino/blob/master/.vimrc#L278-L279
-[vim-buffers]: https://github.com/isovector/tino/blob/master/.vimrc#L695-L711
-[vim-indent]: https://github.com/isovector/tino/blob/master/.vimrc#L220-L221
-[vim-no-q]: https://github.com/isovector/tino/blob/master/.vimrc#L204-L210
-[vim-c]: https://github.com/isovector/tino/blob/master/.vimrc#L181-L182
-[vim-save]: https://github.com/isovector/tino/blob/master/.vimrc#L264
+[vim-todos]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L126
+[vim-cr]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L214
+[vim-newlines]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L278-L279
+[vim-buffers]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L695-L711
+[vim-indent]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L220-L221
+[vim-no-q]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L204-L210
+[vim-c]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L181-L182
+[vim-save]: https://github.com/isovector/tino/blob/0bf7c9f567a10d6cdc053d4c81dd7a880c090d43/.vimrc#L264
 [vim-esc]: https://github.com/isovector/tino/blob/master/.xmodmaprc#L3-L4
 
 Bonus: I extract the links in that [list above][src] and wrote markdown anchors
