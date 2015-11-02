@@ -251,4 +251,4 @@ They're in no particular order.
 Bonus: I extract the links in that [list above][src] and wrote markdown anchors
 for them with this: <br /> `:g/\]\[vim-/exec "norm $T[yi]Go\<ESC>p0ys$]A: \<ESC>"`.
 
-[src]:
+[src]: https://raw.githubusercontent.com/isovector/we-can-really-solve-this/master/posts/2015-11-01-vim-is-not-about-hjkl.markdown
