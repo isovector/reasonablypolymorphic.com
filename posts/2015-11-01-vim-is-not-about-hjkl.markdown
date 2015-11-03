@@ -3,7 +3,7 @@ layout: post
 title: vim Is Not About hjkl
 date: 2015-11-01 19:26
 comments: true
-tags: vim, november
+tags: vim, november, tools
 ---
 
 Every once in a while, people make a pained kind of face when I tell them I do
