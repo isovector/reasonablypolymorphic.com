@@ -9,5 +9,8 @@ deploy:
 newpost:
 	@./scripts/newpost.sh
 
-.PHONY: deploy test newpost
+clippings:
+	flip -ub clippings/*
+
+.PHONY: deploy test newpost clippings
 
