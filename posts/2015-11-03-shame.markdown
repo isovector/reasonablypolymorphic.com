@@ -3,7 +3,7 @@ layout: post
 title: Shame. Sorrow.
 date: 2015-11-03 07:42
 comments: true
-tags: november, feels, analytics
+tags: november, feels, analytics, regret
 ---
 
 Let's take a break from programming for a little bit and change tack. Thank god
