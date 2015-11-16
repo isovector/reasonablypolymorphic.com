@@ -55,7 +55,7 @@ personal skills so far, but I chose those words carefully. You've been able to
 of you. Get good at identifying quickly what people are looking for, and find a
 side of you that aligns with that. But be genuine about it. Remember, this whole
 "I am who I am" thing is [bullshit][lesson]. You're multifaceted as hell; we
-both knot it. Read a book on how to get along with people. Hell, read two.
+both know it. Read a book on how to get along with people. Hell, read two.
 Really, you can't go overboard with this kind of thing.
 
 I know, I know, it sounds like an adult position to hold, but school man, that
