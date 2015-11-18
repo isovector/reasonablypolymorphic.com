@@ -282,7 +282,7 @@ highlight][quotes].
 [zamm]: https://en.wikipedia.org/wiki/Zen_and_the_Art_of_Motorcycle_Maintenance
 [quality]: https://en.wikipedia.org/wiki/Pirsig%27s_metaphysics_of_Quality
 [azathoth]: https://en.wikipedia.org/wiki/Azathoth
-[strawman]:
+[strawman]: https://en.wikipedia.org/wiki/Straw_man
 [hpmor]: http://hpmor.com/
 [convincing]: http://yudkowsky.tumblr.com/writing/realistic-viewpoints
 [wesley]: http://tvtropes.org/pmwiki/pmwiki.php/Main/CreatorsPet?from=Main.TheWesley
