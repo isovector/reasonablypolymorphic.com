@@ -201,7 +201,7 @@ discussion.
 Honestly, here at the bottom of the post, I'm still a little hesitant to
 actually go ahead and publish this. It's not necessary the world's coolest
 feeling to put your heart on your sleeve like this, but I think it's the right
-thing to do. At my new job, there is a culture of writing post moretems whenever
+thing to do. At my new job, there is a culture of writing post mortems whenever
 you go ahead and break something critical. The idea is twinfold: to figure out
 why, in depth, the problem happened the first time around, and to disseminate
 the knowledge to ensure it doesn't happen again.
