@@ -1,0 +1,138 @@
+---
+layout: post
+title: 2015 Year End Report
+date: 2015-12-29 15:03
+comments: true
+tags: foo, bar
+---
+
+With 2015 coming to a close, it's time again for my annual year-end report.
+
+Because I liked it so much last year, I thought it would be fun to collect all
+sorts of new analytics this year. That was the focus of the year, but it went
+poorly.
+
+
+## School
+
+- accio
+- graduated
+- wrote a compiler
+- got a cool ring + ceremony
+
+
+## Travel
+
+Spent four months traveling.
+
+- Total countries: 7+2
+- New countries: 3+1
+- Distance flown: 34,896km
+- Flights: 15
+
+
+## Money
+
+Can't track, due to three banks over the course of the year. Unfortunate.
+
+
+## Love
+
+- Sex partners: 6
+- People kissed: 9
+- People gone on dates with: 7 (correlation with sex partners: 45%)
+- Tinder dates: 3
+
+Quit Tinder half way through the year. Switched to CMB for a few months, due to
+having better luck. Quit it as well.
+
+
+## Social
+
+- Friends made: 143
+- Friends removed: 167
+- Net friends: -24 (negative two years in a row, despite a shit-ton of traveling!)
+
+Don't have the bandwidth (or API keys) to compute messages sent this year.
+Expected to be ~60% of last year.
+
+
+## Youtube
+
+Roughly split into six major categories of what takes up my online viewing
+habits.
+
+I stripped out music from this.
+
+### Game Grumps
+
+Videos watched: 1045 (avg: 2.86/day)
+Total time spent: 245 hours, 6 minutes, 55 seconds (avg: 14.1min/video, 4.2% of
+    waking life)
+Best episodes:
+- funny joke
+- subway rant
+- I think I'm going crazy
+
+### Educational
+
+Videos watched: 228 (avg: 0.623/day)
+Total time spent: 107 hours, 23 seconds (avg: 28.2min/video, 1.8% of waking life)
+Best video:
+- propositions as types https://www.youtube.com/watch?v=IOiZatlZtGU
+
+### Minecraft
+
+Videos watched: 160 (avg: 0.438/day)
+Total time spent: 74 hours, 6 minutes, 16 seconds (avg: 27.8min/video, 1.2% of waking life)
+
+### Red Letter Media
+
+Film reviews. Much faster than actually watching them =)
+
+Videos watched: 71
+Total time spent: 32 hours, 36 minutes, 46 seconds (avg: 27.6min/video, 0.55% of waking
+    life)
+Best:
+- fuck you, it's january
+
+### Vinesauce
+
+Videos watched: 189 (avg: 0.52/day)
+Total time spent: 210 hours, 53 minutes, 45 seconds (avg: 67.0min/video, 3.6% of
+    waking life)
+Best:
+- joel rct
+
+### Other
+
+Videos watched: 1472 (avg: 4.0/day)
+Total time spent: 316 hours, 44 minutes, 39 seconds (avg: 12.9min/video, 5.4% of
+    waking life)
+
+### Totals
+
+Videos watched: 3165 (avg: 8.7/day)
+Total time spent: 986 hours, 28 minutes, 45 seconds (avg: 18.7min/video, 16.9%
+    of waking life)
+
+Caveat: I watched most of vinesauce and education at >=1.5x. I didn't watch most
+of vinesauce.
+
+
+## Productivity
+
+Blog posts published: 19
+Words published: 38,001 (avg: 2000/post, 104/day)
+Best received: http://sandymaguire.me/blog/why-i-quit
+My favorite: http://sandymaguire.me/blog/programming
+
+Source commits: 828
+Best project: take2
+Best commit: again monad
+
+
+
+## Music
+
+hello michelle type
