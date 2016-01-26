@@ -3,7 +3,7 @@ layout: post
 title: Stories from 2015
 date: 2016-01-22 07:17
 comments: true
-tags: life, postmortem, stories
+tags: life, stories, review
 ---
 
 Now that 2016 is finally upon us, I want to take some time aside and do my
