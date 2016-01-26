@@ -1,0 +1,379 @@
+---
+layout: post
+title: Stories from 2015
+date: 2016-01-22 07:17
+comments: true
+tags: life, postmortem, stories
+---
+
+Now that 2016 is finally upon us, I want to take some time aside and do my
+third annual yearly postmortem. January is mostly over, so apparently
+punctuality isn't one of my greatest strengths in this lovely world of ours. I
+figured I'd better take some initiative and push this thing out before I get
+embarrassed about having not done it and let it slide silently off into the
+mists of time.
+
+Better late than never; better done than perfect.
+
+This post is organized into trimesters, because they happen to align pretty well
+with the major events of the year. This is not a coincidence; the school year
+has kept my life divided into trimesters for the last five years. Somehow, my
+life stayed that way even after graduation. Maybe this artificial segmentation
+will go away in 2016. I'm not really expecting it to; old habits are a lot like
+Bruce Willis.
+
+
+
+## Winter -- School
+
+2015 kicked itself off with a bang: I signed a job with my dream company, and
+met a woman. Pun unintentional, but not scratched out. Combined with a course
+load consisting only of project work and bird courses, the school term turned
+out to be pretty lovely.
+
+The project work consisted of writing a [Java compiler][juicy]. You probably
+don't know this about me (but you could probably guess if you've spent 5 minutes
+talking to me about programming), but compilers turn me on in a way that women
+don't. I'm not super sure what it is, but I started programming originally in
+order to write a compiler. Finally getting a chance to do it was *really really
+really* exciting. I dived in. Probably too hard. My initial progress alienated a
+potential teammate, leaving what could-have-been-a-four-person-team with only
+two members. It didn't matter. We were ahead of the class for the entire course.
+
+My other project was the culmination of a few years work with some of my good
+friends as a capstone project. We built a tool for software engineers that
+sussed out the knowledge graph -- who knew what -- of an underlying codebase. We
+thought it was pretty cool, and apparently so did Yelp because we placed 2nd in
+a competition for cool projects. We lost out to a compiler. As you can imagine,
+I was very ambivalent about this outcome.
+
+I spent the rest of the year flirting with the idea of doing a startup around
+this project, but ultimately decided I'm lacking the hustle to really make
+anything of it. At this point the project is probably considered abandonware, so
+[feel free to take a look][take2] if that kind of thing tickles your fancy.
+
+There was a big symposium for all of the engineers to show off their cool
+capstone projects. The woman I was seeing came to mine. I got distracted by my
+compiler instead of going to hers. She didn't really understand how it could
+happen; I didn't know how to explain it, and couldn't really blame her.
+
+Things didn't work out between us.
+
+Under the guidance of [Alex "Dr. Monad" Klen][klen], I started getting serious
+about [Haskell][haskell]. It's changed my life, but I'm not entirely sure for
+the better. Now I feel like a little bit of my soul dies every time I need to
+write code that isn't Haskell, because [it's so *painful*][blub]. That's a good
+thing because it means I'm smarter and more capable, but I don't get to code in
+Haskell professionally so, well, I'm sure you can do the modus ponens.
+
+Technically I unofficially graduated sometime during this trimester. But nobody
+really cared, because the highlight of the term was pledging an oath on [honor
+and cold iron][oath], a ceremony which signaled the end of my engineering
+education. During a surprisingly non-cheesy ritual involving robes, chanting and
+iron chains, I received my iron ring -- a symbol of the culmination of five long
+years working towards becoming an engineer. Though I'm not an engineer under the
+eyes of the law, I am under the eyes of other engineers, and that's really what
+counts.
+
+Foolishly, this ceremony was held only halfway through the trimester (after a
+sexamester?), and so the rest of the academic term was what one might describe
+as having been "phoned in."
+
+[juicy]: https://github.com/isovector/juicy
+[take2]: https://github.com/isovector/take2
+[klen]: http://alexklen.com
+[haskell]: https://en.wikipedia.org/wiki/Haskell_(programming_language)
+[blub]: http://www.paulgraham.com/avg.html
+[oath]: https://en.wikipedia.org/wiki/Ritual_of_the_Calling_of_an_Engineer
+
+
+
+## Spring -- Travel
+
+### Backpacking
+
+With more wanderlust than I could manage during the winter, I somehow convinced
+my best friend Rory to come backpacking in the UK with me. We spent two
+months bumming around without a plan. It was terrific.
+
+Traveling with a friend is a *very* different experience from traveling alone. I
+think I prefer being alone, because it makes you take more chances and get into
+more trouble. That being said, traveling with a friend is much more comfortable
+and means you always have interesting conversation if you want it.
+
+Rory and I got into too many adventures to recount here, but some of the
+highlight teasers were:
+
+- Joining a "10 pin bowling league" in Bristol with a batshit-crazy Australian
+    named Ben who afterwards brought us out "to where the party's at", and
+    subsequently managed to commit at least four felonies over the course of the
+    night.
+- Meeting some German girls who had lost their passports while doing the
+    macarena, and hearing stories about them from random travelers over the next
+    two months.
+- Picking up the coolest girls in Manchester with the line "hey, want to party
+    with [our ragamuffin group of disheveled travlers]," and getting kicked out
+    of the club for not having cool enough shoes.
+- Getting a spur-of-the-moment tattoo on a bank holiday in a seedy Irish tattoo
+    parlor with some girls who didn't speak any English.
+- Going on the world's most shit pub crawl in Belfast, lead by a sketchy guy who
+    kept trying to give us "tattoos for really cheap". We went to two bars and
+    were the only people at both, but met some fantastic locals who happened to
+    be on our flight to Scotland the next morning, and spent a few days showing
+    us around.
+- Accidentally hiking up [Arthur's Seat][arthur] with a reunited travel friend
+    who happened to be on a blind date, and hearing it described as "not the
+    worst first date."
+
+After too short a time (but what *felt* like eternity), Rory and I went our
+separate ways. I headed to Berlin for the [LessWrong Community Weekend][lcwc] on
+the recommendation of a woman I had once kissed. After being told in no
+uncertain terms that she "didn't want or plan to kiss me again," the weekend
+went pretty smoothly.
+
+I think the community weekend was the straw that broke the camel's back, though,
+as I realized I'm not really very interested in LessWrong anymore. I just don't
+care about any of the *causes du jour*, and was kind of hoping to spend the
+weekend talking about weird brain hacks and computability theory. Needless to
+say, that didn't happen, but regardless I'm happy I went.
+
+A big part of the reason I wanted to end up in the Bay for my job was because it
+was so close to the rationalist scene. Awkward. But the Bay Area is pretty cool
+so I guess I can't complain too much.
+
+Halfway through the weekend, I realized I didn't have a plan for what to do
+next, so I started looking at potential options. When I went to book a flight,
+my credit card was declined and I realized that I hadn't checked my bank account
+in some time. I logged in, and found I had negative four hundred dollars to my
+name. Canadian.
+
+Luckily I had accidentally stashed away some American money in a bank account
+for rainy days. Further luckily I had brought that card. Upon inspection, it had
+a little more than \$2000USD. Better than negative four hundred, but still not a
+great fortune on which to live for the next two months. And somehow get a flight
+home.
+
+With immense amounts of shame, I emailed my mom asking her for enough money to
+come home on. She was lovely and said yes, but *fuck.*  I'm 25 for fucks sake
+and shouldn't need to be borrowing money from my parents. I borrowed it though,
+because I'm not stupid and being illegally stuck somewhere is unequivocally a
+stupid idea.
+
+I booked a flight to Lithuania, which met my two desiderata for a country in
+which to be: a) remarkably cheap, and b) some place I knew I wouldn't hate.
+Seeing as I had accidentally spent an extra three weeks in Lithuania during my
+last trip there, I figured I could probably rough it for two months.
+
+[arthur]: http://nvaspeedoflight.org.uk/images/515c40d43195f-%C2%A9AlSmith_Oct11_rehearsall%20(42)%20RESIZED%20@%20191212.jpg
+[lcwc]: http://lesswrong.com/lw/l4s/european_community_weekend_2015/
+
+
+### Lithuania
+
+The plan was to live in a hostel for two months. I knew a place. It was 8 euros
+a night, including breakfast and all the flirting you could do with the
+disinterested receptionists. Fortunately, after all of my failed attempts last
+time around, the receptionists were all new. Unfortunately, despite my best
+efforts, I didn't impress any of them this time around, just like the last time
+around.
+
+That meant the only people in Lithuania whom I might know were the tourism
+girls. I headed off the next morning to the free walking tour, and was
+recognized immediately by the tour guide. Much to my chagrin, I didn't remember
+her name. Despite having been Facebook friends for a few months, and despite
+having been embarrassed the last time I couldn't remember her name.
+
+Whoops.
+
+The tour guides (mine, and the one I was hoping to run into) invited me along to
+a trip to Lithuania's lake-castle. I declined because I'm an idiot and in one
+fell swoop, somehow managed to not to make a bunch of awesome friends right at
+the get go. We all became awesome friends a few weeks later, but I'm still a
+little salty that we didn't get started sooner.
+
+Living in a hostel for three weeks was pretty wild. I went on a lot of pub
+crawls. I tried to melt cheese on top of hot chocolate. It didn't work out, as
+you might have expected.
+
+Some guys and I accidentally broke into a planetarium, and had to charm our ways
+out of being arrested with the surly security guard who didn't speak even a bit
+of English. A girl and I talked our way past the security guard at the
+university's library, again, somehow without any Lithuanian.
+
+A couple of kiwis and I somehow stumbled our way into a fantastic friendship
+which culminated in eating ice cream and trying to take photos of ourselves
+jumping nonstop for a solid hour.
+
+The tourism girls invited me out for Lithuania's midsummer's festival, where two
+couples, a very pretty girl and I journeyed together into the forest on the
+rainiest day of the year. The couples paired off, so I was left to learn
+traditional Lithuanian folk dances with a partner I was quite keen with whom to
+learn some traditional Lithuanian folk dances. We jumped over a bonfire, and lit
+tiki torches, and all wandered down a million steps to the river. At the river,
+I watched with a tiny pang of jealousy as my dancing partner sent a flaming
+wreath down the river in some sort of pagan ritual to find her husband. None of
+us found any blooming ferns, unfortunately.
+
+Midsummer's festival is sort of like New Years Eve in North America. Everyone
+was there, and getting home was really hard. After trying to get a taxi for 30
+minutes, we decided to walk the 15km home. After some much-needed Maccas, we
+hiked up [Tauras hill][tauras] (and the [view][view]) and tried our best to
+witness the sunrise through the unending rain and cloud cover. We were
+unsuccessful, but found the kebab place, so it was all in all a pretty
+successful night.
+
+[tauras]: http://media-cdn.tripadvisor.com/media/photo-s/07/47/9b/f7/tauras-hill-the-former.jpg
+[view]: https://drscdn.500px.org/photo/72065847/h%3D450/b861035ac50676d274a68120f1edc1c8
+
+Living in a hostel was cool and all, but after a week I decided I couldn't do it
+anymore. I started looking for a flat, and managed to find a potential roommate
+-- an Argentinian man who had at least three differently named Facebook
+profiles, each of whom had created some fake-looking "housing for students"
+groups. It was a little sketchy, but he and his girlfriend seemed nice enough.
+The three of us made arrangements to move in together; rent was cheap, and the
+place was gorgeous. He wasn't going to be there on the move-in date, though.
+
+I was convinced I was "moving in" with a con-man who would take my money and I'd
+never hear from again. But I didn't really have a choice, and the money would be
+going directly to the landlord. I couldn't actually figure out *how* it could be
+a scam, so I went ahead with it.
+
+It wasn't a scam! My roommates turned out to actually be super cool. They
+weren't around for my first week of tenancy, however, so I had the place to
+myself. At least, until a woman whom I had met in Cornwall inexplicably arrived
+in town, intending to stay at my place. I'm not sure how she made it, but I'm
+pretty sure I hadn't invited her. However, not wanting to be a bad host, I let
+her stay over.
+
+Things got fresh. Things got *weird*. She had decided she was going to stay for
+ten days, but things didn't work out.
+
+I kicked her out after four.
+
+With my new place in gear, a solid group of friends nearby, and a memorized
+route to the kebab place, things took a turn into the realm of being marvelous.
+We hung out every day. We did a lot of drinking. I tried to learn how to
+skateboard over the cobblestone streets of Vilnius. I learned enough Lithuanian
+to be able to buy *kebabai*. One time we played twister.
+
+After a week or two of *the moves* ambiguously connecting with my folk-dancing
+partner, I decided to tell her that I liked her. It didn't go well. She was
+gracious about it though, and after far too many drinks we ended up having snuck
+into [Gediminas' tower][gediminas] where we looked out over the city and talked
+about what we wanted out of life. Despite the rejection, it was one of my
+favorite nights of the year.
+
+One night during the Perseids, we took a detour on our hike up to the [Three
+Crosses][crosses], where the girls tried to perform a ritualistic sacrifice on
+me. They were unsuccessful, but only barely. We spent the night lying on our
+backs, looking up at the cosmos, while the girls somehow managed to keep missing
+the shooting stars.
+
+My 25th birthday occurred while I was in Lithuania. In the style of my friend
+[Malcolm][malcolm], instead of wishing me "happy birthday", I had told people to
+share a fond memory they had had with me. My dutch friend and I drank beer by
+the liters, and the girls got me a gigantic uncooked steak. We somehow ended up
+at a Lithuanian pun (a boat turned into a bar, called *the Barža*), and I proved
+once and for all that my 74 second peeing record wasn't phony. Everyone was very
+impressed.
+
+You should be too.
+
+I've got a million other Lithuanian stories, but these are some of my favorites,
+so I'll spare you the excruciating detail of the remainder of them.
+
+I left Lithuania with a heavy heart, but feeling a little wide-eyed for Iceland,
+where I was stopping over for the weekend on my journey home. Turns out Iceland
+is shit. Don't go, unless you really like tourism and hamburgers.
+
+[gediminas]: http://www.efoto.lt/files/images/7332/5112.jpg
+[crosses]: https://upload.wikimedia.org/wikipedia/commons/8/87/Vilnius_Three_Crosses.jpg
+[malcolm]: http://malcolmocean.com/
+
+
+
+## Fall -- Reality
+
+On my way to San Francisco, I headed via Waterloo -- my old digs. It's really
+strange how the city I once loved could be so different now that everyone has
+graduated and left; it seems like maybe it wasn't the city that I loved but the
+people.
+
+So Waterloo was relatively uneventful. I got into some trouble, ate some
+poutine, had a long discussion about feminism in academia, about the Canadian
+spirit, and about whether or not humanity would be worth saving from oblivion at
+any cost (yes). I also ate some kebab, which is definitely up there in the
+highlight reel.
+
+And finally it happened. Four months after leaving Waterloo to go gallivanting
+around Europe, I left more permanently to start my new life in San Francisco
+with my shiny new adult job. I spent two weeks living in corporate housing in
+Santa Clara, which is far too long to live in Santa Clara. Two weeks was enough
+for the culture shock to kick in. I didn't expect there to be any: Minnesota
+notwithstanding, apparently San Francisco is the Canada of the US.
+
+My longest-running roommate and long-running friend decided we should continue
+our tenacious tenancy tendencies, and we somehow managed to beat the San
+Francisco housing market by locking in a two-bedroom, one-bathroom place without
+a working oven that is only 41% of our impressive after-tax salaries. Score!
+What a great city!
+
+We've now been settled in one place for four months and twelve days. To date,
+this is the longest I have spent in one location over the last five years. We
+decided to buy furniture and decorate. It's almost surreal to have this much
+stability in my life. Really all I need now is a girlfriend and a dog and one
+and a half children and I'd be all the way to adulthood.
+
+Let's hope that doesn't happen anytime soon.
+
+Speaking of girlfriends, I found myself in Mexico for my cousin's wedding, where
+I met a couple of fantastic women on a bus. One of them and I accidentally found
+ourself in a pseudo-long-distance-relationship, and I ended up spending
+Christmas with her. I really like her, but we decided living in different
+countries with no intentions of moving to be a bit of a roadblock on the path
+to true love and everlasting happiness.
+
+And so it didn't work out.
+
+A new city has been amenable to starting new hobbies. On the uncoordinated
+advice both of my boss and good friend, I decided to pick up the guitar. I'm a
+few months in and already so much better than I ever was at the banjo. It's kind
+of like cheating at how easy it is. Not that I'm good, but I'm better than I
+should be for the investment I've put into it.
+
+Perhaps further outside of my usual realm of comfort is that I've taken up
+painting, as instructed by [Bob Ross][bob]. My evenings are spent cursing,
+yelling at Bob to slow down, and rewinding his youtube videos time and time
+again, trying to shamelessly copy everything he does. It's strangely reminiscent
+of learning how to program all those moons ago. What should be a relaxing,
+zen-like evening is instead ultra stressful, but it results in paintings that
+aren't half bad.
+
+Ravenous fans of my blog will note that I participated in some sort of
+bastardized [national novel writing month][nanowrimo] this year, where I gave it
+my some in an attempt to publish 50,000 words of reasonably-interesting blog
+posts. I only made it to 20,000 words or so before running out of things to say,
+but I'm glad I did it because the response was overwhelmingly good. All of the
+essays I thought were cheap throwaways turned out to be fan favorites.
+
+From this I took away that I should just shovel out more essays even if I'm not
+very happy with them, because I'm a bit shit at determining what will be
+popular.  [Sebastian Marshall][marshall] has some really good advice along these
+lines, but I can't seem to track it down right now.
+
+And I guess that takes us to now, give or take a month. The year felt like it
+went by far too quickly, but having just spent a few hours writing out thousands
+of words about it, it seems much more substantial now. I'd been planning on
+ending this essay with a [more][2013] [traditional][2014] year-in-review but
+let's be honest with one another, we're both tired of this. Splitting it out
+into another post might salvage some readers who are on the fence about how long
+this essay is, and will artificially inflate my post count for the year.
+
+Let's hope it works out for me.
+
+[bob]: https://www.youtube.com/channel/UCdXKzUSbFZyBFt1h2LjjvsQ
+[nanowrimo]: http://nanowrimo.org
+[marshall]: http://sebastianmarshall.com/
+[2013]: http://sandymaguire.me/blog/2013-in-review
+[2014]: http://sandymaguire.me/blog/2014-postmortem
+
