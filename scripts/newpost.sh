@@ -2,12 +2,12 @@
 
 echo -n "Post slug: "
 read slug
-SLUG="posts/$(date +'%Y-%m-%d')-${slug}.markdown"
+SLUG="wip/${slug}.markdown"
 cat > $SLUG <<EOF
 ---
 layout: post
 title: $slug
-date: $(date +'%Y-%m-%d %H:%M')
+date: TO_BE_DETERMINED
 comments: true
 tags: foo, bar
 ---

@@ -6,6 +6,9 @@ test:
 deploy:
 	@./scripts/deploy.sh
 
+publish:
+	@./scripts/publish.sh
+
 newpost:
 	@./scripts/newpost.sh
 
