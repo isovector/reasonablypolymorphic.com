@@ -25,7 +25,7 @@ no typeclasses; no means of implementing them
 - elm doesn't have typeclasses. okay, fine. but it sort of does.
 - comparable is a typeclass which dict is implemented in terms of. but you can't
     make your own instances of comparable. so you can't put user defined types
-    as the keys in a dict.
+    as the keys in a dict. [scrap your typeclasses](http://www.haskellforall.com/2012/05/scrap-your-type-classes.html)
 - whenevery you complain about not having typeclasses in elm, they point you at
     a paper about using records as your typeclass.
 - but maybe nobody has ever taken their own advice and tried to use records as a
@@ -72,6 +72,43 @@ no typeclasses; no means of implementing them
 - with conceptual workload you solve it once in a library, and people never need
     to know unless they're curious
 
+- elm has this thing called extensible types, but umm it seems to work
+    backwards.
+- instead of extending a type, what you're doing is projecting any record down
+    to something that has these fields
+- cool -- this is essentially a [structural
+    type](https://twitter.github.io/scala_school/advanced-types.html#structural) in scala
+```elm
+type alias Positioned a =
+  { a | x : Float, y : Float }
+```
+- this is the mechanism we'd want for projecting our typeclass witness down to
+    the relevant pieces
+```elm
+type alias Ord t a = { t | toInt : a -> Int, fromInt : Int -> a }
+```
+- here `t` would be the complete typeclass witness, and `Enum t a` for a
+    specific `a` and polymorphic `t` (preserving the type information of my
+    other typeclass witnesses) would project it down to the bits we care
+    about
+- unfortunately no lifting can occur in the opposite direction:
+```elm
+type alias Ord t a = { t | enums :: List a }
+
+derivingOrd : Enum t a -> Ord (Enum t a) a
+derivingOrd enum =
+    let toInt'   e = ...
+        fromInt' i = ...
+    in { a | toInt = toInt'
+           , fromInt = fromInt'
+           }
+```
+- this fails with a compiler error thinking I'm trying to update a record
+    instead of trying to add new fields to a record.
+- but that is not what I wanted! i wanted to perform induction and say that for
+    any `Enum t a` I can create a `Ord (Enum t a) a` by doing something dumb
+    with my underlying list to assume they're well-ordered
+
 - alright fine. we get it. you're hard for typeclasses. what else?
 - i wanted to use a library to provide localstorage
 - i can't. because evan hasn't vetted it personally.
@@ -100,6 +137,18 @@ no typeclasses; no means of implementing them
 - because buttons produce a signal, we need to route it into main.
 - but now my parent needs to know about this signal. and its parent.
 - now main needs to know about this button
+- the argument against monadic signals is the following dichotomy if they're
+    adopted:
+    * in order to be efficient, they need to be non-referentially transparent
+- why? well, let's say you want to fold over the entire mouse position. either
+    you need to save all of the mouse positions, in case you want to spin up a
+    signal that depends on them. or you can NOT, and be able to construct two
+    different signals with the same rhs which are nevertheless different.
+- at first blush this is bad. at second blush, there are at least 3 functions in
+    the stdlib that already have this problem: for example,
+    [every](http://package.elm-lang.org/packages/elm-lang/core/3.0.0/Time#every)
+- my argument is furthermore that signals are essentially `IO` anyway -- they
+    can talk to the outside world, so they aren't all that pure
 
 [elm]:
 
