@@ -6,6 +6,226 @@ comments: true
 tags: foo, bar
 ---
 
+A few weeks ago, on a whim [my friend][ariel] and I decided to hackathon our way
+through an [app to help us learn how to play guitar][afro]. In a stroke of
+inspiration, we decided to learn something new, and do the project in the [Elm
+programming language][elm], about which I had heard many good things.
+
+[ariel]: https://github.com/asweingarten
+[afro]: https://github.com/isovector/afro-kravitz
+[elm]:
+
+/* TODO(sandy): it was positive at first... */
+
+Consider this post to be *what I wished I knew about Elm before deciding to
+write code in it.* Since I can't send this information into the past and save
+myself a few weeks of frustration, it's too late for me, but perhaps you, gentle
+reader, can avoid this egregious tarpit of a language where abstraction goes to
+die.
+
+I jest. Elm's not really that bad.
+
+It's worse.
+
+I realize that such harsh words are going to require a supporting argument. I'll
+get there, but in the idea of fairness I want to first talk about the things I
+really like in Elm:
+
+1) It's got great documentation.
+2) As a *library*, it's really pleasant to work with.
+3) ...that's about it.
+
+Unfortunately, Elm isn't a library. It's a language, which just happens to have
+a great library. Elm qua the language is an unsurmountable pile of
+poorly-thought-out and impossible-to-compose new ideas on top of the least
+interesting pieces of Haskell.
+
+
+## The Typeclass Fiasco
+
+Elm currently doesn't have typeclasses. Evan Czaplicki, the primary
+author/designer/benevolent dictator of Elm, [suggests][announce] that
+typeclasses might be coming, but that was back in early 2013. As of early 2016,
+they're still not around.
+
+
+The Elm mores [direct][shugoff] questions of "why doesn't Elm have type classes"
+to [Gabriel Gonzalez][gg]'s essay "[Scrap Your Typeclasses][sytc]" (henceforth
+referred to as SYTC). I was coming
+to Elm to learn new things, so I decided to suspend my disbelief and give it a
+try. After all, the [blub paradox][blub] indicates we don't know recognize ideas
+until it's way too late. And so I decided to play along.
+
+If you don't want to read the essay, SYTC essentially says "hey, why don't we
+pass around an object that describes the implementation of the contract that we
+care about, rather than having the compiler infer it for us?". If you're
+familiar with Scala, this is how they implement typeclasses in terms of
+[implicit parameters][implicits]. If you're not, SYTC is equivalent to passing
+around a [vtable][vtable] whenever you want to invoke code on a dynamic target.
+
+It's a reasonable approach, and I can sympathize with the fact that actually
+writing a typeclass mechanism into your language is a lot a work, especially
+when you have something which accomplish the same thing.
+
+Unfortunately for me, after a few days of fighting with the typesystem trying to
+get SYTC working, it became glaringly obvious that nobody advocating SYTC in Elm
+had actually implemented it. The original essay is written for Haskell,
+after all.
+
+So what went wrong? Let's look at a contrived example to get in the mood. The
+following type alias might capture some of our intuitions about an enum type:
+
+```elm
+type alias Enum a = { elements :: Array a }
+```
+
+This can be read as, a type `a` is an enum consisting of the values specified by
+(and in the order of) `elements`.
+
+Using it might look like this:
+
+```elm
+fromInt :: Enum a -> Int -> a
+fromInt witness idx = get idx witness.elements
+```
+
+This function takes a witness (proof) that `a` is an enum type (encoded by the
+parameter of type `Enum a`). It then uses the known `elements` of that witness
+to find an element corresponding to the `Int` passed in.
+
+Now let's wrap up this `fromInt` with a corresponding `toInt` into a new
+"typeclass", which we'll call `Ord a`. `Ord a` is a witness that type `a` is
+[well-ordered][ordered], which is to say that for any two `a`s, one is
+definitely less than or equal to another[^1].
+
+[^1]: Integers have this property. Shapes don't.
+
+In Elm:
+
+```elm
+type alias Ord a = { fromInt :: Int -> a
+                   , toInt   :: a -> Int
+                   }
+```
+
+We're kind of cheating here by getting this property via a bijection with the
+integers, but it's for a good reason that I'll get into later.
+
+/* TODO(sandy): talk about dict comparable */
+
+For sake of example, now imagine we want to implement [bucket sort][bucket] as
+generically as possible:
+
+```elm
+bucketSort :: [a] -> [a]
+```
+
+/* TODO(sandy): type annotations are a single colon */
+
+But what should `a` be, here? Clearly we can't bucket sort arbitrary data
+structures. Promising `a` be an enum seems like a good start, so we add a
+witness:
+
+/* TODO(sandy): maybe rename Enum => Finite, and expound on its semantics */
+
+```elm
+bucketSort :: Enum a -> [a] -> [a]
+```
+
+Unfortunately, this is breaking our abstraction barrier. The semantics we
+adopted for `Enum a` are only sufficient to know that there are a finite number
+of `a` values, but we don't have a canonical means of arranging buckets. For
+that, we require an `Ord a` witness too:
+
+```elm
+bucketSort :: Ord a -> Enum a -> [a] -> [a]
+```
+
+Our function is now implementable, but at the cost of having to pass around an
+additional two arguments everywhere we go. Unpleasant, but manageable. We have
+this extra problem now, is that our witnesses must be passed to the function in
+the right order. The more powerful the abstractions you write, the more
+constraints you need on your types, and thus the heavier these burdens become.
+Haskell98, for example, defines [16 basic typeclasses][haskell98]. This is
+before you start writing your *own* abstractions.
+
+/* TODO(sandy): good place to talk about abstracting away pain */
+
+To digress for a moment, One of Elm's features that I was genuinely excited
+about was its so-called [extensible records][extensible]. These are types which
+allow you to do things like this:
+
+```elm
+type alias Positioned a = { a | x : Float
+                              , y : Float
+                              }
+```
+
+This says that a `Positioned a` is any `a` type which has `x` and `y` fields
+that are `Float`s. Despite being exceptionally poorly named (think about it --
+saying something is `:: Positioned a` is strictly less information than saying
+it is `:: a` for any non-polymorphic `a`), it's a cool feature. It means we can
+project arbitrarily big types down to just the pieces that we need.
+
+
+
+
+[announce]: http://elm-lang.org/blog/announce/0.7
+[direct]: https://github.com/elm-lang/elm-compiler/issues/38#issuecomment-116748295
+[gg]: http://www.haskellforall.com/
+[sytc]: http://www.haskellforall.com/2012/05/scrap-your-type-classes.html
+[blub]:
+[implicits]:
+[vtable]:
+[ordered]:
+[bucket]:
+[extensible]: http://elm-lang.org/docs/records#record-types
+[haskell98]: https://www.haskell.org/onlinereport/basic.html#standard-classes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 I've spent the last few weeks writing an app in [Elm][elm]. My first impressions
 of the language were very positive, but my complaints kept growing and growing.
 
