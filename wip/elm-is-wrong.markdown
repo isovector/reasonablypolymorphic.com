@@ -76,7 +76,7 @@ So what went wrong? Let's look at a contrived example to get in the mood. The
 following type alias might capture some of our intuitions about an enum type:
 
 ```elm
-type alias Enum a = { elements :: Array a }
+type alias Enum a = { elements : Array a }
 ```
 
 This can be read as, a type `a` is an enum consisting of the values specified by
@@ -85,7 +85,7 @@ This can be read as, a type `a` is an enum consisting of the values specified by
 Using it might look like this:
 
 ```elm
-fromInt :: Enum a -> Int -> a
+fromInt : Enum a -> Int -> a
 fromInt witness idx = get idx witness.elements
 ```
 
@@ -103,8 +103,8 @@ definitely less than or equal to another[^1].
 In Elm:
 
 ```elm
-type alias Ord a = { fromInt :: Int -> a
-                   , toInt   :: a -> Int
+type alias Ord a = { fromInt : Int -> a
+                   , toInt   : a -> Int
                    }
 ```
 
@@ -117,7 +117,7 @@ For sake of example, now imagine we want to implement [bucket sort][bucket] as
 generically as possible:
 
 ```elm
-bucketSort :: [a] -> [a]
+bucketSort : [a] -> [a]
 ```
 
 /* TODO(sandy): type annotations are a single colon */
@@ -129,7 +129,7 @@ witness:
 /* TODO(sandy): maybe rename Enum => Finite, and expound on its semantics */
 
 ```elm
-bucketSort :: Enum a -> [a] -> [a]
+bucketSort : Enum a -> [a] -> [a]
 ```
 
 Unfortunately, this is breaking our abstraction barrier. The semantics we
@@ -138,7 +138,7 @@ of `a` values, but we don't have a canonical means of arranging buckets. For
 that, we require an `Ord a` witness too:
 
 ```elm
-bucketSort :: Ord a -> Enum a -> [a] -> [a]
+bucketSort : Ord a -> Enum a -> [a] -> [a]
 ```
 
 Our function is now implementable, but at the cost of having to pass around an
@@ -163,9 +163,92 @@ type alias Positioned a = { a | x : Float
 
 This says that a `Positioned a` is any `a` type which has `x` and `y` fields
 that are `Float`s. Despite being exceptionally poorly named (think about it --
-saying something is `:: Positioned a` is strictly less information than saying
-it is `:: a` for any non-polymorphic `a`), it's a cool feature. It means we can
+saying something is `: Positioned a` is strictly less information than saying
+it is `: a` for any non-polymorphic `a`), it's a cool feature. It means we can
 project arbitrarily big types down to just the pieces that we need.
+
+This gave me a thought. If I can build arbitrarily large types and enforce that
+they have certain fields, it means we can collapse all of our witnesses into a
+single "directory" which contains all of the typeclass implementations we
+support. We add a new parameter to our earlier typeclass signatures, whose only
+purpose is to be polymorphic.
+
+```elm
+type alias Enum t a = { t
+                      | elements : Array a
+                      }
+
+type alias Ord t a = { t
+                     | fromInt : Int -> a
+                     , toInt   : a -> Int
+                     }
+```
+
+We can look at this as now saying, a type `a` is well-ordered if and only if we
+can provide a witness record of type `t` containing fields `fromInt` and `toInt`
+with the correct type signatures. This record might *only* contain those fields,
+but it can also contain other fields -- maybe like, fields for other
+typeclasses?
+
+Let's do a quick sanity check to make sure we haven't yet done anything
+atrocious.
+
+```elm
+type Directions = North | East | West | South
+witness = { elements = fromList [ North, East, West, South ]
+          , fromInt  = -- elided
+          , toInt    = -- elided
+          }
+```
+
+To my dismay, in writing this post I learned that Elm's repl (and presumably Elm
+as a language) doesn't support inline type annotations. That is to say, it's a
+syntax error to write `witness : Enum t Directions` at the term-level. This is
+an obvious inconsistency where these constraints can be declared at the
+type-level, and then evaluated with the same terms. But I digress. Suffice to
+say, our witness magic is all valid, working Elm -- so far, at least.
+
+Let's take a moment to stop and think about what this extra type `t` has bought
+us. `Enum t a` is a proof that `a` is an enum, as indicated by a witness of type
+`t`. Since `t` has heretofore been polymorphic, it has conveyed no information
+to us, but this is not a requirement. Consider the type `Enum (Ord t a) a`,
+in which we have expanded our old polymorphic parameter into a further
+constraint on our witness -- any `w : Enum (Ord t a) a` is now a witness that
+`a` is both an enum *and* well-ordered.
+
+This is a significant piece of the puzzle in our quest to *Scrap Our
+Typeclasses*. We can now bundle *all* of our typeclass witnesses into a single
+structure, which can be passed around freely. It's still a little more work than
+having the compiler do it for us, but we've gone a long way in abstracting the
+problem away from user code.
+
+The final piece, is to provide an automatic means of deriving typeclasses and
+bundling our results together. Consider this: in our toy example, `Enum t a`
+already has an (ordered) list of the `elements` in the type. This ordering is
+completely arbitrary and just happened to be the same as which order the
+programmer typed them in, but it *is* an ordering. Knowing this, we should be
+able to get Elm to write us an `Ord t a` instance for any `Enum t a` we give it
+-- if we don't feel particularly in the mood to write it ourselves:
+
+```elm
+derivingOrd : Enum t a -> Ord (Enum t a) a
+derivingOrd w = { w
+                | fromInt = \i -> get i w.elements
+                | toInt   = -- elided, but in the other direction
+                }
+```
+
+We send it off to Elm, and...
+
+> The type annotation for `derivingOrd` does not match its definition.
+>
+> 13│ derivingOrd : Enum t a -> Ord (Enum t a) a
+>                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+...uh oh. We've broken Elm! The issue is that `{a | b = c}` is strictly record
+*update* syntax -- it requires `a` to *already have* a `b` field. There is no
+corresponding syntax to *add* fields -- not even if `a` is polymorphic and we
+don't know that it *doesn't* have field `b`.
 
 
 
@@ -313,7 +396,7 @@ type alias Ord t a = { t | toInt : a -> Int, fromInt : Int -> a }
     about
 - unfortunately no lifting can occur in the opposite direction:
 ```elm
-type alias Ord t a = { t | enums :: List a }
+type alias Ord t a = { t | enums : List a }
 
 derivingOrd : Enum t a -> Ord (Enum t a) a
 derivingOrd enum =
