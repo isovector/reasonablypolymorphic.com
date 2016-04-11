@@ -244,11 +244,92 @@ We send it off to Elm, and...
 >
 > 13│ derivingOrd : Enum t a -> Ord (Enum t a) a
 >                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>
 
 ...uh oh. We've broken Elm! The issue is that `{a | b = c}` is strictly record
 *update* syntax -- it requires `a` to *already have* a `b` field. There is no
 corresponding syntax to *add* fields -- not even if `a` is polymorphic and we
 don't know that it *doesn't* have field `b`.
+
+*Prima facie*, it's reasonable to stop here and think to ourselves, "oh, well I
+guess we can't do this -- there's probably a good reason." Regrettably, there is
+not a good reason. Nothing we've done so far is an unreasonable expectation of
+the type-checker; in fact, the only thing in our way is the parser. To
+reiterate, all we're missing is the ability to add fields to a record.
+
+[So I filed a bug][bug].
+
+As it turns out, [Elm used to support this feature][failhard], but it was
+removed because "pretty much no one ever used field addition or deletion."
+Forgive me for being pedantic here, let's look at some statistics. At time of
+writing, there are [119 people who write Elm on GitHub][users], who had written
+a total of [866 repositories][notmany] before this feature was removed.
+
+119 people[^2] failing to find a use-case for a bleeding-edge new feature
+shouldn't be an extreme surprise to anyone, especially given that they had no
+guidance from the original authors on how to use this feature. Furthermore, the
+first mention of an open-union type facility (essentially what we're trying to
+implement here) I can find reference to [was published in 2013][effects] -- not
+a huge amount of time to work its way into the cultural memeplex.
+
+[^2]: Of whom, we can assume the majority are web-programmers, and, by
+association, that Elm's is likely the strongest type-system to which they have
+been exposed.
+
+My bug was closed with the explanation "[I don't want to readd this
+feature.][closed]" If I sound salty about this, it's because I am. Here's why:
+
+The thing that separates good programmers from OK ones is the ability to which
+they can develop abstractions. From the [best][boost] [programmers][lens] we get
+[libraries][jquery], and the rest of us write applications that use those
+libraries. The reason we have libraries is to fix holes in the standard library,
+and to allow us to accomplish things we otherwise couldn't.
+
+Elm takes a very peculiar stance on libraries. Libraries which don't have the
+blessing of Czaplicki himself [allegedly aren't allowed to be published][wat].
+
+What. The. Fuck.
+
+But I digress. Libraries exist to overcome shortcomings of the language. It's
+okay to make library authors do annoying, heavy-lifting so that users don't have
+to. Which is why I'm particularly salty about the whole "we couldn't figure out
+a use for it" thing.
+
+Elm doesn't have typeclasses, and doesn't have a first-class solution in their
+interim. Instead, the naive approach requires a linear amount of boilerplate
+*per-use*, which is developer time being wasted continually reinventing the
+wheel. If Elm's syntax supported it, we could solve this problem once and for
+all, put it in a library somewhere, get Czaplicki's explicit go-ahead, and be
+done with it. But we can't.
+
+In the worst case, given $n$ typeclasses, the naive solution requires $O(n)$
+additional witnesses to be passed around at every function call. The proposal
+presented in this essay would bring this boilerplate to $O(1)$. Definitely an
+improvement.
+
+But here's the most deplorable state of affairs. Trying to power through with
+our witness approach *and retain type-safety while doing it* requires in
+a super-exponential amount of code to be written. Let's see why:
+
+Given $n$ typeclasses, there are $2^n$ different combinations of
+having-them-or-not. Let's group these sets by size -- ie. how many typeclasses
+they contain -- and assume we only need to lift from size $k$ to size $k+1$.  In
+this case, we're left with $2^{n-1}n$ separate lifting functions we need to
+write in order to add any typeclass to any set of other typeclasses.  Notice
+that this is not a worst-case, this is the exact solution to that problem. This
+is just the number of functions. Since each lift is required to explicitly
+reimplement all of the existing typeclasses, it grows at $O(n)$, giving us a
+tight upper bound on the amount of code we need to write in order to achieve
+type-safety and witness compacting. Ready for it?
+
+$O(2^{n-1}n^2)$
+
+That function grows so quickly it's no longer super-exponential. It's officially
+reached a new level: super-duper-exponential. And the worst part is that it's
+*all* boilerplate that we know how to write (because we already did it), but
+aren't allowed to because Czaplicki can't find a use-case for this feature.
+
+Hey! I found one! Pick me! Pick me!
 
 
 
@@ -264,97 +345,20 @@ don't know that it *doesn't* have field `b`.
 [bucket]:
 [extensible]: http://elm-lang.org/docs/records#record-types
 [haskell98]: https://www.haskell.org/onlinereport/basic.html#standard-classes
+[bug]: https://github.com/elm-lang/elm-compiler/issues/1283
+[failhard]: http://elm-lang.org/blog/compilers-as-assistants
+[notmany]: https://github.com/search?q=created%3A%3C2015-11-19+language%3AElm+extension%3Aelm+language%3AElm+elm&type=Repositories&ref=searchresults
+[users]: https://github.com/search?o=desc&q=language%3AElm&ref=searchresults&s=repositories&type=Users&utf8=%E2%9C%93
+[closed]: https://github.com/elm-lang/elm-compiler/issues/1283#issuecomment-183515916
+[effects]: http://okmij.org/ftp/Haskell/extensible/exteff.pdf
+[boost]: http://www.boost.org/
+[lens]: https://github.com/ekmett/lens
+[jquery]: https://jquery.com/
+[wat]: https://github.com/xdissent/elm-localstorage/issues/1#issuecomment-122585560
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-I've spent the last few weeks writing an app in [Elm][elm]. My first impressions
-of the language were very positive, but my complaints kept growing and growing.
-
-no typeclasses; no means of implementing them
-- just use records
-- doesn't work. not reusable
-- if you have overhead necessary at the library level, fine
-- but if you pass this complexity off to the end uesr that is unacceptable
-- that means your language is not powerful enough
-- c has this problem. void* isn't powerful enough for polymorphism, so you also
-    need to pass in the size of your datatype. everywhere. you can't abstract
-    over it. the end user has to care about that shit.
-- c++ fixes this by providing templates. now a library writer can write the
-    extra complicated stuff once, but end users don't have to worry about it.
-    it's a problem we have solved through abstraction
-
-- elm doesn't have typeclasses. okay, fine. but it sort of does.
-- comparable is a typeclass which dict is implemented in terms of. but you can't
-    make your own instances of comparable. so you can't put user defined types
-    as the keys in a dict. [scrap your typeclasses](http://www.haskellforall.com/2012/05/scrap-your-type-classes.html)
-- whenevery you complain about not having typeclasses in elm, they point you at
-    a paper about using records as your typeclass.
-- but maybe nobody has ever taken their own advice and tried to use records as a
-    typeclass. because it only superficially works
-- so first, you need to reimplement dict in terms of your new recordclass thing.
-    all of a sudden you lose a lot of guarantees, because you need to pass a
-    witness of a constraint, which means you can use different witnesses at
-    different times, and break shit. not good
-- but this reimplementaiton is 100 lines of boilerplate lifting and unlifting.
-    it sucks.
-- but then you make a new typeclass, which is orthogonal. what it would be nice
-    to do is create a SINGLE witness of all of your typeclasses for a given
-    type.
-- this reduces any mental overhead for a user. okay fine, the compiler can't do
-    this for me, but it's 0 work. i just pass the same parameter around whenever
-    i want to use a typeclass method.
-- the using method can just project this big typeclass down to the piece it
-    needs, and everything works lovely
-- but THIS doesn't work either, because elm decided to make up some poorly
-    thought out semantics for records. you can project downwards, but you can't
-    perform induction
-- so now you need to write O(n*2^n) different lifting functions for the combination
-    of typeclasses you want. and each one has to have O(n) mechanical lines of
-    code in order to construct the thing you want to construct. that is O(n^2*2^n)
-    library work to get composable semantics for typeclasses
-- for fucks sake
 
 - elm gets around this complexity by just decided to do everything the hard way.
 - there is not map but List.map and Dict.map and Array.map and you need to type
@@ -374,84 +378,4 @@ no typeclasses; no means of implementing them
     mechanical workload.
 - with conceptual workload you solve it once in a library, and people never need
     to know unless they're curious
-
-- elm has this thing called extensible types, but umm it seems to work
-    backwards.
-- instead of extending a type, what you're doing is projecting any record down
-    to something that has these fields
-- cool -- this is essentially a [structural
-    type](https://twitter.github.io/scala_school/advanced-types.html#structural) in scala
-```elm
-type alias Positioned a =
-  { a | x : Float, y : Float }
-```
-- this is the mechanism we'd want for projecting our typeclass witness down to
-    the relevant pieces
-```elm
-type alias Ord t a = { t | toInt : a -> Int, fromInt : Int -> a }
-```
-- here `t` would be the complete typeclass witness, and `Enum t a` for a
-    specific `a` and polymorphic `t` (preserving the type information of my
-    other typeclass witnesses) would project it down to the bits we care
-    about
-- unfortunately no lifting can occur in the opposite direction:
-```elm
-type alias Ord t a = { t | enums : List a }
-
-derivingOrd : Enum t a -> Ord (Enum t a) a
-derivingOrd enum =
-    let toInt'   e = ...
-        fromInt' i = ...
-    in { a | toInt = toInt'
-           , fromInt = fromInt'
-           }
-```
-- this fails with a compiler error thinking I'm trying to update a record
-    instead of trying to add new fields to a record.
-- but that is not what I wanted! i wanted to perform induction and say that for
-    any `Enum t a` I can create a `Ord (Enum t a) a` by doing something dumb
-    with my underlying list to assume they're well-ordered
-
-- alright fine. we get it. you're hard for typeclasses. what else?
-- i wanted to use a library to provide localstorage
-- i can't. because evan hasn't vetted it personally.
-- because that's how libraries work in elm. the guy has to personally, manually
-    vet every library.
-- that doesn't scale. even a little bit.
-- so because this guy hasn't said "yes this code is OK to run", I can't use that
-    code in MY code with any of the standard tools
-- what the fuck kind of world are we living in?
-- that's the thing about libraries; they're user generated content.
-- if you want to do that with the standard library; great. that makes sense. all
-    the power to you
-- but you can't control the entire ecosystem because the ecosystem is how people
-    fix problems in the original language. look at boost. look at hackage.
-    people build tools that are missing, and people use them if they're the
-    right tool for the job
-
-- ok so let's talk about the elm architecture
-- it's a FRP program with only one function that can accept signals -- main
-- strange choice; but the argument is that this promotes pure code. that's cool.
-    i can respect that
-- but here's the problem; signals are a really natural paradigm for programming
-    in, and lots of problems don't fit nicely into purity
-- let's say we have a page that has a button on it. the button should change the
-    state of this page
-- because buttons produce a signal, we need to route it into main.
-- but now my parent needs to know about this signal. and its parent.
-- now main needs to know about this button
-- the argument against monadic signals is the following dichotomy if they're
-    adopted:
-    * in order to be efficient, they need to be non-referentially transparent
-- why? well, let's say you want to fold over the entire mouse position. either
-    you need to save all of the mouse positions, in case you want to spin up a
-    signal that depends on them. or you can NOT, and be able to construct two
-    different signals with the same rhs which are nevertheless different.
-- at first blush this is bad. at second blush, there are at least 3 functions in
-    the stdlib that already have this problem: for example,
-    [every](http://package.elm-lang.org/packages/elm-lang/core/3.0.0/Time#every)
-- my argument is furthermore that signals are essentially `IO` anyway -- they
-    can talk to the outside world, so they aren't all that pure
-
-[elm]:
 
