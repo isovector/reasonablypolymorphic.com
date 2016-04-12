@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Elm Is Wrong
-date: TO_BE_DETERMINED
+date: 2016-04-12 08:05
 comments: true
 tags: foo, bar
 ---
@@ -13,9 +13,7 @@ programming language][elm], about which I had heard many good things.
 
 [ariel]: https://github.com/asweingarten
 [afro]: https://github.com/isovector/afro-kravitz
-[elm]:
-
-/* TODO(sandy): it was positive at first... */
+[elm]: http://elm-lang.org
 
 Consider this post to be *what I wished I knew about Elm before deciding to
 write code in it.* Since I can't send this information into the past and save
@@ -33,7 +31,7 @@ really like in Elm:
 
 1) It's got great documentation.
 2) As a *library*, it's really pleasant to work with.
-3) ...that's about it.
+3) ...and well, that's about it.
 
 Unfortunately, Elm isn't a library. It's a language, which just happens to have
 a great library. Elm qua the language is an unsurmountable pile of
@@ -41,20 +39,66 @@ poorly-thought-out and impossible-to-compose new ideas on top of the least
 interesting pieces of Haskell.
 
 
-## The Typeclass Fiasco
+## Scrapping my Typeclasses
+
+I've got a really appropriate word for dealing with dicts in Elm. *Painful.*
+It's not any fault of the library, but of the language. Let's look at an
+example of working with one:
+
+```elm
+insert : comparable -> v -> Dict comparable v -> Dict comparable v
+```
+
+"What is this `comparable` thing?" you might ask. A little documentation
+searching leads to:
+
+> This includes numbers, characters, strings, lists of comparable things, and
+> tuples of comparable things. Note that tuples with 7 or more elements are not
+> comparable; why are your tuples so big?
+
+First of all, ever heard of the [zero-one-infinity][infinity] rule? Second of
+all, fuck you and your 6-element-max comparable tuples[^3].  Anyway. The real
+thing I want to discuss is how `comparable` is magical compiler stuff. I'd argue
+that whenever magical compiler stuff rears its head, things are going to get
+arbitrary and stupid.
+
+[^3]: Haskell's tuples stop working in a very real way at 63 elements, but
+that's at least far into the realm of [unimaginably large][17].
+
+Lo and behold, things get arbitrary and stupid around `comparable`. Since it's
+compiler magic, we mere mortals are unable to make our instances of
+`comparable`, which is to say, you can't use any custom data-types as the key of
+a dictionary in Elm.
+
+[infinity]: http://www.catb.org/jargon/html/Z/Zero-One-Infinity-Rule.html
+[17]: http://mindingourway.com/respect-for-large-numbers/
+
+Did you hear that? That was the sound of type-safety dying.
+
+Haskell solves this problem with what seams like a similar solution. In Haskell:
+
+```haskell
+insert :: Ord k => k -> a -> Map k a -> Map k a
+```
+
+Here, the bit before the `=>` is a constraint that `k` must be comparable. The
+difference is that programmers in Haskell (as opposed to compiler writers) can
+define their own instances of `Ord k`, and so in Haskell, the only limit is our
+imagination. In Haskell, these constraints are called "typeclasses", and they're
+roughly equivalent to interfaces in OOP languages (except that you don't need to
+be part of the typeclass at declaration time).
 
 Elm currently doesn't have typeclasses. Evan Czaplicki, the primary
 author/designer/benevolent dictator of Elm, [suggests][announce] that
 typeclasses might be coming, but that was back in early 2013. As of early 2016,
 they're still not around.
 
-
 The Elm mores [direct][shugoff] questions of "why doesn't Elm have type classes"
 to [Gabriel Gonzalez][gg]'s essay "[Scrap Your Typeclasses][sytc]" (henceforth
-referred to as SYTC). I was coming
-to Elm to learn new things, so I decided to suspend my disbelief and give it a
-try. After all, the [blub paradox][blub] indicates we don't know recognize ideas
-until it's way too late. And so I decided to play along.
+referred to as SYTC). I was coming to Elm to learn new things, so I decided to
+suspend my disbelief and give it a try. After all, the [blub paradox][blub]
+indicates we don't know recognize ideas until it's way too late. And so I
+decided to play along.
 
 If you don't want to read the essay, SYTC essentially says "hey, why don't we
 pass around an object that describes the implementation of the contract that we
@@ -79,24 +123,26 @@ following type alias might capture some of our intuitions about an enum type:
 type alias Enum a = { elements : Array a }
 ```
 
-This can be read as, a type `a` is an enum consisting of the values specified by
-(and in the order of) `elements`.
+This can be read as, a type `a` is an enum consisting of the unique values
+specified by `elements`. We make no claims about the ordering of this `Array`.
+(We can't use `Set` because it requires a `comparable` value, which is the whole
+problem.)
 
 Using it might look like this:
 
 ```elm
-fromInt : Enum a -> Int -> a
-fromInt witness idx = get idx witness.elements
+enumCount : Enum a -> Int
+enumCount witness = Array.length witness.elements
 ```
 
 This function takes a witness (proof) that `a` is an enum type (encoded by the
 parameter of type `Enum a`). It then uses the known `elements` of that witness
-to find an element corresponding to the `Int` passed in.
+to figure out how many different enum values of type `a` there are.
 
-Now let's wrap up this `fromInt` with a corresponding `toInt` into a new
-"typeclass", which we'll call `Ord a`. `Ord a` is a witness that type `a` is
-[well-ordered][ordered], which is to say that for any two `a`s, one is
-definitely less than or equal to another[^1].
+To do something a little more useful, let's wrap up a pair of functions
+`fromInt` and `toInt` into a new "typeclass", which we'll call `Ord a`. `Ord a`
+is a witness that type `a` is [well-ordered][ordered], which is to say that for
+any two `a`s, one is definitely less than or equal to another[^1].
 
 [^1]: Integers have this property. Shapes don't.
 
@@ -109,9 +155,9 @@ type alias Ord a = { fromInt : Int -> a
 ```
 
 We're kind of cheating here by getting this property via a bijection with the
-integers, but it's for a good reason that I'll get into later.
-
-/* TODO(sandy): talk about dict comparable */
+integers, but it's for a good reason: you can put integers into a dictionary in
+Elm (they *are* `comparable`, so with one we can emulate Haskell's constraints
+on dictionary keys).
 
 For sake of example, now imagine we want to implement [bucket sort][bucket] as
 generically as possible:
@@ -120,19 +166,15 @@ generically as possible:
 bucketSort : [a] -> [a]
 ```
 
-/* TODO(sandy): type annotations are a single colon */
-
 But what should `a` be, here? Clearly we can't bucket sort arbitrary data
 structures. Promising `a` be an enum seems like a good start, so we add a
 witness:
-
-/* TODO(sandy): maybe rename Enum => Finite, and expound on its semantics */
 
 ```elm
 bucketSort : Enum a -> [a] -> [a]
 ```
 
-Unfortunately, this is breaking our abstraction barrier. The semantics we
+Unfortunately, this is breaking our abstraction barrier: the semantics we
 adopted for `Enum a` are only sufficient to know that there are a finite number
 of `a` values, but we don't have a canonical means of arranging buckets. For
 that, we require an `Ord a` witness too:
@@ -148,8 +190,6 @@ the right order. The more powerful the abstractions you write, the more
 constraints you need on your types, and thus the heavier these burdens become.
 Haskell98, for example, defines [16 basic typeclasses][haskell98]. This is
 before you start writing your *own* abstractions.
-
-/* TODO(sandy): good place to talk about abstracting away pain */
 
 To digress for a moment, One of Elm's features that I was genuinely excited
 about was its so-called [extensible records][extensible]. These are types which
@@ -174,14 +214,12 @@ support. We add a new parameter to our earlier typeclass signatures, whose only
 purpose is to be polymorphic.
 
 ```elm
-type alias Enum t a = { t
-                      | elements : Array a
-                      }
+type alias Enum t a = { t | elements : Array a
+                          }
 
-type alias Ord t a = { t
-                     | fromInt : Int -> a
-                     , toInt   : a -> Int
-                     }
+type alias Ord t a = { t | fromInt : Int -> a
+                         , toInt   : a -> Int
+                         }
 ```
 
 We can look at this as now saying, a type `a` is well-ordered if and only if we
@@ -196,8 +234,8 @@ atrocious.
 ```elm
 type Directions = North | East | West | South
 witness = { elements = fromList [ North, East, West, South ]
-          , fromInt  = -- elided
-          , toInt    = -- elided
+          , fromInt  = -- elided for brevity
+          , toInt    = -- elided for brevity
           }
 ```
 
@@ -205,7 +243,7 @@ To my dismay, in writing this post I learned that Elm's repl (and presumably Elm
 as a language) doesn't support inline type annotations. That is to say, it's a
 syntax error to write `witness : Enum t Directions` at the term-level. This is
 an obvious inconsistency where these constraints can be declared at the
-type-level, and then evaluated with the same terms. But I digress. Suffice to
+type-level and then evaluated with the same terms. But I digress. Suffice to
 say, our witness magic is all valid, working Elm -- so far, at least.
 
 Let's take a moment to stop and think about what this extra type `t` has bought
@@ -224,8 +262,8 @@ problem away from user code.
 
 The final piece, is to provide an automatic means of deriving typeclasses and
 bundling our results together. Consider this: in our toy example, `Enum t a`
-already has an (ordered) list of the `elements` in the type. This ordering is
-completely arbitrary and just happened to be the same as which order the
+already has an (ordered) array of the `elements` in the type. This ordering is
+*completely arbitrary* and just happened to be the same as which order the
 programmer typed them in, but it *is* an ordering. Knowing this, we should be
 able to get Elm to write us an `Ord t a` instance for any `Enum t a` we give it
 -- if we don't feel particularly in the mood to write it ourselves:
@@ -290,10 +328,10 @@ blessing of Czaplicki himself [allegedly aren't allowed to be published][wat].
 
 What. The. Fuck.
 
-But I digress. Libraries exist to overcome shortcomings of the language. It's
-okay to make library authors do annoying, heavy-lifting so that users don't have
-to. Which is why I'm particularly salty about the whole "we couldn't figure out
-a use for it" thing.
+But again I digress. Libraries exist to overcome shortcomings of the language.
+It's okay to make library authors do annoying, heavy-lifting so that users don't
+have to. Which is why I'm particularly salty about the whole "we couldn't figure
+out a use for it" thing.
 
 Elm doesn't have typeclasses, and doesn't have a first-class solution in their
 interim. Instead, the naive approach requires a linear amount of boilerplate
@@ -325,24 +363,42 @@ type-safety and witness compacting. Ready for it?
 $O(2^{n-1}n^2)$
 
 That function grows so quickly it's no longer super-exponential. It's officially
-reached a new level: super-duper-exponential. And the worst part is that it's
-*all* boilerplate that we know how to write (because we already did it), but
-aren't allowed to because Czaplicki can't find a use-case for this feature.
+reached super-duper-exponential. We've hit ludicrous speed here, people. And the
+worst part is that it's *all* boilerplate that we know how to write (because we
+already did it), but aren't allowed to because Czaplicki can't find a use-case
+for this feature.
 
 Hey! I found one! Pick me! Pick me!
 
+Elm gets around all of this complexity by ignoring it and making us do
+everything the hard way. There is no `map` function, but there are `List.map`,
+`Dict.map`, `Array.map` among others, and *none of them are related to one
+another*. This is not only annoying, but also breaks the abstract data-type
+guarantee: our call-sites are now tightly coupled to our implementation details.
+If I decide to change from a `List a` to an `Array a` for efficiency reasons, my
+*whole codebase needs to know about it*.
 
+Haskell solved this problem with typeclasses. OOP with single-dispatch. Elm
+mysteriously seems to follow in PHP's footsteps of having lots-and-lots of
+really similar functions (for all intents and purposes being in the same
+namespace), saying "fuck it! we'll do it live!".
 
+I have another million complaints about other semantics of Elm's design, but in
+comparison they seem small and this post is already long enough. It's such a
+shame that Elm is so terrible from a PL standpoint. Its rendering primitives are
+state-of-the-art, and I really wanted to like it despite myself.
+
+Too bad. Really wanting to like it isn't enough to actually like it.
 
 [announce]: http://elm-lang.org/blog/announce/0.7
 [direct]: https://github.com/elm-lang/elm-compiler/issues/38#issuecomment-116748295
 [gg]: http://www.haskellforall.com/
 [sytc]: http://www.haskellforall.com/2012/05/scrap-your-type-classes.html
-[blub]:
-[implicits]:
-[vtable]:
-[ordered]:
-[bucket]:
+[blub]: http://www.paulgraham.com/avg.html
+[implicits]: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
+[vtable]: https://en.wikipedia.org/wiki/Virtual_method_table
+[ordered]: https://en.wikipedia.org/wiki/Well-order
+[bucket]: https://en.wikipedia.org/wiki/Bucket_sort
 [extensible]: http://elm-lang.org/docs/records#record-types
 [haskell98]: https://www.haskell.org/onlinereport/basic.html#standard-classes
 [bug]: https://github.com/elm-lang/elm-compiler/issues/1283
@@ -355,27 +411,4 @@ Hey! I found one! Pick me! Pick me!
 [lens]: https://github.com/ekmett/lens
 [jquery]: https://jquery.com/
 [wat]: https://github.com/xdissent/elm-localstorage/issues/1#issuecomment-122585560
-
-
-
-
-
-- elm gets around this complexity by just decided to do everything the hard way.
-- there is not map but List.map and Dict.map and Array.map and you need to type
-    it out every time. and it gets really old. the point of mapping over thigns
-    is that you don't care what type the container is.
-- if i make something with the wrong container type, and i want to update that
-    to a semantically equivalent type for performance reasons, i need to
-    refactor my ENTIRE CODEBASE to do it. this breaks the shit out of
-    encapsulation
-- haskell has solved this problem with typeclasses. OOP has solved this problem
-    with interfaces and/or single dispatch.
-- the argument against typeclasses is that they're too complicated [citation].
-    but here's the thing. first of all that arugment assumes that you know best,
-    and you don't.
-- the other thing is that without a suitable replacement you are offloading all
-    of that conceptual workload into mechanical workload, and you can't automate
-    mechanical workload.
-- with conceptual workload you solve it once in a library, and people never need
-    to know unless they're curious
 

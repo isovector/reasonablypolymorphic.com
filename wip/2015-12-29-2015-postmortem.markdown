@@ -6,12 +6,19 @@ comments: true
 tags: foo, bar
 ---
 
-With 2015 coming to a close, it's time again for my annual year-end report.
+Because I liked doing it so much last year, I thought it would be fun to collect
+all sorts of new analytics from last year. Collecting all sorts of analytics was
+the [stated goal][2014] of 2014, but it went poorly. My original attempts to
+collect everything in one place failed pretty spectacularly, so the records I
+have are what I could scrape together from various sources.
 
-Because I liked it so much last year, I thought it would be fun to collect all
-sorts of new analytics this year. That was the focus of the year, but it went
-poorly.
+[2014]:
 
+# activity
+2,252,325 steps according to fitbit
+1200 floors
+1688.31km
+826,936 calories burned
 
 ## School
 
