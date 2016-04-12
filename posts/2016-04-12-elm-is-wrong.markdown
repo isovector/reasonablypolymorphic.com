@@ -100,6 +100,8 @@ suspend my disbelief and give it a try. After all, the [blub paradox][blub]
 indicates we don't know recognize ideas until it's way too late. And so I
 decided to play along.
 
+[shugoff]: https://github.com/elm-lang/elm-compiler/issues/38#issuecomment-116748295
+
 If you don't want to read the essay, SYTC essentially says "hey, why don't we
 pass around an object that describes the implementation of the contract that we
 care about, rather than having the compiler infer it for us?". If you're
@@ -279,7 +281,8 @@ derivingOrd w = { w
 We send it off to Elm, and...
 
 <pre>
-The type annotation for `derivingOrd` does not match its definition.
+The type annotation for `derivingOrd` does not match its
+definition.
 
 13│ derivingOrd : Enum t a -> Ord (Enum t a) a
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -389,7 +392,8 @@ comparison they seem small and this post is already long enough. It's such a
 shame that Elm is so terrible from a PL standpoint. Its rendering primitives are
 state-of-the-art, and I really wanted to like it despite myself.
 
-Too bad. Really wanting to like it isn't enough to actually like it.
+Too bad. As it turns out that really wanting to like Elm isn't enough to
+actually like Elm.
 
 [announce]: http://elm-lang.org/blog/announce/0.7
 [direct]: https://github.com/elm-lang/elm-compiler/issues/38#issuecomment-116748295
