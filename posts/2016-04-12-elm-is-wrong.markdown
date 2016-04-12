@@ -3,7 +3,7 @@ layout: post
 title: Elm Is Wrong
 date: 2016-04-12 08:05
 comments: true
-tags: foo, bar
+tags: rebuttal, technical, programming
 ---
 
 A few weeks ago, on a whim [my friend][ariel] and I decided to hackathon our way
