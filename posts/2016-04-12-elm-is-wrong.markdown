@@ -278,11 +278,12 @@ derivingOrd w = { w
 
 We send it off to Elm, and...
 
-> The type annotation for `derivingOrd` does not match its definition.
->
-> 13│ derivingOrd : Enum t a -> Ord (Enum t a) a
->                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->
+<pre>
+The type annotation for `derivingOrd` does not match its definition.
+
+13│ derivingOrd : Enum t a -> Ord (Enum t a) a
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+</pre>
 
 ...uh oh. We've broken Elm! The issue is that `{a | b = c}` is strictly record
 *update* syntax -- it requires `a` to *already have* a `b` field. There is no
