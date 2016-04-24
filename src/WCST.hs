@@ -53,7 +53,7 @@ main = do
                 curBook = head clipItems
                 name = canonicalName curBook
             create [fromFilePath $ wcst ++ "books/" ++ name] $ do
-                route $ setExtension "html"
+                route $ stripPrefix wcst <+> setExtension "html"
                 compile $ do
                     let timeField name book = optionalConstField name
                                             . fmap showTime
@@ -69,7 +69,7 @@ main = do
                     contentCompiler wcst (fromFilePath $ wcst ++ "templates/book.html") ctx
 
         create [fromFilePath $ wcst ++ "books/index.html"] $ do
-            route $ idRoute
+            route $ stripPrefix wcst
             compile $ do
                 let ctx = mconcat
                         [ listField "books" clippingCtx
