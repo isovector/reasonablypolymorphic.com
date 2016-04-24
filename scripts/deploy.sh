@@ -5,11 +5,11 @@ if [ "$(whoami)" ==  "ubuntu" ]; then
     git pull origin master
     stack install
     rm -r _live/we-can-solve-this _live/reasonably-polymorphic
-    /home/ubuntu/.local/bin clean
-    /home/ubuntu/.local/bin build
+    /home/ubuntu/.local/bin/wcst clean
+    /home/ubuntu/.local/bin/wcst build
     cp -r _site/* _live/we-can-solve-this
-    /home/ubuntu/.local/bin clean
-    /home/ubuntu/.local/bin build
+    /home/ubuntu/.local/bin/poly clean
+    /home/ubuntu/.local/bin/poly build
     cp -r _site/* _live/reasonably-polymorphic
 
 else
