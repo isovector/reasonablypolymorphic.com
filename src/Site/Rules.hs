@@ -45,6 +45,7 @@ postRules prefix postCtxTags =
         route $   gsubRoute "posts/" (const "blog/")
               <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
               <+> cruftlessRoute
+              <+> stripPrefix prefix
         compile $ do
             pandocMathCompiler
                 >>= loadAndApplyTemplate (fromFilePath $ prefix ++ "templates/post.html")
