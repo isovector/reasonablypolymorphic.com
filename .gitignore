@@ -8,3 +8,4 @@ _live/
 *.hi
 /site
 /octo-clip-it/output
+*.swo
