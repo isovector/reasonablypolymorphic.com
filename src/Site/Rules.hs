@@ -42,9 +42,8 @@ postRules :: String -> Context String -> Rules ()
 postRules prefix postCtxTags =
     match (postsDir prefix) $ do
         postMatches <- getMatches $ postsDir prefix
-        route $   gsubRoute "posts/" (const "blog/")
+        route $   gsubRoute (prefix ++ "posts/") (const "blog/")
               <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
-              <+> cruftlessRoute
               <+> stripPrefix prefix
         compile $ do
             pandocMathCompiler
