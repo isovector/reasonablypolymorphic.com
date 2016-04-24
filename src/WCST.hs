@@ -20,6 +20,14 @@ import Utils
 
 wcst = "we-can-solve-this/"
 
+feedConfiguration = FeedConfiguration
+    { feedTitle       = "We Can Solve This"
+    , feedDescription = "Musings on effective life strategies"
+    , feedAuthorName  = "Sandy Maguire"
+    , feedAuthorEmail = "sandy@sandymaguire.me"
+    , feedRoot        = "http://sandymaguire.me/"
+    }
+
 main :: IO ()
 main = do
     hakyll $ do
@@ -37,7 +45,7 @@ main = do
         postRules    wcst postCtxTags
         archiveRules wcst postCtxTags
         indexRules   wcst postCtxTags
-        feedRules    wcst
+        feedRules    wcst feedConfiguration
         tagRules     wcst tags
 
         forM_ clipBooks $ \book -> do

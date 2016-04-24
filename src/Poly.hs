@@ -10,6 +10,14 @@ import Site.Rules
 
 poly = "reasonably-polymorphic/"
 
+feedConfiguration = FeedConfiguration
+    { feedTitle       = "Reasonably Polymorphic"
+    , feedDescription = "Haskell"
+    , feedAuthorName  = "Sandy Maguire"
+    , feedAuthorEmail = "sandy@sandymaguire.me"
+    , feedRoot        = "http://reasonablypolymorphic.com/"
+    }
+
 main :: IO ()
 main = do
     hakyll $ do
@@ -22,6 +30,6 @@ main = do
         postRules    poly postCtxTags
         archiveRules poly postCtxTags
         indexRules   poly postCtxTags
-        feedRules    poly
+        feedRules    poly feedConfiguration
         tagRules     poly tags
 

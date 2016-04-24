@@ -79,10 +79,10 @@ indexRules prefix postCtxTags =
                     ]
             contentCompiler "templates/index.html" indexCtx
 
-feedRules :: String -> Rules ()
-feedRules prefix = do
-    create [fromFilePath $ prefix ++ "atom.xml"] $ feedRoute renderAtom prefix
-    create [fromFilePath $ prefix ++ "feed.rss"] $ feedRoute renderRss prefix
+feedRules :: String -> FeedConfiguration -> Rules ()
+feedRules prefix feedConfiguration = do
+    create [fromFilePath $ prefix ++ "atom.xml"] $ feedRoute renderAtom prefix feedConfiguration
+    create [fromFilePath $ prefix ++ "feed.rss"] $ feedRoute renderRss prefix feedConfiguration
 
 tagRules :: String -> Tags -> Rules ()
 tagRules prefix tags =
@@ -101,7 +101,7 @@ tagRules prefix tags =
 templateRules :: Rules ()
 templateRules = match "templates/*" $ compile templateCompiler
 
-feedRoute render prefix = do
+feedRoute render prefix feedConfiguration = do
     route idRoute
     compile $ do
         let feedCtx = postCtx <> bodyField "description"
