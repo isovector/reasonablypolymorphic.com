@@ -7,10 +7,10 @@ if [ "$(whoami)" ==  "ubuntu" ]; then
     rm -r _live/we-can-solve-this _live/reasonably-polymorphic
     /data/local/bin/wcst clean
     /data/local/bin/wcst build
-    cp -r _site _live/we-can-solve-this
+    cp -r _site _live
     /data/local/bin/poly clean
     /data/local/bin/poly build
-    cp -r _site _live/reasonably-polymorphic
+    cp -r _site _live
 
 else
     git push
