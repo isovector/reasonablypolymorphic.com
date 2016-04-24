@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module Site.Constants where
 
-import Hakyll (Pattern, FeedConfiguration (..))
+import Hakyll (Pattern, FeedConfiguration (..), fromGlob)
 
 
 dateFormat = "%B %e, %Y"
 
-postsDir :: Pattern
-postsDir = "posts/*"
+postsDir :: String -> Pattern
+postsDir = fromGlob . (++ "posts/*")
 
 feedConfiguration = FeedConfiguration
     { feedTitle       = "We Can Solve This"
