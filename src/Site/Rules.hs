@@ -23,19 +23,19 @@ import Utils
 imageRules :: String -> Rules ()
 imageRules prefix =
     match (fromGlob $ prefix ++ "images/**") $ do
-        route   idRoute
+        route   $ stripPrefix prefix
         compile copyFileCompiler
 
 jsRules :: String -> Rules ()
 jsRules prefix =
     match (fromGlob $ prefix ++ "js/*") $ do
-        route   idRoute
+        route   $ stripPrefix prefix
         compile copyFileCompiler
 
 cssRules :: String -> Rules ()
 cssRules prefix =
     match (fromGlob $ prefix ++ "css/*") $ do
-        route   idRoute
+        route   $ stripPrefix prefix
         compile compressCssCompiler
 
 postRules :: String -> Context String -> Rules ()
@@ -56,7 +56,7 @@ postRules prefix postCtxTags =
 archiveRules :: String -> Context String -> Rules ()
 archiveRules prefix postCtxTags =
     create [fromFilePath $ prefix ++ "blog/archives/index.html"] $ do
-        route idRoute
+        route $ stripPrefix prefix
         compile $ do
             posts <- recentFirst =<< loadAll (postsDir prefix)
             let archiveCtx = mconcat
@@ -69,7 +69,7 @@ archiveRules prefix postCtxTags =
 indexRules :: String -> Context String -> Rules ()
 indexRules prefix postCtxTags =
     create [fromFilePath $ prefix ++ "index.html"] $ do
-        route idRoute
+        route $ stripPrefix prefix
         compile $ do
             posts <- recentFirst =<< loadAll (postsDir prefix)
             let indexCtx = mconcat
@@ -88,7 +88,7 @@ tagRules :: String -> Tags -> Rules ()
 tagRules prefix tags =
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged \"" ++ tag ++ "\""
-        route idRoute
+        route $ stripPrefix prefix
         compile $ do
             posts <- recentFirst =<< loadAll pattern
             let ctx = mconcat
@@ -103,7 +103,7 @@ templateRules prefix =
     match (fromGlob $ prefix ++ "templates/*") $ compile templateCompiler
 
 feedRoute render prefix feedConfiguration = do
-    route idRoute
+    route $ stripPrefix prefix
     compile $ do
         let feedCtx = postCtx <> bodyField "description"
         posts <- fmap (take 10) . recentFirst =<<
@@ -118,4 +118,6 @@ titleCompare s =
     if isPrefixOf "The " s
        then drop 4 s
        else s
+
+stripPrefix prefix = gsubRoute prefix (const "")
 
