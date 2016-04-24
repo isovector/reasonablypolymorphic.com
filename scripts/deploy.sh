@@ -3,7 +3,6 @@
 if [ "$(whoami)" ==  "ubuntu" ]; then
     cd /data/blog
     git pull origin master
-    stack clean
     stack build
     rm -r _live/we-can-solve-this _live/reasonably-polymorphic
     .stack-work/dist/x86_64-linux/Cabal-1.18.1.5/build/wcst/wcst clean
