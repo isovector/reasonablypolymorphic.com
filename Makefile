@@ -14,10 +14,10 @@ test:
 	rm _live/reasonably-polymorphic || return 0
 	wcst clean
 	wcst build
-	cp -r _site/* _live/we-can-solve-this
+	cp -r _site _live/we-can-solve-this
 	poly clean
 	poly build
-	cp -r _site/* _live/reasonably-polymorphic
+	cp -r _site _live/reasonably-polymorphic
 
 deploy:
 	@./scripts/deploy.sh
