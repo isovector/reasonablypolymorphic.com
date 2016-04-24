@@ -47,10 +47,10 @@ postRules prefix postCtxTags =
               <+> cruftlessRoute
         compile $ do
             pandocMathCompiler
-                >>= loadAndApplyTemplate "templates/post.html"
+                >>= loadAndApplyTemplate (fromFilePath $ prefix ++ "templates/post.html")
                     (setNextPrev postMatches postCtxTags)
                 >>= saveSnapshot "content"
-                >>= loadAndApplyTemplate "templates/default.html" postCtxTags
+                >>= loadAndApplyTemplate (fromFilePath $ prefix ++ "templates/default.html") postCtxTags
                 >>= relativizeUrls
 
 archiveRules :: String -> Context String -> Rules ()
@@ -64,7 +64,7 @@ archiveRules prefix postCtxTags =
                     , constField "title" "Archives"
                     , defaultContext
                     ]
-            contentCompiler "templates/archive.html" archiveCtx
+            contentCompiler prefix (fromFilePath $ prefix ++ "templates/archive.html") archiveCtx
 
 indexRules :: String -> Context String -> Rules ()
 indexRules prefix postCtxTags =
@@ -77,7 +77,7 @@ indexRules prefix postCtxTags =
                     , constField "title" "Home"
                     , defaultContext
                     ]
-            contentCompiler "templates/index.html" indexCtx
+            contentCompiler prefix (fromFilePath $ prefix ++ "templates/index.html") indexCtx
 
 feedRules :: String -> FeedConfiguration -> Rules ()
 feedRules prefix feedConfiguration = do
@@ -96,10 +96,11 @@ tagRules prefix tags =
                     , listField "posts" postCtx (return posts)
                     , defaultContext
                     ]
-            contentCompiler "templates/tag.html" ctx
+            contentCompiler prefix (fromFilePath $ prefix ++ "templates/tag.html") ctx
 
-templateRules :: Rules ()
-templateRules = match "templates/*" $ compile templateCompiler
+templateRules :: String -> Rules ()
+templateRules prefix =
+    match (fromGlob $ prefix ++ "templates/*") $ compile templateCompiler
 
 feedRoute render prefix feedConfiguration = do
     route idRoute

@@ -7,11 +7,12 @@ import Text.Pandoc.Options
 import Hakyll
 
 
-contentCompiler :: Identifier -> Context String -> Compiler (Item String)
-contentCompiler t c =   makeItem ""
-                    >>= loadAndApplyTemplate t c
-                    >>= loadAndApplyTemplate "templates/default.html" c
-                    >>= relativizeUrls
+contentCompiler :: String -> Identifier -> Context String -> Compiler (Item String)
+contentCompiler prefix t c =
+    makeItem ""
+    >>= loadAndApplyTemplate t c
+    >>= loadAndApplyTemplate (fromFilePath $ prefix ++ "templates/default.html") c
+    >>= relativizeUrls
 
 pandocMathCompiler :: Compiler (Item String)
 pandocMathCompiler =

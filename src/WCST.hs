@@ -38,15 +38,15 @@ main = do
             clipBooks = sortAndGroup bookName clippings
             postCtxTags = postCtxWithTags tags
 
-        templateRules
-        imageRules   wcst
-        jsRules      wcst
-        cssRules     wcst
-        postRules    wcst postCtxTags
-        archiveRules wcst postCtxTags
-        indexRules   wcst postCtxTags
-        feedRules    wcst feedConfiguration
-        tagRules     wcst tags
+        templateRules wcst
+        imageRules    wcst
+        jsRules       wcst
+        cssRules      wcst
+        postRules     wcst postCtxTags
+        archiveRules  wcst postCtxTags
+        indexRules    wcst postCtxTags
+        feedRules     wcst feedConfiguration
+        tagRules      wcst tags
 
         forM_ clipBooks $ \book -> do
             let clipItems = sortBy (comparing added) book
@@ -66,7 +66,7 @@ main = do
                             , listField "clippings"   clippingCtx (mapM makeItem clipItems)
                             , defaultContext
                             ]
-                    contentCompiler "templates/book.html" ctx
+                    contentCompiler wcst (fromFilePath $ wcst ++ "templates/book.html") ctx
 
         create [fromFilePath $ wcst ++ "books/index.html"] $ do
             route $ idRoute
@@ -80,5 +80,5 @@ main = do
                         , constField "title" "Index of Book Quotes"
                         , defaultContext
                         ]
-                contentCompiler "templates/book-index.html" ctx
+                contentCompiler wcst (fromFilePath $ wcst ++ "templates/book-index.html") ctx
 

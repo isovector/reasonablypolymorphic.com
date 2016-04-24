@@ -23,13 +23,13 @@ main = do
     hakyll $ do
         tags <- buildTags (postsDir poly) (fromCapture . fromGlob $ poly ++ "tags/*.html")
         let postCtxTags = postCtxWithTags tags
-        templateRules
-        imageRules   poly
-        jsRules      poly
-        cssRules     poly
-        postRules    poly postCtxTags
-        archiveRules poly postCtxTags
-        indexRules   poly postCtxTags
-        feedRules    poly feedConfiguration
-        tagRules     poly tags
+        templateRules poly
+        imageRules    poly
+        jsRules       poly
+        cssRules      poly
+        postRules     poly postCtxTags
+        archiveRules  poly postCtxTags
+        indexRules    poly postCtxTags
+        feedRules     poly feedConfiguration
+        tagRules      poly tags
 
