@@ -81,10 +81,10 @@ rewriting `player` in terms of this is better, we avoid gnarly tuples fmapping
 ```haskell
 player :: Now (Behavior Prop)
 player = fmap fst . foldmp playerProp $ \p -> do
-    ints   <- fmap (map asInteraction . filter isInteraction) scene
-    dt     <- elapsed
-    dir    <- arrows
-    active <- keyPress SpaceKey
+    ints   <- sample interactions
+    dt     <- sample elapsed
+    dir    <- sample arrows
+    active <- sample $ keyPress SpaceKey
     props  <- sample scene
     let walls  = filter isWall props
         floors = filter isFloor props
@@ -105,8 +105,8 @@ separate out the interaction logic
 player :: Now ( Behavior Prop
               , (Prop -> Prop) -> IO ())
 player = foldmp playerProp $ \p -> do
-    dt    <- elapsed
-    dir   <- arrows
+    dt    <- sample elapsed
+    dir   <- sample arrows
     props <- sample scene
     let walls  = filter isWall props
         floors = filter isFloor props
@@ -117,8 +117,8 @@ player = foldmp playerProp $ \p -> do
 interactionHandler :: ((Prop -> Prop) -> IO ())
                    -> Now ()
 interactionHandler addr = poll $ do
-    ints   <- interactions
-    active <- keyPress SpaceKey
+    ints   <- sample interactions
+    active <- sample $ keyPress SpaceKey
     when active . forM_ interactions (addr $)
 ```
 
@@ -145,7 +145,9 @@ on that. define the following combinator
 note its similarity to `poll`
 
 ```haskell
-onEvent :: B (E a) -> (a -> Now ()) -> Now ()
+onEvent :: Behavior (Event a)
+        -> (a -> Now ())
+        -> Now ()
 onEvent events f = loop
   where
     loop = do
@@ -169,9 +171,8 @@ newPlayer = return $ do
        return $ tryMove walls floors p dpos
 
    onEvent (keyPress SpaceKey) . const $ do
-       p  <- sample sig
-       props <- sample scene
-       forM_ interactions (addr $)
+       ints <- sample interactions
+       forM_ ints (addr $)
 
    return r
 ```
