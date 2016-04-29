@@ -48,6 +48,59 @@ procedural-generation.
 [nomonads]:
 [stopworrying]:
 
+My first approach in this domain was to simply model `Signal`s as being
+denotationally equal to `Time -> a` -- an `a` that changes over time. The idea
+was that this was continuous, but I sort of cheated because I'm bad at
+denotations. In fact it was actually `Int -> IO a`, where the `IO` was to do
+side effects, like `getRealTime` which gave the *illusion of being continuous.*
+I'm ashamed to admit that I actually thought this was a good idea.
+
+Perhaps more disgusting than that was that I wanted my `Signal`s to be
+*rewindable*, so they had to track all of their previous values for all time.
+This resulted in what you might call a "small space leak." I put in some
+`unsafePerformIO` hacks to get reasonable performance for folds that occurred
+recently in time, which worked for recent time, but turned out to be $O(n!)$ if
+you ever needed to fast-forward a non-recently-evaluated `Signal` to the
+present.
+
+Programming is hard, as it turns out.
+
+Many hours of uneasiness later, I found another issue in my poorly-thought-out
+`Signal` library. After I realized that my `unsafePerformIO`-created "mailboxes"
+weren't quite unsafe enough (because Haskell would give me the same pointer for
+two things with identical declarations, even if that declaration had
+`unsafePerformIO` in it and a `NOINLINE` clause), I "fixed" the issue.
+
+The result is a strong contender for my most terrifying commit message of all
+time:
+
+> i solemnly swear on all that is holy that if these mailboxes give me any more
+> issues I will write something with real semantics
+
+They did. I held up my end of the bargain, and tracked down the remarkably
+gorgeous [FRPNow][frpnow]: "forget the past, change the future!". I was in love
+at first sight. It came with a [denotational design][denotation], had a `Monad`
+instance, and promised to solve my space leaks.
+
+[denotation]:
+
+Unfortunately for me, FRPNow had *very* different semantics from my `Signal`
+library, so I couldn't just drop it in place. Fortunately for me, FRPNow is
+actually well-designed and unlikely to cause me any grief going forwards.
+
+While my library only had `Signal`s -- "continuous" transformations of a value
+over time, FRPNow also has discrete `Event`s. It also has continuous (note the
+lack of scare quotes) transformations, but it calls them `Behavior`s.
+
+But the genius of FRPNow is, appropriately, the `Now` monad. `Now` is kind of
+`IO` but with time semantics: it describes things you can do at a particular
+moment in time, like sample a `Behavior`, send an `Event`, or kick off some
+`IO`.
+
+In short, `Now` is what I didn't come up with because I went with
+`unsafePerformIO` instead. Because apparently I'm just *begging* for trouble.
+
+
 here is a useful combinator to continuously run a `Now` action
 
 ```haskell
