@@ -1,9 +1,9 @@
 ---
 layout: post
-title: frpnow
+title: Some Useful FRP Combinators
 date: TO_BE_DETERMINED
 comments: true
-tags: foo, bar
+tags: frp, game
 ---
 
 As some of you might know, I'm working on building a procedurally-generated RPG
@@ -100,8 +100,9 @@ moment in time, like sample a `Behavior`, send an `Event`, or kick off some
 In short, `Now` is what I didn't come up with because I went with
 `unsafePerformIO` instead. Because apparently I'm just *begging* for trouble.
 
-
-here is a useful combinator to continuously run a `Now` action
+It took more time than I'm proud of figuring out how to use the dang thing.
+Here's a combinator that should exist in the core library: run an action as
+often as possible:
 
 ```haskell
 poll :: Now a -> Now (Behavior a)
@@ -114,8 +115,25 @@ poll now = loop
         return $ step a e'
 ```
 
-Let's talk about combinators for a while. Most FRP libraries I've found offer a
-function of the form:
+FRPNow's behaviors can only change instantaneously, which happens via an `Event`
+telling them to:
+
+```haskell
+step :: a -> Event (Behavior a) -> Behavior a
+```
+
+`step` starts with value `a`, and changes to the signaled `Behavior a` when the
+event fires. It's elegant, but it took some time to grok. And it's a lot of
+boilerplate. `poll` does all of this lifting for us -- writing a clock is now
+dead easy:
+
+```haskell
+clock :: Now (Behavior Time)
+clock = poll . sync $ (getTime :: IO Time)
+```
+
+Cool! While we're on the topic, let's talk about combinators for a while longer.
+Most FRP libraries I've found offer a function of the form:
 
 ```haskell
 foldp :: (a -> b -> b) -> b -> Behavior a -> Behavior b
@@ -125,7 +143,7 @@ As you might expect, the first parameter is a folding function, the second is an
 initial value, and the third is the state of the world you're sampling from.
 
 Elm trumpets this function as the solution to "how do I write games?" And
-they're not wrong, it's possible, if unpleasant. For example, we might define a
+they're not wrong: it's possible, if unpleasant. For example, we might define a
 player character as a `foldp move` over the arrow keys.
 
 There are two annoyances I've run into while attempting to "folding my p", if
@@ -140,6 +158,12 @@ Let's look at an example of code *that I actually wrote* for my player
 character:
 
 ```haskell
+-- A list of actions to perform at any given moment in time.
+interactions :: Behavior [Prop -> IO ()]
+
+-- `true` iff `Key` has just been pressed.
+keyPress :: Key -> Behavior Signal
+
 player :: Behavior Prop
 player = foldp update playerProp $ (,,,,,)
              <$> fmap (filter isWall)  scene
@@ -151,7 +175,7 @@ player = foldp update playerProp $ (,,,,,)
   where
     update (walls, floors, ints, dt, dir, active) p =
         if active && (not $ null ints)
-           then seq (unsafePerformIO $ mapM_ id ints) p
+           then seq (unsafePerformIO $ mapM_ ($ p) ints) p
            else
                 let dpos = scaleRel (dt * playerSpeed) dir
                  in tryMove walls floors p dpos
@@ -179,33 +203,43 @@ foldmp :: a
        -> Now ( Behavior a
               , (a -> a) -> IO ())
 foldmp start f = do
+    -- Construct the underlying mailbox.
     (evStream, mailbox) <- callbackStream
     let events = nextAll evStream
     nextEvent <- sample events
+
+    -- Like `poll`, but aware of the event stream.
     b <- loop start events nextEvent
     return (b, mailbox)
   where
     loop a events nextEvent = do
-        e     <- async (return ())
+        -- See if our event has fired yet...
         evVal <- sample $ tryGetEv nextEvent
         (a'mb, nextEvent') <-
             case evVal of
+              -- And if it has, fold over all its transformations.
               Just updates ->
                   sample events >>= return . (foldr ($) a updates,)
               Nothing -> return (a, nextEvent)
         a' <- f a'mb
+
+        -- Just `poll`.
+        e  <- async (return ())
         e' <- planNow $ loop a' events nextEvent' <$ e
         return $ step a' e'
 ```
-
-TODO: this is nondeterministic :(
 
 `foldmp` turns out to be the function we wished we had when we were writing
 `player` up there: it returns a behavior that folds itself over time (with a
 monadic fold, however, so it can sample other behaviors!), and a "mailbox" that
 we can use to introduce changes in the fold from an external source.
 
-Rewriting `player` in terms of `foldmp` is already a much nicer experience:
+Unfortunately, if two transformations are given to the mailbox at the same time,
+it's non-deterministic which will win. This is a problem I haven't solved yet,
+but by which have yet to be bitten. Any solutions would be highly appreciated.
+
+Anyway -- rewriting `player` in terms of `foldmp` is already a much nicer
+experience:
 
 ```haskell
 player :: Now (Behavior Prop)
@@ -227,52 +261,42 @@ player = fmap fst . foldmp playerProp $ \p -> do
              in tryMove walls floors p dpos
 ```
 
-Much better, but notice how this is pretty much a direct port -- we're throwing
-away the mailbox that `foldmp` gives back. We can instead use it to separate out
-the interaction logic:
+Better, but notice how this is pretty much a direct port -- we're throwing away
+the mailbox that `foldmp` gives back. We can instead use it to separate out the
+interaction logic:
 
 ```haskell
 player :: Now ( Behavior Prop
               , (Prop -> Prop) -> IO ())
-player = foldmp playerProp $ \p -> do
-    dt    <- sample elapsed
-    dir   <- sample arrows
-    props <- sample scene
-    let walls  = filter isWall props
-        floors = filter isFloor props
-        dpos = scaleRel (dt * playerSpeed) dir
-    return $ tryMove walls floors p dpos
+player = do
+    r@(_, addr) <- foldmp playerProp $ \p -> do
+        dt    <- sample elapsed
+        dir   <- sample arrows
+        props <- sample scene
+        let walls  = filter isWall props
+            floors = filter isFloor props
+            dpos   = scaleRel (dt * playerSpeed) dir
+        return $ tryMove walls floors p dpos
 
-interactionHandler :: ((Prop -> Prop) -> IO ())
-                   -> Now ()
-interactionHandler addr = poll $ do
-    ints   <- sample interactions
-    active <- sample $ keyPress SpaceKey
-    when active . liftIO $ forM_ ints (addr $)
+    poll $ do
+        ints   <- sample interactions
+        active <- sample $ keyPress SpaceKey
+        when active . liftIO $ forM_ ints (addr $)
+
+    return r
 ```
 
-It's nice that `player` can now fold in a natural way, and that interactions are
-no longer shoe-horned in just for the sake of making it compile. Unfortunately,
-there's a bit of plumbing necessary on the caller to connect the `player`
-mailbox with the `interactionHandler`.
+It's nice that `player` can now fold in a natural way: interactions are no
+longer shoe-horned in just for the sake of making it compile, but now run in
+their own context.
 
-```haskell
-keyPress :: Key -> Behavior Bool
-```
+However, we can do better yet. Recall that `poll` runs as quickly as it can; but
+`keyPress SpaceKey` by happens only very rarely. We'll change `keyPress` to
+instead be `keyPress :: Key -> Behavior (Event ())`, which conceptually, is, at
+any moment, an `Event` referring to the *next* time that `Key` is pressed.
 
-which is true if the key wasn't pressed last frame but is now. we're wasting all
-of these cpu cycles by polling even though we don't need to anymore.
-
-change to:
-
-```haskell
-keyPress :: Key -> Behavior (Event ())
-```
-
-now we get a discrete event when the key was pressed, and we can run some logic
-on that. define the following combinator
-
-note its similarity to `poll`
+This suggests another combinator, like `poll`, but only running when events come
+in:
 
 ```haskell
 onEvent :: Behavior (Event a)
@@ -281,12 +305,12 @@ onEvent :: Behavior (Event a)
 onEvent events f = loop
   where
     loop = do
-        e <- sample events
+        e <- sample events -- ^ The next time this event happens.
         planNow $ ((>> loop) . f) <$> e
         return ()
 ```
 
-and now pulling it all together:
+And now pulling it all together:
 
 ```haskell
 newPlayer :: Now ( Behavior Prop
@@ -298,8 +322,7 @@ newPlayer = return $ do
         props <- sample scene
         let walls  = filter isWall props
             floors = filter isFloor props
-            dpos = scaleRel (dt * playerSpeed) dir
-        dpos  <- fmap (scaleRel $ dt * playerSpeed) . sample $ arrows keys
+            dpos   = scaleRel (dt * playerSpeed) dir
         return $ tryMove walls floors p dpos
 
     onEvent (keyPress SpaceKey) . const $ do
@@ -308,3 +331,10 @@ newPlayer = return $ do
 
    return r
 ```
+
+Wow! It's everything we ever wanted! We've eliminated our space leaks,
+eliminated a bunch of boilerplate, modularized our logic, made the whole thing
+performant, and managed to come up with a typesafe messaging protocol over time
+in the process.
+
+
