@@ -337,4 +337,3 @@ eliminated a bunch of boilerplate, modularized our logic, made the whole thing
 performant, and managed to come up with a typesafe messaging protocol over time
 in the process.
 
-
