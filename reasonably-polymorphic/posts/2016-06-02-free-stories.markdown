@@ -182,7 +182,7 @@ described above. But how?
 
 Let's start playing madlibs with what we know.
 
-```
+```haskell
 type Story a = Free StoryF a
 
 data StoryF a = -- ???
