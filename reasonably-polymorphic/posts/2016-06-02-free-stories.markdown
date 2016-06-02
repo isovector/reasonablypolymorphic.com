@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Towards Procedurally Generated Stories Via Free Monads
-date: TO_BE_DETERMINED
+date: 2016-06-02 01:34
 comments: true
 tags: haskell, dsl, rpg
 ---
