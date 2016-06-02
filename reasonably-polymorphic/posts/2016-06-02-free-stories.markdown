@@ -20,7 +20,7 @@ an RPG vs. I already know how to make RPGs, it'd be fun creatively but gee that
 sounds like a lot of tedium and wouldn't teach me much in the end, except for
 maybe the value of hard work."
 
-![I should make an RPG](/images/rpg.jpg)
+![](/images/rpg.jpg "I should make an RPG")
 
 Then I realized making an RPG doesn't need to be tedious and boring. I'll just
 teach a computer how to generate an RPG. Goldmine genius idea. I don't know how
