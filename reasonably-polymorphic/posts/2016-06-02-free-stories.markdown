@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Towards Procedurally Generated Stories Via Free Monads
+title: Towards Procedurally Generated Stories via Free Monads
 date: 2016-06-02 01:34
 comments: true
 tags: haskell, dsl, rpg
@@ -147,7 +147,7 @@ monad:
 ```haskell
 instance Functor f => Monad (Free f) where
   return a = Pure a
-  Pure   a >>= f = f a
+  Pure a >>= f = f a
   Bind m >>= f = Bind (fmap (>>= f) m)
 ```
 
