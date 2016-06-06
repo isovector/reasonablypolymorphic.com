@@ -6,7 +6,7 @@ comments: true
 tags: haskell, dsl, rpg
 ---
 
-In the last post on this series, we talked about the rough sketch of an idea on
+In the last post in this series, we talked about the rough sketch of an idea on
 how we might be able to make procedurally generated RPG stories. The general
 approach is this: make a super simple core set of story primitives, and then
 build more interesting abstractions on top of them.
