@@ -102,18 +102,20 @@ The functors out of which `StoryF` is built are kind of hidden, but if you
 squint, you'll see we have a sum (between `Change` and `Interrupt`), a product
 (the parameters in each branch), and a function.
 
-In functor form, we know these as `(,) a`, `(->) a` and `Either a`. This
+In functor form, we know these as `(,) x`, `(->) x` and `Either x`. This
 suggests we should start looking for instances of `Zap` between these functors.
 Since pairs make up most of `StoryF`, let's start there. Our naive approach in
 dualizing the products into sums earlier gave us crazy results, so let's look at
-building a `Zap ((,) a) ((->) a)` instead.
+building a `Zap ((,) x) ((->) x)` instead.
 
-This means we're looking for a function. Given the type signature, it's pretty
-easy to work out:
+This means we're looking for a function of type
+`(a -> b -> c) -> (x, a) -> (x -> b) -> c`.  Given the type signature, it's
+pretty easy to work out:
 
 ```haskell
-zap :: (a -> b -> c) -> (x, a) -> (x -> b) -> c
-zap f (x, a) xtob = f a (xtob x)
+instance Zap ((,) x) ((->) x) where
+    zap :: (a -> b -> c) -> (x, a) -> (x -> b) -> c
+    zap f (x, a) xtob = f a (xtob x)
 ```
 
 Note that we don't need to derive `Zap ((->) a) ((,) b)` as well, since we can
@@ -149,9 +151,14 @@ instance Zap CoStoryF StoryF where
                                                b       = k cr
                                             in f a b
     zap f (CoStoryF _ h) (Interrupt x x' b) = f (h x x') b
+```
 
-    -- or more tersely, using our zap for products and functions:
-    zap f (CoStoryF h _) (Change c ct k)    = zap f (h c ct) k
+or, more tersely, we can use our `Zap` instance for products and functions from
+earlier:
+
+```haskell
+instance Zap CoStoryF StoryF where
+    zap f (CoStoryF h _) (Change    c ct k) = zap f (h c ct) k
     zap f (CoStoryF _ h) (Interrupt x x' k) =     f (h x x') k
 ```
 
@@ -178,29 +185,6 @@ instance Zap f g => Zap (Cofree f) (Free g) where
 
 Notice how we're doing the same trick here: using the sum value of our `Free`
 type to pick a particular piece out of the product of our `Cofree` type.
-
-
-## Adjunctions
-
-Looks like we don't yet (I know, I know) have enough theory to figure out what
-we need to build.
-
-```haskell
-class (Functor f, Functor g) => Adjunction f g | f -> g, g -> f where
-    unit   :: a -> g (f a)
-    counit :: f (g a) -> a
-```
-
-
-```haskell
-instance (Cofree cf) (Free f) where
-    unit   :: a -> Free f (Cofree cf a)
-    unit = Pure
-
-    counit :: Cofree cf (Free f a) -> a
-    counit cffa =
-```
-
 
 [cofree]:
 [free]:
