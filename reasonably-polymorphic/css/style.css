@@ -15,8 +15,12 @@ p, pre, .content > ul, .content > ol, .footnotes {
 
 .content > pre {
     margin: -2px 0 20px 2em;
-    border: 1px dotted #aaa;
+    border: 1px solid #000;
     padding: 0 0.5em;
+}
+
+p code {
+    background-color: rgba(0, 0, 0, 0.12);
 }
 
 code {
@@ -52,7 +56,6 @@ strong, em, del {
 }
 
 p > code, li > code, a > code {
-    border: 1px dotted #aaa;
     padding: 1px 0.5em;
 }
 
@@ -214,7 +217,7 @@ ul {
     font-size: 0.7500em; /* 12px */
     line-height: 1.6667em; /* 20px */
     margin-top: 1.6667em;  margin-bottom: 19px;
-    border-bottom: 1px solid #11212e;
+    border-bottom: 1px dashed #11212e;
     font-family: 'Muli', sans-serif;
     text-transform: uppercase;
 }
