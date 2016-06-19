@@ -265,7 +265,7 @@ myStory = do
     return 5
 
 die :: Character -> Story ChangeResult
-die who = change Die who
+die who = change who Die
 
 kill :: Character -> Character -> Story ChangeResult
 kill who whom = change who (Kill whom) <* die whom

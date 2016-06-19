@@ -19,7 +19,7 @@ p, pre, .content > ul, .content > ol, .footnotes {
     padding: 0 0.5em;
 }
 
-p code {
+p code, li code {
     background-color: rgba(0, 0, 0, 0.12);
 }
 
