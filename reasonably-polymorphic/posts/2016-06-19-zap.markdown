@@ -100,14 +100,9 @@ to evaluate our programs. Carrying on.
 
 As is usually the case with typeclasses, we can probably derive `Zap f g`
 inductively, by which I mean this: if we have a `Zap StoryF CoStoryF`, we can
-likely use it to derive `Zap (Cofree CoStoryF) (Free StoryF)`. Following this
+likely use it to derive `Zap (Free StoryF) (Cofree CoStoryF)`. Following this
 line of reasoning, we'll try to work backwards to see what `CoStoryF` might look
 like.
-
-It's reasonable to assume (as is usually the case with typeclasses) that we can
-define `Zap f g` inductively. By that I mean, we can probably derive `Zap
-(Cofree CoStoryF) (Free StoryF)` given `Zap StoryF CoStoryF`. This might give us
-clues as to what `CoStoryF` would look like.
 
 But where do we start? Well, in the same line of reasoning, we can probably get
 a `Zap StoryF CoStoryF` from a `Zap` over the constituent functors of `StoryF`.
