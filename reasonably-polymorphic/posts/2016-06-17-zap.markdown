@@ -1,9 +1,9 @@
 ---
 layout: post
-title: Zap
+title: Zap as the Machinery of Program Reduction
 date: TO_BE_DETERMINED
 comments: true
-tags: foo, bar
+tags: haskell, dsl, rpg
 ---
 
 Last time around, we discussed [duality and cofree comonads][cofree] towards our
@@ -11,7 +11,9 @@ quest in generating rich stories. I promised that comonads were the abstraction
 and machinery behind interpreters, but I have yet to prove that. Let's do it
 today.
 
-## The Mmand Functor
+
+
+## My Kingdom for a Functor
 
 [Two posts ago][free], we created a "command functor" whose job it was to
 specify the specific commands possible in our DSL:
@@ -30,55 +32,53 @@ conspicuous `(ChangeResult -> a)` argument to the `Change` data constructor is
 "the remainder of the computation will be given a `ChangeResult`" or perhaps
 more naturally, "the `Change` command returns a `ChangeResult`."
 
-If you've been following along with my talk on duality, you'll probably suspect
-that we'll need a co-command functor to go with our cofree comonad. But since
-duality is a symmetric operation, two 'co-'s cancel out, and we're just left
-with a "mmand functor." I'm sorry, I couldn't resist. It's not even going to
-turn out to be a dual, but the pun was just too good. Whatever.
+So that's one half of the puzzle. We can create programs in our DSL, but we
+can't yet interpret them. We've derived `Cofree` from first principles, and I've
+promised you that once we have an appropriate cofree comonad, we can use it as
+an interpreter for our DSL. In the same way that we created `StoryF` to exist as
+a `Functor` over which `Free` would give us a `Monad`, we're going to need to
+find a meaningful `CoStoryF` to act as a carrier over `Cofree` to give us a
+`Comonad`.
 
-Let's look at why it's not a dual. Naively swapping our sums and products leads
-us decidedly in the path of madness:
+It's tempting to dive right in and try our same old tried-and-true approach:
+dualize everything and go from there. Unfortunately, that doesn't work (I tried
+it), so instead of leading ourselves down a path of madness, let's slow down and
+think about what we're actually trying to accomplish.
 
-```haskell
--- 100% confirmed for crazy: don't do this
-data CoChange a = ChangeCharacter Character
-                | ChangeChangeType ChangeType
-                | ChangeChangeResult (ChangeResult -> a)
-data CoInterrupt a = InterruptInterruptedStory (Story ())
-                   | InterruptInterruptingStory (Story ())
-                   | InterruptResult a
-data CoStoryF a = CoStoryF (CoChange a) (CoInterrupt a)
-```
-
-TODO(sandy): WHY is this crazy
-
-No no no no no. Burn it with fire. This is obviously not what we want. How do we
-know? Because it's crazy. Remember, `a` is the continuation of our computation,
-but ... umm.
-
-## OKWTF
-
-Ok, so what are we *actually* trying to do?
-
-What we really want to do is define a function:
+The function we're actually trying to write is this:
 
 ```haskell
-interpret :: CoStory b -> Story a -> (a, b)
+interpret :: Story a -> CoStory b -> (a, b)
 ```
 
-which is to say, a function that runs `Story a` programs through a `CoStory b`
-interpreter, and get back both the resulting computation (from the monad), and
-the resulting world (from the comonad).
+which is to say, a function that runs `Story a` programs through an interpreter
+with internal state `b`. While the program itself computes an `a`, in the case
+of our interpreter, it's this internal state `b` that we're actually interested
+in. When we get closer to actually using this machinery to generate stories,
+this `b` is going to be instantiated as necessary locations, interesting
+character quirks, and other things we're trying to compute *about* our story.
 
-We can view this as the special case of a more general function:
+While `a` carries information between program segments (on the DSL side of
+things), `b` carries information *about* program segments (on the interpretation
+side).
+
+
+
+## When Zap's in Charge, Every Mission's a Suicide Mission
+
+Due to [free theorems from parametricity][parametric], it's often easier to find
+implementations of general functions than it is for more specific ones. In light
+of this, we can view this desired `interpret` function as the special case of a
+more general one:
 
 ```haskell
 zap :: (a -> b -> c) -> f a -> g b -> c
 ```
 
-which is a function where somehow the functors `f` and `g` "annihilate" one
-another, and allow us to run pure functions over top of them. Obviously this
-depends on our choice of `f` and `g`, so we will make a typeclass:
+Here, `zap` is understood to be a function where somehow the functors `f` and
+`g` "annihilate" one another, and allow us to run pure functions over top of
+them. Obviously this depends on our choice of `f` and `g`, so we will make a
+typeclass:
 
 ```haskell
 {-# LANGUAGE FunctionalDependencies #-}
@@ -87,31 +87,52 @@ class Zap f g | f -> g, g -> f where
     zap :: (a -> b -> c) -> f a -> g b -> c
 ```
 
+It's safe to ignore the `LANGUAGE` pragmas and the `| f -> g, g -> f` syntax if
+you don't know what's going on with them; they're just there to convince Haskell
+that the gnarly things we're doing with the type are kosher. Things won't
+compile without them, but the type signature of `zap` is really what we care
+about here.
+
+If you've forgotten what we're trying to do by this point, we're still looking
+for a meaningful `CoStoryF` functor. Once we get that, we can make a `Cofree
+CoStoryF`, which will necessarily form a `Comonad` and we'll *finally* be able
+to evaluate our programs. Carrying on.
+
+As is usually the case with typeclasses, we can probably derive `Zap f g`
+inductively, by which I mean this: if we have a `Zap StoryF CoStoryF`, we can
+likely use it to derive `Zap (Cofree CoStoryF) (Free StoryF)`. Following this
+line of reasoning, we'll try to work backwards to see what `CoStoryF` might look
+like.
+
 It's reasonable to assume (as is usually the case with typeclasses) that we can
 define `Zap f g` inductively. By that I mean, we can probably derive `Zap
-(Cofree CoStoryF) (Free StoryF)` given `Zap CoStoryF StoryF`. This might give us
+(Cofree CoStoryF) (Free StoryF)` given `Zap StoryF CoStoryF`. This might give us
 clues as to what `CoStoryF` would look like.
 
-But where do we start? Well, let's start by trying to build a `Zap` for the
-functors inside of `StoryF`. Its definition, again:
+But where do we start? Well, in the same line of reasoning, we can probably get
+a `Zap StoryF CoStoryF` from a `Zap` over the constituent functors of `StoryF`.
+Recall its definition:
 
 ```haskell
 data StoryF a = Change Character ChangeType (ChangeResult -> a)
               | Interrupt (Story ()) (Story ()) a
 ```
 
-The functors out of which `StoryF` is built are kind of hidden, but if you
-squint, you'll see we have a sum (between `Change` and `Interrupt`), a product
-(the parameters in each branch), and a function.
+The constituent functors here are kind of hidden, but if you stare at it, you'll
+see we have a sum (between `Change` and `Interrupt`), a product (the parameters
+in each branch), and a function.
 
 In functor form, we know these as `Either x`, `(,) x` and `(->) x`. This
 suggests we should start looking for instances of `Zap` between these functors.
-Since pairs make up most of `StoryF`, let's start there. Our naive approach in
-dualizing the products into sums earlier gave us crazy results, so let's try to
-build a `Zap ((,) x) ((->) x)` instead.
+Since pairs make up most of `StoryF`, we'll start there. With the wisdom of
+having done it already, I'll suggest we look for a `Zap ((,) x) ((->) x)`
+instance[^1].
+
+[^1]: Deriving the other two instances is informative for how this machinery
+actually works, and is left as an exercise to the reader.
 
 If we expand this out, it means we're looking for a function of type
-`(a -> b -> c) -> (x, a) -> (x -> b) -> c`.  Given the type signature, it's
+`(a -> b -> c) -> (x, a) -> (x -> b) -> c`.  Given the signature, it's actually
 pretty easy to work out:
 
 ```haskell
@@ -120,8 +141,10 @@ instance Zap ((,) x) ((->) x) where
     zap f (x, a) xtob = f a (xtob x)
 ```
 
-Note that we don't need to derive `Zap ((->) a) ((,) b)` as well, since we can
-just `flip` our incoming pure function and then use that in our other instance:
+It's worth noticing that `Zap f g` is symmetric about `f` and `g`. We had to
+pick one to go first, but there is no semantic distinction between the
+positions. We can exploit this fact to derive `Zap g f` automatically: we can
+just `flip` our incoming function:
 
 ```haskell
 {-# LANGUAGE FlexibleInstances #-}
@@ -130,14 +153,21 @@ instance {-# OVERLAPPABLE #-} Zap f g => Zap g f where
     zap f a b = zap (flip f) b a
 ```
 
-The fact that we were able to construct this `Zap` suggests that we might be
-able to use it in our derivation of `CoStoryF`. We'll construct a `Zap`-able
-`CoStoryF` by changing all of the pairs with functions (and vice versa) in
-`StoryF`. For reasons I don't entirely understand (but would probably make sense
-if I were smart enough to draw the diagrams), we'll turn our sums into products.
+Again, more magic syntax to convince Haskell that this is kosher.
+`UndecidableInstances` certainly sounds scary, but I promise that this is an OK
+use of it.
 
-Makes total sense, right? Yeah, me neither. But maybe looking at some actual
-code will help. Here's the transformation I just suggested:
+
+
+## Searching for a Functor Clarity
+
+The construction of this `Zap` instance between pairs and functions is
+promising. If you're curious about what sorcery is actually going on here, this
+magic comes directly from the [adjunction between curry and uncurry][kan]. Since
+every term in our sum-type `StoryF` is made up of nothing but pairs and
+functions, and functions and pairs can annihilate one another, this suggests our
+`CoStoryF` should be a product-type where we swap all of our products with
+functions and vice-versa:
 
 ```haskell
 data CoStoryF a = CoStoryF
@@ -147,7 +177,14 @@ data CoStoryF a = CoStoryF
 type CoStory a = Cofree CoStoryF a
 ```
 
-TODO: we need a functor instance for this!
+This actually makes a great deal of sense if you look at it for a minute or two.
+If a `StoryF` is one of any possible commands, a `CoStoryF` should be a
+collection of functions to handle any action that a `StoryF` is capable of
+throwing at it. A `StoryF` is a sum of arguments, while a `CoStoryF` is a
+product of functions taking those arguments.
+
+Convinced that we've found the right data structure, we'll write a `Functor`
+instance for it:
 
 ```haskell
 instance Functor CoStoryF where
@@ -156,157 +193,91 @@ instance Functor CoStoryF where
         (fmap (fmap f) i)
 ```
 
-This actually makes a great deal of sense if you look at it for a minute or two.
-If a `StoryF` is actually one of any possible commands, each with arguments, a
-`CoStoryF` should be capable of computing all possible commands by running those
-arguments as function parameters.
+Your first thought might be "what a disgusting mess of `fmap`". And you'd be
+right. You can convince yourself that it's right by remembering that each
+application of `fmap` moves you inside a function, or into the second piece of a
+pair. Alternatively, you can try compiling it, see that it type-checks, and move
+on with your life thinking no more about it.
 
-Again, the `Zap CoStoryF StoryF` instance is informative:
+Armed with the right data structure and a `Functor` instance it, we'll go on to
+build our `Zap StoryF CoStoryF`. Remember that the pieces of our `CoStoryF`
+product are "handlers" of particular actions from our `StoryF`, and thus we'll
+call these pieces `h` in the following snippet:
 
 ```haskell
-instance Zap CoStoryF StoryF where
-    zap f (CoStoryF h _) (Change c ct k) =
-        let (cr, a) = h c ct
-            b       = k cr
+instance Zap StoryF CoStoryF where
+    zap f (Change c ct k) (CoStoryF h _) =
+        let (cr, b) = h c ct
+            a       = k cr
          in f a b
-    zap f (CoStoryF _ h) (Interrupt x x' b) = f (h x x') b
+    zap f (Interrupt x x' a) (CoStoryF _ h) = f a (h x x')
 ```
 
-or, more tersely, we can instead use our `Zap` instance for products and
-functions from earlier to derive it:
+Gross and ugly, I know. What are we writing here, C? Instead, we can exploit our
+`Zap` instance from earlier to perform the computation in that `let` block for
+us:
 
 ```haskell
-instance Zap CoStoryF StoryF where
-    zap f (CoStoryF h _) (Change    c ct k) = zap f (h c ct) k
-    zap f (CoStoryF _ h) (Interrupt x x' k) =     f (h x x') k
+-- much nicer version of our previous snippet
+instance Zap StoryF CoStoryF where
+    zap f (Change    c ct k) (CoStoryF h _) = zap f k (h c ct)
+    zap f (Interrupt x x' k) (CoStoryF _ h) =     f k (h x x')
 ```
+
+Much better.
 
 I claim that this does what we want. But why does this work? Well we're using
-the sum arguments from our `StoryF` type as an *index* into the product handler
-of our `CoStoryF`. In the case of `Change`, we feed the *resulting*
-`ChangeResult` of interpreting the `Change` back into the continuation `k` in
-order to obtain our `b`.
+the sum constructor from our `StoryF` type as an *index* into the related
+handler from the product of our `CoStoryF`.
+
+To interpret a `Change`, for example, we compute a `ChangeResult` from our
+handler given the arguments from `Change`. We then take this resulting
+`ChangeResult` and pass it into the continuation `(ChangeResult -> a)` returned
+by `Change`. In effect, this instance of `Zap` has performed a single stage of
+reduction between our DSL and our interpreter.
+
+
+
+## The Cogs in the Machine
 
 Maybe you're starting to see now why this `Zap` machinery is useful for running
 our program: it automatically interleaves the results from our interpretation
-into the bound values in our DSL.
+into the bound values in our DSL. What we've built so far automatically connects
+a single step of the program with a single step of the interpretation; as you
+might expect, the `Zap` over `Free` and `Cofree` will take care of running the
+individual reductions sequentially until we've fully evaluated our program.
 
-But first we need to implement `Zap (Cofree f) (Free g)`. It's a little more
-involved, but once you get it, should help solidify how `Cofree` and `Free` are
-related.
+And so we need to find a derivation of `Zap (Free f) (Cofree g)`. If you
+followed the last derivation, this one should be a piece of cake. If not, it's
+worth staring at for a little while -- grokking it definitely helped solidify in
+my mind how `Free` and `Cofree` are related.
 
 ```haskell
 instance Zap f g => Zap (Cofree f) (Free g) where
-    zap f (Cofree a _ ) (Pure b)  = f a b
-    zap f (Cofree _ as) (Bind bs) = zap (zap f) as bs
+    zap f (Pure a)  (Cofree b _ ) = f a b
+    zap f (Bind as) (Cofree _ bs) = zap (zap f) as bs
 ```
 
-Notice how we're doing the same trick here: using the sum value of our `Free`
-type to pick a particular piece out of the product of our `Cofree` type.
+Notice that we're doing the same trick here: using the sum constructor of our
+`Free` type to pick a particular piece out of the product of our `Cofree` type.
 
-I want to take a second here. There's a lot of moving pieces all of a sudden,
-and it might be helpful to ensure we're all on the same page between what these
-things are and what they do:
-
-* `StoryF` (the functor): the datatype describing our possible actions at any
-    given point in the story.
-* `action : StoryF a` (the value): a particular action in our story
-* `Story = Free StoryF` (the monad): a DSL for our story
-* `story : Story a` (the value): some *particular* story represented by our DSL
-* `CoStoryF` (the functor): the datatype describing what it means to interpret a
-    story
-* `transition : CoStoryF b` (the value): a value describing how the interpreter
-    with state `b` evolves *at a given moment*
-* `CoStory = Cofree CoStoryF` (the comonad): the type of interpreters for our
-    story
-* `interpreter : CoStory b` (the value): a particular interpreter, made up of
-    infinitely many `CoStoryF b` transitions, simultaneously describing every
-    possible combination of actions the story might take.
-
-All that's left now is to construct a `Cofree CoStoryF`, and we're good to go.
-Recall that a `Free StoryF a` for some `a` corresponded with a particular story
-in our DSL; by analogy, we should expect a `Cofree CoStoryF a` to correspond to
-a particular interpreter. We can (correctly) think of comonads as an `Object` in
-the OOP sense -- they have internal state, and some interface for manipulating
-that state --
-
-
-
-As an example, let's write a simple interpreter which counts how many times
-characters change states in the main flow of the program (we ignore interrupted
-story-lines for now because they pose an extra challenge we'll get into next
-time).
+All that's left now is to construct a particular `interpreter : CoStory b`,
+which we can `zap` against any `story : Story a`. That will be our focus for the
+next post, but in the meantime, we'll convince ourselves that we've done
+something worthwhile here by implementing our desired `interpret` function from
+earlier:
 
 ```haskell
--- Every change increases our number of changes by one.
-coChange :: Int -> Character -> ChangeType -> (ChangeResult, Int)
-coChange w c ct = (ChangeResult c ct, w + 1)
-
--- We ignore changes that happen in interrupted branches, so return the incoming
--- number of changes.
-coInterrupt :: Int -> Story () -> Story () -> Int
-coInterrupt w x x' = w
+interpret :: Story a -> CoStory b -> (a, b)
+interpret = zap (,)
 ```
 
-These are the individual handlers for our `CoStoryF`, and now to put it all
-together:
+Oh. That was easy. Definitely a sign that we're onto something here.
 
-```haskell
-changeCounter :: CoStory Int
-changeCounter = coiter next start
-  where
-    next w = CoStoryF (coChange w) (coInterrupt w)
-    start  = 0
-```
-
-But what is this wild `coiter` thing? It's pronounced less like "coitus" and
-more like "co-iterate". Its type:
-
-```haskell
-coiter :: Functor f => (a -> f a) -> a -> Cofree f a
-```
-
-`coiter` builds an infinite `Cofree` comonad by taking a starting value, and a
-means of doing induction on how the comonad changes the deeper you get into the
-cofree. It's defined like this:
-
-```haskell
-coiter :: Functor f => (a -> f a) -> a -> Cofree f a
-coiter next start = Cofree start (coiter next <$> next start)
-```
-
-For us, the `w` variable in `coChange` and `coInterrupt` is tracking our
-comonadic value, so it's the value that changes as our characters do. In the
-case of a `Change`, we increase our resulting `w` by one. For `Interrupt`, we
-just return the one we were given, since we're not yet sure how to deconstruct
-our constituent `Story ()`s. We'll sort that out in the next post.
-
-And we're done! Let's prove that it works. Given our old `Story`:
-
-```haskell
-myStory :: Story String
-myStory = do
-    let mandalf = Character "Mandalf the Wizard"
-        orcLord = Character "Orclord Lord of the Orcs"
-        orcBaby = Character "Orclord's Child"
-
-    sadness <- kill mandalf orcLord -- 2 changes (orcLord dies & mandalf did it)
-    change orcBaby $ Learn sadness  -- a third change
-
-    return "Feel good story of the year"
-```
-
-we can run it:
-
-```haskell
-interpret :: CoStory b -> Story a -> (a, b)
-interpret costory story = zap (,) story costory
-
-interpret changeCounter myStory -- result: ("Feel good story of the year", 3)
-```
-
-So what have we accomplished here? We've built general purpose machinery
+Until next time.
 
 [cofree]: /blog/cofree-comonads
 [free]: /blog/free-stories
+[parametric]: https://bartoszmilewski.com/2014/09/22/parametricity-money-for-nothing-and-theorems-for-free/
+[kan]: http://comonad.com/reader/2008/kan-extensions-ii/
 
