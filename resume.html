@@ -87,7 +87,7 @@ h2 {
     font-size: 13pt;
     float: right;
     margin: 0;
-    margin-top: 0.4em;
+    margin-top: 0.65em;
     margin-left: 1em;
     height: 1.25em;
 }
@@ -167,7 +167,7 @@ li a {
 <body>
 <div id="page">
   <div id="contact">
-    +011 370 6072 2436
+    415 513 7088
     |<a>sandy@sandymaguire.me</a>|
     Software Engineer</div>
 <div id="header">
@@ -181,11 +181,11 @@ li a {
         <h2 style="height: 0;">Summary of Skills</h2>
 
         <section>
-            <h3>Technical Skills</h3>
+            <h3>Programming Experience</h3>
             <ul>
         <li>C++<span class="details">(decade)</a></li>
-        <li>C#, PHP, JavaScript, Lua<span class="details">(5 years)</a></li>
-        <li>Haskell, Java, Python, Scala et al.<span class="details">(some)</a></li>
+        <li>C#, JavaScript, Lua, PHP, Python<span class="details">(5 years)</a></li>
+        <li>Haskell, Scala<span class="details">(2 years)</a></li>
             </ul>
         </section>
 
@@ -195,27 +195,32 @@ li a {
         <h2>Work Experience</h2>
 
         <section>
-      <h3>Software Engineer <span class="jobsep">&raquo;</span> Facebook<span class="duration">January &rarr; April 2014</span></h3>
+            <h3>Engineer (Identity and Access Management) <span class="jobsep">&raquo;</span> Google<span class="duration">September 2015 &rarr; ongoing</span></h3>
+            <ul>
+        <li>Led the architectural design effort of a user-defined permission model for the cloud &ndash; the team's only project for the next quarter.</li>
+        <li>Took ownership over an unmaintained, service-critical internal compiler; improved compile times by 96% and test coverage by 65%.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>Engineering Intern (Ads Ranking) <span class="jobsep">&raquo;</span> Facebook<span class="duration">January &rarr; April 2014</span></h3>
             <ul>
         <li>Analyzed the advertising platform's spending behaviors and subsequently implemented algorithmic changes resulting in a 0.5% revenue increase.</li>
-        <li>Parallelized the backend graph ranker, resulting in site-wide response time gains of ~0.4%.</li>
+        <li>Parallelized the backend graph ranker, resulting in site-wide response time gains of 0.4%.</li>
             </ul>
         </section>
 
         <section>
-            <h3>Mobile Developer <span class="jobsep">&raquo;</span> Electronic Arts Canada<span class="duration">May &rarr; August 2013</span></h3>
+            <h3>Engineering Intern (FIFA Mobile) <span class="jobsep">&raquo;</span> Electronic Arts Canada<span class="duration">May &rarr; August 2013</span></h3>
             <ul>
         <li>Singlehandedly cleaned up 60% of the project's technical debt alongside assigned tasks.</li>
-                <li>Improved the team's debugging capabilities by implementing data breakpoints in JavaScript.</li>
-
             </ul>
         </section>
 
         <section>
-            <h3>Game Programmer <span class="jobsep">&raquo;</span> Digital Extremes<span class="duration">January &rarr; December 2012</span></h3>
+            <h3>Game Programmer (Warframe) <span class="jobsep">&raquo;</span> Digital Extremes<span class="duration">January &rarr; December 2012</span></h3>
             <ul>
                 <li>Architected and implemented an entire VOIP stack.</li>
-                <li>Rewrote a significant portion of the AI and PhysX engines to support arbitrary 3-space rotation.</li>
                 <li>Added type-safety to the proprietary game editor's scripting-runtime.</li>
             </ul>
         </section>
@@ -225,19 +230,20 @@ li a {
         <h2>Personal Projects</h2>
 
         <section>
-            <h3>"We Can Solve This" Blog<span class="duration">2011 &rarr; ongoing</span></h3>
-            <span class="details noText"><a href="http://sandymaguire.me">sandymaguire.me</a></span>
-            <ul>
-                <li>Teaching mathematical concepts to self-described "non-math types" and showing how to apply programming principles to everyday life.</li>
+            <h3>Accio<span class="duration">2013 &rarr; 2015</span></h3>
+            <span class="details noText"><a href="http://github.com/Paamayim/take2">github.com/Paamayim/take2</a></span>
+            <ul class="last">
+                <li>An analytics platform to answer "who knows what?" in actively changing codebases.</li>
+                <li>Won 2nd place in the Yelp SoftEng Capstone Design Symposium 2015.</li>
             </ul>
         </section>
 
         <section>
-            <h3>Adventure Engine<span class="duration">2011 &rarr; 2013</span></h3>
-            <span class="details noText"><a href="http://github.com/Paamayim/adventure">github.com/Paamayim/adventure</a></span>
-            <ul class="last">
-                <li>An engine for older-style graphical point and click adventure games.</li>
-                <li>Language-level implementation of references-to-variables in Metalua.</li>
+            <h3>"Reasonably Polymorphic" Blog<span class="duration">2015 &rarr; ongoing</span></h3>
+            <span class="details noText"><a href="http://reasonablypolymorphic.com">reasonablypolymorphic.com</a></span>
+            <ul>
+                <li>Exploring novel abstraction machinery in Haskell.</li>
+                <li>Current series is on how interleaving free monads with cofree comonads gives rise to the abstraction behind programming languages.</li>
             </ul>
         </section>
     </div>
@@ -246,27 +252,17 @@ li a {
         <h2>Formal Education</h2>
 
         <section>
-            <h3>Honours Software Engineering<span class="duration">2010 &rarr; 2015</span></h3>
+            <h3>Honors Software Engineering<span class="duration">2010 &rarr; 2015</span></h3>
             <span class="details">Bachelor of Software Engineering, University of Waterloo, ON</span>
             <h4>Relevant Courses</h4>
             <ul class="last">
-                <li>Concurrency &ndash; mutual exclusion principles; lock detection and prevention</li>
+                <li>Adaptive Search &ndash; stochastic means of approximating global maxima for chaotic functions</li>
+                <li>Compilers &ndash; resulting Java compiler was most correct from class of 50 students</li>
                 <li>Networking &ndash; socket programming; robust protocol design; routing principles</li>
                 <li>Numerical Computation &ndash; computational error correction; solving differential equations</li>
-        <li>User Interfaces &ndash; designing accessible software; direct manipulation; Gestalt principles</li>
             </ul>
         </section>
 
-        <section>
-            <h3>Applied Rationality Workshop<span class="duration">January 2013 (participant); March 2014 (volunteer)</span></h3>
-            <span class="details">Center for Applied Rationality, Berkeley, CA <a href="http://rationality.org">rationality.org</a></span>
-            <h4>Relevant Courses</h4>
-            <ul class="last">
-                <li>Turbocharging Training &ndash;  acquiring new skills exceptionally quickly.</li>
-                <li>Value of Information &ndash; mathematically examining the expected value of an action.</li>
-                <li>Getting Things Done &ndash; methodically organizing and doing all of life's tasks.</li>
-            </ul>
-        </section>
     </div>
 </div>
 </div>
