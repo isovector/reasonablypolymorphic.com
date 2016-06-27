@@ -165,11 +165,11 @@ functions, and functions and pairs can annihilate one another, this suggests our
 functions and vice-versa:
 
 ```haskell
-data CoStoryF a = CoStoryF
-                { changeH    :: Character -> ChangeType -> (ChangeResult, a)
-                , interruptH :: Story () -> Story () -> a
+data CoStoryF b = CoStoryF
+                { changeH    :: Character -> ChangeType -> (ChangeResult, b)
+                , interruptH :: Story () -> Story () -> b
                 }
-type CoStory a = Cofree CoStoryF a
+type CoStory b = Cofree CoStoryF b
 ```
 
 This actually makes a great deal of sense if you look at it for a minute or two.

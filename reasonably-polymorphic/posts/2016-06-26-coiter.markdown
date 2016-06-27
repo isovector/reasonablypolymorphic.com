@@ -1,59 +1,148 @@
 ---
 layout: post
-title: comonad-instance
-date: TO_BE_DETERMINED
+title: Constructing a Comonad
+date: 2016-06-26 23:39
 comments: true
-tags: foo, bar
+tags: haskell, dsl, comonad
 ---
 
-As an example, let's write a simple interpreter which counts how many times
-characters change states in the main flow of the program (we ignore interrupted
-story-lines for now because they pose an extra challenge we'll get into next
-time).
+We're so close! (to our first milestone.) We've built all of the machinery
+necessary for our first attempt at constructing the tools we'll used to
+procedurally generate stories.
+
+[First][free] we built a command functor and derived free monads. [Then][cofree]
+we dualized the whole contraption and realized we'd need to connect them with
+cofree comonads. In the [last post][zap], we derived an interpretation function
+out of the `Zap` machinery, and used it to find an adjunction to our command
+functor.
+
+All that's left now is to provide a *particular* cofree comonad over our costory
+functor, and we can use the rest of our machinery to use it as interpreter for
+our story DSL.
+
+
+## Cofree Comonads: You Coiter Love 'Em
+
+As a simple example, let's write an interpreter which counts how many character
+state changes occur in the main flow of a story. We'll ignore any interrupted
+storylines for now, because they pose an interesting challenge we'll attack in
+the next post.
+
+A challenge for us right now is this: if a cofree comonad is an infinite
+[(co-)data][codata] structure, how can we ever hope to construct one? Our first
+attempt might be to use a `fix :: (a -> a) -> a` point:
+
+[codata]: http://blog.sigfpe.com/2007/07/data-and-codata.html
+
+```
+naiveCofree :: Cofree StoryF a
+naiveCofree a = fix $ \self -> Cofree a self -- doesn't compile :(
+```
+
+Observe that this is almost what we want; unfortunately `Cofree f a` is
+constructed via `Cofree a (f (Cofree a))` -- we can't use `self` because it's
+not wrapped in an `f`, and without an `Applicative` constraint, we've got no way
+of getting it into one. So what do we do?
+
+Well, we cheat, of course, and we write a version of `fix` that does what we
+want. We'll call it `coiter` (pronounced "co-iter") for reasons that will become
+evident in a moment:
+
+```haskell
+coiter :: Functor f => (b -> f b) -> b -> Cofree f b
+```
+
+It would be a good exercise to derive `coiter` for yourself to get into the
+habit of playing type-tetris. If you can't be bothered, however, here's what I
+came up with:
+
+```haskell
+coiter :: Functor f => (b -> f b) -> b -> Cofree f b
+coiter step start = Cofree start (coiter step <$> step start)
+```
+
+This is where it all clicked for me: this `Cofree CoStoryF b` is an infinite
+list with state `b`. The head of this list is `start`, and each successive cons
+is the result on that state after handling one `StoryF a` action. The reason
+this works as an interpreter is that because it's infinite we can always reduce
+our program further. But since our *program* is always finite, we have a
+guaranteed termination condition.
+
+
+## Machinery in the Library is Worth Two in the Bush
+
+So, getting back to our "count the state changes in characters" interpreter, it
+seems reasonable to fix our state `b` as `Int`, and because it's addition,
+`start` should be $0$.
+
+So all we need is a meaningful function of type `Int -> CoStoryF Int`.
+`CoStoryF` itself is a product type, so we'll write two functions--one for
+either side.
+
+Recall `CoStoryF` is defined as:
+
+```haskell
+data CoStoryF b = CoStoryF
+                { changeH    :: Character -> ChangeType -> (ChangeResult, b)
+                , interruptH :: Story () -> Story () -> b
+                }
+```
+
+The `Interrupt` handler is easy (since by design we want it to do nothing), so
+we'll start there:
+
+```haskell
+-- We ignore changes that happen in interrupted branches, so return the incoming
+-- number of changes.
+handleInterrupt :: Int -> Story () -> Story () -> Int
+handleInterrupt b _ _ = b
+```
+
+Our `Change` handler is a little more involved, since we need to provide a
+return value back to our DSL.
 
 ```haskell
 -- Every change increases our number of changes by one.
-coChange :: Int -> Character -> ChangeType -> (ChangeResult, Int)
-coChange w c ct = (ChangeResult c ct, w + 1)
-
--- We ignore changes that happen in interrupted branches, so return the incoming
--- number of changes.
-coInterrupt :: Int -> Story () -> Story () -> Int
-coInterrupt w x x' = w
+handleChange :: Int -> Character -> ChangeType -> (ChangeResult, Int)
+handleChange b c ct = (ChangeResult c ct, b + 1)
 ```
 
-These are the individual handlers for our `CoStoryF`, and now to put it all
-together:
+Remember, the return type here is a specialized version of `(ChangeResult, b)`
+where the `ChangeResult` will be fed back into the third parameter of `StoryF`:
+
+```haskell
+-- GADT form of the `Change` constructor for `StoryF`
+Change :: Character -> ChangeType -> (ChangeResult -> a) -> StoryF a
+```
+
+and, even more cool, our `Zap StoryF CoStoryF` instance was designed
+specifically to do this plumbing for us and feed the `fst` of the result of
+`handleChange` into the `(ChangeResult -> a)` of `Change`, while using the `snd`
+as the ongoing state.
+
+This. This right here is what all of our hard work has been in service of.
+You'll notice that neither `handleChange` nor `handleInterrupt` is recursive --
+all of the reduction is handled by what we can now consider to be "library
+code." Our programs are defined in terms of individual actions, our interpreters
+in terms of basic reductions of those individual actions. And the library code
+takes care of the rest!
+
+
+## Counting to Three
+
+Let's tie it all together now:
 
 ```haskell
 changeCounter :: CoStory Int
 changeCounter = coiter next start
   where
-    next w = CoStoryF (coChange w) (coInterrupt w)
+    next b = CoStoryF (handleChange b) (handleInterrupt b)
     start  = 0
 ```
 
-But what is this wild `coiter` thing? It's pronounced less like "coitus" and
-more like "co-iterate". Its type:
-
-```haskell
-coiter :: Functor f => (a -> f a) -> a -> Cofree f a
-```
-
-`coiter` builds an infinite `Cofree` comonad by taking a starting value, and a
-means of doing induction on how the comonad changes the deeper you get into the
-cofree. It's defined like this:
-
-```haskell
-coiter :: Functor f => (a -> f a) -> a -> Cofree f a
-coiter next start = Cofree start (coiter next <$> next start)
-```
-
-For us, the `w` variable in `coChange` and `coInterrupt` is tracking our
-comonadic value, so it's the value that changes as our characters do. In the
-case of a `Change`, we increase our resulting `w` by one. For `Interrupt`, we
-just return the one we were given, since we're not yet sure how to deconstruct
-our constituent `Story ()`s. We'll sort that out in the next post.
+[free]: /blog/free-stories
+[cofree]: /blog/cofree-comonads
+[zap]: /blog/zap
 
 And we're done! Let's prove that it works. Given our old `Story`:
 
@@ -64,6 +153,11 @@ myStory = do
         orcLord = Character "Orclord Lord of the Orcs"
         orcBaby = Character "Orclord's Child"
 
+    -- changes inside of `interrupt` blocks don't count, so no changes here
+    interrupt (return ()) $ do
+        change mandalf Leave
+        return ()
+
     sadness <- kill mandalf orcLord -- 2 changes (orcLord dies & mandalf did it)
     change orcBaby $ Learn sadness  -- a third change
 
@@ -73,10 +167,13 @@ myStory = do
 we can run it:
 
 ```haskell
-interpret :: CoStory b -> Story a -> (a, b)
-interpret costory story = zap (,) story costory
-
-interpret changeCounter myStory -- result: ("Feel good story of the year", 3)
+interpret myStory changeCounter -- result: ("Feel good story of the year", 3)
 ```
 
-So what have we accomplished here? We've built general purpose machinery
+Wow! It works! That's oddly satisfying: we've managed to count to three, and it
+only took four blog posts and one hundred lines of code! We've now successfully
+build machinery for creating DSLs and interpreters over them, but we've still
+got a long way to go. In particular, some of our command functor's semantics are
+wrong, and we'll need to clean that up before we go much further.
+
+But that's a story for another time.
