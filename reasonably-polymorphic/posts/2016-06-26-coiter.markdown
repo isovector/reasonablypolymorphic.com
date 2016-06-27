@@ -34,7 +34,7 @@ attempt might be to use a `fix :: (a -> a) -> a` point:
 
 [codata]: http://blog.sigfpe.com/2007/07/data-and-codata.html
 
-```
+```haskell
 naiveCofree :: Cofree StoryF a
 naiveCofree a = fix $ \self -> Cofree a self -- doesn't compile :(
 ```
