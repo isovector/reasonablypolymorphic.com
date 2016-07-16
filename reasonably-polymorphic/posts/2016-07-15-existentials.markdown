@@ -160,7 +160,11 @@ your interpretation strategy half way through.
 
 ```haskell
 {-# LANGUAGE RankNTypes #-}
-handleInterrupt :: (forall a. Story a -> (a, b)) -> b -> Story x -> Story y -> (y, b)
+handleInterrupt :: (forall a. Story a -> (a, b))
+                -> b
+                -> Story x
+                -> Story y
+                -> (y, b)
 ```
 
 What's this `forall a.` stuff? Well, without it, our type variable `a` will get
