@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Better Data Types a la Carte
-date: TO_BE_DETERMINED
+date: 2016-09-13 23:51
 comments: true
 tags: haskell, dsl, data types a la carte, semantics
 ---
