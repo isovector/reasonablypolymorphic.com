@@ -3,7 +3,7 @@ layout: post
 title: Better Data Types a la Carte
 date: 2016-09-13 23:51
 comments: true
-tags: haskell, dsl, data types a la carte, semantics
+tags: haskell, rpg, dsl, data types a la carte, semantics
 ---
 
 To be honest with you, my approach to [procedurally generating RPG
@@ -52,26 +52,26 @@ What we really want to be able to do is to mix and match individual constructors
 into one larger data structure, which we can then transform as we see fit.
 
 Fortunately for us, the machinery for this has already been built. It's
-Swierstra's [Data Types *a la Carte*][dtalc] (henceforth *DTalC*) -- essentially
+Swierstra's [Data Types a la Carte][dtalc] (henceforth DTalC) -- essentially
 a set of combinators capable of composing data types together, and tools for
 working with them in a manageable way.
 
-Unfortunately for us, Data Types *a la Carte* isn't as type-safe as we'd like it
+Unfortunately for us, Data Types a la Carte isn't as type-safe as we'd like it
 to be. Additionally, it's missing (though not *fundamentally*) the primitives
 necessary to remove constructors.
 
-This post presents a variation of *DTalC* which *is* type-safe, and contains the
+This post presents a variation of DTalC which *is* type-safe, and contains the
 missing machinery.
 
-But first, we'll discuss *DTalC* as it is described in the original paper, in
+But first, we'll discuss DTalC as it is described in the original paper, in
 order to get a feeling for the approach and where the problems might lie. If
-you know how *DTalC* works already, consider skipping to the next heading.
+you know how DTalC works already, consider skipping to the next heading.
 
 
 
-## Data Types *a la Carte*
+## Data Types a la Carte
 
-Data Types *a la Carte* presents a novel strategy for building data types out of
+Data Types a la Carte presents a novel strategy for building data types out of
 other data types with kind[^1] `* -> *`. A code snippet is worth a thousand words,
 so let's dive right in. Our `StoryF` command functor as described above would
 instead be represented like this:
@@ -172,7 +172,7 @@ which will create a `Change` constructor in any data type which supports it
 Astute readers will notice immediately that the structural induction carried out
 by `(:<:)` won't actually find the desired functor in any sum tree which isn't
 right-associative, since it only ever recurses right. This unfortunate fact
-means that we must be *very careful* when defining *DTalC* in terms of type
+means that we must be *very careful* when defining DTalC in terms of type
 aliases.
 
 In other words: **we must adhere to a strict convention in order to ensure our
@@ -180,11 +180,11 @@ induction will work correctly.**
 
 
 
-## Better Data Types *a la Carte*
+## Better Data Types a la Carte
 
-The problem, of course, is caused by the fact that *DTalC* can be constructed in
+The problem, of course, is caused by the fact that DTalC can be constructed in
 ways that the structural induction can't handle. Let's fix that by constraining
-how *DTalC*s are constructed.
+how DTalCs are constructed.
 
 At the same time, we'll add the missing inverse of `inj`, namely `outj :: (f :<:
 fs) => fs a -> Maybe (f a)`[^2], which we'll need later to remove constructors,
@@ -264,7 +264,7 @@ deriving instance Functor (Summed fs) => Functor (Summed (f ': fs))
 but this now gives us what we want. `Summed fs` builds a nested sum-type from a
 type-level list of data types, and enforces (crucially, *not* by convention)
 that they form a right-associative list. We now turn our attention to building
-the `inj` machinery *a la* Data Types *a la Carte*:
+the `inj` machinery *a la* Data Types a la Carte:
 
 ```haskell
 class Injectable (f :: * -> *) (fs :: [* -> *]) where
@@ -291,11 +291,11 @@ fs`, and call it a day with guaranteed correct-by-construction data types a la
 carte, but we're not quite done yet.
 
 Remember, the original reason we dived into all of this mumbo jumbo was in order
-to *remove* data constructors from our *DTalC*s. We can't do that yet, so we'll
+to *remove* data constructors from our DTalCs. We can't do that yet, so we'll
 need to set out on our own.
 
 We want a function `outj :: Summed fs a -> Maybe (f a)` which acts as a prism
-into our *a la carte* sum types. If our `Summed fs a` is constructed by a `f a`,
+into our a la carte sum types. If our `Summed fs a` is constructed by a `f a`,
 we should get back a `Just` -- otherwise `Nothing`. We define the following type
 class:
 
@@ -360,9 +360,9 @@ main = quickCheck (injOutj_prop (Proxy @'[ []
 where we use the `Proxy fs` to drive type checking for the otherwise hidden `fs`
 from the type signature in our property.
 
-And there you have it! Data types *a la carte* which are guaranteed
+And there you have it! Data types a la carte which are guaranteed
 correct-by-construction, which we can automatically get into and out of. In the
-next post we'll look at how rewriting our command functor in terms of *DTalC*
+next post we'll look at how rewriting our command functor in terms of DTalC
 solves all of our `Interrupt`-related headaches.
 
 A working version of all this code together can be found [on my GitHub
