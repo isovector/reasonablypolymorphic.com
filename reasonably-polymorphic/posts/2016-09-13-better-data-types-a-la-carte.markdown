@@ -57,8 +57,11 @@ a set of combinators capable of composing data types together, and tools for
 working with them in a manageable way.
 
 Unfortunately for us, Data Types a la Carte isn't as type-safe as we'd like it
-to be. Additionally, it's missing (though not *fundamentally*) the primitives
-necessary to remove constructors.
+to be. <del>Additionally, it's missing (though not *fundamentally*) the
+primitives necessary to remove constructors.</del>[^3]
+
+[^3]: EDIT 2016-09-14: After re-reading the paper, it turns out that it
+describes (though doesn't implement) this functionality.
 
 This post presents a variation of DTalC which *is* type-safe, and contains the
 missing machinery.
