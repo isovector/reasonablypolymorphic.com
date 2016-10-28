@@ -1,11 +1,14 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Site.Compilers where
 
-import Data.Set (insert)
-import Text.Pandoc (Pandoc)
-import Text.Pandoc.Options
-
-import Hakyll
+import           Data.Set (insert)
+import           Hakyll
+import           Language.Haskell.Interpreter
+import qualified Text.Pandoc as P
+import           Text.Pandoc.Options
+import           Text.Pandoc.Walk (walkM)
 
 
 contentCompiler :: String -> Identifier -> Context String -> Compiler (Item String)
@@ -28,9 +31,26 @@ pandocMathCompiler =
             { writerExtensions = newExtensions
             , writerHTMLMathMethod = MathJax ""
             }
-    in pandocCompilerWith defaultHakyllReaderOptions writerOptions
-  where
-    transform :: Pandoc -> Compiler Pandoc
-    transform = return
+    in pandocCompilerWithTransformM defaultHakyllReaderOptions writerOptions transform
 
+evalBlock :: P.Block -> Interpreter P.Block
+evalBlock cb@(P.CodeBlock (name, classes, vs) contents)
+  | elem "circuit" classes = do
+      r <- eval contents
+      let contents' = contents ++ " => " ++ r
+      return $ P.CodeBlock (name, classes, vs) contents'
+  | otherwise = return cb
+evalBlock x = return x
+
+transform :: P.Pandoc -> Compiler P.Pandoc
+transform doc = do
+    Right x <- unsafeCompiler . runInterpreter $ do
+        let modules = []
+        let imports = [ "*" ++ m | m <- modules]
+        loadModules imports
+
+        getLoadedModules >>= setTopLevelModules
+        setImports ["Prelude"]
+        walkM evalBlock doc
+    return x
 

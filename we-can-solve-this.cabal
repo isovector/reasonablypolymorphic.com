@@ -18,6 +18,7 @@ executable wcst
                   , datetime
                   , parsec
                   , pandoc
+                  , pandoc-types
                   , strptime
                   , time
                   , containers
@@ -25,6 +26,10 @@ executable wcst
                   , old-locale
                   , regex-compat
                   , time
+                  , hint
+                  , diagrams
+                  , diagrams-svg
+                  , svg-builder
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -36,6 +41,7 @@ executable poly
                   , datetime
                   , parsec
                   , pandoc
+                  , pandoc-types
                   , strptime
                   , time
                   , containers
@@ -43,6 +49,10 @@ executable poly
                   , old-locale
                   , regex-compat
                   , time
+                  , hint
+                  , diagrams
+                  , diagrams-svg
+                  , svg-builder
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010
