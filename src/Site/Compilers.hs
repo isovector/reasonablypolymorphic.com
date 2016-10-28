@@ -2,6 +2,7 @@
 module Site.Compilers where
 
 import Data.Set (insert)
+import Text.Pandoc (Pandoc)
 import Text.Pandoc.Options
 
 import Hakyll
@@ -28,4 +29,8 @@ pandocMathCompiler =
             , writerHTMLMathMethod = MathJax ""
             }
     in pandocCompilerWith defaultHakyllReaderOptions writerOptions
+  where
+    transform :: Pandoc -> Compiler Pandoc
+    transform = return
+
 

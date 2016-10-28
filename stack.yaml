@@ -1,11 +1,11 @@
 flags: {}
 packages:
 - '.'
+- location:
+    git: https://github.com/jaspervdj/hakyll.git
+    commit: 3c73cd1e32e3070924abf542c456c67d778e0b27
 extra-deps:
+- hakyll-4.9.0.0
 - datetime-0.3.1
-- hakyll-4.6.9.0
-- pandoc-1.13.2.1
-- parsec-3.1.9
 - strptime-1.0.10
-- regex-compat-0.92
-resolver: lts-2.17
+resolver: lts-7.3

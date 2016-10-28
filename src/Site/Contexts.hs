@@ -11,9 +11,8 @@ import Control.Applicative (Alternative (..))
 import Data.List (intercalate, sortBy)
 import Data.Monoid (mconcat, (<>))
 import Data.Time.Clock (UTCTime)
-import Data.Time.Format (parseTime, formatTime)
+import Data.Time.Format (parseTimeM, formatTime, defaultTimeLocale)
 import System.FilePath (takeFileName)
-import System.Locale (defaultTimeLocale)
 
 import ClipIt
 import Hakyll
@@ -42,7 +41,7 @@ sortIdentifiersByDate identifiers =
     byDate id1 id2 =
         let fn1 = takeFileName $ toFilePath id1
             fn2 = takeFileName $ toFilePath id2
-            parseTime' fn = parseTime defaultTimeLocale "%Y-%m-%d"
+            parseTime' fn = parseTimeM True defaultTimeLocale "%Y-%m-%d"
                           . intercalate "-"
                           . take 3
                           $ splitAll "-" fn
