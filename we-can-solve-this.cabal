@@ -28,8 +28,12 @@ executable wcst
                   , time
                   , hint
                   , diagrams
-                  , diagrams-svg
-                  , svg-builder
+                  , circuitry
+                  , directory
+                  , temporary
+                  , process
+                  , bytestring
+                  , string-conv
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -51,8 +55,12 @@ executable poly
                   , time
                   , hint
                   , diagrams
-                  , diagrams-svg
-                  , svg-builder
+                  , circuitry
+                  , directory
+                  , temporary
+                  , process
+                  , bytestring
+                  , string-conv
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010
