@@ -38,11 +38,11 @@ cssRules prefix =
         route   $ stripPrefix prefix
         compile compressCssCompiler
 
-postRules :: String -> Context String -> Rules ()
-postRules prefix postCtxTags =
-    match (postsDir prefix) $ do
-        postMatches <- getMatches $ postsDir prefix
-        route $   gsubRoute (prefix ++ "posts/") (const "blog/")
+postRules :: String -> (String -> Pattern) -> String -> String -> Context String -> Rules ()
+postRules prefix get src dst postCtxTags =
+    match (get prefix) $ do
+        postMatches <- getMatches $ get prefix
+        route $   gsubRoute (prefix ++ src) (const dst)
               <+> gsubRoute "/[0-9]{4}-[0-9]{2}-[0-9]{2}-" (const "/")
               <+> stripPrefix prefix
               <+> cruftlessRoute
@@ -54,12 +54,12 @@ postRules prefix postCtxTags =
                 >>= loadAndApplyTemplate (fromFilePath $ prefix ++ "templates/default.html") postCtxTags
                 >>= relativizeUrls
 
-archiveRules :: String -> Context String -> Rules ()
-archiveRules prefix postCtxTags =
-    create [fromFilePath $ prefix ++ "blog/archives/index.html"] $ do
+archiveRules :: String -> (String -> Pattern) -> String -> Context String -> Rules ()
+archiveRules prefix get dst postCtxTags =
+    create [fromFilePath $ prefix ++ dst ++ "/index.html"] $ do
         route $ stripPrefix prefix
         compile $ do
-            posts <- recentFirst =<< loadAll (postsDir prefix)
+            posts <- recentFirst =<< loadAll (get prefix)
             let archiveCtx = mconcat
                     [ listField "posts" postCtxTags (return posts)
                     , constField "title" "Archives"

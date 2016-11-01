@@ -9,3 +9,5 @@ dateFormat = "%B %e, %Y"
 postsDir :: String -> Pattern
 postsDir = fromGlob . (++ "posts/*")
 
+bookDir :: String -> Pattern
+bookDir = fromGlob . (++ "httw/*")

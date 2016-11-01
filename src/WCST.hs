@@ -42,8 +42,8 @@ main = do
         imageRules    wcst
         jsRules       wcst
         cssRules      wcst
-        postRules     wcst postCtxTags
-        archiveRules  wcst postCtxTags
+        postRules     wcst postsDir "posts/" "blog/" postCtxTags
+        archiveRules  wcst postsDir "blog/archives/" postCtxTags
         indexRules    wcst postCtxTags
         feedRules     wcst feedConfiguration
         tagRules      wcst tags
