@@ -3,7 +3,7 @@ comments: true
 date: 2012-01-11 04:54:41
 layout: post
 slug: autoethics-self-enslavement
-title: Autoethics: Self Enslavement
+title: "Autoethics: Self Enslavement"
 tags: philosophy
 ---
 

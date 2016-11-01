@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Tracking: Midterm
+title: "Tracking: Midterm"
 date: 2015-01-08 03:02
 comments: true
 tags: science, life, results

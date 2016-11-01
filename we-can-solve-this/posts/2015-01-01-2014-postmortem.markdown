@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 2014: Building Infrastructure
+title: "2014: Building Infrastructure"
 date: 2015-01-01 10:24
 comments: true
 tags: life, results, analytics, science

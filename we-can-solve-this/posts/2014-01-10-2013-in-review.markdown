@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 2013: Doing Something With My Life
+title: "2013: Doing Something With My Life"
 date: 2014-01-10 09:54
 comments: true
 tags: results, life, analytics

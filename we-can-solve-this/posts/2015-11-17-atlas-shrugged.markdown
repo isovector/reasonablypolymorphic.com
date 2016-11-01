@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Book Review: Atlas Shrugged
+title: "Book Review: Atlas Shrugged"
 date: 2015-11-17 07:23
 comments: true
 tags: november, review

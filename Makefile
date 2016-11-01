@@ -10,14 +10,14 @@ poly:
 
 test:
 	stack install
-	rm _live/we-can-solve-this || return 0
-	rm _live/reasonably-polymorphic || return 0
+	rm -r _live/we-can-solve-this || return 0
+	rm -r _live/reasonably-polymorphic || return 0
 	wcst clean
 	wcst build
-	cp -r _site _live/we-can-solve-this
+	mv _site _live/we-can-solve-this
 	poly clean
 	poly build
-	cp -r _site _live/reasonably-polymorphic
+	mv _site _live/reasonably-polymorphic
 
 deploy:
 	@./scripts/deploy.sh

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Power Word: Case Study
+title: "Power Word: Case Study"
 date: 2014-03-18 07:36
 comments: true
 tags: crazy, science
