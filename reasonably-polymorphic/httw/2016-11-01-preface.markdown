@@ -12,8 +12,9 @@ tags:
 
 ### Part 1
 
-* Preface
-* Truth
+* [Preface](/book/preface)
+* [Machine Diagrams](/book/machine-diagrams)
+* Universal Machines
 * Simple Embeddings
 * Numbers
 * Arithmetic

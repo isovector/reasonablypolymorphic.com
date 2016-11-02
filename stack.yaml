@@ -1,12 +1,13 @@
 flags: {}
 packages:
 - '.'
+- '../circuitry'
 - location:
     git: https://github.com/jaspervdj/hakyll.git
     commit: 3c73cd1e32e3070924abf542c456c67d778e0b27
-- location:
-    git: https://github.com/isovector/circuitry.git
-    commit: 78ebf5b1f7147edeb1a5f57bd01e241d867dd468
+# - location:
+#     git: https://github.com/isovector/circuitry.git
+#     commit: 78ebf5b1f7147edeb1a5f57bd01e241d867dd468
 extra-deps:
 - hakyll-4.9.0.0
 - datetime-0.3.1

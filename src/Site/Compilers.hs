@@ -79,13 +79,14 @@ import Diagrams.TwoD.Layout.Constrained ((=.=))
 import Circuitry
 import Circuitry.Backend
 import Circuitry.Gates
+import Circuitry.Machinery
 import Circuitry.Misc
 import Circuitry.Types
 
 ${circ}
 
 main :: IO ()
-main = BS.putStrLn $ toDataURL $ runCircuit $ void circuit
+main = BS.putStrLn $ toDataURL $ frame 0.25 circuit
 |]
 
 runProgram :: FilePath -> IO ByteString
