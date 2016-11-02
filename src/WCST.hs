@@ -44,7 +44,7 @@ main = do
         cssRules      wcst
         postRules     wcst postsDir "posts/" "blog/" postCtxTags
         archiveRules  wcst postsDir "blog/archives/" postCtxTags
-        indexRules    wcst postCtxTags
+        indexRules    wcst postsDir "" postCtxTags
         feedRules     wcst feedConfiguration
         tagRules      wcst tags
 

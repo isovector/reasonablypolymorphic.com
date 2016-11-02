@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -9,6 +10,7 @@ import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import           Data.Set (insert)
 import           Data.String.Conv
+import Data.String.Here
 import           Hakyll
 import           System.Directory
 import           System.FilePath
@@ -45,7 +47,7 @@ pandocMathCompiler =
 evalBlock :: P.Block -> IO P.Block
 evalBlock cb@(P.CodeBlock (name, classes, vs) contents)
   | elem "circuit" classes = do
-      compileExistingSource $ toS contents
+      compileExistingSource $ toS $ mkSrc contents
       contents' :: String <- toS <$> runProgram "/home/bootstrap"
       return $ P.Para . return $ P.Image (name, classes, vs) [] (contents', "")
   | otherwise = return cb
@@ -53,6 +55,38 @@ evalBlock x = return x
 
 transform :: P.Pandoc -> Compiler P.Pandoc
 transform doc = unsafeCompiler $ walkM evalBlock doc
+
+mkSrc :: String -> String
+mkSrc circ = [i|
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+module Main where
+
+import qualified Data.ByteString as BS
+import Data.Typeable
+import Control.Arrow (first, second)
+import Control.Monad
+import Diagrams.TwoD.Arrow
+import Diagrams.TwoD.Arrowheads
+import Diagrams.Prelude hiding (anon)
+import Diagrams.TwoD.Shapes
+import Diagrams.TwoD.Layout.Constrained ((=.=))
+
+import Circuitry
+import Circuitry.Backend
+import Circuitry.Gates
+import Circuitry.Misc
+import Circuitry.Types
+
+${circ}
+
+main :: IO ()
+main = BS.putStrLn $ toDataURL $ runCircuit $ void circuit
+|]
 
 runProgram :: FilePath -> IO ByteString
 runProgram dir = do
@@ -100,10 +134,4 @@ compileExistingSource source =
         let ghcArgs = [ "exec", "ghc", tmpdir </> "program.hs", "--", "-o", "/home/bootstrap/done", "-package", "circuitry", "-package", "diagrams" ]
         runCompiler "/home/bootstrap/Projects/blog" ghcArgs -- >>= \output -> do
         return True
-            -- B.writeFile (programId) output
-            -- let target = tmpdir </> "program.jsexe" </> "all.js"
-            -- hasTarget <- doesFileExist target
-            -- when hasTarget $
-            --     copyFile target (programId)
-            -- return hasTarget
 

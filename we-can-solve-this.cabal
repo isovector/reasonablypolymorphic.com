@@ -34,6 +34,7 @@ executable wcst
                   , process
                   , bytestring
                   , string-conv
+                  , here
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -61,6 +62,7 @@ executable poly
                   , process
                   , bytestring
                   , string-conv
+                  , here
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010

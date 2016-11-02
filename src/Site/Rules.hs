@@ -67,12 +67,12 @@ archiveRules prefix get dst postCtxTags =
                     ]
             contentCompiler prefix (fromFilePath $ prefix ++ "templates/archive.html") archiveCtx
 
-indexRules :: String -> Context String -> Rules ()
-indexRules prefix postCtxTags =
-    create [fromFilePath $ prefix ++ "index.html"] $ do
+indexRules :: String -> (String -> Pattern) -> String -> Context String -> Rules ()
+indexRules prefix get dst postCtxTags =
+    create [fromFilePath $ prefix ++ dst ++ "index.html"] $ do
         route $ stripPrefix prefix
         compile $ do
-            posts <- recentFirst =<< loadAll (postsDir prefix)
+            posts <- recentFirst =<< loadAll (get prefix)
             let indexCtx = mconcat
                     [ listField "posts" postCtxTags (return $ take 1 posts)
                     , constField "title" "Home"
