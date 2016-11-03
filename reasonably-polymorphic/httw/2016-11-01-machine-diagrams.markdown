@@ -21,7 +21,7 @@ difficult things (and of life) that we must walk before we can run.
 This is a **wire**.
 
 ``` {#wire}
-circuit = ru$ void $
+circuit = runCircuit $ void $
   anon bend $ \(in', inp) ->
   anon bend $ \(out, outp) -> do
     leftOf inp outp
@@ -36,7 +36,7 @@ going to get a shock. Likewise, a cold wire is cold along its entire length.
 A wire doesn't need to be a straight line. It can bend, and it can fork:
 
 ``` {#fork}
-circuit = ru$ void $
+circuit = runCircuit $ void $
   anon con  $ \(split, splitp) ->
   anon bend $ \(d, dp) ->
   anon bend $ \(r, rp) ->
@@ -64,7 +64,7 @@ there is no little circle marking their intersection. Because they are separate
 wires, they can carry different values.
 
 ``` {#cross}
-circuit = ru$ void $
+circuit = runCircuit $ void $
   anon bend $ \(in', inp) ->
   anon bend $ \(out, outp) ->
   anon bend $ \(in'2, inp2) ->
@@ -176,4 +176,7 @@ the discovery of the so-called universal machines.
 2) Besides the *not gate*, there are 3 other possible machines with 1 input and
    1 output. Figure out what their function tables must look like. Remember, a
    function table *must* have an output for every possible input.
+
+3) Does it make sense for the inputs of two machines to be connected to the same
+   wire? How about the outputs? Why or why not?
 
