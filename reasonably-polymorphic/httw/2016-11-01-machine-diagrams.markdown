@@ -20,8 +20,8 @@ difficult things (and of life) that we must walk before we can run.
 
 This is a **wire**.
 
-``` {.circuit}
-circuit = runCircuit $ void $
+``` {#wire}
+circuit = ru$ void $
   anon bend $ \(in', inp) ->
   anon bend $ \(out, outp) -> do
     leftOf inp outp
@@ -35,8 +35,8 @@ going to get a shock. Likewise, a cold wire is cold along its entire length.
 
 A wire doesn't need to be a straight line. It can bend, and it can fork:
 
-``` {.circuit}
-circuit = runCircuit $ void $
+``` {#fork}
+circuit = ru$ void $
   anon con  $ \(split, splitp) ->
   anon bend $ \(d, dp) ->
   anon bend $ \(r, rp) ->
@@ -63,8 +63,8 @@ one is higher than the other, or something). They are not touching, because
 there is no little circle marking their intersection. Because they are separate
 wires, they can carry different values.
 
-``` {.circuit}
-circuit = runCircuit $ void $
+``` {#cross}
+circuit = ru$ void $
   anon bend $ \(in', inp) ->
   anon bend $ \(out, outp) ->
   anon bend $ \(in'2, inp2) ->
@@ -105,7 +105,7 @@ wires for are to move values between **machines**.
 
 Machines are little bit more interesting, but only just. They look like this:
 
-``` {.circuit}
+``` {#machine}
 circuit = blackBox "M" undefined ||| inputWire
 ```
 
@@ -138,7 +138,7 @@ be output as on.
 
 Consider the following diagram:
 
-``` {.circuit}
+``` {#not_box}
 circuit = wireLabel "a=1" ||| blackBox "Not" undefined
                           ||| inputWire
                           ||| wireLabel "b"
@@ -160,7 +160,7 @@ other people call them, and I wouldn't want people to look at you like you're
 crazy when you're discussing these things around the water-cooler. Redrawing
 the last diagram with a *not gate*:
 
-``` {.circuit}
+``` {#not_gate}
 circuit = notGate undefined ||| inputWire
 ```
 
