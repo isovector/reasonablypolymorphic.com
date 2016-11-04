@@ -168,6 +168,8 @@ This concludes our discussion of machine diagrams. Next we will look at more
 complicated machines (those with more than one input), and that will lead us to
 the discovery of the so-called universal machines.
 
+---
+
 ## Exercises
 
 1) Determine the function table for one *not gate* feeding into another *not

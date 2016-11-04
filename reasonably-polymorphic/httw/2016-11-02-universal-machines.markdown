@@ -246,3 +246,105 @@ well, we know now that that is simply untrue! `and` and `or` are somehow
 "equally fundamental", in the sense that we can always produce one out of the
 other *by de Morgan*. Assuming we have some `not` gates lying around, obviously.
 
+So if it isn't `and` that's fundamental, maybe it's `not`? A few minutes of
+pondering on this implies it can't be so -- because `not` gates only have one
+input and one output, the only thing we can do is chain them together, and
+whenever we chain two together, they cancel one another out.
+
+It must be some combination of `and` and `not` (or, equivalently, `or` and
+`not`) that result in this "universality" we're looking for. And indeed, it is.
+We've actually already looked at it in this chapter.
+
+``` {#and_not_labeled}
+circuit = labeled "Nand" $ runCircuit $ void $ do
+  and <- liftDia andGate
+  not <- liftDia notGate
+  spaceH 0.5 and not
+  arr (and, (Out 0)) (not, (In 0))
+  afterwards (||| inputWire)
+```
+
+You're probably not convinced that this is indeed the one, true, fundamental
+machine, from which all others can be built, but it really is! It's called the
+`nand` gate, which, as Wikipedia would call it, is a *portmandeau* of `not` and
+`and`.
+
+Of course, since this gate is *extra* popular, it too has a special symbol.
+
+``` {#nand_gate}
+circuit = nandGate undefined ||| inputWire
+```
+
+If you squint, it's kind of like a combination of the `and` and `not` symbols.
+
+But is this thing truly fundamental? It really is; I'm not pulling your leg.
+Here, let's use it to construct a `not` gate:
+
+``` {#not_from_nand}
+circuit = labeled "Not" $ runCircuit $ void $ do
+  c <- liftDia con
+  nand1 <- liftDia $ fmap (||| inputWire) nandGate
+  arr (nand1, (In 0)) (nand1, (In 1))
+  liftCircuit $ constrainWith hcat [ c, nand1 ]
+  afterwards (inputWire |||)
+```
+
+"What is this sorcery?" you might be asking? Well, we're connecting the *one*
+input wire to our machine to *both* inputs of the `nand` gate. Remember our rule
+about wires -- they have the same value all the way across them. So we know that
+both inputs to our `nand` gate must have the same value.
+
+Looking at the function table for our `nand` gate, that means we can cross off
+any rows in which input `A` and input `B` are not the same.
+
+| Input A | Input B | Output |
+|:-------:|:-------:|:------:|
+| 0       | 0       | 1      |
+| ~~0~~   | ~~1~~   | ~~1~~  |
+| 1       | 1       | 0      |
+| ~~1~~   | ~~0~~   | ~~1~~  |
+
+And furthermore, since we know that `A` and `B` must be the same always, we
+don't need two columns for them.
+
+| Input | Output |
+|:-----:|:------:|
+| 0     | 1      |
+| 1     | 0      |
+
+And voila! We've created a `not` gate out of `nand`s. Since we know that a
+`nand` is just an `and` with a `not` after it, and that two `not`s in a row
+cancel, getting from here to an `and` gate isn't actually very hard at all:
+
+``` {#and_from_nand}
+circuit = labeled "" $ runCircuit $ void $ do
+  c <- liftDia con
+  nand1 <- liftDia $ fmap (||| inputWire) nandGate
+  nand2 <- liftDia nandGate
+  arr (nand2, (In 0)) (nand2, (In 1))
+  liftCircuit $ constrainWith hcat [ nand1, c, nand2 ]
+  afterwards (||| inputWire)
+```
+
+If you're still feeling dubious, feel free to derive the function table for this
+diagram. But the reason (and arguably, the beauty) behind why we use diagrams is
+that they're easy to visualize, and with some practice, you can begin to see how
+values must flow through these machines. It takes a little bit of work, but it's
+going to save you a huge amount of time to not need to derive a function table
+for every diagram you see.
+
+There is a question yet that remains unanswered: *why* is a fundamental `nand`
+gate "better" than just using `and`s and `not`s? It's a good one, and one that
+we'll explore further next chapter.
+
+---
+
+## Exercises
+
+1) Build an `or` gate entirely out of `nand` gates. Derive a function table for
+   it, to really convince yourself that you you got it right.
+2) What would a `nor` gate look like? Write its function table, and take a guess
+   at what its symbol would be.
+3) Would a `nor` gate *also* be universal? Why or why not? If so, build a `nand`
+   gate out of them. If not, explain why.
+

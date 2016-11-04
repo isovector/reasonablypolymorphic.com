@@ -14,7 +14,7 @@ tags:
 
 * [Preface](/book/preface)
 * [Machine Diagrams](/book/machine-diagrams)
-* Universal Machines
+* [Universal Machines](/book/universal-machines)
 * Simple Embeddings
 * Numbers
 * Arithmetic
