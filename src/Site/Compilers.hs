@@ -63,7 +63,7 @@ evalBlock :: P.Block -> IO P.Block
 evalBlock cb@(P.CodeBlock (name, classes, vs) contents)
   | name /= "" = do
       contents' :: String <- toS <$> runProgram "/home/bootstrap" (circId name)
-      return $ P.Para . return $ P.Image (name, classes, vs) [] (contents', "")
+      return $ P.Para . return $ P.Image (name, "circuit" : classes, vs) [] (contents', "")
   | otherwise = return cb
 evalBlock x = return x
 
@@ -149,7 +149,7 @@ import Diagrams.TwoD.Arrow
 import Diagrams.TwoD.Arrowheads
 import Diagrams.Prelude hiding (anon)
 import Diagrams.TwoD.Shapes
-import Diagrams.TwoD.Layout.Constrained ((=.=))
+import Diagrams.TwoD.Layout.Constrained ((=.=), constrainWith)
 
 import Circuitry
 import Circuitry.Backend

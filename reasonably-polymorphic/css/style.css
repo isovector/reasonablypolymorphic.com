@@ -249,3 +249,22 @@ ul {
         margin-right: 0px;
     }
 }
+
+table {
+  margin: 0 auto;
+  margin-bottom: 1em;
+  border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th {
+  padding: 0 0.5em;
+}
+
+.circuit {
+  margin: 0 auto;
+  display: block;
+}
