@@ -136,18 +136,14 @@ but otherwise we apply the same method as we did before.
 | Input A | Input B | Output |
 |:-------:|:-------:|:------:|
 | ~~0~~  &rarr; 1 | 0       | 1 |
-| ~~0~~  &rarr; 1 | 1       | ~~1~~ &rarr; 0 |
-| ~~1~~  &rarr; 0 | 1       | ~~0~~ &rarr; 1 |
+| ~~0~~  &rarr; 1 | 1       | 1 |
+| ~~1~~  &rarr; 0 | 1       | 0 |
 | ~~1~~  &rarr; 0 | 0       | 1 |
 
 Cool! We can compose machines to the left of others, just like we could to the
 right of them. But be careful when composing to the left, it's easier to get
 yourself into a sticky situation. We'll discuss this more in the future when we
 talk about positive and negative function positions.
-
-[EDIT 2016-11-03]: This function table was incorrect, because I composed it
-poorly. Thakns to Daniel Satanove for pointing out that when you compose
-machines on the left, you need to recompute what the output will be.
 
 But back to the task at hand. Let's do this composition stuff one more time,
 this time adding a `not` gate before input `B`.
