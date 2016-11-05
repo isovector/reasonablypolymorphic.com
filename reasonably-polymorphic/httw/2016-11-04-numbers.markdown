@@ -1,0 +1,190 @@
+---
+layout: post
+title: Numbers
+date: 2016-11-04 20:00
+comments: true
+tags: foo, bar
+---
+
+$$\renewcommand{bin}[1]{#1\text{b}}$$
+
+## Building Our Way Up
+
+In the previous chapters, we discussed how to break down what we had into more
+fundamental parts. Such an approach has an obvious due-date attached to it; once
+you get to the fundamental building blocks, there's nowhere left to go in that
+direction.
+
+And so in this chapter, we turn our attention around, and look at how we can
+build more complicated things out of our simpler pieces.
+
+Wires, as we've defined them, allow us to carry a single piece of information --
+whether they're on or whether they're off. While that's great and all, lots of
+things we as humans care about are more complicated than yes-or-no. The good
+news, is that yes-and-no is all we need in order to build arbitrarily
+interesting things, if we're clever in how we go about it.
+
+But again, we must walk before we can run. And so we will turn our attention to
+construct the second-most-simple thing we can -- numbers. We do this not only
+because it will be useful, but also as an exercise in deconstructing things into
+their constituent parts. Ready? Let's go!
+
+Frickin' numbers. How do they work?
+
+
+
+## A (Very) Short History of Numbers
+
+It might not seem like it, but numbers are actually a pretty radical invention.
+Not only in the sense of like "yeah, it's kinda cool that we can count things,"
+which was an amazing technological advance for humanity when it happened. But
+there's also a subtler marvel at work here, and that's how we *represent*
+numbers.
+
+Remember back in the late 1900s, when movie studies thought it was pretty cool
+to write the year in which films were copyrighted as Roman numerals? The credits
+would have things like &copy;MGM MCMXCIX at the end. I'd be willing to bet that
+you don't know off the bat exactly what year MCMXCIX refers to. There's actually
+a pretty complicated set of rules for deciphering Roman numerals into a real
+number that people without a Greco-Roman anthropology degree would understand.
+
+What's perhaps more interesting is that deciphering Roman numerals wasn't even
+significantly easier for the *Romans* than it is for us. There's a lot of
+arithmetic required to figure out what's going on in that jumble of letters.
+
+And then the Arabs came around and said "hey you guys, forget all that stuff. We
+have a much better system," and the world agreed with them, and that's why we
+still use the Arabic numeral system today.
+
+It's the Arabic numeral system that's the marvelous technological innovation
+behind numbers. And it's that invention that we'll need to study in order to
+implement numbers in our wiring diagrams.
+
+
+
+## The Decimal System
+
+We use the decimal system. What's that? It means we have ten different symbols
+for numbers. You know 'em. `0` through `9`. Somewhat remarkably, even though we
+have ten of them, we don't have a symbol *for* the number ten. To represent ten,
+we use a combination of two symbols: `1` and `0`, placed after one another.
+
+In fact, the order in which we place these symbols turns out to matter. `12` is
+a very different number than `21`, even though they have all the same symbols.
+The more-left a number is in a sequence, the more "number-ness" it represents.
+
+I'm sorry, I know that you know this. But bear with me for a little while
+longer.
+
+Let's say we're counting. We start with `0`, and then `1`, and so on, changing
+our number-symbol until we reach `9`. Now we need to change it again to
+represent ten, but we *don't have any more symbols to use*, since it'd be
+confusing if we reused one. So we cheat, and we go back to `0`, and slyly add a
+new `1` to the left. We continue counting, and now we can change our right-most
+`0` again, changing it through all of our symbols again, until we hit `9`.
+
+Crap, we've run out of symbols again, so we pull another trick; we switch back
+to `0`, and change that `1` we made up to a `2`. We realize we can just cycle
+*that* symbol as well, albeit slower than our first one.
+
+When we get all the way up to `99` -- poop, no more ways we can change those
+symbols and not reuse a combination we used already. So we use the old tried
+and true method again, change everything back to a `0` and slap a new `1` at the
+front.
+
+I just spent 300 words describing counting to you. It's patronizing, I know. I'm
+sorry. The point I'm trying to illustrate is that this procedure we've been
+doing has really nothing to do with *numbers* whatsoever, we're just shuffling
+symbols around.
+
+The magic is in our *strategy* for shuffling these symbols. It turns out that
+because we have 10 symbols to switch between, then we can obviously represent 10
+different things with them. If we use TWO of the symbols, and each has 10
+different possibilities, then we can describe $10*10=100$ things. Three symbols
+gives us $10*10*10=1000$ and so on.
+
+Your first thought might be "but the biggest number we can represent with three
+symbols is `999`." Which is true, but we also have the number zero, which
+conventional counting skips. So we really and truly have 1000 different numbers
+that we can represent with three symbols.
+
+Because of this decimal system, we get an interesting mathematical fact, which
+is that any number can be decomposed into powers-of-ten. For example:
+
+$$6934 = 6\times 10^3 + 9\times 10^2 + 3\times 10^1 + 4\times 10^0$$
+
+If you don't like math and the exponents make you unhappy, don't fret, we're not
+going to do much more with them. Intuitively, this says that the rightmost
+symbol describes how many *ones* your number has, well the next-to-rightmost
+describes how many *tens* your number has. And so on, until you run out of
+symbols.
+
+
+
+## The Binary System
+
+I'll bet you can see where we're going with all of this. Since a wire can be
+either hot or cold, which can think of it as having two different symbols. If we
+stack a bunch of wires beside one another, we can decide on a convention for
+which one is the biggest, and then replace all of the "tens" in our argument
+above with "twos".
+
+The resulting system we get out of all of this work is known as the **binary
+system**. I'm sure you've heard of it.
+
+To really whet your whistle for these things, let's go through a few examples
+for deciphering a number *represented in the binary system* into one you'd be
+more familiar with, *represented in the decimal system*.
+
+Remember that in the decimal system, even though we had ten symbols, we had no
+symbol *for* the number ten. Similarly, in the binary system, we have two
+symbols, but no symbol *for* two.
+
+So as to not confuse anyone, we'll end any binary numbers we're working with
+with a final `b`. So the number $\bin{10}$ should be considered a binary number,
+while the number $10$ is the usual ten that we know and love.
+
+Starting slowly, we'll look at the number $\bin{0}$, which is obviously the same
+as our regular decimal $0$. Likewise, we still have a symbol to shuffle, so
+$\bin{1}=1$.
+
+If we increase one to both sides, our decimal side easily goes up to $2$, but in
+binary, we've now run out of symbols, and so we need to steal a new one.
+Therefore $\bin{10}=2$. In the same way that a decimal number full of `9`s
+switches to a `1` followed by the same number of `0`s when its increased, a
+binary number full of `1`s switches too!
+
+That decomposition of decimal numbers into their powers-of-ten trick that we saw
+earlier works equally well in binary land. For example:
+
+$$\bin{101101} = 1\times 2^5+0\times 2^4 + 1\times 2^3 + 1\times 2^2 + 0\times
+2^1 + 1\times 2^0 = 45$$
+
+Your powers-of-two likely aren't up to the same calibre as your powers-of-ten,
+but you have to admit, this method is much easier than trying to count all the
+way up from 0.
+
+And so that's it! We've come up with a scheme for representing numbers in terms
+of the building blocks we had, namely wires! This is the beginning of a trend.
+As we'll see more and more, wires are, in fact, useful. We use them to describe
+*things that are*, while we use machines to describe *how things change*, by way
+of function tables. In this sense, our wires are "nouns", and our machines are
+"verbs".
+
+In the next chapter we'll look at putting these numbers directly into our
+diagrams, and reinterpret some of our existing machines in terms of how they act
+on numbers. Additionally, we'll build some new machines for doing useful things
+*with* numbers.
+
+---
+
+## Exercises
+
+1) Convert the number $\bin{11111111}$ into its decimal representation.
+   Recalling what you know about how numbers "roll-over", is there an easier way
+   of computing this?
+2) Change the decimal number $17$ into its binary representation.
+3) Come up with a general strategy for changing decimal numbers into their
+   binary equivalents. Hint: Start from the left, and try to find the biggest
+   power-of-two that you can pull out of it.
+

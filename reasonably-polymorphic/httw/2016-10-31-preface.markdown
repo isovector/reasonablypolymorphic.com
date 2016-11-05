@@ -16,7 +16,7 @@ tags:
 * [Machine Diagrams](/book/machine-diagrams)
 * [Universal Machines](/book/universal-machines)
 * [Interlude](/book/interlude)
-* Numbers
+* [Numbers](/book/numbers)
 * Arithmetic
 * Time
 * Types
@@ -94,5 +94,6 @@ understanding behind *why*.
 <img src="/images/httw/fractal.png" title="A fractal." />
 
 Finally, I'd like to dedicate this book to my mum, whose thirst for knowledge
-has always inspired me.
+has always inspired me, and to my father, who gave me this mindset in the first
+place.
 
