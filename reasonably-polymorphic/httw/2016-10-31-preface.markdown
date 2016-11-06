@@ -17,7 +17,7 @@ tags:
 * [Universal Machines](/book/universal-machines)
 * [Interlude](/book/interlude)
 * [Numbers](/book/numbers)
-* Arithmetic
+* [Arithmetic](/book/arithmetic)
 * Time
 * Types
 
