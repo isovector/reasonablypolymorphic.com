@@ -18,6 +18,8 @@ tags:
 * [Interlude](/book/interlude)
 * [Numbers](/book/numbers)
 * [Arithmetic](/book/arithmetic)
+* [Abstraction](/book/abstraction)
+* Higher-Level Machinery
 * Time
 * Types
 
