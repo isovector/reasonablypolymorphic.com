@@ -195,7 +195,7 @@ implement `Add4` more concisely like this:
 
 ```{#mw_add_four}
 wireLabel s = topLeftText s # scale textSize # translate (r2 (-0.2, 0.3))
-mw l a = mkCon a (In 0) ||| text "}" # scale 0.5 # translateY (-0.003) ||| inputWire ||| wireLabel l ||| inputWire ||| text "{" # scale 0.5 ||| mkCon a (Out 0)
+mw l a = mkCon a (In 0) ||| text "}" # scale 0.5 # translateY (-0.003) ||| inputWire ||| wireLabel l ||| inputWire ||| mkCon a (Out 0)
 mw' l a = (mkCon a (In 0) <> text "}" # scale 0.5 # translateY (-0.003) # translateX 0.1) ||| inputWire ||| wireLabel l ||| inputWire
 deWire s = mkCon s (In 0) ||| inputWire ||| mkCon s (Out 0)
 vdeWire s = (mkCon s (In 0) ||| inputWire ||| mkCon s (Out 0)) # rotate (-1/4 @@ turn)
@@ -203,7 +203,7 @@ vdeWire s = (mkCon s (In 0) ||| inputWire ||| mkCon s (Out 0)) # rotate (-1/4 @@
 circuit = labeled "Add4" $ runCircuit $ void $ do
   n1 <- liftDia $ mw ":4"
   n2 <- liftDia $ mw ":4"
-  m <- liftDia $ machine [ "A", "B", "Cin" ] [ "S", "Cout" ] "Add"
+  m <- liftDia $ machine' [outputMulti, outputMulti, inputWire] [ "A", "B", "Cin" ] [ "S", "Cout" ] "Add"
   assertSame n1 (Out 0) m (In 0)
   assertSame n2 (Out 0) m (In 1)
   cin <- liftDia vdeWire
@@ -246,7 +246,6 @@ the same thing* as this one we built earlier.
 
 ``` {#nybble_add}
 addScale = 0.3
-nybble s = vsep 0.1 $ fmap (\x -> inputWire ||| mkCon s (Out x)) [3, 2, 1, 0]
 deWire s = mkCon s (In 0) ||| inputWire # scale addScale ||| mkCon s (Out 0)
 vdeWire s = (mkCon s (In 0) ||| inputWire # scale addScale ||| mkCon s (Out 0)) # rotate (-1/4 @@ turn)
 add n n1 n2 = do

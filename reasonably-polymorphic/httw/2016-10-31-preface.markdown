@@ -19,8 +19,8 @@ tags:
 * [Numbers](/book/numbers)
 * [Arithmetic](/book/arithmetic)
 * [Abstraction](/book/abstraction)
-* Higher-Level Machinery
-* Time
+* [Multiplexing](/book/multiplexing)
+* Changes over Time
 * Types
 
 ### Part 2
