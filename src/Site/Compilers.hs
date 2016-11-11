@@ -150,7 +150,8 @@ import Diagrams.TwoD.Arrow
 import Diagrams.TwoD.Arrowheads
 import Diagrams.Prelude hiding (anon)
 import Diagrams.TwoD.Shapes
-import Diagrams.TwoD.Layout.Constrained ((=.=), constrainWith)
+import Diagrams.TwoD.Layout.Constrained ((=.=), constrainWith, xOf, yOf, along)
+import Diagrams.TwoD.Vector
 
 import Circuitry
 import Circuitry.Backend

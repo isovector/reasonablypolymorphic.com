@@ -20,14 +20,14 @@ tags:
 * [Arithmetic](/book/arithmetic)
 * [Abstraction](/book/abstraction)
 * [Multiplexing](/book/multiplexing)
-* Changes over Time
+* [Latches](/book/latches)
+* [Constructions on Annotations](/constructions-on-annotations)
+* Memory Cells
 * Types
 
 ### Part 2
 
 * Abstraction
-* Multiplexing
-* Memory
 * Operations
 * Processing
 

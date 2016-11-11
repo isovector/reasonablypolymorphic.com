@@ -1,0 +1,272 @@
+---
+layout: post
+title: Latches
+date: 2016-11-09 20:00
+comments: true
+tags:
+---
+
+In the last chapter, we discussed multiplexing and demultiplexing --
+respectively merging and splitting many streams of information over a single
+pipeline. As previously hinted, we're getting surprisingly close to having all
+of the pieces in place to make an honest-to-goodness computer.
+
+We don't plan to stop there, it's just that we'll need one in order to jump to
+the next level of abstraction; dealing directly with wires is so *barbarian*.
+
+But we're not there yet. Today we set our sights on coming up with a way of
+representing *changes over time* in our machine diagrams. This is a harder
+problem than it sounds, because we don't even have a notion of time yet. Our
+machine diagrams are defined in terms of *function tables*, which, as we've
+repeatedly stressed, *always provide the same output given the same input*.
+They're not allowed to do anything except for syntactic manipulation of values
+on the underlying wires.
+
+And so, it would seem, we find ourselves at an impasse. We could obviously just
+loosen the constraints on what our function tables are allowed to do, but this
+is undesirable for two reasons:
+
+The first is that ensuring our machines depend on nothing but their inputs means
+they are easy to reason about, and can always be decomposed and recomposed to
+and from their constituent parts. Because function tables must depend only on
+their inputs, this kind of reasoning is safe to do, since no externalities in
+the system can influence our analysis.
+
+The more practical reason is that it's not even clear how we would *allow*
+function tables to do these crazy things that don't depend on their input, like
+determine whether it's Tuesday. Half the time I'm not entirely convinced about
+whether or not today is Tuesday; I usually resolve the question by asking
+someone. Again, we get a win from parsimony on this one; "Tuesday" and most
+other arbitrary things you can ask about are very obviously *human concepts*.
+Humans are great and all, but we shouldn't expect the universe to fundamentally
+agree with us that time should be subdivided into seven units, upon which our
+machines behave differently.
+
+So, how can we make a machine whose future depends on its past? Easy. Consider
+the following simplified example:
+
+```{#simple}
+circuit = labeled "Hold" $ runCircuit $ void $ do
+  or <- liftDia orGate
+  c <- liftDia con
+  input <- liftDia wire
+  done <- liftDia wire
+  orOut <- liftDia wire
+  orDown <- liftDia $ scale 2 <$> vwire
+  assertSame or (In 0) input (Out 0)
+  assertSame or (Out 0) orOut (In 0)
+  assertSame orOut (Out 0) orDown (In 0)
+  assertSame orOut (Out 0) done (In 0)
+  assertSame c Split orOut (Out 0)
+  b <- aligning bend Split (or, In 1) (orDown, Out 0)
+  arr (b, Split) (or, In 1)
+  arr (b, Split) (orDown, Out 0)
+```
+
+Whoa. This `Hold` machine outputs a 0 at first, but a 1 forever after its input
+has been raised high. What we've done is created a **feedback loop** from this
+machine's output to its input. Somehow the output of this machine is *defined in
+terms of itself*, which is actually pretty spooky if you think about it.
+
+It will be informative to look at this machine's function table, since it is a
+little different than we are used to seeing.
+
+| Input | Last Output | Next Output |
+|:-----:|:-----------:|:-----------:|
+| 0     | 0           | 0           |
+| 0     | 1           | 1           |
+| 1     | 1           | 1           |
+| 1     | 0           | 1           |
+
+We've cleverly snuck around our limitation of requiring a function table to
+depend only on its inputs by splitting its output into its *last output* and its
+*next output*.
+
+The very labeling of *last* and *next* outputs is informative; it strongly
+suggests that these machines can change over time, so long as their inputs
+change over time. And this makes sense; if some external force influences our
+wires (eg. maybe the user presses a button), we want our systems to react to
+that stimulus.
+
+Feedback is actually a really interesting phenomenon. We can use it to implement
+rather exotic things, like a clock:
+
+```{#clock}
+circuit = labeled "Clock" $ runCircuit $ void $ do
+  or <- liftDia $ (spacer |||) <$> notGate
+  c <- liftDia con
+  done <- liftDia wire
+  orOut <- liftDia wire
+  orDown <- liftDia $ scale 2 <$> vwire
+  assertSame or (Out 0) orOut (In 0)
+  assertSame orOut (Out 0) orDown (In 0)
+  assertSame orOut (Out 0) done (In 0)
+  assertSame c Split orOut (Out 0)
+  b <- aligning bend Split (or, In 0) (orDown, Out 0)
+  arr (b, Split) (or, In 0)
+  arr (b, Split) (orDown, Out 0)
+```
+
+This is not a "clock" in the usual human sense, but more in the sense of "it
+ticks and it tocks and in general could be used to measure time if you knew how
+fast it was ticking".
+
+| Last Output | Next Output |
+|:-----------:|:-----------:|
+| 0           | 1           |
+| 1           | 0           |
+
+Neat. So with a couple of these examples under our belt, let's build something
+useful. There is a canonical first impression of these things, and it looks like
+this:
+
+```{#rs}
+circuit = labeled "RS" $ runCircuit $ void $ do
+  nor1 <- liftDia norGate
+  nor1out <- liftDia wire
+  nor1in <- liftDia vwire
+  c <- liftDia $ (\x -> x ||| inputWire ||| wireLabel "Q") <$> con
+  nor2 <- liftDia norGate
+  nor2out <- liftDia wire
+  nor2in <- liftDia vwire
+  liftCircuit $ constrainWith (vsep 1) [nor1, nor2]
+  assertSame nor1 (Out 0) nor1out (In 0)
+  assertSame nor2 (Out 0) nor2out (In 0)
+  assertSame nor1 (In 1) nor1in (In 0)
+  assertSame nor2 (In 0) nor2in (Out 0)
+  assertSame c Split nor1out (Out 0)
+  in1 <- liftDia $ (wireLabel "R" |||) <$> wire
+  in2 <- liftDia $ (wireLabel "S" |||) <$> wire
+  s1 <- liftDia vwire
+  s2 <- liftDia vwire
+  assertSame s1 (In 0) nor1out (Out 0)
+  assertSame s2 (Out 0) nor2out (Out 0)
+  assertSame in1 (Out 0) nor1 (In 0)
+  assertSame in2 (Out 0) nor2 (In 1)
+  arr (nor1in, Out 0) (s2, In 0)
+  arr (nor2in, In 0) (s1, Out 0)
+```
+
+This is known as an `RS` latch. A useful mnemonic for keeping track of what it
+does is that the `S` stands for "set" and the `R` stands for "reset". Which is
+to say, that raising the `S` input will "set" the latch, and keep output `Q` be
+1, while raising the `R` input will "reset" the latch and return the output to
+0.
+
+Its function table, if you're into that kind of thing, is presented here:
+
+| R | S | Last Q | Next Q  |
+|:-:|:-:|:------:|:-------:|
+| 0 | 0 | 0      | 0       |
+| 0 | 0 | 1      | 1       |
+| 0 | 1 | 1      | 1       |
+| 0 | 1 | 0      | 1       |
+| 1 | 0 | 0      | 0       |
+| 1 | 0 | 1      | 0       |
+| 1 | 1 | 1      | Invalid |
+| 1 | 1 | 0      | Invalid |
+
+What's this "invalid" stuff? Well, setting both `R` and `S` high makes both of
+the `nor` gates output a 0, which if you trace the diagram will cause crazy
+behavior in our output `Q`, and break the semantic model we have of what it
+means to "set" or "reset" this thing.
+
+The function table is kind of gnarly, so we can also write it like the
+following, which helps to convey the *semantics* of what we're trying to
+accomplish:
+
+| R | S | Q |
+|:-:|:-:|:--|
+| 0 | 0 | No Change |
+| 0 | 1 | 0         |
+| 1 | 1 | Invalid   |
+| 1 | 0 | 1         |
+
+where "No Change" obviously indicates `Next Q = Last Q`.
+
+The `RS` machine is our first exposure to **latches**: machines which hold some
+kind of "state" depending on what has happened in the past. In this case, `RS`
+remembers which of `R` or `S` was most recently high. As such, we can think of
+it as having a some **memory**. Indeed, the `RS` latch stores one bit of
+information for us.
+
+Unfortunately, the `RS` latch is finicky. Whenever you see an *Invalid* set of
+inputs, you should become very worried, because of Murphy's law: despite your
+best efforts, something will cause the illegal combination of inputs, and the
+rest of our machine will explode -- either logically, or in some cases of real
+electronics, physically.
+
+What we'd really like to do is to provide some sort of "interface" to the `RS`
+latch, which *guarantees* that `R` and `S` can't possibly be high
+simultaneously. The only way to ensure that is if the input to `R` were somehow
+derived from the `not` of the input to `S`. But, if that were the case, we'd
+also want another wire `and`ed against both of them, to prevent the latch from
+toggling indefinitely.
+
+```{#snap}
+circuit = labeled "Snap" $ runCircuit $ void $ do
+  split <- liftDia $ machine [""] ["-", "+"] "Split"
+  and1 <- liftDia $ scale 0.6 <$> andGate
+  and2 <- liftDia $ scale 0.6 <$> andGate
+  assertSame split (Named "-") and1 (In 1)
+  assertSame split (Named "+") and2 (In 0)
+  c <- aligning ((labeledWire "S" |||) <$> con) Split (split, In 0) (and1, In 0)
+  b <- aligning bend Split (c, Split) (and2, In 1)
+  input <- liftDia $ (wireLabel "V" |||) <$> wire
+  assertSame input (Out 0) split (In 0)
+  arr (c, Split) (b, Split)
+  arr (c, Split) (and1, In 0)
+  arr (b, Split) (and2, In 1)
+  rs <- liftDia $ (\x -> x ||| inputWire ||| wireLabel "Q") <$> machine ["R", "S"] ["Q"] "RS"
+  liftCircuit $ constrainWith (hsep 1.3) [split, rs]
+  arr (and1, Out 0) (rs, In 0)
+  arr (and2, Out 0) (rs, In 1)
+```
+
+The `Snap` machine is exactly this interface we desire. As you might expect from
+the name, `Snap` takes a *snapshot* of `V` ("value") whenever `S` ("set") is
+high. Behind the scenes, `Snap` is nothing more than a fancy `RS` latch, but now
+we've guaranteed that we can't possibly toggle the illegal input condition on
+the latch. Our semantic function table for `Snap` looks like this:
+
+| S | Q         |
+|:-:|:---------:|
+| 0 | No Change |
+| 1 | **V**     |
+
+Of course, being able to store a single bit isn't particularly useful.
+Thankfully, as usual, multiwires give us a convenient way of "lifting"
+single-wire machines to multi-wire machines. Thus, we present `Snap*`, a
+*polymorphic* snapshot machine capable of taking a snapshot of an entire
+multiwire at once:
+
+```{#snap_nybble}
+circuit = labeled "Snap*" $ runCircuit $ void $ do
+  snap <- liftDia $ (\x -> x ||| sspacer # scale 0.5 ||| inputMulti ||| wireLabel ":n") <$> machine' [inputWire, outputMulti] ["S", "V"] ["Q"] "Snap"
+  d <- liftDia $ const $ vspacer # scale 0.6
+  spaceV 0.1 snap d
+  input1 <- liftDia $ scale 2.2 <$> wire
+  input2 <- liftDia $ multiIn ":n"
+  assertSame input1 (Out 0) snap (In 0)
+  assertSame input2 (Out 0) snap (In 1)
+  return ()
+```
+
+It's worthwhile to stop and think about how far we've come, and exactly how many
+little details are hiding away inside of this simple diagram for `Snap*`. The
+multiwire makes `n` copies of the internal `Snap`, which itself contains two
+machines. We've managed to pack an incredible amount of *machinery* into this
+one diagram, and the functionality of it is no longer anywhere close to being
+"trivial". We really and truly have designed something worthwhile here, both in
+terms of `Snap*` and in terms of the abstraction tools we've built in order to
+actually describe it.
+
+Something that might further pique your intrigue is that we are *nowhere near*
+the limit of the abstraction tools we'll have built by the end of this book.
+We're still just getting started.
+
+In the next chapter, we'll build big blocks of these `Snap*` machines, capable
+of storing many different nybbles simultaneously. We'll further design machinery
+to *read* and *write* from any particular cell in this snapshot block, at which
+point we'll have a working memory component for our computer.
+
