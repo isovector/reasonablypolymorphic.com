@@ -143,6 +143,7 @@ mkSrc circs = [iTrim|
 module Main where
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as C8
 import Data.Typeable
 import Control.Arrow (first, second)
 import Control.Monad
@@ -170,6 +171,6 @@ ${intercalate "\n" . fmap mkCirc $ M.assocs circs }
 main :: IO ()
 main = do
   diagram <- read . head <$> getArgs
-  BS.putStrLn $ toDataURL $ frame 0.25 $ circuits diagram
+  C8.putStrLn $ toDataURL $ frame 0.25 $ circuits diagram
 |]
 
