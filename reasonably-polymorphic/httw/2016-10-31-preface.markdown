@@ -10,7 +10,7 @@ tags:
 
 ## Table of Contents
 
-### Part 1
+### Part 1 -- Diagrams
 
 * [Preface](/book/preface)
 * [Machine Diagrams](/book/machine-diagrams)
@@ -23,10 +23,11 @@ tags:
 * [Latches](/book/latches)
 * [Constructions on Annotations](/book/constructions-on-annotations)
 * [Memory Cells](/book/memory)
-* Types
+
 
 ### Part 2
 
+* [A New Foundation](/book/new-foundations)
 * Abstraction
 * Operations
 * Processing
