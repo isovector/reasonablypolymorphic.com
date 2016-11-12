@@ -21,8 +21,8 @@ tags:
 * [Abstraction](/book/abstraction)
 * [Multiplexing](/book/multiplexing)
 * [Latches](/book/latches)
-* [Constructions on Annotations](/constructions-on-annotations)
-* Memory Cells
+* [Constructions on Annotations](/book/constructions-on-annotations)
+* [Memory Cells](/book/memory)
 * Types
 
 ### Part 2

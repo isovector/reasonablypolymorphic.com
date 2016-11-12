@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Memory
+title: Memory Cells
 date: 2016-11-11 23:00
 comments: true
 tags:
