@@ -1,0 +1,243 @@
+---
+layout: post
+title: Memory
+date: 2016-11-11 23:00
+comments: true
+tags:
+---
+
+We've spent four chapters now building machinery in order to construct memory
+blocks -- large arrays of our `Snap*` machine -- capable of being selectively
+written-to and addressed-from. This "selectively" criterion generally goes by
+the name **addressable**, which means that each `Snap*` machine has an
+"address", which we know beforehand and can use to route signals to and from it.
+
+As usual, this notion of *addressability* has deeper and more interesting
+implications in the wider theoretical sense, but we are not interested in that
+today. Abstractions are only valuable in the fact that they allow us to
+*abstract over* something, and we do not yet have an example over which we can
+abstract.
+
+But we do, in fact, have something else which we'd like to abstract over, and
+that is this memory block we've so desired over these four long chapters. A good
+way to go about designing these things is to completely ignore the internals,
+and reason about how you'd like it to work if someone else had built it and
+didn't provide any kind of documentation. One lens for abstraction is in terms
+of "usability" -- can we provide a simple mental model for describing how this
+thing works, and then manage to *never* violate that model? If so, we have
+provided a useful abstraction. If not, the thing we have built deserves to be
+thrown into the trash and done again.
+
+And so the question is asked: how would we like this machine to operate? Another
+phrasing of that question is "what are its semantics?" which is equivalently
+"what is our mental model of this thing?"
+
+Let's start with what we know so far. We'd like to be able to write to a
+`Snap*`, which suggests we'll need to get input to the `Snap*`, which means at
+the very least we'll need signals `S:1` and `V:n`, albeit possibly manipulated
+somehow to make the interface "cleaner". But we also need to fit several of
+these `Snap*`s into one logical machine, and we'll need a way to *address* them.
+Fortunately we were forward thinking and have already built `Demux`, which, if
+you think about it, provides *exactly* the mechanism necessary for addressing
+machines.
+
+So what does `Demux` take as input? A payload, `A:n` (although this `:n` need
+*not* be the same as the multiwire `V:n` on `Snap*` -- remember, polymorphic
+wires with the same letter need only be consistent *within a single diagram*.
+When we merge these things together, we'll rename one of those `:n`s to a
+different letter so that we don't confuse ourselves later). `Demux` also takes
+an input `D:d`, which is responsible for describing a "destination" output
+multiwire to move the payload to.
+
+Presumably this means we'd like a `Demux` machine in front of a bunch of `Snap*`
+machines, and that the payload to `Demux` should be the value `V` we're sending
+to our `Snap*`s. As such, we'll need to line up the output multiwires from
+`Demux` with the value multiwire to `Snap*`, and we realize that yes, indeed the
+`:n` annotation on the `A` is in fact the same as the `:n` annotation on the
+`V`. Remember -- a wire has the same value all along it, and multiwires are no
+different. In order to connect an output multiwire to an input multiwire, they
+*must* have the same annotation, or they wouldn't physically (or logically)
+"fit" together.
+
+Recall that the other thing we want from our memory block is to be able to
+selectively *read* from an addressable `Snap*` machine. If you remember,
+`Snap*`'s output is always the last thing it snapshotted, and so if we have
+several of these things together, we'll have nothing but a cacophony of values,
+only *one* of which we actually want. But only sometimes.
+
+Why only sometimes? It seems more parsimonious that if we're not always
+*writing* to a `Snap*` (because it requires you to raise the `S`napshot wire),
+then we probably don't want to always be *reading* from it either. This way,
+consumers of the data can tightly control exactly what they're getting -- they
+can raise a wire, receive the data they wanted, and then go on their jolly way.
+Making the data *read on demand* means that it's tricky for someone else
+listening on the same output line to receive information meant for someone else.
+
+It's like the difference between a telephone and a walkie-talkie; a telephone
+notifies someone that you'd like some data, and the connection only stays open
+as long as you require. A walkie-talkie on the other hand is always listening,
+and having multiple people share the same channel results in "chatter" -- you'll
+be distracted any time *anyone* is talking, even if it's not towards you.
+
+With this semantic constraint, it's now obvious that we need a way to tell our
+memory block machine that we're listening, and it should send data to us.
+Because we're *listening* for data, don't want to put any data on the payload
+line, and so any writes that happen simultaneously with our read will
+accidentally *write over* the data we're trying to read. As a result, we
+probably don't want to be able to *read* and *write* at the same time; the only
+tool we know for dealing with that is to make it the same line, where a 0 value
+represents one of the possibilities, and 1 represents the other. Unfortunately,
+such a decision means that we need *another* wire to tell the machine to
+actually do something. A "go for it!" kind of signal, if you will.
+
+On a cursory glance, we seem to have described exactly what we want out of our
+memory block, so let's start synthesizing all of the things we decided. Our
+machine needs to take some inputs:
+
+* a payload `A:n`
+* a destination `D:d`
+* a read-write option `RW:1`, where 0 describes a "read" and a 1 describes a
+  "write"
+* and an active "go" wire `G:1`
+
+whose semantics are as follows:
+
+| RW | G | Output | Side Effect |
+|:--:|:-:|:------:|:-----------:|
+| _  | 0 | Nothing | Nothing |
+| 0  | 1 | `Snap*` at **D** | Nothing |
+| 1  | 1 | Nothing | Set `Snap*` at **D** to **A** |
+
+What tools to we have available to us to construct such a beast? Well we know
+that anything `and`ed against a 0 is also 0, so `and`ing against the `G` wire
+allows us to turn the entire machine on or off. In particular, the things we'd
+want to `and` against would be the `S`napshot wire in the `Snap*`, and the
+*output* of the `Snap*` (so that we don't read any data if `G` is low).
+
+`Demux` gives us the capability to address a particular machine based on some
+input `D:d`, which allows us to move not only the payload `A` to the correct
+`Snap*`, but also the snapshot value `S`. The last trick is to "un-demux" the
+results from our many `Snap*`s onto a single output multiwire. This, of course,
+we have already looked at in the form of `Mux2`. We won't be covering the
+construction of the generalization of `Mux2` to a polymorphic `Mux`, but it
+follows exactly the same procedure we did to construct `Demux` from `Demux2`.
+
+With all of the pieces and reasoning in place, let's go about building this
+sucker.
+
+```{#mem}
+connecting ((d, _, output):ds@((d', input, _):_)) =
+  assertSame d output d' input >> connecting ds
+connecting _ = return ()
+
+multiIn' n s = mkCon s (In 0) ||| sspacer # scale 0.5 ||| inputMulti ||| wireLabel n ||| mkCon s (Out 0)
+machine_ x y z s = machine x y z s # scaleX 0.75
+machine_' w x y z s = machine' w x y z s # scaleX 0.75
+
+same d p (x, y) = do
+  d' <- liftDia d
+  assertSame d' p x y
+  return d'
+
+circuit = labeled "Mem" $ runCircuit $ void $ do
+  demuxV <- liftDia $ machine_ ["A", "D"] [""] "Demux"
+  demuxS <- liftDia $ machine_ ["A", "D"] [""] "Demux"
+  vb <- liftDia wire
+  vIn <- liftDia vwire
+  sb <- liftDia wire
+  sIn <- liftDia vwire
+  snap <- liftDia $ machine_' [outputMulti, outputMulti] ["V", "S"] ["Q"] "Snap*"
+  connecting [ (demuxV, undefined, Out 0)
+             , (vb, In 0, Out 0)
+             , (vIn, In 0, Out 0)
+             , (snap, In 0, undefined)
+             ]
+  connecting [ (demuxS, undefined, Out 0)
+             , (sb, In 0, Out 0)
+             , (sIn, Out 0, In 0)
+             , (snap, In 1, undefined)
+             ]
+  d <- liftDia $ multiIn "D:d"
+  dbd <- aligning con Split (demuxV, In 0) (d, Out 0)
+  dbv <- aligning con Split (dbd, Split) (demuxV, In 1)
+  dbs <- aligning con Split (dbd, Split) (demuxS, In 1)
+  arr (d, Out 0) (dbd, Split)
+  arr (dbd, Split) (dbv, Split)
+  spaceV 0.5 demuxS d
+
+  rwSAnd <- liftDia $ scale 0.5 <$> andGate
+  rwSW <- liftDia $ scale 0.5 <$> wire
+  connecting [ (rwSAnd, undefined, Out 0)
+             , (rwSW, In 0, Out 0)
+             , (demuxS, In 0, undefined)
+             ]
+  rsSAndGb <- same con Split (rwSAnd, In 1)
+  rsSAndIn <- liftDia $ scale 0.5 <$> wire
+  assertSame rsSAndIn (Out 0) rwSAnd (In 0)
+  rsSAndRWb <- same con Split (rsSAndIn, In 0)
+
+  rwGo <- liftDia $ scale 0.85 <$> andGate
+  spaceV 1.2 rwGo snap
+  rwNot <- liftDia $ scale 0.35 <$> notGate
+  assertSame rwNot (Out 0) rwGo (In 0)
+  getPort rwGo (Out 0) >>= \p1 ->
+    getPort snap (Out 0) >>= \p2 -> above p1 p2
+
+  rw <- aligning ((\x -> wireLabel "RW" ||| x # scale 2) <$> wire) (Out 0) (rsSAndRWb, Split) (rwNot, In 0)
+  same con Split (rw, Out 0)
+  arr (rw, Out 0) (rsSAndRWb, Split)
+  arr (rw, Out 0) (rwNot, In 0)
+
+  g <- aligning ((\x -> wireLabel "G" ||| x # scale 2) <$> wire) (Out 0) (rw, Out 0) (rwGo, In 1)
+  gb <- aligning con Split (rsSAndGb, Split) (g, Out 0)
+  arr (g, Out 0) (rwGo, In 1)
+  arr (gb, Split) (rsSAndGb, Split)
+
+  a <- aligning (multiIn "A:n") (In 0) (d, In 0) (demuxV, In 0)
+  arr (a, Out 0) (demuxV, In 0)
+
+  sameX d g
+
+  rwGoOut <- liftDia wire
+  rwGoDown <- liftDia $ scale 2.25 <$> vwire
+  connecting [ (rwGo, undefined, Out 0)
+             , (rwGoOut, In 0, Out 0)
+             , (rwGoDown, In 0, undefined)
+             ]
+  ands <- liftDia $ andGate' inputWire outputMulti
+  arr (rwGoDown, Out 0) (ands, In 0)
+
+  snapout <- liftDia $ multiIn ":(2^d,n)"
+  mux <- liftDia $ (\x -> x ||| inputWire ||| wireLabel ":n") <$> machine_ ["*", "D"] [""] "Mux"
+  andsout <- liftDia $ multiIn' ":(2^d,n)"
+  connecting [ (snap, undefined, Out 0)
+             , (snapout, In 0, Out 0)
+             , (ands, In 1, Out 0)
+             , (andsout, In 0, Out 0)
+             , (mux, In 0, Out 0)
+             ]
+  dbend <- aligning bend Split (mux, In 1) (d, Out 0)
+  arr (d, Out 0) (dbend, Split)
+  arr (dbend, Split) (mux, In 1)
+```
+
+Egads, what a monster. But remember, *don't panic!* This `Mem` thing looks
+tricky at first, but it's still exactly the thing we described earlier. As an
+exercise, convince yourself that `Mem` has the same semantics as the function
+table we drew earlier.
+
+We've spent a long time (five chapters now!) building this `Mem` machine; it
+feels like time for a break. In the next chapter, we'll upgrade our
+understanding of what an annotation is, and find that they are much more
+powerful than we'd ever imagined. We'll then start looking at how we can build a
+new way of describing these machine diagrams, since they're getting surprisingly
+large and difficult (for you to read, and for me to draw!).
+
+---
+
+## Exercises
+
+1) Go through the exercise of generalizing `Mux2` to a polymorphic `Mux`.
+2) Work out the semantic function table of `Mem`, and ensure that it agrees with
+   the one given previously.
+
