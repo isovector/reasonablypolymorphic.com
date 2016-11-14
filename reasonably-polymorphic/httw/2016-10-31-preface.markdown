@@ -28,6 +28,7 @@ tags:
 ### Part 2
 
 * [A New Foundation](/book/new-foundations)
+* [Symbolic Computation](/book/symbolic-computation)
 * Abstraction
 * Operations
 * Processing
