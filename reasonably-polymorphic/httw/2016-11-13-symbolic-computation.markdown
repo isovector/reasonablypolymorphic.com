@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Symbolic Computation
-date: 2016-11-11 14:00
+date: 2016-11-13 14:00
 comments: On
 tags:
 ---

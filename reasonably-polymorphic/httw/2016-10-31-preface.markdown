@@ -29,7 +29,9 @@ tags:
 
 * [A New Foundation](/book/new-foundations)
 * [Symbolic Computation](/book/symbolic-computation)
-* Abstraction
+* [Symbolic Evaluation and Equational Reasoning](/book/evaluation)
+* More Types
+* Revisiting State
 * Operations
 * Processing
 
@@ -37,6 +39,8 @@ tags:
 
 * Induction
 * Abstraction Barriers
+* Function Composition
+* Kleisli Composition
 * Graphs
 * Isomorphisms and Transformations
 * Embeddings and Functors
