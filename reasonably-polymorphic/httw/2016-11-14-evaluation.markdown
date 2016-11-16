@@ -244,4 +244,4 @@ up.
 
 1) Fully evaluate (walk through all the steps of it) the expression `or (xor
 (and On Off) Off) (or Off (not Off))`.
-2) ok
+
