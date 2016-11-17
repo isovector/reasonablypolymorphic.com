@@ -30,7 +30,8 @@ tags:
 * [A New Foundation](/book/new-foundations)
 * [Symbolic Computation](/book/symbolic-computation)
 * [Symbolic Evaluation and Equational Reasoning](/book/evaluation)
-* More Types
+* [More Types](/book/more-types)
+* [Polymorphism](/book/polymorphism)
 * Revisiting State
 * Operations
 * Processing
