@@ -32,6 +32,7 @@ tags:
 * [Symbolic Evaluation and Equational Reasoning](/book/evaluation)
 * [More Types](/book/more-types)
 * [Polymorphism](/book/polymorphism)
+* [Back in Business and Better than Ever](/book/back-in-business)
 * Revisiting State
 * Operations
 * Processing
