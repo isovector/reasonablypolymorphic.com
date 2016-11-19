@@ -33,6 +33,7 @@ tags:
 * [More Types](/book/more-types)
 * [Polymorphism](/book/polymorphism)
 * [Back in Business and Better than Ever](/book/back-in-business)
+* [The Infectiousness of Reality](/book/infectiousness-of-reality)
 * Revisiting State
 * Operations
 * Processing
