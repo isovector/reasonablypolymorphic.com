@@ -34,6 +34,7 @@ tags:
 * [Polymorphism](/book/polymorphism)
 * [Back in Business and Better than Ever](/book/back-in-business)
 * [The Infectiousness of Reality](/book/infectiousness-of-reality)
+* [Functions](/book/functions)
 * Revisiting State
 * Operations
 * Processing
