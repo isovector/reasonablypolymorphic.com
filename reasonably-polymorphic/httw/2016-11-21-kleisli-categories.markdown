@@ -286,3 +286,14 @@ out, **reality itself is *Kleisli***, and this fact is our first glimpse into
 the mindset that maybe all of this isn't merely just a toy logic world after
 all.
 
+---
+
+## Exercises
+
+1) `Either Nat` is *Kleisli* under some circumstances. One of those
+   circumstances is when `composeEither` "short circuits" if any of its
+   results are `Left` (similar to how `composeMaybe` short circuits whenever any
+   of its results are `Nothing`). <br />&nbsp;<br />Write the functions
+   `injectEither : a -> Either Nat a`, and
+   `composeEither : (a -> Either Nat b) -> (b -> Either Nat c) -> (a -> Either Nat c)`
+   to prove that `Either Nat` is *Kleisli*.
