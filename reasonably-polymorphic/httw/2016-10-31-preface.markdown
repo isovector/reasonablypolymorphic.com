@@ -36,7 +36,8 @@ tags:
 * [The Infectiousness of Reality](/book/infectiousness-of-reality)
 * [Functions](/book/functions)
 * [Kleisli Categories](/book/kleisli-categories)
-* Revisiting State
+* [Revisiting State](/book/revisiting-state)
+* Kleisli Tools
 * Operations
 * Processing
 
