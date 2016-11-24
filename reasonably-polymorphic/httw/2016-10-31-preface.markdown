@@ -25,7 +25,7 @@ tags:
 * [Memory Cells](/book/memory)
 
 
-### Part 2
+### Part 2 -- Symbolic Computations
 
 * [A New Foundation](/book/new-foundations)
 * [Symbolic Computation](/book/symbolic-computation)
@@ -37,12 +37,12 @@ tags:
 * [Functions](/book/functions)
 * [Kleisli Categories](/book/kleisli-categories)
 * [Revisiting State](/book/revisiting-state)
-* Kleisli Tools
-* Operations
-* Processing
+* [Kleisli Tools](/book/kleisli-tools)
 
 ### Part 3
 
+* Operations
+* Processing
 * Induction
 * Abstraction Barriers
 * Function Composition
