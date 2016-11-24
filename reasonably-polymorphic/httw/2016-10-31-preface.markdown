@@ -39,14 +39,14 @@ tags:
 * [Revisiting State](/book/revisiting-state)
 * [Kleisli Tools](/book/kleisli-tools)
 
+
 ### Part 3
 
+* [Our First Computer](/book/our-first-computer)
 * Operations
 * Processing
 * Induction
 * Abstraction Barriers
-* Function Composition
-* Kleisli Composition
 * Graphs
 * Isomorphisms and Transformations
 * Embeddings and Functors

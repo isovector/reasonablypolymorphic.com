@@ -260,6 +260,14 @@ table, th, td {
     border: 1px solid black;
 }
 
+.noborders * {
+  border: none;
+}
+
+.noborders table {
+  border-bottom: 1px solid black;
+}
+
 th {
   padding: 0.3em 0.5em;
   font-size: larger;
