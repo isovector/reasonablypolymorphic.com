@@ -43,6 +43,7 @@ tags:
 ### Part 3
 
 * [Our First Computer](/book/our-first-computer)
+* [Tapes](/book/tapes)
 * Operations
 * Processing
 * Induction

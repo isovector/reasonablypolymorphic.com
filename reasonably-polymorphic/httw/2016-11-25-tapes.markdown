@@ -1,0 +1,195 @@
+---
+layout: post
+title: Tapes
+date: 2016-11-24 14:00
+comments: true
+tags:
+---
+
+In the last chapter, we discussed the *P''* computer architecture -- a highly
+simplified computer consisting of two tapes. *P''* has a *program tape*, which
+contains the current program to run, and it also has a *memory tape*, where it
+can store `Nat`s as a form of "scratch work."
+
+As a required step towards building a *P''* machine, we'll obviously need to
+build this tape **data structure**. A *data structure* is a container for
+storing information, complete with an interface for interacting with it, and
+trade-offs for when one *data structure* should be used in place of another.
+
+## Tapes
+
+We've already seen a *data structure*, the `List a`. `List a` fits our
+description for what it means to be a *data structure*: it is a container of
+elements of type `a`, and its interface allows us to pull off the front of the
+list, getting back the element there, and the remainder of the list. We'll look
+at trade-offs later when we discuss the Big-O notation, but that won't be for
+some time yet.
+
+Before we go ahead and build a tape, we should probably understand what a tape
+is, and how we'll want to interact with it. Recall that a tape has a *read
+head*, which corresponds to the "active" element on the tape; we're only ever
+allowed to look at the *read head* of the tape. In addition, we have two spools
+on either side of the read head, which act as a kind of "storage". As we move
+the *read head* left and right, the value at the *read head* moves to one of the
+spools, and a new value comes under the *read head* from the other spool. We
+also said that tapes are *infinitely long* in both directions, a fact we'll need
+to deal with at some point.
+
+So, conceptually, we can represent a tape as some new type `Tape a`, consisting
+of two "spools containing `a`s", and a distinguished "read head", itself of type
+`a`. But what should these "spools" be? Well, let's go back to our use-cases and
+see what we need from the spools. The spools only ever absorb or provide a new
+element for the *read head* -- meaning we need to either be able to put an
+element onto the spool, or take one off. Also, we'd like to get the elements out
+of the spool in the *opposite order* that we put them in on. Think about this
+like a VHS tape -- the further back you rewind from a moment, the more you need
+to fast-forward to get back to where you were.
+
+With all of this in our minds simultaneously, we see that the "spools" we wanted
+are nothing more than just `List a`. We can always pull the head off of a `List
+a` (provide an `a` to the *read head*), or "push" one in (absorbing the *read
+head*). Since we can only ever get the first thing in the list, if we add things
+to the front of the list, we'll get the desired property that elements come out
+in the opposite order that they were added. This property is sometimes known as
+"last in, first out".
+
+We're now ready to provide a type definition for tapes:
+
+```
+type Tape a = Tape (List a) a (List a)
+```
+
+A `Tape a` is nothing more than two `List a`s representing the spools, and a
+value of type `a` sitting in the middle, representing our *read head*. We'll
+provide a few helper functions to deal with a `Tape a`:
+
+```
+readHead : Tape a -> a
+readHead (Tape _ a _) = a
+```
+
+`readHead : Tape a -> a` is nothing but a function that gets the current value
+"under focus" of the tape -- which is to say, the *read head*. We also need some
+functions to move the *read head* left and right:
+
+```
+moveLeft : Tape a -> Tape a
+moveLeft (Tape (Cons l ls) a rs) = Tape ls l (Cons a rs)
+moveLeft (Tape Nil         a rs) = ???
+```
+
+`moveLeft : Tape a -> Tape a` takes the first thing off the left-most spool, and
+moves it to the current *read head*. It pushes the current *read head* into the
+right-most spool. But there's a problem! What happens if our left-most spool is
+`Nil` (empty)? Conceptually, our spools are infinitely long, but we don't have a
+notion of infinity to work with, unfortunately. The best we can do is to
+"magically" pull `a`s out of nowhere, and pretend like they were in the spool to
+begin with. But which value of type `a` should we choose?
+
+Because `a` is polymorphic, there's no "obvious" answer for which `a` to use.
+It's going to depend on the specific type that fills in the type variable `a`.
+For the program tape, we probably want to fill in the rest of the tape with
+*Halt* instructions. But for the memory tape, we want to fill it in with $0$s.
+
+We can capture this "most interesting element" to fill the tapes with via a new
+`class` of patterns, just like we had the `Kleisli` class pattern!
+
+```
+class Point a where
+  point : a
+```
+
+This should be read as "`Point` is a class of patterns, parameterized by some
+type `a`. This pattern is in effect whenever we have a value `point : a`." You
+can think of a `Point a` as being some type `a` with a "point of interest". With
+this `point : a` machinery in place, let's revisit `moveLeft`:
+
+```
+moveLeft : Point a => Tape a -> Tape a
+moveLeft (Tape (Cons l ls) a rs) = Tape ls  l     (Cons a rs)
+moveLeft (Tape Nil         a rs) = Tape Nil point (Cons a rs)
+```
+
+Now, if the left-most spool runs out of elements, we can use our witness of a
+`Point a` pattern to "pull an `a` out of nowhere!" Recall that `point : a` is a
+value that exists whenever we have a witness of the `Point a` pattern.
+
+The machine for `moveRight` is symmetric to the `moveLeft` example:
+
+```
+moveRight : Point a => Tape a -> Tape a
+moveRight (Tape ls a (Cons r rs)) = Tape (Cons a ls) r     rs
+moveRight (Tape ls a Nil)         = Tape (Cons a ls) point Nil
+```
+
+It's worth thinking about this "pulling `a`s out of nowhere" trick and why it
+works. Conceptually our spools have infinite length, but because the universe
+doesn't have infinite size, we can't directly make an equivalent analogue.
+However, what we can do is make a spool that is "as big as necessary".
+Unfortunately, we don't know how big "necessary" is in advance, so our next best
+bet is to make a spool that can become larger whenever more is requested. This
+solves the same problem, and so we're good to go!
+
+
+## The P'' Machine
+
+Now, we know that a *P''* machine is defined as two tapes: one for instructions,
+and one for memory. We know that the memory tape is `Tape Nat`, but what type
+should we use for our instructions?
+
+We made a list of seven possible instructions before. An particular instruction
+could be any one of *Move Left*, *Move Right*, *Increment*, *Decrement*, *Enter
+Loop*, *Exit Loop*, or *Halt*. The word "or" in this list should indicate that
+we want a *sum* type to describe these options:
+
+```
+type Instr = MoveLeft
+           | MoveRight
+           | Increment
+           | Decrement
+           | EnterLoop
+           | ExitLoop
+           | Halt
+```
+
+and we can define the "points of interest" for our `Instr`uctions and `Nat`s:
+
+```
+instance Point Instr where
+  point = Halt
+
+instance Point Nat where
+  point = 0
+```
+
+Given all of this, we can now define our *P''* machine as the product type of a
+`Tape Instr` and a `Tape Nat`.
+
+```
+type P'' = P'' (Tape Instr) (Tape Nat)
+```
+
+You should be convinced that this `P''` type corresponds exactly to what we said
+we meant by a *P''* machine. We still need to write functions to "execute" the
+program described by our `Tape Instr`, but that shouldn't be too hard.
+
+In the next chapter, we'll build this "executor" function, which looks like
+`execute : P'' -> P''` -- transforming a *P''* machine into another by
+evaluating the instruction at the *read head* of the program tape. When
+`execute` is run repetitively, until a `Halt` instruction is run, we'll have our
+first working computer and everything will be groovy.
+
+---
+
+## Exercises
+
+1) Use *equational reasoning* to show that
+   `readHead (moveRight (moveLeft x)) = readHead x` for every
+   `x : Point a => List a`, and that
+   `readHead (moveLeft (moveRight x)) = readHead x`.
+2) Why can't we make the stronger claims of *equational reasoning* that
+   `moveRight (moveLeft x) = x` and `moveLeft (moveRight x) = x`? Under which
+   circumstances would this prove to not be true?
+3) Prove that `Maybe a` has an `instance` of the `Point` pattern, by writing
+   *the* instance for it.
+
