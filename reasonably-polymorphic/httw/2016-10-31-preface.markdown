@@ -44,7 +44,7 @@ tags:
 
 * [Our First Computer](/book/our-first-computer)
 * [Tapes](/book/tapes)
-* Operations
+* [Operations](/book/operations)
 * Processing
 * Induction
 * Abstraction Barriers
