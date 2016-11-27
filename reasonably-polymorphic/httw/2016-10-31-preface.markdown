@@ -45,12 +45,7 @@ tags:
 * [Our First Computer](/book/our-first-computer)
 * [Tapes](/book/tapes)
 * [Operations](/book/operations)
-* Processing
-* Induction
-* Abstraction Barriers
-* Graphs
-* Isomorphisms and Transformations
-* Embeddings and Functors
+* [Tying It All Together](/book/tying-it-all-together)
 
 
 ## Preface
@@ -67,10 +62,15 @@ event.  "All of it," he replied. "Not all at once, but I know enough to be able
 to puzzle together the pieces I don't know right this second."
 
 That sentiment strongly resounded with me, and I've been thinking about it ever
-since. I share my friend's optimism, that given enough large pieces of the puzzle, it's possible to work backwards and figure out what shapes must have filled the gaps. It's likely not an overnight endeavor, but it's doable.
+since. I share my friend's optimism, that given enough large pieces of the
+puzzle, it's possible to work backwards and figure out what shapes must have
+filled the gaps. It's likely not an overnight endeavor, but it's doable.
 
 And so that's what this book strives to be: my contribution to any hypothetical
-survivors of the hypothetical apocalypse. A gentle, yet comprehensive introduction to *how these things work*. It won't answer every question you might have, but the motivated reader will learn enough to be able to answer the remaining questions themselves.
+survivors of the hypothetical apocalypse. A gentle, yet comprehensive
+introduction to *how these things work*. It won't answer every question you
+might have, but the motivated reader will learn enough to be able to answer the
+remaining questions themselves.
 
 "But what of the rest of us," you might be wondering. "Does this book hold any
 value for those of us without the delusions of grandeur to think we can rebuild

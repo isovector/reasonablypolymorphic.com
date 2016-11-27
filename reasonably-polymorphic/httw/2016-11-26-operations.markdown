@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Operations
-date: 2016-11-25 01:00
+date: 2016-11-26 01:00
 comments: true
 tags:
 ---
@@ -229,6 +229,7 @@ the next chapter.
 
 ## Exercises
 
-1) Define an analogous `withProgTape : (Tape Instr -> Tape Instr) -> State P'' Unit` function.
+1) Define an analogous `withProgTape : (Tape Instr -> Tape Instr) -> State P'' Unit`
+   function.
 2) Rewrite the `instrDecrement` action in terms of the `decr : Nat -> Maybe Nat`
    function we defined when we were first looking at `Nat`s.
