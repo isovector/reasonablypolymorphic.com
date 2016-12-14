@@ -7,15 +7,15 @@ module ClipIt
     ) where
 
 import Control.Arrow ((***))
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>), (<|>))
 import Data.Char (toLower, isAlphaNum, isSpace)
 import Data.DateTime
 import Data.Either (rights)
-import Data.List (nub)
+import Data.List (nub, sort)
 import Text.Regex
 import Data.Time.Clock
 import Data.Time.LocalTime (localTimeToUTC, utc)
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding ((<|>))
 import Debug.Trace (trace, traceM)
 import Control.Monad (liftM, liftM2, join)
 import Data.Time.Parse (strptime)
@@ -25,9 +25,7 @@ data Clipping =
     { bookName :: String
     , subtitle :: Maybe String
     , author   :: String
-    , page     :: Maybe Int
-    , location :: (Int, Int)
-    , added    :: Maybe DateTime
+    , added    :: DateTime
     , contents :: String
     } deriving (Show, Eq)
 
@@ -59,33 +57,35 @@ authorWord =
 
 
 titleWord :: GenParser Char st String
-titleWord =
-    do
-        manyTill anyChar (try $ lookAhead authorWord)
+titleWord = manyTill anyChar . try $ lookAhead authorWord
 
 typeof :: GenParser Char st String
-typeof =
-    do
-        let types = ["Highlight", "Note", "Bookmark"]
-        choice $ map string types
+typeof = do
+  optional $ string "Your "
+  choice $ map string ["Highlight", "Note", "Bookmark"]
 
 showTrace :: (Show a) => a -> a
-showTrace t = trace (show t) t
+showTrace = trace =<< show
 
 getClippings :: [FilePath] -> IO [Clipping]
 getClippings = fmap (filter (("" /=) . author))
-             . fmap (join . rights)
+             . fmap (join . fmap (either (error . show) id))
              . sequence
-             . map (fmap parseClippings . readFile)
+             . map (\f -> fmap (parseClippings f) $ readFile f)
+             . sort
 
 
-onPage :: GenParser Char st (Maybe Int)
-onPage = optionMaybe $ do
-    string "on Page "
-    cPage <- read <$> many digit
-    string " |"
+onPage :: GenParser Char st ()
+onPage = do
+    choice [ string "Page"
+           , string "page"
+           ]
     spaces
-    return cPage
+    many digit
+    optional $ do
+      spaces
+      string "|"
+      spaces
 
 parseSubtitle :: String -> (String, Maybe String)
 parseSubtitle l =
@@ -113,11 +113,14 @@ clipping =
         string "- "
         typeof
         spaces
-        cPage <- onPage
+        optional $ do
+          string "on"
+          spaces
+        optional onPage
         cLoc <- loc
         string "|"
         string " Added on "
-        time <- parseTime <$> line
+        Just time <- timeParser <$> line
         many eol                       -- end of line
         cContents <- line
         eol
@@ -127,30 +130,36 @@ clipping =
             { bookName = book
             , subtitle = cSub
             , author = authorName
-            , page = cPage
-            , location = cLoc
             , added = time
             , contents = cContents
             }
 
+timeParser :: String -> Maybe UTCTime
+timeParser s = parseTime s <|> parseTime2 s
+
 parseTime :: String -> Maybe UTCTime
 parseTime = fmap (localTimeToUTC utc . fst) . strptime "%A, %B %e, %Y, %I:%M %p"
 
+parseTime2 :: String -> Maybe UTCTime
+parseTime2 = fmap (localTimeToUTC utc . fst) . strptime "%A, %B %e, %Y %I:%M:%s %p"
+
 loc :: GenParser Char st (Int, Int)
-loc =
-    do
-        string "Loc. "
-        start <- many digit
-        endMaybe <- optionMaybe $
-            do
-                char '-'
-                many digit
-        spaces
-        return . join (***) read $ case endMaybe of
-            Just end ->
-                let prefix = take (length start - length end) start
-                 in (start, prefix ++ end)
-            Nothing  -> (start, start)
+loc = do
+  string "Loc"
+  choice [ string "."
+         , string "ation"
+         ]
+  spaces
+  start <- many digit
+  endMaybe <- optionMaybe $ do
+    char '-'
+    many digit
+  spaces
+  return . join (***) read $ case endMaybe of
+      Just end ->
+          let prefix = take (length start - length end) start
+           in (start, prefix ++ end)
+      Nothing  -> (start, start)
 
 
 -- The end of line character is \n
@@ -166,11 +175,11 @@ parseFile = do
     many clipping
 
 
-parseClippings :: String -> Either ParseError [Clipping]
-parseClippings input = parse parseFile "(unknown)" input
+parseClippings :: FilePath -> String -> Either ParseError [Clipping]
+parseClippings path input = parse parseFile path input
 
 getBooks :: Either ParseError [Clipping] -> [(String, String)]
-getBooks (Left _) = []
+getBooks (Left s) = error $ show s
 getBooks (Right bs) = nub $ map (liftM2 (,) bookName author) bs
 
 canonicalName :: Clipping -> String
@@ -182,4 +191,37 @@ canonicalName = replace ' ' '-'
   where spaceConcat a b = a ++ " " ++ b
         replace a b = map $ \c -> if (c == a) then b else c
 
+files = [ "clippings/age-of-em-daily-rituals.txt"
+        , "clippings/ai-to-zombies.txt"
+        , "clippings/atlas-shrugged-ending.txt"
+        , "clippings/believer-lightness-clock.txt"
+        , "clippings/dennet-ikigai.txt"
+        , "clippings/fail-everything-room.txt"
+        , "clippings/feynman-solitude.txt"
+        , "clippings/hpmor-silver-gatto.txt"
+        , "clippings/influence-atlas-shrugged.txt"
+        , "clippings/initial-commit.txt"
+        , "clippings/kegan-feynman.txt"
+        , "clippings/metaphors-rising-intelligence.txt"
+        , "clippings/misc-diamond-age.txt"
+        ]
 
+
+
+oldStyle :: String
+oldStyle = unlines
+  [ "Atlas Shrugged: (Centennial Edition) (Ayn Rand)"
+  , "- Highlight on Page 1121 | Loc. 17178-79  | Added on Wednesday, November 04, 2015, 07:47 AM"
+  , ""
+  , "She heard the words; she understood the meaning; she was unable to make it real—to grant the respect of anger, concern, opposition to a nightmare piece of insanity that rested on nothing but people's willingness to pretend to believe that it was sane."
+  , "=========="
+  ]
+
+newStyle :: String
+newStyle = unlines
+  [ "The Age of Em: Work, Love and Life when Robots Rule the Earth (Hanson, Robin)"
+  , "- Your Highlight on Location 2837-2839 | Added on Sunday, June 19, 2016 3:43:11 PM"
+  , ""
+  , "give stronger incentives for overall performance, compared with rewarding the best performers (Drouvelis and Jamison 2015; Kubanek et al. 2015)."
+  , "=========="
+  ]

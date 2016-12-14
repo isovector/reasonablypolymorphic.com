@@ -57,6 +57,7 @@ main = do
                 compile $ do
                     let timeField name book = optionalConstField name
                                             . fmap showTime
+                                            . Just
                                             $ added book
                         ctx = mconcat
                             [ constField "title"    $ bookName curBook
