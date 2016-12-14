@@ -14,4 +14,4 @@ extra-deps:
 - strptime-1.0.10
 - mfsolve-0.3.2.0
 - here-1.2.9
-resolver: lts-7.3
+resolver: lts-7.1
