@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Comonadic Collision Resolution
-date: TO_BE_DETERMINED
+date: 2017-01-01 16:18
 comments: true
 tags: haskell, comonads, physics, game
 ---
