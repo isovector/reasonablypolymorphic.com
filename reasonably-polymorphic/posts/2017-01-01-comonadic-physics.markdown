@@ -112,7 +112,7 @@ also have a *specific* `Capsule` under focus[^laws].
 To relieve the unbearable tension you're experience about what comonad `w` is,
 it's a `Store`. If you're unfamiliar with `Store`:
 
-```
+```haskell
 data Store s a = Store s (s -> a)
 ```
 
@@ -152,7 +152,7 @@ However, notice that this is not the usual least-fixed point we're used to
 dealing with in Haskell (`fix`). What we are looking for is an iterated fixed
 point:
 
-```
+```haskell
 iterFix :: Eq a => (a -> a) -> a -> a
 iterFix f = head . filter (==) . ap zip tail . iterate f
 ```

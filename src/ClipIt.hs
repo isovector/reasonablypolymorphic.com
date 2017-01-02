@@ -141,7 +141,7 @@ parseTime :: String -> Maybe UTCTime
 parseTime = fmap (localTimeToUTC utc . fst) . strptime "%A, %B %e, %Y, %I:%M %p"
 
 parseTime2 :: String -> Maybe UTCTime
-parseTime2 = fmap (localTimeToUTC utc . fst) . strptime "%A, %B %e, %Y %I:%M:%s %p"
+parseTime2 = fmap (localTimeToUTC utc . fst) . strptime "%A, %B %e, %Y %I:%M:%S %p"
 
 loc :: GenParser Char st (Int, Int)
 loc = do
