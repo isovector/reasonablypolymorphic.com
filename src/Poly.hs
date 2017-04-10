@@ -27,6 +27,7 @@ main = do
             bookCtxTags = postCtxWithTags booktags
         templateRules poly
         imageRules    poly
+        staticRules   poly
         jsRules       poly
         cssRules      poly
         postRules     poly postsDir "posts/" "blog/" postCtxTags
