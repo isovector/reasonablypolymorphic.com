@@ -29,7 +29,7 @@ imageRules prefix =
 staticRules :: String -> Rules ()
 staticRules prefix =
     match (fromGlob $ prefix ++ "static/**") $ do
-        route   $ stripPrefix prefix
+        route   $ stripPrefix $ prefix ++ "static/"
         compile copyFileCompiler
 
 jsRules :: String -> Rules ()

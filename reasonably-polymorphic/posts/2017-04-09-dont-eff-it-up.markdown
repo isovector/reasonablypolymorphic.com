@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Don't Eff It Up
-date: TO_BE_DETERMINED
+date: 2017-04-09 20:09
 comments: true
 tags: foo, bar
 ---
