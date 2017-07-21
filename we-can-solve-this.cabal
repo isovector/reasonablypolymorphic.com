@@ -13,9 +13,7 @@ category:           Web
 
 executable wcst
   main-is:          WCST.hs
-  build-depends:    base
-                  , hakyll
-                  , datetime
+  build-depends:    base , hakyll , datetime
                   , parsec
                   , pandoc
                   , pandoc-types

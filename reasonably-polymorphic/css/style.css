@@ -62,7 +62,7 @@ p > code, li > code, a > code {
 .math {
     font-family: monospace, monospace;
     vertical-align: top;
-    font-size: 15px;
+    font-size: 12px;
     line-height: 1.1500em; /* 20px */
     padding: 0;
 }
