@@ -51,10 +51,6 @@ img {
     margin-top: 1.6667em;  margin-bottom: 40px;
 }
 
-strong, em, del {
-    vertical-align: top;
-}
-
 p > code, li > code, a > code {
     padding: 1px 0.5em;
 }
