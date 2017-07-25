@@ -64,87 +64,9 @@ function from types to set-theoretic mathematical relations. The elements of the
 relations are theorems about inhabitants of the original type: our "theorems for
 free".
 
-Wadler gives this inductive function (which I am calling $\omega$, since it sort
-of looks like a 'W') for concrete types, product types, lists, function types,
-and for universal quantification. They are provided here, in what I consider to
-be a more readable format than presented in the paper, with commentary:
-
-$$
-\newcommand{\myset}[2]{\left\{(#1) \mid #2\right\}}
-\omega(\text{T}) = \myset{t, t}{t \in \text{T}}
-$$
-
-All inhabitants of a concrete type $\text{T}$ are related only to themselves.
-
-$$
-\omega(A \times B) = \myset{(a, b), (a', b')}{(a, a') \in \omega(A),\; (b, b')
-\in \omega(B)}
-$$
-
-Inhabitants of a product type are related if each of their projections (`fst`,
-`snd`) are related.
-
-$$
-\omega([A]) = \myset{[x_1,\ldots,x_n],[x_1',\ldots,x_n']}{(x_1, x_1') \in
-\omega(A),\; \ldots,\; (x_n, x_n') \in \omega(A)}
-$$
-
-Two terms of type `[A]` are related if they have the same `length` and if their
-corresponding elements are related[^errata].
-
-[^errata]: The original paper writes $(x_1, x_1') \in A$ as $(x_1, x_1') \in a$,
-which I believe is an erratum, since there is no $a$ in scope.
-
-$$
-\omega(A \to B) = \myset{f, f'}{(a, a') \in \omega(A),\; (f\;a, f'\;a') \in
-\omega(B)}
-$$
-
-Two functions are related if they map related values in the domain to related
-values in the codomain.
-
-$$
-\omega(\forall X \ldotp F(X)) = \myset{g, g'}{\forall A \ldotp
-\left(g\big\rvert_{X = A}, g'\big\rvert_{X = A}\right)
-\in \omega(F(A))}
-$$
-
-And finally, a universally qualified type depending on the type variable $X$ has
-related terms if they are related under every possible substitution of $X$ with
-another type.
-
-The attentive reader might be rather perplexed right now; why are we given
-induction rules for *list* and not *coproducts*? I don't have a good answer,
-other than that this paper was originally written in 1989 and maybe they didn't
-know about coproducts back then.
-
-To make you feel better, we can derive the "obvious" rule for the relatedness of
-coproducts ourselves:
-
-$$
-\omega(A|B) = \myset{\text{inl}\;a, \text{inl}\;a'}{(a, a') \in \omega(A)}
-\cup \myset{\text{inr}\;b, \text{inr}\;b'}{(b, b') \in \omega(B)}
-$$
-
-Which is to say that two terms of a coproduct are related if they share the
-constructor and their contents are related.
-
-With $\omega$ under our belts, lets see what it can do for us. Wadler takes us
-through the derivation of the paper's first presented theorem:
-
-```haskell
-r :: [x] -> [x]
-```
-
-Remember that there is an implicit `forall x.` hiding at the beginning of that
-type signature. Running through the end of all hoops, we get the following
-derivation:
-
 
 ------------------------------------------------------------------------------
 
-
-attempt 2
 
 If you're not super comfortable with what it means to be a relation (I wasn't
 when I started writing this), it's a set of pairs of things which are related
@@ -164,6 +86,7 @@ Here, $(<_\mathbb{N})$ is understood to be the name of the relation/set. We can
 write it more formally in set-builder notation:
 
 $$
+\newcommand{\myset}[2]{\left\{(#1) \mid #2\right\}}
 \newcommand{\reln}[1]{\boldsymbol{\mathcal{#1}}}
 \newcommand{\rel}[3]{\reln{#1} : #2\Leftrightarrow#3}
 \myset{x, y}{x \in \mathbb{N},\;y \in \mathbb{N},\;x < y}
@@ -337,4 +260,78 @@ coprodRel _ g (Right b) = Right (g b)
 
 which again, if you're familiar with `Bifunctor`, is just `bimap` in disguise
 
+
+
+## TODO
+
+With all of that foreplay out of the way, we're now ready to tackle the meat of
+the paper. Wadler gives his contribution of the article:
+
+> **Proposition.** (Parametricity.) If `t` is a ... term of type `T`, then $(t,
+> t) \in \reln{T}$ where $\reln{T}$ is the relation corresponding to the type
+> `T`.
+
+That this is a proposition (ie. "assumed to be true") is troubling, given that
+we just went through all of the work to construct these relations. But we will
+persevere, and in fact, see later, why this must in fact be true.
+
+We will repeat Wadler's derivation of the originally presented theorem here:
+
+Given a function `r :: forall x. [x] -> [x]`, by parametricity we get $(r, r)
+\in \reln{\forall X\ldotp [X]\to[X]}$.
+
+We can expand out the definition of the universally quantified type relation:
+
+$$
+\begin{align*}
+& \text{forall}\;\rel{A}{A}{A'}\ldotp \\
+&\quad (r_A, r_{A'})\in \reln{[A]\to[A]}
+\end{align*}
+$$
+
+and again, we expand the definition of the function relation:
+
+$$
+\begin{align*}
+& \text{forall}\;\rel{A}{A}{A'}\ldotp \\
+&\quad \text{forall}\; (xs, xs') \in \reln{[A]} \\
+&\quad\quad (r_A\;xs, r_{A'}\;xs')\in \reln{[A]}
+\end{align*}
+$$
+
+We can now specialize this with the trick above -- assume our relation is a
+function. In particular, we will simplify our derivation by equating
+$\rel{A}{A}{A'}=\reln{\hat{f}} : A\to A'$.
+
+This substitution means that we now know $(x, f\;x)\in\reln{\hat{f}}$. We also
+know the special case of the list relation means that the relation
+$\reln{[\hat{f}]}$ contains only pairs of the form $(xs, \text{map}\;f\;xs)$.
+
+We can use these facts to rewrite the above:
+
+$$
+\begin{align*}
+& \text{forall}\;\reln{\hat{f}} : A\to A'\ldotp \\
+&\quad \text{forall}\; xs \in [A] \\
+&\quad\quad \text{let}\;xs' = \text{map}\;f\;xs \\
+&\quad\quad \text{in}\;\text{map}\;f\;(r_A\;xs) = r_{A'}\;xs'
+\end{align*}
+$$
+
+Notice here that we're pulling out terms `xs` from *type* (not relation) `[A]`.
+Finally, we can complete the derivation by inlining our `let` binding:
+
+$$
+\begin{align*}
+& \text{forall}\;\reln{\hat{f}} : A\to A'\ldotp \\
+&\quad \text{forall}\; xs \in [A] \\
+&\quad\quad \text{map}\;f\;(r_A\;xs) = r_{A'}\;(\text{map}\;f\;xs)
+\end{align*}
+$$
+
+That's pretty cool, if you come to think about it. We came up with a theorem
+about our function `r` knowing nothing more about it than its type. This implies
+that *every* function of type `forall x. [x] -> [x]` will share this property,
+and more generally, that all expressions with the same type will share the same
+free theorem.
 
