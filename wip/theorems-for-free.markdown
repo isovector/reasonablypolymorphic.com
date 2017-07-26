@@ -149,7 +149,7 @@ Recall that functions are themselves relations, and in that case that $\reln{A}$
 and $\reln{B}$ are both functions, the above construction simplifies to:
 
 $$
-\reln{\widehat{f \times g}} = \myset{(a, b), (f\;a,g\;b)}{a \in A,\; b \in B}
+\reln{\hat{f}\times\hat{g}} = \myset{(a, b), (f\;a,g\;b)}{a \in A,\; b \in B}
 $$
 
 or, alternatively, could be written in Haskell as:
@@ -262,7 +262,7 @@ which again, if you're familiar with `Bifunctor`, is just `bimap` in disguise
 
 
 
-## TODO
+## Generating Free Theorems
 
 With all of that foreplay out of the way, we're now ready to tackle the meat of
 the paper. Wadler gives his contribution of the article:
@@ -285,7 +285,7 @@ We can expand out the definition of the universally quantified type relation:
 $$
 \begin{align*}
 & \text{forall}\;\rel{A}{A}{A'}\ldotp \\
-&\quad (r_A, r_{A'})\in \reln{[A]\to[A]}
+&\quad \left(r_A, r_{A'}\right)\in \reln{[A]\to[A]}
 \end{align*}
 $$
 
@@ -295,7 +295,7 @@ $$
 \begin{align*}
 & \text{forall}\;\rel{A}{A}{A'}\ldotp \\
 &\quad \text{forall}\; (xs, xs') \in \reln{[A]} \\
-&\quad\quad (r_A\;xs, r_{A'}\;xs')\in \reln{[A]}
+&\quad\quad \left(r_A\;xs, r_{A'}\;xs'\right)\in \reln{[A]}
 \end{align*}
 $$
 
@@ -334,4 +334,161 @@ about our function `r` knowing nothing more about it than its type. This implies
 that *every* function of type `forall x. [x] -> [x]` will share this property,
 and more generally, that all expressions with the same type will share the same
 free theorem.
+
+Wadler's next example is folds of type `forall x y. (x -> y -> y) -> y -> [x] ->
+y`. However, if you can follow the above derivation, you'll be able to follow
+his working of folds. I wanted to go out on my own and find a free theorem not
+provided by the paper.
+
+Although `id :: forall a. a -> a` seemed to be too trivial, I still wanted an
+easy example, so I went for `const :: forall a b. a -> b -> a`. Before cranking
+out the theorem, I wasn't sure what it would look like, so it seemed like a good
+candidate. My derivation is as follows:
+
+By parametricity, any function `c :: forall a b. a -> b -> a` gives us $(c, c)
+\in \reln{\forall A\ldotp\forall B\ldotp A\to B\to A}$. We can apply universal
+quantification twice, and get:
+
+$$
+\begin{align*}
+& \text{forall}\;\rel{A}{A}{A'}\ldotp \\
+&\quad \text{forall}\;\rel{B}{B}{B'}\ldotp \\
+&\quad\quad \left(c_{AB},\;c_{A'B'}\right) \in \reln{A\to B\to A}
+\end{align*}
+$$
+
+We apply the definition of the function relation, recalling that the arrow
+associates to the right:
+
+
+$$
+\begin{align*}
+& \text{forall}\;\rel{A}{A}{A'}\ldotp \\
+&\quad \text{forall}\;\rel{B}{B}{B'}\ldotp \\
+&\quad\quad \text{forall}\;(a, a') \in \reln{A} \\
+&\quad\quad\quad \left(c_{AB}\;a,\;c_{A'B'}\;a'\right) \in \reln{B\to A}
+\end{align*}
+$$
+
+We can now specialize $\rel{A}{A}{A'} = \reln{\hat{f}} : A\to A'$:
+
+$$
+\begin{align*}
+& \text{forall}\;\reln{\hat{f}} : A\to A'\ldotp \\
+&\quad \text{forall}\;\rel{B}{B}{B'}\ldotp \\
+&\quad\quad \text{forall}\;a \in A \\
+&\quad\quad\quad \left(c_{AB}\;a,\;c_{A'B'}\;(f\;a)\right) \in \reln{B\to \hat{f}}
+\end{align*}
+$$
+
+and then specializing $\rel{B}{B}{B'} = \reln{\hat{g}} : B\to B'$:
+
+$$
+\begin{align*}
+& \text{forall}\;\reln{\hat{f}} : A\to A'\ldotp \\
+&\quad \text{forall}\;\reln{\hat{g}} : B\to B'\ldotp \\
+&\quad\quad \text{forall}\;a \in A \\
+&\quad\quad\quad \left(c_{AB}\;a,\;c_{A'B'}\;(f\;a)\right) \in \reln{\hat{g}\to\hat{f}}
+\end{align*}
+$$
+
+Finally, recall that a function relation between two functions is not itself a
+function, but instead an identity proof:
+
+$$
+\begin{align*}
+& \text{forall}\;\reln{\hat{f}} : A\to A'\ldotp \\
+&\quad \text{forall}\;\reln{\hat{g}} : B\to B'\ldotp \\
+&\quad\quad \text{forall}\;a \in A \\
+&\quad\quad\quad c_{A'B'}\;(f\;a) \circ g = f \circ (c_{AB}\;a)
+\end{align*}
+$$
+
+This theorem can be read out in Haskell as the equality `const (f a) . g = f .
+const a`, which is true! We can add back the points to it in order to see this
+fact more clearly:
+
+```haskell
+const (f a) (g b) = f (const a b)
+```
+
+It's an exceptionally short proof to show the correctness of this, so we'll go
+through the motions
+
+```haskell
+const (f a) (g b)  -- given
+f a                -- definition of `const`
+
+=
+
+f (const a b)      -- given
+f a                -- definition of `const`
+```
+
+Very snazzy! Maybe Wadler is onto something with all of this stuff. The
+remainder of the paper is a tighter formalization of the preceding, as well as
+an extension of it into System F. Finally it provides a proof that fixpoints
+don't violate parametricity, which crucially gives us access to inductive types
+and recursive functions.
+
+At this point, however, we have enough of an understanding of the technique for
+the purpose of this essay, and we'll accept the remainder of Wadler89 without
+further ado.
+
+
+## Commentary
+
+Three observations of this paper stopped to give me pause.
+
+The first curious feature is that all of Wadler's examples of generating
+theorems for free involve specialization of the relation $\rel{A}{A}{A'} =
+\reln{\hat{a}}:A\to A'$. Why is this? Is the relation machinery itself
+overkill?
+
+The second odd thing is that when the relations are specialized to functions in
+the constructions of the product, coproduct, and list relations all just happen
+to be instances of `Bifunctor` (just squint and pretend like lists have a
+phantom type parameter to make this statement true). Suspicious, no?
+
+The coup de grace is that when its arguments are specialized to functions, the
+function relation $(f, f') \in \reln{\hat{g}\to\hat{h}}$ itself reduces to a
+proof of $f' \circ g = h \circ f$. Call me crazy, but that looks like too big a
+coincidence to be... well, a coincidence.
+
+What do I mean? Good question. The definition of a natural transformation
+$\mathcal{N} : F\to G$ between two functors (for convenience, let's say they're
+both $\mathcal{Hask}\to\mathcal{Hask}$ -- the functors in the category of
+Haskell), is:
+
+$$
+\begin{array}[t]{c @{} c @{} c}
+\begin{xy}
+\xymatrix {
+A \ar[d]_f \\
+B
+}
+\end{xy}
+& {{\;}\\[2ex]\mapsto} &
+\begin{xy}
+\xymatrix {
+FA\ar[d]_{Ff}\ar[r]^{\mathcal{N}_A} & GA\ar[d]^{Gf}\\
+FB\ar[r]_{\mathcal{N}_B} & GB
+}
+\end{xy}
+\end{array}
+$$
+
+We can understand such a thing in Haskell as looking at the arrows as functions,
+and the objects (the things that the functions are *between*) as types.
+Therefore, a natural transformation $\mathcal{N} : F\to G$ takes a function `f
+:: A -> B` to the equation $\mathcal{N}_B \circ Ff = Gf \circ \mathcal{N}_A$.
+Remind you of anything we've looked at recently?
+
+A natural transformation is a mapping from one functor to another; which we can
+express in Haskell as:
+
+```haskell
+type Nat f g = (Functor f, Functor g) => forall x. f x -> g x
+```
+
 
