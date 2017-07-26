@@ -12,11 +12,9 @@ Free][tff].
 [wadler]: https://homepages.inf.ed.ac.uk/wadler/
 [tff]: http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf
 
-The thesis of the paper is that given a most-general[^mostgeneral] polymorphic
-type signature, we can generate for free a theorem to which any inhabitant of
-such a type must adhere.
-
-[^mostgeneral]: TODO(sandy)
+The thesis of the paper is that given a most-general (taking as few constraints
+on its values as possible) polymorphic type signature, we can generate for free
+a theorem to which any inhabitant of such a type must adhere.
 
 Translating into familiar Haskell notation, Wadler gives the following example:
 
@@ -65,9 +63,6 @@ relations are theorems about inhabitants of the original type: our "theorems for
 free".
 
 
-------------------------------------------------------------------------------
-
-
 If you're not super comfortable with what it means to be a relation (I wasn't
 when I started writing this), it's a set of pairs of things which are related
 somehow. For example, we can write less-than for the natural numbers as a
@@ -96,7 +91,7 @@ which says that the pair $(x, y)$, plucking $x \in \mathbb{N}$ and $y \in
 \mathbb{N}$ is in our set only when $x < y$.
 
 It is interesting to note that a function $f : A \to B$ is a special case of a
-relation. We will call such a function-viewed-as-a-relation $\reln{\hat{f}}$,
+relation. We will denote such a function-viewed-as-a-relation $\reln{\hat{f}}$,
 since we are computer scientists, and to us, functions are not sets. We can
 define $\reln{\hat{f}}$ as:
 
@@ -219,7 +214,7 @@ There is nothing interesting going on here except for the substitution of the
 type $\reln{A}$ for the type variable $\reln{X}$.
 
 This universally quantified relation $\rel{\forall X\ldotp
-F(X)}{\forall X\ldotp F(X)}{\forall X'\ldotp F'(X')}$ can be constructedthusly:
+F(X)}{\forall X\ldotp F(X)}{\forall X'\ldotp F'(X')}$ can be constructed thusly:
 
 $$
 \myset{g, g'}{\forall \rel{A}{A}{A'}\ldotp \left(g_A, g'_{A'}\right)\in\reln{F(A)}}
@@ -436,7 +431,27 @@ the purpose of this essay, and we'll accept the remainder of Wadler89 without
 further ado.
 
 
-## Commentary
+## Commentary (on the computer science)
+
+Neat! The fact that we can derive theorems for terms given *their most general
+type* means that giving functions the "correct" type must be important. For
+example, if we monomorphize a function of type `a -> b -> a` to `Bool -> String
+-> Bool`, we can no longer reason about it; despite its implementation being
+identical.
+
+What's perhaps more interesting about this to me is what it implies about
+*looking* for functions. I recall once asking some coworkers if they had an
+implementation of `Int -> [a] -> [[a]]`, which they suggested could be
+`replicate @[a]`. While it typechecks, it's obviously not the implementation I
+wanted, since that is not the most general type of `replicate : Int -> a ->
+[a]`.
+
+I think this realization is the most important contribution of the paper for an
+every-day Haskell programmer. Darn! We could have skipped all of the math!
+
+
+
+## Commentary (on the mathematics)
 
 Three observations of this paper stopped to give me pause.
 
@@ -457,8 +472,8 @@ coincidence to be... well, a coincidence.
 
 What do I mean? Good question. The definition of a natural transformation
 $\mathcal{N} : F\to G$ between two functors (for convenience, let's say they're
-both $\mathcal{Hask}\to\mathcal{Hask}$ -- the functors in the category of
-Haskell), is:
+both $\mathcal{Hask}\to\mathcal{Hask}$: the traditional functors we think about
+in everyday Haskell), is:
 
 $$
 \begin{array}[t]{c @{} c @{} c}
@@ -491,4 +506,70 @@ express in Haskell as:
 type Nat f g = (Functor f, Functor g) => forall x. f x -> g x
 ```
 
+Remember how our relation constructors when specialized to functions turned out
+to be (bi)functors? As a matter of fact, we can view our relation for concrete
+types as the `Identity` functor, and so the rabbit hole continues.
+
+But why must we specialize our relations to functions in all of our free theorem
+analysis? Well by specializing to functions, we ensure they're arrows in
+$\mathcal{Hask}$. Given that our identity, product, coproduct, and list relation
+constructions are functors from $\mathcal{Hask}\to\mathcal{Hask}$ (ie.
+"endofunctors"), this means our analysis must stay in the realm of Haskell.
+Which makes sense, since our original goal was to prove things about Haskell
+types.
+
+The pieces of the puzzle have mostly come together. We must specialize our
+relations to arrows in order to force our other relations to form (endo)functors
+in Haskell. Once we have endofunctors, we can use our function relation as a
+natural transformation as the only way of introducing non-trivial equations into
+our analysis (the so-called naturality condition). All that's left before we can
+definitively claim that Wadler's free theorems are nothing more than basic
+applications of category theory[^sandy] is a categorical notion of the
+universally quantified relation.
+
+[^sandy]: Which would make sense, because I have a conjecture: all laws in
+Haskell are just the category laws disguised in different categories.
+
+Let's look again at the definition of our universally quantified construction:
+
+$$
+\myset{g, g'}{\forall \rel{A}{A}{A'}\ldotp \left(g_A, g'_{A'}\right)\in\reln{F(A)}}
+$$
+
+Two universally quantified expressions are related if they maintain relatedness
+under any substitution of their type variable. Honestly, I don't have a great
+idea about where to go from here, but I've got three intuitions about how to
+proceed. In order of obviousness:
+
+* The $\forall$ here looks like a smoking gun compared to the expression of a
+  natural transformation in Haskell. Maybe this construction is just an artifact
+  of being expressed in set theory, and in fact is the other side of the coin as
+  the function relation's natural transformation.
+* Relatedly, would we get more insight if we looked at a universally quantified
+  type in Haskell that *didn't* contain a function type?
+* Do we get any hints if we specialize the $\reln{F(A)}$ relation to a function?
+
+The first bullet isn't actionable, so we'll keep it in mind as we go through the
+other points.
+
+However, the second bullet is interesting. Interesting because if we look at any
+universally qualified types that *don't* involve functions, we'll find that they
+*aren't* interesting. For example:
+
+```haskell
+universalMaybe :: forall a. Maybe a
+universalMaybe = Nothing  -- the only inhabitant of our type
+
+universalList :: forall a. [a]
+universalList = []        -- the only inhabitant of our type
+
+universalEither :: forall a b. Either a b
+universalEither = undefined  -- no inhabitants of this type!
+```
+
+The only inhabitants of these types are ones that don't contain any `a`s at all.
+Given this realization, it seems safe to say that our first bullet point is
+correct; that universal construction is the other side of the coin to the
+natural transformation created by our function relation, manifest as an artifact
+for reasons only the eldritch set-theoretical gods know.
 
