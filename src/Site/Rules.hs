@@ -9,7 +9,6 @@ import Data.Monoid (mconcat, (<>))
 import Data.Ord (comparing)
 import System.IO.Unsafe (unsafePerformIO)
 
-import ClipIt (Clipping (..), getClippings, canonicalName)
 import Hakyll
 import Hakyll.Web.Tags
 import Site.Compilers

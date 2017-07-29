@@ -11,32 +11,6 @@ maintainer:         sandy@sandymaguire.me
 
 category:           Web
 
-executable wcst
-  main-is:          WCST.hs
-  build-depends:    base , hakyll , datetime
-                  , parsec
-                  , pandoc
-                  , pandoc-types
-                  , strptime
-                  , time
-                  , containers
-                  , filepath
-                  , old-locale
-                  , regex-compat
-                  , time
-                  , hint
-                  , diagrams
-                  , circuitry
-                  , directory
-                  , temporary
-                  , process
-                  , bytestring
-                  , string-conv
-                  , here
-  ghc-options:      -threaded
-  hs-source-dirs:   src
-  default-language: Haskell2010
-
 executable poly
   main-is:          Poly.hs
   build-depends:    base

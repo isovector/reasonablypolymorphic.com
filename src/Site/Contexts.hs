@@ -3,7 +3,6 @@ module Site.Contexts
     , postCtx
     , setNextPrev
     , optionalConstField
-    , clippingCtx
     , showTime
     ) where
 
@@ -14,7 +13,6 @@ import Data.Time.Clock (UTCTime)
 import Data.Time.Format (parseTimeM, formatTime, defaultTimeLocale)
 import System.FilePath (takeFileName)
 
-import ClipIt
 import Hakyll
 import Hakyll.Web.Tags
 import Site.Constants
@@ -60,17 +58,6 @@ setNextPrev posts ctx =
 optionalConstField :: String -> Maybe String -> Context a
 optionalConstField key Nothing =  field key $ return empty
 optionalConstField key (Just x) = field key . const $ return x
-
-liftClip :: (Clipping -> String) -> Item Clipping -> Compiler String
-liftClip f = return . f . itemBody
-
-clippingCtx :: Context Clipping
-clippingCtx = mconcat
-    [ field "body" $ liftClip contents
-    , field "url"  $ liftClip canonicalName
-    , field "author"  $ liftClip author
-    , field "bookName"  $ liftClip bookName
-    ]
 
 postCtx :: Context String
 postCtx = mconcat
