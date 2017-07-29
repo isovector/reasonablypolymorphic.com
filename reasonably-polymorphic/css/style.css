@@ -75,6 +75,7 @@ a {
 }
 
 h1 a, h2 a {
+    font-family: 'Muli', sans-serif;
     color: #421;
 }
 
@@ -88,7 +89,7 @@ h1 a, h2 a {
 
 .main {
     flex-grow: 1;
-    background-color: #eee;
+    background-color: #fff;
 }
 
 article {
@@ -136,7 +137,7 @@ nav h1 {
 
     font-size: 1.8571em; /* 26px */
     line-height: 1.2308em; /* 32px */
-    margin-top: 80px;  margin-bottom: 80px;
+    margin-top: 60px;  margin-bottom: 80px;
 
 }
 
@@ -160,7 +161,7 @@ nav h1 a {
 }
 
 nav p {
-    font-size: 1em; /* 14px */
+    font-size: 11pt; /* 14px */
     line-height: 1.1429em; /* 16px */
     margin: 0 0 1.1429em 0;
 }
@@ -194,7 +195,7 @@ header h1 {
 h3 {
     font-size: 1.2500em; /* 20px */
     line-height: 1.0000em; /* 20px */
-    margin-top: 1.0000em;  margin-bottom: 0.0000em;
+    margin-top: 2.0000em;  margin-bottom: 1.0000em;
     font-weight: normal;
 }
 
