@@ -128,7 +128,7 @@ only have monomorphic types to deal with.
 
 ### Product Types
 
-Given a two relationships $\rel{A}{A}{A'}$ and $\rel{B}{B}{B'}$, we can form a
+Given two relationships $\rel{A}{A}{A'}$ and $\rel{B}{B}{B'}$, we can form a
 product relation $\rel{A\times B}{(A\times B)}{(A' \times B')}$ by the
 construction:
 
@@ -186,7 +186,7 @@ We can construct the function relation $\rel{A\to B}{(A\to B)}{(A'\to B')}$, by
 taking relations $\rel{A}{A}{A'}$ and $\rel{B}{B}{B'}$ to:
 
 $$
-\myset{f, f'}{(a, a')\in\reln{A},\;(f\;a, f\;a')\in\reln{B}}
+\myset{f, f'}{(a, a')\in\reln{A},\;(f\;a, f'\;a')\in\reln{B}}
 $$
 
 This can be understood as related functions take a related values in the domain
