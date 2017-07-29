@@ -1,13 +1,13 @@
 ---
 layout: post
 title: Theorems for Free
-date: TO_BE_DETERMINED
+date: 2017-07-29 13:15
 comments: true
-tags: foo, bar
+tags: papers, review, wadler, haskell, category theory
 ---
 
-I've been reading through [Wadler's][wadler] classic paper [Theorem's for
-Free][tff].
+I've been reading through [Wadler's][wadler] classic paper "[Theorems for
+Free][tff]".
 
 [wadler]: https://homepages.inf.ed.ac.uk/wadler/
 [tff]: http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf
@@ -40,7 +40,7 @@ He explains:
 > each element.
 
 This passage is somewhat misleading: `r` above is not restricted only to
-rearrangements, it can also structurally manipulate the list; for example, it
+rearrangements, `r` can also structurally manipulate the list; for example, it
 can duplicate the first element and drop the middle three if it so pleases.
 
 Wadler continues, with what might be one of the greatest lines in an academic
@@ -56,7 +56,7 @@ theorems can be derived not only for Hindley-Milner type systems, but also for
 System-F. Hindley-Milner is Haskell98's everyday type system; System-F is what
 you get when you turn on `RankNTypes` too.
 
-But enough foreplay. If you're anything like me, you're just *aching* to know
+But enough dilly dally. If you're anything like me, you're just *aching* to know
 what the secret here is. And it's this: we can build a structurally inductive
 function from types to set-theoretic mathematical relations. The elements of the
 relations are theorems about inhabitants of the original type: our "theorems for
@@ -222,8 +222,8 @@ $$
 
 We can interpret this as two polymorphic expressions are related if they
 preserve their relationship under being monomorphized to any possible type. This
-property can be hard to see in Haskell, since it's a pretty hard thing to
-violate there.
+property can be hard to see in Haskell, since the language makes it a difficult
+thing to violate.
 
 
 ### Coproduct Types
@@ -244,8 +244,11 @@ $$
 \myset{\text{inr}\;b, \text{inr}\;b'}{(b, b')\in\reln{B}}
 $$
 
+where $\text{inl}$ and $\text{inr}$ are more commonly known in Haskell under the
+guises `Left` and `Right`.
+
 In the special case that $\reln{\hat{f}}$ and $\reln{\hat{g}}$ are functions,
-the relation $\reln{(\hat{f}|\hat{g})}$ is a function:
+the relation $\reln{(\hat{f}|\hat{g})}$ is itself a function:
 
 ```haskell
 coprodRel :: (a -> a') -> (b -> b') -> Either a b -> Either a' b'
@@ -572,4 +575,10 @@ Given this realization, it seems safe to say that our first bullet point is
 correct; that universal construction is the other side of the coin to the
 natural transformation created by our function relation, manifest as an artifact
 for reasons only the eldritch set-theoretical gods know.
+
+---
+
+Thanks to [J Haigh][j] for proofreading an early version of this post.
+
+[j]: https://github.com/DebugSteven
 
