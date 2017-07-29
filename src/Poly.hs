@@ -34,7 +34,7 @@ main = do
         archiveRules  poly postsDir "blog/archives/" postCtxTags
         -- postRules     poly bookDir "httw/" "book/" bookCtxTags
         -- archiveRules  poly bookDir "book/" bookCtxTags
-        indexRules    poly bookDir "book/" postCtxTags
+        -- indexRules    poly bookDir "book/" postCtxTags
         indexRules    poly postsDir "" postCtxTags
         feedRules     poly feedConfiguration
         tagRules      poly tags

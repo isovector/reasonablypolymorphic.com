@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TypeApplications    #-}
+
 module Site.Rules where
 
 import Control.Applicative ((<$>))
@@ -78,12 +80,7 @@ indexRules prefix get dst postCtxTags =
         route $ stripPrefix prefix
         compile $ do
             posts <- recentFirst =<< loadAll (get prefix)
-            let indexCtx = mconcat
-                    [ listField "posts" postCtxTags (return $ take 1 posts)
-                    , constField "title" "Home"
-                    , defaultContext
-                    ]
-            contentCompiler prefix (fromFilePath $ prefix ++ "templates/index.html") indexCtx
+            makeItem @String . itemBody $ head posts
 
 feedRules :: String -> FeedConfiguration -> Rules ()
 feedRules prefix feedConfiguration = do
