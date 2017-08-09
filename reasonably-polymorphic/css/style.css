@@ -1,11 +1,13 @@
 body {
-    background-color: #111;
+    background-color: #fff;
     padding: 0;
     margin: 0;
     font-family: 'Amiri', serif;
     font-size: 16px;
     line-height: 20px;
     display: flex;
+    align-items: stretch;
+    min-height: 100vh;
 }
 
 p, pre, .content > ul, .content > ol, .footnotes {
@@ -124,6 +126,9 @@ nav {
 
     font-family: 'Muli', sans-serif;
     text-align: justify;
+    min-height: 100vh;
+    background-color: #111;
+    align-self: stretch;
 
     /*background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAQCAYAAAA8qK60AAAAF0lEQVQIW2NkgALGgWWUl5f/7+zsZAQAGOgEEZMPrH4AAAAASUVORK5CYII=); /* */
 }
