@@ -70,8 +70,8 @@ in order to model this language in Haskell, we'll need the following types:
 
 ```haskell
 data a <=> b = Iso
-  { to   :: a -> b
-  , from :: b -> a
+  { run :: a -> b
+  , rev :: b -> a
   }
 ```
 
@@ -83,7 +83,7 @@ James and Sabry present the following axioms of their language:
 
 ```haskell
 swapP   ::       a + b <=> b + a
-asoccP  :: a + (b + c) <=> (a + b) + c
+assocP  :: a + (b + c) <=> (a + b) + c
 unite   ::       U * a <=> a
 swapT   ::       a * b <=> b * a
 assocT  :: a * (b * c) <=> (a * b) * c
@@ -94,7 +94,7 @@ id      ::           a <=> a
 The implementations of these terms are all trivial, being that they are purely
 syntactic isomorphisms. They will not be reproduced here, but can be found in
 the [code accompanying this post][code]. The motivated reader is encouraged to
-implement them for themself.
+implement these for themself.
 
 [code]: TODO(sandy)
 
@@ -163,5 +163,207 @@ type `Bool * a`, which we can do by factoring out the `a`. Factoring is the
 inverse of `distrib`uting, and so we can use the `sym` operator to "undo" the
 `distrib`.
 
-It's crazy, but it actually works!
+It's crazy, but it actually works! We can run these things to convince
+ourselves. Given:
 
+```haskell
+not :: Bool <=> Bool
+not = swapP  -- move a left ('true') to a right ('false'), and vice versa.
+```
+
+We get:
+
+```
+> run (ifthen not) $ Pair true false
+Pair true true
+
+> run (ifthen not) $ Pair false false
+Pair false false
+```
+
+Neat, no? For fun, we can also run these things *backwards*:
+
+```
+> rev (ifthen not) $ Pair true true
+Pair true false
+
+> rev (ifthen not) $ Pair false false
+Pair false false
+```
+
+James et al. are eager to point out that `ifthen (ifthen not) :: Bool * (Bool *
+Bool) <=> Bool * (Bool * Bool)` is the [Toffoli gate][toffoli] -- a known
+universal reversible gate. Because we can implement Toffoli (and due to its
+universalness), we can thus implement *any* boolean expression.
+
+[toffoli]: https://en.wikipedia.org/wiki/Toffoli_gate
+
+
+## Recursion and Natural Numbers
+
+Given two more primitives, James and Sabry show us how we can extend this
+language to be "expressive enough to write arbitrary looping programs, including
+non-terminating ones."
+
+We'll need to define a term-level recursion axiom:
+
+```haskell
+trace :: (a + b <=> a + c) -> (b <=> c)
+```
+
+The semantics of `trace` are as follows: given an incoming `b` (or,
+symmetrically, a `c`), lift it into `InR b :: a + b`, and then run the given iso
+over it looping until the result is an `InR c`, which can then be returned.
+
+Notice here that we have introduced potentially non-terminating looping.
+Combined with our universal boolean expressiveness, this language is now
+Turing-complete, meaning it is capable of computing anything computable.
+Furthermore, by construction, we *also* have the capability to compute backwards
+-- given an output, we can see what the original input was.
+
+You might be concerned that the potential for partiality given by the `trace`
+operator breaks the bijection upon which all of our reversibility has been
+based. This, we are assured is not a problem, because a divergence is never
+actually observed, and as such, does not *technically* violate the
+bijectiveness. It's fine, you guys. Don't worry.
+
+
+There is one final addition we need, which is the ability to represent inductive
+types:
+
+```haskell
+data Fix f = Fix { unFix :: f (Fix f) }
+
+fold :: f (Fix f) <=> Fix f
+fold = Iso Fix unFix
+```
+
+Given these things, we can define the natural numbers a little circuitously. We
+can define their type as follows:
+
+```haskell
+type Nat = Fix ((+) U)
+```
+
+Constructing such things is a little tricky, however. First we'll need a way to
+introduce a coproduct. The type and name of this isomorphism should be
+suggestive:
+
+```haskell
+just :: a <=> U + a
+just = trace $ do
+  sym assocP
+  (sym fold >> swapP) .+ id
+```
+
+`just` is a tricky little beast; it works by using `trace` to eliminate the `Nat
++ U` of a `(Nat + U) + (U + a)`. We can follow the derivation a little more
+closely:
+
+```haskell
+body :: (Nat + U) + a <=> (Nat + U) + (U + a)
+body = do
+  id              -- (Nat + U) + a
+  sym assocP      -- Nat + (U + a)
+  sym fold .+ id  -- (U + Nat) + (U + a)
+  swapP    .+ id  -- (Nat + U) + (U + a)
+
+trace body :: a <=> U + a
+```
+
+I wish I had come up with this, because it's quite clever. Notice however that
+this is a partial isomorphism; when run backwards, it will diverge in the case
+of `InR U :: U + a`.
+
+Given `just`, we can now define `succ`:
+
+```haskell
+succ :: Nat <=> Nat
+succ = do
+  just
+  fold
+```
+
+James et al. provide a little more machinery in order to get to the introduction
+of a $0$:
+
+```haskell
+injectR :: a <=> a + a
+injectR = do
+  sym unite
+  just .* id
+  distrib
+  unite .+ unite
+```
+
+and finally:
+
+```haskell
+zero :: U <=> Nat
+zero = trace $ do
+  swapP
+  fold
+  injectR
+```
+
+What's interesting here is that the introduction of $0$ is an isomorphism
+between `U` and `Nat`, as we should expect since $0$ is a constant.
+
+
+## Lists
+
+James and Sabry provide a sketch of how to define lists, but I wanted to flesh
+out the implementation to test my understanding.
+
+```haskell
+data ListF a b
+  = Nil
+  | Cons a b
+
+type List a = Fix (ListF a)
+
+liste :: List a <=> U + (a * List a)
+liste = Iso to from
+  where
+    to (Fix Nil)          = InL U
+    to (Fix (Cons a b))   = InR (Pair a b)
+    from (InL U)          = Fix Nil
+    from (InR (Pair a b)) = Fix (Cons a b)
+```
+
+```haskell
+swapCbaP :: (a + b) + c <=> (c + b) + a
+swapCbaP = do
+  sym assocP
+  swapP
+  swapP .+ id
+```
+
+```haskell
+diverge :: a <=> b
+diverge = trace $ do
+  swapP .+ id
+  swapCbaP
+  sym injectR .+ id
+  swapP
+  right .+ id
+  swapCbaP
+```
+
+```haskell
+nil :: U <=> List z
+nil = trace $ do
+  swapP
+  sym liste
+  sym unite
+  just .* id
+  distrib
+  (diverge .* id) .+ unite
+```
+
+```haskell
+cons :: Iso (a, List a) (List a)
+cons = do
+  just
+  sym liste
+```
