@@ -263,7 +263,6 @@ closely:
 ```haskell
 body :: (Nat + U) + a <=> (Nat + U) + (U + a)
 body = do
-  id              -- (Nat + U) + a
   sym assocP      -- Nat + (U + a)
   sym fold .+ id  -- (U + Nat) + (U + a)
   swapP    .+ id  -- (Nat + U) + (U + a)
@@ -280,8 +279,8 @@ Given `just`, we can now define `succ`:
 ```haskell
 succ :: Nat <=> Nat
 succ = do
-  just
-  fold
+  just  -- U + Nat
+  fold  -- Nat
 ```
 
 James et al. provide a little more machinery in order to get to the introduction
@@ -290,10 +289,10 @@ of a $0$:
 ```haskell
 injectR :: a <=> a + a
 injectR = do
-  sym unite
-  just .* id
-  distrib
-  unite .+ unite
+  sym unite       -- U * a
+  just .* id      -- (U + U) * a
+  distrib         -- (U * a) + (U * a)
+  unite .+ unite  -- a + a
 ```
 
 and finally:
@@ -301,9 +300,10 @@ and finally:
 ```haskell
 zero :: U <=> Nat
 zero = trace $ do
-  swapP
-  fold
-  injectR
+  id       -- Nat + U
+  swapP    -- U + Nat
+  fold     -- Nat
+  injectR  -- Nat + Nat
 ```
 
 What's interesting here is that the introduction of $0$ is an isomorphism
@@ -334,36 +334,38 @@ liste = Iso to from
 ```haskell
 swapCbaP :: (a + b) + c <=> (c + b) + a
 swapCbaP = do
-  sym assocP
-  swapP
-  swapP .+ id
+  sym assocP   -- a + (b + c)
+  swapP        -- (b + c) + a
+  swapP .+ id  -- (c + b) + a
 ```
 
 ```haskell
 diverge :: a <=> b
 diverge = trace $ do
-  swapP .+ id
-  swapCbaP
-  sym injectR .+ id
-  swapP
-  right .+ id
-  swapCbaP
+  id                 -- (a + b) + a
+  swapP .+ id        -- (b + a) + a
+  swapCbaP           -- (a + a) + b
+  sym injectR .+ id  -- a + b
+  swapP              -- b + a
+  right .+ id        -- (b + b) + a
+  swapCbaP           -- (a + b) + b
 ```
 
 ```haskell
-nil :: U <=> List z
+nil :: U <=> List a
 nil = trace $ do
-  swapP
-  sym liste
-  sym unite
-  just .* id
-  distrib
-  (diverge .* id) .+ unite
+  id                        -- (a * List a) + U
+  swapP                     -- U + (a * List a)
+  sym liste                 -- List a
+  sym unite                 -- U * List a
+  just .* id                -- (U + U) * List a
+  distrib                   -- (U * List a) + (U * List a)
+  (diverge .* id) .+ unite  -- (a * List a) + List a
 ```
 
 ```haskell
-cons :: Iso (a, List a) (List a)
+cons :: a * List a <=> List a
 cons = do
-  just
-  sym liste
+  just       -- U + (a * List a)
+  sym liste  -- List
 ```
