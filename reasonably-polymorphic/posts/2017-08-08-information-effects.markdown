@@ -284,7 +284,7 @@ succ = do
 ```
 
 James et al. provide a little more machinery in order to get to the introduction
-of a $0$:
+of a 0:
 
 ```haskell
 injectR :: a <=> a + a
@@ -306,8 +306,150 @@ zero = trace $ do
   injectR  -- Nat + Nat
 ```
 
-What's interesting here is that the introduction of $0$ is an isomorphism
-between `U` and `Nat`, as we should expect since $0$ is a constant.
+What's interesting here is that the introduction of 0 is an isomorphism between
+`U` and `Nat`, as we should expect since 0 is a constant.
+
+
+### Induction on Nats
+
+The paper teases an implementation of `isEven` for natural numbers -- from the
+text:
+
+> For example, it is possible to write a function `even? :: Nat * Bool <=> Nat *
+> Bool` which, given inputs `(n, b)`, reveals whether `n` is even or odd by
+> iterating `not` `n`-times starting with `b`. The iteration is realized using
+> `trace` as shown in the diagram below **(where we have omitted the boxes for
+> `fold` and `unfold`)**.
+
+Emphasis mine. The omitted `fold` and `unfold` bits of the diagram are the
+actual workhorses of the isomorphism, and their omission caused me a few days of
+work to rediscover. I have presented the working example here to save you,
+gentle reader, from the same frustration.
+
+The insight is this -- our desired isomorphism has type `Nat * a <=> Nat * a`.
+Due to its universally qualified nature, we are unable to pack any information
+into the `a`, and thus to be reversible, the `Nat` must be the same on both
+sides. Since we are unable to clone arbitrary values given our axioms
+(seriously!  try it!), our only solution is to build a resulting `Nat` up from 0
+as we tear apart the one we were given.
+
+We can view the `a` in `trace :: (a + b <=> a + c) -> (b <=> c)` as "scratch
+space" or "intermediate state". It is clear that in order to execute upon our
+earlier insight, we will need three separate pieces of state: the `Nat` we're
+tearing down, the `Nat` we're building up, and the `a` along for the ride.
+
+For reasons I don't deeply understand, other than it happened to make the
+derivation work, we also need to introduce a unit to the input of our traced
+combinator.
+
+With this line of reasoning, we have the following:
+
+```haskell
+iterNat :: (a <=> a) -> (Nat * a <=> Nat * a)
+iterNat step = do
+  sym unite
+  trace $ do
+    id  -- (Nat' * (Nat * a)) + (U * (Nat * a))
+  unite
+```
+
+For clarity, we'll annotate the natural number under construction as `Nat'`.
+
+When the iteration begins, our combinator receives an `InR` whose contents are
+of type `U * (Nat * a)` corresponding to the fact that there is not yet any
+internal state. From there we can factor our the `Nat * a`:
+
+```haskell
+  ...
+  trace $ do
+    id           -- (Nat' * (Nat * a)) + (U * (Nat * a))
+    sym distrib  -- (Nat' + U) * (Nat * a)
+  ...
+```
+
+All of a sudden this looks like a more tenable problem. We now have a product of
+(conceptually) a `Maybe Nat'`, the `Nat` being torn down, and our `a`. We can
+`fold :: U + Nat <=> Nat` our `Nat'`, which will give us 0 in the case that the
+state hasn't yet been created, or $n+1$ in the case it has.
+
+```haskell
+  ...
+  trace $ do
+    id                     -- (Nat' * (Nat * a)) + (U * (Nat * a))
+    sym distrib            -- (Nat' + U) * (Nat * a)
+    (swapP >> fold) .* id  -- Nat' * (Nat * a)
+  ...
+```
+
+The only thing left is to destruct the incoming `Nat` and apply our `step`
+isomorphism. We introduce a lemma to help:
+
+```haskell
+swapBacT :: a * (b * c) <=> b * (a * c)
+sw = do
+  assocT
+  swapT .* id
+  sym assocT
+```
+
+which we can then use to move the pieces of our state and destruct the correct
+number:
+
+```haskell
+  ...
+  trace $ do
+    id                         -- (Nat' * (Nat * a)) + (U * (Nat * a))
+    sym distrib                -- (Nat' + U) * (Nat * a)
+    (swapP >> fold) .* id      -- Nat' * (Nat * a)
+    sw                         -- Nat * (Nat' * a)
+    (sym fold >> swapP) .* id  -- (Nat + U) * (Nat' * a)
+  ...
+```
+
+We can then distribute out the `Nat + U` again:
+
+
+```haskell
+  ...
+  trace $ do
+    id                         -- (Nat' * (Nat * a)) + (U * (Nat * a))
+    sym distrib                -- (Nat' + U) * (Nat * a)
+    (swapP >> fold) .* id      -- Nat' * (Nat * a)
+    sw                         -- Nat * (Nat' * a)
+    (sym fold >> swapP) .* id  -- (Nat + U) * (Nat' * a)
+    distrib                    -- (Nat * (Nat' * a)) + (U * (Nat' * a))
+  ...
+```
+
+And finally, we apply our `step` iso to the internal state (we do this after the
+`distrib` so that we don't apply the combinator if the incoming number was 0).
+The fruits of our labor are presented in entirety:
+
+```haskell
+iterNat :: (a <=> a) -> (Nat * a <=> Nat * a)
+iterNat step = do
+  sym unite
+  trace $ do
+    id                                -- (Nat' * (Nat * a)) + (U * (Nat * a))
+    sym distrib                       -- (Nat' + U) * (Nat * a)
+    (swapP >> fold) .* id             -- Nat' * (Nat * a)
+    sw                                -- Nat * (Nat' * a)
+    (sym fold >> swapP) .* id         -- (Nat + U) * (Nat' * a)
+    distrib                           -- (Nat * (Nat' * a)) + (U * (Nat' * a))
+    (id .* (id .* step) >> sw) .+ id  -- (Nat' * (Nat * a)) + (U * (Nat' * a))
+  unite
+```
+
+Lo and behold, the types now line up, and thus quod erat demonstrandum. The
+implementation of `isEven` is now trivial:
+
+```haskell
+isEven :: Nat * Bool <=> Nat * Bool
+isEven = iterNat not
+```
+
+which computes if a `Nat` is even in the case the incoming `Bool` is `false`,
+and whether it is odd otherwise.
 
 
 ## Lists
