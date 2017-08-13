@@ -315,13 +315,29 @@ between `U` and `Nat`, as we should expect since $0$ is a constant.
 James and Sabry provide a sketch of how to define lists, but I wanted to flesh
 out the implementation to test my understanding.
 
+For reasons I don't pretend to understand, Haskell won't let us partially apply
+a type synonym, so we're forced to write a higher-kinded data definition in
+order to describe the shape of a list.
+
 ```haskell
+-- To be read as @type ListF a b = U + (a * b)@.
 data ListF a b
   = Nil
   | Cons a b
+```
 
+We can then get the fixpoint of this in order to derive a real list:
+
+```haskell
 type List a = Fix (ListF a)
+```
 
+And to get around the fact that we had to introduce a wrapper datatype in order
+to embed this into Haskell, we then provide an eliminator to perform "pattern
+matching" on a `List a`. In a perfect world, this function would just be `sym
+fold`, but alas, we must work with what we have.
+
+```haskell
 liste :: List a <=> U + (a * List a)
 liste = Iso to from
   where
@@ -331,6 +347,21 @@ liste = Iso to from
     from (InR (Pair a b)) = Fix (Cons a b)
 ```
 
+From here, it is trivial to write `cons`:
+
+```haskell
+cons :: a * List a <=> List a
+cons = do
+  just       -- U + (a * List a)
+  sym liste  -- List
+```
+
+However, introducing a list via `nil` is actually quite complicated. Note the
+parallels with the natural numbers, where it was trivial to define `succ` but
+required a clever trick to introduce a `zero`.
+
+We begin with a lemma that moves a coproduct:
+
 ```haskell
 swapCbaP :: (a + b) + c <=> (c + b) + a
 swapCbaP = do
@@ -338,6 +369,11 @@ swapCbaP = do
   swapP        -- (b + c) + a
   swapP .+ id  -- (c + b) + a
 ```
+
+And given that, we can write an isomorphism between any `a` and any `b`. The
+catch, of course, is that you can never witness such a thing since it obviously
+doesn't exist. Nevertheless, we can use it to convince the type checker that
+we're doing the right thing in cases that would diverge in any case.
 
 ```haskell
 diverge :: a <=> b
@@ -351,6 +387,10 @@ diverge = trace $ do
   swapCbaP           -- (a + b) + b
 ```
 
+Finally we can implement `nil` using the same trick we did for `zero` -- use
+`trace` to vacuously introduce exactly the type we need, rip out the result, and
+then divergently reconstruct the type that `trace` expects.
+
 ```haskell
 nil :: U <=> List a
 nil = trace $ do
@@ -363,9 +403,4 @@ nil = trace $ do
   (diverge .* id) .+ unite  -- (a * List a) + List a
 ```
 
-```haskell
-cons :: a * List a <=> List a
-cons = do
-  just       -- U + (a * List a)
-  sym liste  -- List
-```
+
