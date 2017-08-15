@@ -386,7 +386,7 @@ isomorphism. We introduce a lemma to help:
 
 ```haskell
 swapBacT :: a * (b * c) <=> b * (a * c)
-sw = do
+swapBacT = do
   assocT
   swapT .* id
   sym assocT
@@ -401,7 +401,7 @@ number:
     id                         -- (Nat' * (Nat * a)) + (U * (Nat * a))
     sym distrib                -- (Nat' + U) * (Nat * a)
     (swapP >> fold) .* id      -- Nat' * (Nat * a)
-    sw                         -- Nat * (Nat' * a)
+    swapBacT                   -- Nat * (Nat' * a)
     (sym fold >> swapP) .* id  -- (Nat + U) * (Nat' * a)
   ...
 ```
@@ -415,7 +415,7 @@ We can then distribute out the `Nat + U` again:
     id                         -- (Nat' * (Nat * a)) + (U * (Nat * a))
     sym distrib                -- (Nat' + U) * (Nat * a)
     (swapP >> fold) .* id      -- Nat' * (Nat * a)
-    sw                         -- Nat * (Nat' * a)
+    swapBacT                   -- Nat * (Nat' * a)
     (sym fold >> swapP) .* id  -- (Nat + U) * (Nat' * a)
     distrib                    -- (Nat * (Nat' * a)) + (U * (Nat' * a))
   ...
@@ -430,13 +430,14 @@ iterNat :: (a <=> a) -> (Nat * a <=> Nat * a)
 iterNat step = do
   sym unite
   trace $ do
-    id                                -- (Nat' * (Nat * a)) + (U * (Nat * a))
-    sym distrib                       -- (Nat' + U) * (Nat * a)
-    (swapP >> fold) .* id             -- Nat' * (Nat * a)
-    sw                                -- Nat * (Nat' * a)
-    (sym fold >> swapP) .* id         -- (Nat + U) * (Nat' * a)
-    distrib                           -- (Nat * (Nat' * a)) + (U * (Nat' * a))
-    (id .* (id .* step) >> sw) .+ id  -- (Nat' * (Nat * a)) + (U * (Nat' * a))
+    id                          -- (Nat' * (Nat * a)) + (U * (Nat * a))
+    sym distrib                 -- (Nat' + U) * (Nat * a)
+    (swapP >> fold) .* id       -- Nat' * (Nat * a)
+    swapBacT                    -- Nat * (Nat' * a)
+    (sym fold >> swapP) .* id   -- (Nat + U) * (Nat' * a)
+    distrib                     -- (Nat * (Nat' * a)) + (U * (Nat' * a))
+    (id .* (id .* step)) .+ id  -- (Nat * (Nat' * a)) + (U * (Nat' * a))
+    swapBacT .+ id              -- (Nat' * (Nat * a)) + (U * (Nat' * a))
   unite
 ```
 
@@ -545,4 +546,55 @@ nil = trace $ do
   (diverge .* id) .+ unite  -- (a * List a) + List a
 ```
 
+
+### Induction on Lists
+
+In a manner spiritually similar to `iterNat`, we can define `iterList :: (a * z
+<=> b * z) -> (List a * z <=> List b * z)`. The semantics are mostly what you'd
+expect from its type, except that the resulting `List b` is in reverse order due
+to having to be constructed as the `List a` was being destructed. We present the
+implementation here for completeness but without further commentary.
+
+```haskell
+iterList :: (a * z <=> b * z) -> (List a * z <=> List b * z)
+iterList f = do
+  sym unite
+  trace $ do
+                                -- ((b * List b) * (List a * z)) + (U * (List a * z))
+    sym distrib                 -- ((b * List b) + U) * (List a * z)
+    (swapP >> sym liste) .* id  -- List b * (List a * z)
+    swapBacT                    -- List a * (List b * z)
+    liste .* id                 -- (U + (a * List a)) * (List b * z)
+    distrib                     -- (U * (List b * z)) + ((a * List a) * (List b * z))
+    (.+) id $                   -- (U * (List b * z)) + ...
+      do
+        swapT .* id             --    ((List a * a) * (List b * z))
+        swapAcbdT               --    ((List a * List b) * (a * z))
+        id .* f                 --    ((List a * List b) * (b * z))
+        swapAcbdT               --    ((List a * b) * (List b * z))
+
+    swapP                       -- ((List a * b) * (List b * z)) + (U * (List b * z))
+    (swapT .* id) .+ id         -- ((b * List a) * (List b * z)) + (U * (List b * z))
+    swapAcbdT .+ id             -- ((b * List b) * (List a * z)) + (U * (List b * z))
+  unite
+
+swapAcbdT :: (a * b) * (c * d) <=> (a * c) * (b * d)
+swapAcbdT = do
+  sym assocT
+  id .* sw
+  assocT
+```
+
+From here, the functional programming favorite `map` is easily defined:
+
+```haskell
+map :: (a <=> b) -> (List a <=> List b)
+map f = do
+  sym unite
+  swapT
+  iterList $ f .* id  -- map
+  iterList id         -- reverse to original order
+  swapT
+  unite
+```
 

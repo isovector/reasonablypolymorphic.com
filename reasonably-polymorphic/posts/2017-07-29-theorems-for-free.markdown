@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Theorems for Free
+title: "Review: Theorems for Free"
 date: 2017-07-29 13:15
 comments: true
 tags: papers, review, wadler, haskell, category theory
