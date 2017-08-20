@@ -598,3 +598,232 @@ map f = do
   unite
 ```
 
+
+## Remnants
+
+The bulk of the remainder of the paper is an extension to the reversible
+semantics above, introducing `create :: U ~> a` and `erase :: a ~> U` where
+`(~>)` is a non-reversible arrow. We are shown how traditional non-reversible
+languages can be transformed into the `(~>)`-language.
+
+Of more interest is James and Sabry's construction which in general transforms
+`(~>)` (a non-reversible language) into `(<=>)` (a reversible one). But how can
+such a thing be possible? Obviously there is a trick!
+
+The trick is this: given `a ~> b`, we can build `h * a <=> g * b` where `h` is
+"heap" space, and `g` is "garbage". Our non-reversible functions `create` and
+`erase` thus become reversible functions which move data from the heap and to
+the garbage respectively.
+
+Unfortunately, this is a difficult thing to model in Haskell, since the
+construction requires `h` and `g` to vary based on the axioms used. Such a thing
+requires dependent types, which, while possible, is quite an unpleasant
+undertaking. Trust me, I actually tried it.
+
+However, just because it's hard to model entirely in Haskell doesn't mean we
+can't discuss it. We can start with the construction of `(~>)`:
+
+```haskell
+{-# LANGUAGE GADTs #-}
+
+data a ~> b where
+  Arr     :: (a <=> b) -> (a ~> b)
+  Compose :: (a ~> b) -> (b ~> c) -> (a ~> c)
+  First   :: (a ~> b) -> (a * c ~> b * c)
+  Left    :: (a ~> b) -> (a + c ~> b + c)
+  Create  :: U ~> a
+  Erase   :: a ~> U
+```
+
+The axioms here are quite explanatory and will not be discussed further. A point
+of note, however, is that `Arr` allows arbitrary embeddings of our iso `(<=>)`
+language in this arrow language.
+
+The semantics of `Create` is given by induction:
+
+$$
+\begin{align*}
+\text{create U} & \mapsto \text{U} \\
+\text{create}(a + b) & \mapsto \text{InL } (\text{create } a) \\
+\text{create}(a \times b) & \mapsto (\text{create } a, \text{create } b)
+\end{align*}
+$$
+
+
+With the ability to create and erase information, we're (thankfully) now able to
+write some everyday functions that you never knew you missed until trying to
+program in the iso language without them. James et al. give us what we want:
+
+```haskell
+fstA :: a * b ~> a
+fstA = do
+  arr swapT    -- b * a
+  first erase  -- U * a
+  arr unite    -- a
+```
+
+In addition to projections, we also get injections:
+
+```haskell
+leftA :: a ~> a + b
+leftA = do
+  arr $ sym unite  -- U * a
+  first create     -- (a + b) * a
+  arr leftSwap     -- (a + b) * a
+  fstA             -- a + b
+
+leftSwap :: (a + b) * a <=> (a + b) * a
+leftSwap = do
+  distrib      -- (a * a') + (b * a')
+  swapT .+ id  -- (a' * a) + (b * a')
+  sym distrib  -- (a' + b) * a
+```
+
+And the ability to extract from a coproduct:
+
+```haskell
+join :: a + a ~> a
+join = do
+  arr $ do
+    sym unite .+ sym unite  -- (U * a) + (U * a)
+    sym distrib             -- (U + U) * a
+    swapT                   -- a * (U + U)
+  fstA                      -- a
+```
+
+We are also provided with the ability to clone a piece of information, given by
+structural induction. Cloning `U` is trivial, and cloning a pair is just cloning
+its projections and then shuffling them into place. The construction of cloning
+a coproduct, however, is more involved:
+
+```haskell
+clone :: a + b ~> (a + b) * (a + b)
+clone = do
+  left $ do
+    clone                -- (a * a) + b
+    first leftA          -- ((a + b) * a) + b
+    arr swapT            -- (a * (a + b)) + b
+  arr swapP              -- b + (a * (a + b))
+  left $ do
+    clone                -- (b * b) + (a * (a + b))
+    first leftA          -- ((b + a) * b) + (a * (a + b))
+    arr swapT            -- (b * (b + a)) + (a * (a + b))
+  arr $ do
+    swapP                -- (a * (a + b)) + (b * (b + a))
+    id .+ (id .* swapP)  -- (a * (a + b)) + (b * (a + b))
+    sym distrib          -- (a + b) * (a + b)
+```
+
+It should be quite clear that this arrow language of ours is now more-or-less
+equivalent to some hypothetical first-order version of Haskell (like
+[Elm][elm]?). As witnessed above, information is no longer a linear commodity. A
+motivated programmer could likely get work done in a 9 to 5 with what we've
+built so far. It probably wouldn't be a lot of fun, but it's higher level than C
+at the very least.
+
+[elm]: http://reasonablypolymorphic.com/blog/elm-is-wrong
+
+The coup de grace of Information Effects is its construction lifting our arrow
+language *back* into the isomorphism language. The trick is to carefully
+construct heap and garbage types to correspond exactly with what our program
+needs to create and erase. We can investigate this further by case analysis on
+the constructors of our arrow type:
+
+```haskell
+Arr :: (a <=> b) -> (a ~> b)
+```
+
+As we'd expect, an embedding of an isomorphism in the arrow language is already
+reversible. However, because we need to introduce a heap and garbage anyway,
+we'll use unit.
+
+$$
+\newcommand{\lifted}[3]{\text{lift } #1 : #2 \leftrightarrow #3}
+\newcommand{\arr}{\rightsquigarrow}
+\frac{\text{arr } f : a \arr b}{\lifted{(\text{arr } f)}{\text{U}
+\times a}{\text{U} \times b}}
+$$
+
+```haskell
+lift (Arr f) = id .* f
+```
+
+---
+
+```haskell
+Compose :: (a ~> b) -> (b ~> c) -> (a ~> c)
+```
+
+$$
+\frac{\lifted{f}{h_1\times a}{g_1\times b},\; \lifted{g}{h_2\times b}{g_2\times
+c}}{\lifted{(g \circ f)}{(h_1\times h_2)\times a}{(g_1\times g_2)\times c}}
+$$
+
+```haskell
+lift (Compose f g) = do
+  id            -- (H1 * H2) * a
+  swapT .* id   -- (H2 * H1) * a
+  sym assocT    -- H2 * (H1 * a)
+  id .* lift f  -- H2 * (G1 * b)
+  assocT        -- (H2 * G1) * b
+  swapT .* id   -- (G1 * H2) * b
+  sym assocT    -- G1 * (H2 * b)
+  id .* lift g  -- G1 * (G2 * c)
+  assocT        -- (G1 * G2) * c
+```
+
+---
+
+```haskell
+First :: (a ~> b) -> (a * c ~> b * c)
+```
+
+$$
+\frac{\lifted{f}{h\times a}{g\times b}}
+{\lifted{(\text{First } f)}{h\times (a\times c)}{g\times (b\times c)}}
+$$
+
+```haskell
+lift (First f) = do
+  id          -- H * (a * c)
+  assocT      -- (H * a) * c
+  f .* id     -- (G * b) * c
+  sym assocT  -- G * (b * c)
+```
+
+---
+
+```haskell
+Left :: (a ~> b) -> (a + c ~> b + c)
+```
+
+TODO(sandy)
+
+---
+
+```haskell
+Create  :: U ~> a
+```
+
+$$
+\frac{}{\lifted{\text{create}}{a\times\text{U}}{\text{U}\times a}}
+$$
+
+```haskell
+lift Create = swapT
+```
+
+---
+
+```haskell
+Erase  :: a ~> U
+```
+
+$$
+\frac{}{\lifted{\text{erase}}{\text{U}\times a}{a\times\text{U}}}
+$$
+
+```haskell
+lift Erase = swapT
+```
+
