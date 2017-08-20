@@ -643,7 +643,7 @@ The semantics of `Create` is given by induction:
 
 $$
 \begin{align*}
-\text{create U} & \mapsto \text{U} \\
+\text{create U} & \mapsto \u \\
 \text{create}(a + b) & \mapsto \text{InL } (\text{create } a) \\
 \text{create}(a \times b) & \mapsto (\text{create } a, \text{create } b)
 \end{align*}
@@ -740,8 +740,9 @@ we'll use unit.
 $$
 \newcommand{\lifted}[3]{\text{lift } #1 : #2 \leftrightarrow #3}
 \newcommand{\arr}{\rightsquigarrow}
-\frac{\text{arr } f : a \arr b}{\lifted{(\text{arr } f)}{\text{U}
-\times a}{\text{U} \times b}}
+\newcommand{\u}{\text{U}}
+\frac{\text{arr } f : a \arr b}{\lifted{(\text{arr } f)}{\u
+\times a}{\u \times b}}
 $$
 
 ```haskell
@@ -797,7 +798,19 @@ lift (First f) = do
 Left :: (a ~> b) -> (a + c ~> b + c)
 ```
 
-TODO(sandy)
+$$
+\frac{\lifted{f}{h\times a}{g\times b}}{\lifted{(\text{Left f})}{h'\times (a + c)}{g' \times (b + c)}}
+$$
+
+$$
+h' = h\times ((b + c) \times(c + b)) \\
+g' = (g\times (b\times(c + b))) + (h\times ((b+c)\times c))
+$$
+
+```haskell
+lift (Left f) = do
+  id -- (H * ((b + c) * (c + b))) * (a + b)
+```
 
 ---
 
@@ -806,7 +819,7 @@ Create  :: U ~> a
 ```
 
 $$
-\frac{}{\lifted{\text{create}}{a\times\text{U}}{\text{U}\times a}}
+\frac{}{\lifted{\text{create}}{a\times\u}{\u\times a}}
 $$
 
 ```haskell
@@ -820,10 +833,11 @@ Erase  :: a ~> U
 ```
 
 $$
-\frac{}{\lifted{\text{erase}}{\text{U}\times a}{a\times\text{U}}}
+\frac{}{\lifted{\text{erase}}{\u\times a}{a\times\u}}
 $$
 
 ```haskell
 lift Erase = swapT
 ```
+
 
