@@ -737,6 +737,9 @@ As we'd expect, an embedding of an isomorphism in the arrow language is already
 reversible. However, because we need to introduce a heap and garbage anyway,
 we'll use unit.
 
+Since we can't express the typing judgment in Haskell, we'll use a sequent
+instead:
+
 $$
 \newcommand{\lifted}[3]{\text{lift } #1 : #2 \leftrightarrow #3}
 \newcommand{\arr}{\rightsquigarrow}
@@ -744,6 +747,9 @@ $$
 \frac{\text{arr } f : a \arr b}{\lifted{(\text{arr } f)}{\u
 \times a}{\u \times b}}
 $$
+
+Assuming we have a way of describing this type in Haskell, all that's left is to
+implement the `lift`ing of our iso into the enriched iso language:
 
 ```haskell
 lift (Arr f) = id .* f
@@ -755,10 +761,18 @@ lift (Arr f) = id .* f
 Compose :: (a ~> b) -> (b ~> c) -> (a ~> c)
 ```
 
+Composition of arrows proceeds likewise in a rather uninteresting manner. Here,
+we have two pairs of heaps and garbages, results from lifting each of the arrows
+we'd like to compose. Because composition will run *both* of our arrows, we'll
+need both heaps and garbages in order to implement the result. By this logic,
+the resulting heap and garbage types are pairs of the incoming ones.
+
 $$
 \frac{\lifted{f}{h_1\times a}{g_1\times b},\; \lifted{g}{h_2\times b}{g_2\times
 c}}{\lifted{(g \circ f)}{(h_1\times h_2)\times a}{(g_1\times g_2)\times c}}
 $$
+
+We can express the resulting combinator in Haskell:
 
 ```haskell
 lift (Compose f g) = do
@@ -779,10 +793,16 @@ lift (Compose f g) = do
 First :: (a ~> b) -> (a * c ~> b * c)
 ```
 
+Lifting arrows over products again is uninteresting -- since we're doing nothing
+with the second projection, the only heap and garbage we have to work with are
+those resulting from the lifting of our arrow over the first projection.
+
 $$
 \frac{\lifted{f}{h\times a}{g\times b}}
 {\lifted{(\text{First } f)}{h\times (a\times c)}{g\times (b\times c)}}
 $$
+
+In Haskell, our resulting combinator looks like this:
 
 ```haskell
 lift (First f) = do
@@ -798,6 +818,32 @@ lift (First f) = do
 Left :: (a ~> b) -> (a + c ~> b + c)
 ```
 
+Finally, we get to an interesting case. In the execution of `Left`, we may or
+may not use the incoming heap. We also need a means of creating a `b + c` given
+a `b` *or* given a `c`. Recall that in our iso language, we do not have `create`
+(nor relatedly, `leftA`) at our disposal, and so this is a harrier problem than
+it sounds at first.
+
+We can solve this problem by requiring both a `b + c` and a `c + b` from the
+heap. Remember that the Toffoli construction (what we're implementing here) will
+create a reversible gate with additional inputs and outputs that gives the same
+result when all of its inputs have their default values (ie. the same as those
+provided by `create`'s semantics). This means that our incoming `b + c` and `c +
+b` will both be constructed with `InL`.
+
+Given this, we can thus perform case analysis on the incoming `a + c`, and then
+use `leftSwap` from earlier to move the resulting values into their coproduct.
+
+What does the garbage situation look like? In the case we had an incoming `InL`,
+we will have used up our function's heap, as well as our `b + c`, releasing the
+`g`, `b` (the default value swapped out of our incoming `b + c`), and the unused
+`c + b`.
+
+If an `InR` was input to our isomorphism, we instead emit the function's heap
+`h`, the unused `b + c`, and the default `c` originally in the heap's coproduct.
+
+Our final typing judgment thus looks like this:
+
 $$
 \frac{\lifted{f}{h\times a}{g\times b}}{\lifted{(\text{Left f})}{h'\times (a + c)}{g' \times (b + c)}}
 $$
@@ -807,9 +853,38 @@ h' = h\times ((b + c) \times(c + b)) \\
 g' = (g\times (b\times(c + b))) + (h\times ((b+c)\times c))
 $$
 
+and is rather horrifyingly implemented:
+
 ```haskell
 lift (Left f) = do
   id -- (H * ((b + c) * (c + b))) * (a + b)
+  -- TODO(sandy): something is necessary here -- distrib maybe?
+  leftSide .* rightSide
+
+leftSide
+    :: (H * a <=> G * b)
+    -> (a * (H * ((b + c) * (c + b))) <=> (G * (b * (c + b))) * (b + c))
+leftSide f = do
+  swapT                -- (H * ((b + c) * (c + b))) * a
+  swapT .* id          -- (((b + c) * (c + b)) * H) * a
+  assocT               -- ((b + c) * (c + b)) * (H * a)
+  id .* f              -- ((b + c) * (c + b)) * (G * b')
+  swapT .* id          -- ((c + b) * (b + c)) * (G * b')
+  swapAcbdT            -- ((c + b) * G) * ((b + c) * b')
+  id .* leftSwap       -- ((c + b) * G) * ((b' + c) * b)
+  swapT .* swapT       -- (G * (c + b)) * (b * (b' + c))
+  sym assocT           -- ((G * (c + b)) * b) * (b' + c)
+  assocT .* id         -- (G * ((c + b) * b)) * (b' + c)
+  (id .* swapT) .* id  -- (G * (b * (c + b))) * (b' + c)
+
+rightSide :: (H * ((b + c) * (c + b))) * c <=> (H * ((b + c) * c)) * (b + c)
+rightSide = do
+  sym assocT .* id     -- ((H * (b + c)) * (c + b)) * c'
+  assocT               -- (H * (b + c)) * ((c + b) * c')
+  id .* leftSwap       -- (H * (b + c)) * ((c' + b) * c)
+  id .* swapT          -- (H * (b + c)) * (c * (c' + b))
+  sym assocT           -- ((H * (b + c)) * c) * (c' + b)
+  assocT .* swapP      -- (H * ((b + c) * c)) * (b + c')
 ```
 
 ---
