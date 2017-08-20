@@ -150,7 +150,7 @@ $$
 or, alternatively, could be written in Haskell as:
 
 ```haskell
-prodRel :: (a -> a') (b -> b') -> (a, b) -> (a', b')
+prodRel :: (a -> a') -> (b -> b') -> (a, b) -> (a', b')
 prodRel f g (a, b) = (f a, g b)
 ```
 
