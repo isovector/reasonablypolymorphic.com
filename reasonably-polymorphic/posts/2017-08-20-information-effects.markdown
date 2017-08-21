@@ -642,6 +642,7 @@ language in this arrow language.
 The semantics of `Create` is given by induction:
 
 $$
+\newcommand{\u}{\text{U}}
 \begin{align*}
 \text{create U} & \mapsto \u \\
 \text{create}(a + b) & \mapsto \text{InL } (\text{create } a) \\
@@ -743,7 +744,6 @@ instead:
 $$
 \newcommand{\lifted}[3]{\text{lift } #1 : #2 \leftrightarrow #3}
 \newcommand{\arr}{\rightsquigarrow}
-\newcommand{\u}{\text{U}}
 \frac{\text{arr } f : a \arr b}{\lifted{(\text{arr } f)}{\u
 \times a}{\u \times b}}
 $$
