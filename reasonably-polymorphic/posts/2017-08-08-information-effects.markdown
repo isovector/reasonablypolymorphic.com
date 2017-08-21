@@ -14,7 +14,7 @@ the subsequent PL jargon will -- it promises a "typed, universal, and
 reversible computation model in which information is treated as a linear
 resource".
 
-[paper]:
+[paper]: https://www.cs.indiana.edu/~sabry/papers/information-effects.pdf
 
 I don't know about you, but I was positively shaking with anticipation at this
 point. That's one heck of an abstract.
@@ -96,7 +96,7 @@ syntactic isomorphisms. They will not be reproduced here, but can be found in
 the [code accompanying this post][code]. The motivated reader is encouraged to
 implement these for themself.
 
-[code]: TODO(sandy)
+[code]: https://github.com/isovector/information-effects/blob/master/src/Main.hs
 
 With the terms of our algebra out of the way, we're now ready for the operators.
 We are presented with the following:
@@ -857,45 +857,56 @@ and is rather horrifyingly implemented:
 
 ```haskell
 lift (Left f) = do
-  id -- (H * ((b + c) * (c + b))) * (a + b)
-  -- TODO(sandy): something is necessary here -- distrib maybe?
-  leftSide .* rightSide
+  swapT
+  distrib
+  leftSide f .+ rightSide
+  sym distrib
 
 leftSide
-    :: (H * a <=> G * b)
-    -> (a * (H * ((b + c) * (c + b))) <=> (G * (b * (c + b))) * (b + c))
+    :: (h * a <=> g * b)
+    -> (a * (h * ((b + c) * (c + b))) <=> (g * (b * (c + b))) * (b + c))
 leftSide f = do
   swapT                -- (H * ((b + c) * (c + b))) * a
   swapT .* id          -- (((b + c) * (c + b)) * H) * a
-  assocT               -- ((b + c) * (c + b)) * (H * a)
+  sym assocT           -- ((b + c) * (c + b)) * (H * a)
   id .* f              -- ((b + c) * (c + b)) * (G * b')
   swapT .* id          -- ((c + b) * (b + c)) * (G * b')
-  swapAcbdT            -- ((c + b) * G) * ((b + c) * b')
+  sw2                  -- ((c + b) * G) * ((b + c) * b')
   id .* leftSwap       -- ((c + b) * G) * ((b' + c) * b)
   swapT .* swapT       -- (G * (c + b)) * (b * (b' + c))
-  sym assocT           -- ((G * (c + b)) * b) * (b' + c)
-  assocT .* id         -- (G * ((c + b) * b)) * (b' + c)
+  assocT               -- ((G * (c + b)) * b) * (b' + c)
+  sym assocT .* id     -- (G * ((c + b) * b)) * (b' + c)
   (id .* swapT) .* id  -- (G * (b * (c + b))) * (b' + c)
 
-rightSide :: (H * ((b + c) * (c + b))) * c <=> (H * ((b + c) * c)) * (b + c)
+rightSide :: c * (h * ((b + c) * (c + b))) <=> (h * ((b + c) * c)) * (b + c)
 rightSide = do
-  sym assocT .* id     -- ((H * (b + c)) * (c + b)) * c'
-  assocT               -- (H * (b + c)) * ((c + b) * c')
+  swapT                -- c' * (H * ((b + c) * (c + b)))
+  assocT .* id         -- ((H * (b + c)) * (c + b)) * c'
+  sym assocT           -- (H * (b + c)) * ((c + b) * c')
   id .* leftSwap       -- (H * (b + c)) * ((c' + b) * c)
   id .* swapT          -- (H * (b + c)) * (c * (c' + b))
-  sym assocT           -- ((H * (b + c)) * c) * (c' + b)
-  assocT .* swapP      -- (H * ((b + c) * c)) * (b + c')
+  assocT               -- ((H * (b + c)) * c) * (c' + b)
+  sym assocT .* swapP  -- (H * ((b + c) * c)) * (b + c')
 ```
 
 ---
+
+The home stretch is within sight. We have only two constructors of our arrow
+language left. We look first at `Create`:
 
 ```haskell
 Create  :: U ~> a
 ```
 
+Because we've done all of this work to thread through a heap in order to give us
+the ability to create values, the typing judgment should come as no surprise:
+
 $$
 \frac{}{\lifted{\text{create}}{a\times\u}{\u\times a}}
 $$
+
+Our heap contains the `a` we want, and we drop our incoming `U` as garbage. The
+implementation of this is obvious:
 
 ```haskell
 lift Create = swapT
@@ -903,16 +914,95 @@ lift Create = swapT
 
 ---
 
+We're left with `Erase`, whose type looks suspiciously like running `Create` in
+reverse:
+
 ```haskell
 Erase  :: a ~> U
 ```
+
+This is no coincidence; the two operations are duals of one another.
 
 $$
 \frac{}{\lifted{\text{erase}}{\u\times a}{a\times\u}}
 $$
 
+As expected, the implementation is the same as `Create`:
+
 ```haskell
 lift Erase = swapT
 ```
 
+And we're done! We've now constructed a means of transforming any non-reversible
+program into a reversible one. Success!
+
+
+## Summary
+
+Still here? We've come a long way, which we'll briefly summarize. In this paper,
+James and Sabry have taken us through the construction of a reversible language,
+given a proof that it's Turing-complete, and given us some simple constructions
+on it. We set out on our own to implement lists and derived `map` for them.
+
+We then constructed a non-reversible language (due to its capability to create
+and erase information), and then gave a transformation from this language to our
+earlier reversible language -- showing that non-reversible computing is a
+special case of its reversible counterpart.
+
+Information Effects ends with a short discussion of potential applications,
+which won't be replicated here.
+
+
+## Commentary (on the physics)
+
+Assuming I understand the physics correctly (which I probably don't), the fact
+that these reversible functions do not increase entropy implies that they should
+be capable of shunting information for near-zero energy. [Landauer's
+Principle][landauer] and [Szilard's engine] suggests that information entropy
+and thermodynamic entropy are *one and the same*; if we don't increase entropy
+in our computation of a function, there is nowhere for us to have created any
+heat.
+
+[landauer]: https://en.wikipedia.org/wiki/Landauer's_principle
+[szilard]: https://en.wikipedia.org/wiki/Entropy_in_thermodynamics_and_information_theory#Szilard.27s_engine
+
+That's pretty remarkable, if you ask me. Together with our construction from any
+non-reversible program to a reversible one, it suggests we should be able to cut
+down on our CPU power usage by a significant order of magnitudes.
+
+
+## Commentary (on where to go from here)
+
+An obvious limitation of what we've built here today is that it is first-order,
+which is to say that functions are not a first class citizen. I can think of no
+immediate problem with representing reversible functions in this manner. We'd
+need to move our `(<=>)` directly into the language.
+
+`id` would provide introduction of this type, and `(>>)` (transitivity) would
+allow us to create useful values of the type. We'd also need a new axiom:
+
+```haskell
+apply :: a * (a <=> b) <=> b * (b <=> a)
+```
+
+which would allow us to use our functions. We should also expect the following
+theorems (which may or may not be axioms) due to our iso language forming a
+cartesian closed category:
+
+```haskell
+product   :: (a <=> (b * c)) <=> (a <=> b) * (a <=> c)
+coproduct :: (a <=> (b + c)) <=> (a <=> b) + (a <=> c)
+```
+
+Things that we'd expect to be theorems but are **not** are:
+
+```haskell
+terminal :: U <=> (a <=> U)
+select   :: a <=> (U <=> a)
+```
+
+due to the symmetry of `(<=>)`, both of these are equivalent to `create` and
+`erase`. I think the fact that these are not theorems despite `U` being the
+terminal object is that `(<=>)` requires arrows in both directions, but `U` only
+has incoming arrows.
 
