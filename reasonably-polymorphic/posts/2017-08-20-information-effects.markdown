@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Review: Information Effects"
-date: 2017-08-08 22:37
+date: 2017-08-20 20:31
 comments: true
 tags: papers, review, james, sabry, haskell, reversible computing
 ---
