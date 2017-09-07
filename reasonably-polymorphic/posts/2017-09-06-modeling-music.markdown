@@ -400,3 +400,6 @@ more about music theory than I'd learned in 10 years of lessons (in which,
 admittedly, I skipped the theory sections). More to come on this topic,
 probably.
 
+As usual, [you can find the associated code on
+Github](https://github.com/isovector/jazz/).
+
