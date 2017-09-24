@@ -306,3 +306,166 @@ fromFixed (unFix -> Cons' a fixed) = Cons a (fromFixed fixed)
 
 $\blacksquare$
 
+---
+
+### Algebras
+
+An `f`-algebra is a function of type `forall z. f z -> z`, which intuitively
+removes the structure of an `f`. If you think about it, this is spiritually what
+a fold does; it removes some structure as it reduces to some value.
+
+As it happens, the type of an `f`-algebra is identical to the parameters
+required by a catamorphism. Let's look at `List' a`-algebras and see how the
+correspond with our previous examples of catamorphisms.
+
+
+```haskell
+length :: [a] -> Int
+length = foldr (\_ n -> n + 1) 0
+
+lengthAlgebra :: List' a Int -> Int
+lengthAlgebra Nil'        = 0
+lengthAlgebra (Cons' _ n) = n + 1
+```
+
+```haskell
+filter :: forall a. (a -> Bool) -> List a -> List a
+filter p = foldr step Nil
+  where
+    step a as =
+      if p a
+         then Cons a as
+         else as
+
+filterAlgebra :: (a -> Bool) -> List' a (List a) -> (List a)
+filterAlgebra _  Nil'        = Nil
+filterAlgebra p (Cons' a as) =
+  if p a
+    then Cons a as
+    else as
+```
+
+
+### Coalgebras
+
+`f`-algebras correspond succinctly to the parameters of catamorphisms
+over `f`s. Since catamorphisms are dual to anamorphisms, we should expect
+that by turning around an algebra we might get a representation of the
+anamorphism parameters.
+
+And we'd be right. Such a thing is called an `f`-coalgebra of type `forall z. z
+-> f z`, and corresponds exactly to these parameters. Let's look at our previous
+examples of anamorphisms through this lens:
+
+```haskell
+zip :: (List a, List b) -> List (a, b)
+zip = unfoldr produce
+  where
+    produce (as, bs) =
+      if null as || null bs
+         then Nothing
+         else Just ((head as, head bs), (tail as, tail bs))
+
+zipCoalgebra :: ([a], [b]) -> List' (a, b) ([a], [b])
+zipCoalgebra (as, bs) =
+  if null as || null bs
+     then Nil'
+     else Cons (head as, head bs) (tail as, tail bs)
+```
+
+```haskell
+iterate :: (a -> a) -> a -> [a]
+iterate f = unfoldr (\a -> Just (a, f a))
+
+iterateAlgebra :: (a -> a) -> a -> List' a a
+iterateAlgebra f a = Cons a (f a)
+```
+
+You might have noticed that these coalgebras don't line up as nicely as the
+algebras did, due namely to the `produce` functions returning a type of `Maybe
+(a, b)`, while the coalgebras return a `List' a b`. Of course, these types are
+isomorphic (`Nothing <=> Nil'`, `Just (a, b) <=> Cons a b`), it's just that the
+authors of `unfoldr` didn't have our `List'` functor to play with.
+
+
+### From Algebras to Catamorphisms
+
+As we have seen, `f`-algebras correspond exactly to the parameters of a
+catamorphism over an `f`. But how can we actually implement the catamorphism?
+We're almost there, but first we need some machinery.
+
+```haskell
+type family Fixable t :: * -> *
+```
+
+The type family `Fixable` takes a type to its fixable functor representation.
+For example, we can use it to connect our `List a` type to `List' a`:
+
+```haskell
+type instance Fixable (List a) = List' a
+```
+
+Now, assuming we have a function `toFixable :: t -> Fixable t t`, which for
+lists looks like this:
+
+```haskell
+toFixable :: List a -> Fixable (List a) (List a)
+-- equivalently: toFixable :: List a -> List' a (List a)
+toFixable Nil         = Nil'
+toFixable (Cons a as) = Cons' a as
+```
+
+We can now write our catamorphism!
+
+```haskell
+cata :: (Fixable t z -> z) -> t -> z
+cata algebra = algebra
+             . fmap (cata algebra)
+             . toFixable
+```
+
+Very cool. What we've built here is general machinery for tearing down any
+inductive data structure `t`. All we need to do it is its `Fixable t`
+representation, and a function `project :: t -> Fixable t t`. These definitions
+turn out to be completely mechanical, and thankfully, [can be automatically
+derived][th] for you via the [recursion-schemes][schemes] package.
+
+[th]: https://hackage.haskell.org/package/recursion-schemes-5.0.2/docs/Data-Functor-Foldable-TH.html#v:makeBaseFunctor
+[schemes]: https://hackage.haskell.org/package/recursion-schemes-5.0.2
+
+
+### Coalgebras and Catamorphisms
+
+We can turn all of our machinery around in order to implement anamorphisms.
+We'll present this material quickly without much commentary, since there are no
+new insights here.
+
+Given `fromFixable :: Fixable t t -> t`, we can implement `ana`:
+
+```haskell
+ana :: (z -> Fixable t z) -> z -> t
+ana coalgebra = fromFixable
+              . fmap (ana coalgebra)
+              . coalgebra
+```
+
+
+### General Paramorphisms
+
+Because there is nothing interesting about hylomorphisms when viewed via our
+`Fixed` machinery, we skip directly to paramorphisms.
+
+Recall that a paramorphism is a fold that has access to both the accumulated
+value being constructed as well as the remainder of the structure at any given
+point in time. We can represent such a thing "algebraically:" `Fixable t (t, z)
+-> z`. With a minor tweak to `cata`, we can get `para`:
+
+```haskell
+para :: (Fixable t (t, z) -> z) -> t -> z
+para alg = teardown
+  where
+    teardown = alg
+             . fmap (\t -> (t, teardown t))
+             . toFixable
+```
+
