@@ -958,7 +958,7 @@ which won't be replicated here.
 Assuming I understand the physics correctly (which I probably don't), the fact
 that these reversible functions do not increase entropy implies that they should
 be capable of shunting information for near-zero energy. [Landauer's
-Principle][landauer] and [Szilard's engine] suggests that information entropy
+Principle][landauer] and [Szilard's engine][szilard] suggests that information entropy
 and thermodynamic entropy are *one and the same*; if we don't increase entropy
 in our computation of a function, there is nowhere for us to have created any
 heat.
@@ -991,7 +991,6 @@ cartesian closed category:
 
 ```haskell
 product   :: (a <=> (b * c)) <=> (a <=> b) * (a <=> c)
-coproduct :: (a <=> (b + c)) <=> (a <=> b) + (a <=> c)
 ```
 
 Things that we'd expect to be theorems but are **not** are:
@@ -999,6 +998,7 @@ Things that we'd expect to be theorems but are **not** are:
 ```haskell
 terminal :: U <=> (a <=> U)
 select   :: a <=> (U <=> a)
+coproduct :: (a <=> (b + c)) <=> (a <=> b) + (a <=> c)
 ```
 
 due to the symmetry of `(<=>)`, both of these are equivalent to `create` and
