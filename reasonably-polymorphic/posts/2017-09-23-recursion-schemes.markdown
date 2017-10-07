@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Review: Bananas, Lenses, Envelopes and Barbed Wire"
-date: 2017-09-23 15:34
+date: 2017-10-06 23:07
 comments: true
 tags:
 ---
@@ -562,5 +562,12 @@ $\mathbb{Set}$) to injective functions. Therefore, we can get this proof via
 duality from the proof that injective functions are catamorphisms. $\blacksquare$
 
 
-## Commentary
+## Closing Remarks
+
+
+*Functional Programming with Recursion Schemes* has some other (in my opinion)
+minor contributions about this stuff, such as how catamorphisms preserve
+strictness, but I feel like we've tackled the most interesting pieces of it. It
+is my hope that this review will serve as a useful complement in understanding
+the original paper.
 
