@@ -247,7 +247,7 @@ data List a = Nil
 ```
 
 However, there's no reason we need the explicit recursion in the `Cons` data
-structure. Consider instead, an alternative representation:
+structure. Consider instead, an alternative, "fixable" representation:
 
 ```haskell
 data List' a x = Nil'
@@ -275,38 +275,6 @@ into a `b`! Unfortunately we're still left with a `List' a b`, but this turns
 out to be a problem only in our handwaving of `x ~ List' a x`, and the actual
 technique will in fact give us just a `b` at the end of the day.
 
-
-### Recursive Types
-
-Imagine, if you will, the following type:
-
-```haskell
-newtype Fixed f = Fix { unFix :: f (Fixed f) }
-```
-
-`Fixed` takes a functor `f`, and fills in its type parameter with `Fixed f`. It
-might not be obvious, but this property is exactly what we need to tie the
-recursive knot.
-
-**CLAIM**: `List a` is isomorphic to `Fixed (List' a)`.
-
-**PROOF**:
-
-It is sufficient to show polymorphic functions in both directions:
-
-```haskell
-toFixed :: List a -> Fixed (List' a)
-toFixed Nil         = Fix  Nil'
-toFixed (Cons a as) = Fix (Cons' a (toFixed as))
-
-fromFixed :: Fixed (List' a) -> List a
-fromFixed (unFix -> Nil')          = Nil
-fromFixed (unFix -> Cons' a fixed) = Cons a (fromFixed fixed)
-```
-
-$\blacksquare$
-
----
 
 ### Algebras
 
@@ -418,7 +386,7 @@ toFixable (Cons a as) = Cons' a as
 We can now write our catamorphism!
 
 ```haskell
-cata :: (Fixable t z -> z) -> t -> z
+cata :: (Fixable t z -> z) -> (t -> z)
 cata algebra = algebra
              . fmap (cata algebra)
              . toFixable
@@ -453,7 +421,7 @@ ana coalgebra = fromFixable
 ### General Paramorphisms
 
 Because there is nothing interesting about hylomorphisms when viewed via our
-`Fixed` machinery, we skip directly to paramorphisms.
+`Fixable` machinery, we skip directly to paramorphisms.
 
 Recall that a paramorphism is a fold that has access to both the accumulated
 value being constructed as well as the remainder of the structure at any given
@@ -468,4 +436,131 @@ para alg = teardown
              . fmap (\t -> (t, teardown t))
              . toFixable
 ```
+
+
+## Miscellaneous Findings
+
+### All Injective Functions are Catamorphisms
+
+Meijer et al. make the somewhat-unsubstantiated claim that all injective
+functions are catamorphisms. We will reproduce their proof here, and then work
+through it to convince ourselves of its correctness.
+
+> Let `f :: A -> B` be a strict function with left-inverse `g`. Then for any `φ
+> :: F A -> A`, we have:
+>
+> ```haskell
+> g . f = id
+>
+> f . cata φ = cata (f . φ . fmap g)
+> ```
+>
+> Taking `φ = fromFixable$ we immediately get that any strict injective function
+> can be written as a catamorphism:
+>
+> ```haskell
+> f = cata (f . fromFixable . fmap g)
+> ```
+
+Sounds, good? I guess? Meijer et al. must think I'm very smart, because it took
+me about a week of bashing my head against this proof before I got it. There
+were two stumbling blocks for me which we'll tackle together.
+
+To jog our memories, we'll look again at the definition of `cata`:
+
+```haskell
+cata φ = φ . fmap (cata φ) . toFixable
+```
+
+There are two claims we need to tackle here, the first of which is that given `φ
+= fromFixable`:
+
+```haskell
+f . cata φ = cata (f . φ . fmap g)
+```
+
+We can show this by mathematical induction. We'll first prove the base case, by
+analysis of the `[]` case over list-algebras.
+
+```haskell
+  cata (f . φ . fmap g) []
+  -- definition of cata
+= f . φ . fmap g . fmap (cata (f . φ . fmap g)) $ toFixable []
+  -- definition of toFixable
+= f . φ . fmap g . fmap (cata (f . φ . fmap g)) $ NilF
+  -- fmap fusion
+= f . φ . fmap (g . cata (f . φ . fmap g)) $ NilF
+  -- NilF is a constant functor
+= f . φ $ NilF
+  -- substitute φ = fromFixable
+= f $ fromFixable NilF
+  -- definition of fromFixable
+= f []
+```
+
+Great! That's the base case tackled. It's easy to see why this generalizes away
+from lists to any data structure; the only way to terminate the recursion of a
+`cata` is for one of the type's data constructors to not be recursive (such as
+`Nil`). If the data constructor isn't recursive, its `Fixable` representation
+must be a constant functor, and thus the final `fmap` will always fizzle itself
+out.
+
+Let's tackle the inductive case now. We'll look at cases of `cata` that don't
+fizzle out immediately:
+
+```haskell
+  cata (f . φ . fmap g)
+  -- definition of cata
+= f . φ . fmap g . fmap (cata (f . φ . fmap g)) . toFixable
+  -- fmap fusion
+= f . φ . fmap (g . cata (f . φ . fmap g)) . toFixable
+  -- definition of cata
+= f . φ . fmap (g . f . φ . fmap g . fmap (cata (f . φ . fmap g)) . toFixable) . toFixable
+  -- fmap fusion
+= f . φ . fmap (g . f . φ . fmap (g . cata (f . φ . fmap g)) . toFixable) . toFixable
+  -- g . f = id
+= f . φ . fmap (id . φ . fmap (g . cata (f . φ . fmap g)) . toFixable) . toFixable
+  -- definition of id
+= f . φ . fmap (φ . fmap (g . cata (f . φ . fmap g)) . toFixable) . toFixable
+```
+
+As you can see here, subsequent expansions of `cata` line their `g`s and `f`s up
+in such a way that they cancel out. Also, we know from our experience looking at
+the base case that the final `g` will always sizzle out, and so we don't need to
+worry about it only being a left-inverse.
+
+The other stumbling block for me was that `cata fromFixable = id`, but this
+turns out to be trivial:
+
+```haskell
+  cata fromFixable
+= fromFixable . fmap (cata fromFixable) . toFixable
+```
+
+Eventually this will all bottom out when it hits the constant functor, which
+will give us a giant chain of `fromFixable . toFixable`s, which is obviously
+`id`.
+
+To circle back to our original claim that all injective functions are
+catamorphisms, we're now ready to tackle it for real.
+
+
+```haskell
+f . cata φ           = cata (f . φ . fmap g)
+f . cata fromFixable = cata (f . fromFixable . fmap g)
+f . id               = cata (f . fromFixable . fmap g)
+f                    = cata (f . fromFixable . fmap g)
+```
+
+$\blacksquare$
+
+
+### All Surjective Functions are Anamorphisms
+
+Anamorphisms are dual to catamorphisms, and surjective functions are dual (in
+$\mathbb{Set}$) to injective functions. Therefore, we can get this proof via
+duality from the proof that injective functions are catamorphisms. $\blacksquare$
+
+
+## Commentary
 
