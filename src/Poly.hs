@@ -32,6 +32,7 @@ main = do
         cssRules      poly
         postRules     poly postsDir "posts/" "blog/" postCtxTags
         archiveRules  poly postsDir "blog/archives/" postCtxTags
+        postRules     poly miscDir "misc/" "" postCtx
         -- postRules     poly bookDir "httw/" "book/" bookCtxTags
         -- archiveRules  poly bookDir "book/" bookCtxTags
         -- indexRules    poly bookDir "book/" postCtxTags

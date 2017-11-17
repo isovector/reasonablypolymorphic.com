@@ -11,3 +11,6 @@ postsDir = fromGlob . (++ "posts/*")
 
 bookDir :: String -> Pattern
 bookDir = fromGlob . (++ "httw/*")
+
+miscDir :: String -> Pattern
+miscDir = fromGlob . (++ "misc/*")
