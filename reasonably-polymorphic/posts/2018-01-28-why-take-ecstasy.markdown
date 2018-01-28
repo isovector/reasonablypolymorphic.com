@@ -344,7 +344,7 @@ a | Unset | Keep`. If we want a place to store all of our entities, we generate
 an `IntMap` for every `'Field`. There's also support for adding components that
 are uniquely owned by a single entity, but we won't get into that today.
 
-The trick here is that we get the user to fill in the `c :: Component` when
+The trick here is that we get the user to fill in the `c :: ComponentType` when
 they define the components, and ask them to keep the `s :: StorageType`
 polymorphic. The library then can instantiate your `EntWorld f` with different
 `StorageType`s in order to pull out the necessary types for actually plumbing
