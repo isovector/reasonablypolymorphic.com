@@ -3,7 +3,7 @@ layout: post
 title: "Type-Directed Code Generation"
 date: 2017-11-18 23:17
 comments: true
-tags:
+tags: haskell, design, type trickery
 ---
 
 > aka "Type-Level Icing Sugar"
