@@ -144,6 +144,11 @@ gravity to all entities that have a `velocity`, but *don't* have the
 
 ## apecs
 
+*EDIT 2018-01-30*: [The author of apecs has replied to this post][reply]. It's
+worth reading through, as it gives a useful perspective from the other side.
+
+[reply]: https://www.reddit.com/r/haskell/comments/7tlwtl/why_and_how_i_wrote_my_own_entity_component_system/dtgzrab/
+
 With an understanding of what ECS brings to the table, we're now ready to take a
 look at different ways of implementing such a system. We first turn our
 attention to [apecs][apecs].
