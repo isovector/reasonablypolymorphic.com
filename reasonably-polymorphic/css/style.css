@@ -290,3 +290,7 @@ td {
 .copy {
   font-size: smallest;
 }
+
+.figure {
+  text-align: center;
+}
