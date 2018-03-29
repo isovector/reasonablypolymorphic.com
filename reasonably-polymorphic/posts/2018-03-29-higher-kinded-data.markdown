@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Higher-Kinded Data"
-date: TO_BE_DETERMINED
+date: 2018-03-29 23:23
 comments: true
 tags: haskell, technical, programming
 ---
