@@ -279,7 +279,7 @@ Happy higher-kinding!
 
 Big shoutouts to [Travis Athougies][travis] from whom I originally learned this
 technique, and to [Ariel Weingarten][ariel] and [Fintan Halpenny][fintan] for
-proofreading early versions this post.
+proofreading earlier versions of this post.
 
 [travis]: http://travis.athougies.net/
 [ariel]: https://github.com/asweingarten
