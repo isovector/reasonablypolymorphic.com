@@ -271,7 +271,8 @@ That's all for today, folks. We've been introduced to the idea of higher-kinded
 data, seen how it's completely equivalent with a datatype defined in a more
 traditional fashion, and also caught a glimmer of what kind of things are
 possible with this approach. This is where we stop for today, but in the next
-post we'll look at how we can use the HKD approach to generate lenses without resorting to TemplateHaskell.
+post we'll look at how we can use the HKD approach to generate lenses without
+resorting to TemplateHaskell.
 
 Happy higher-kinding!
 
