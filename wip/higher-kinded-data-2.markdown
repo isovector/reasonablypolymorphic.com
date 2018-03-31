@@ -1,32 +1,67 @@
 ---
 layout: post
-title: Higher Kinded Data
+title: "Free Lenses for Higher-Kinded Data"
 date: TO_BE_DETERMINED
 comments: true
 tags: haskell, technical, programming
 ---
 
-* *Is my return type something other than just a differently-parameterized HKD?*
-  If so, factor that return type into the typeclass method (seen here by the
-  `Maybe` in my signature).
-* *Is there recursion anywhere in my HKD?* If so, I need to add a type parameter
-  `z :: * -> *` to the typeclass, such that `z` is the original higher-kinded
-  datatype I'm working over.
-* *Do I need to pull data out of my original `z`?* If so, I need to add a
-  parameter to my method of type `z Identity -> i p`, which acts as a selector
-  that I can build inductively.
+In the [previous blog post][hkd], we discussed *higher-kinded data* (HKD), the
+technique of parameterizing your data types by something of kind `* -> *`, and
+subsequently wrapping each of its fields by this parameter. The example we used
+previously was transforming this type:
 
-Let's look at a more involved example of what we can do if our data is HKD --
-generate lenses for it. The following example is heavily based on [Travis
-Athougies][travis]' fantastic library [beam][beam], which is where I originally
-learned all of this this HKD tomfoolery. Thanks, Travis -- you da man!
+[hkd]: /blog/higher-kinded-data
 
-[travis]: http://travis.athougies.net/
-[beam]: http://travis.athougies.net/projects/beam.html
+```haskell
+data Person = Person
+  { pName :: String
+  , pAge  :: Int
+  }
+```
 
-So, we'd like to be able to generate lenses for all products in a HKD record.
-We'll begin by thinking about what we'll need to instantiate our HKD parameter
-as in order to make this happen. Recall, our `Person'` type:
+into its HKD representation:
+
+```haskell
+data Person' f = Person
+  { pName :: HKD f String
+  , pAge  :: HKD Int
+  }
+```
+
+Recall that `HKD` is a type family given by
+
+```haskell
+type family HKD f a where
+  HKD Identity a = a
+  HKD f        a = f a
+```
+
+which is responsible for stripping out an `Identity` wrapper. This means we can
+recreate our original `Person` type via `type Person = Person' Identity`, and
+use it in all the same places we used to be able to.
+
+Our previous exploration of the topic unearthed some rather trivial applications
+of this approach; we generated a function `validate :: f Maybe -> Maybe (f
+Identity)` which can roughly be described as a "type-level `sequence`." In fact,
+in the comments, [Syrak][syrak] pointed out we can implement this function in a
+less-round-about way via `gtraverse id`.
+
+[syrak]: https://www.reddit.com/r/haskell/comments/884pe0/higherkinded_data_reasonably_polymorphic/dwi0a0f/
+
+So, how about we do something a little more interesting today? Let's generate
+lenses for arbitrary product types.
+
+In my opinion, one of the biggest advantages of the HKD approach is it answers
+the question "where can we put this stuff we've generated?" Generating lenses
+generically is pretty trivial (once you have wrapped your head around the
+mind-boggling types), but the harder part is where to put it. The [`lens`][lens]
+package uses TemplateHaskell to generate new top-level bindings so it has
+somewhere to put the lenses. But we have HKD.
+
+[lens]: https://hackage.haskell.org/package/lens
+
+Recall, our `Person'` type:
 
 ```haskell
 data Person' f = Person
@@ -36,64 +71,115 @@ data Person' f = Person
 ```
 
 By substituting `f ~ Lens' (Person' Identity)`, we'll have `pName :: Lens'
-(Person' Identity) String`, which is exactly the type we want. Good start. Our
-next step is to design the typeclass we'll use to generate this information.
+(Person' Identity) String`, which is exactly the type we need. All of a sudden
+it looks like we have an answer to "where should we put it": inside our original
+structure itself. If we can generate a record of type `Person' (Lens' (Person'
+Identity)`, destructuring such a thing will give us the lenses we want, allowing
+us to name them when we do the destructuring. Cool!
 
-We realize a few things here -- we should be able to generate these lenses *ex
-nihilo*, which is to say, we won't need a `Person' Identity` to get the ball
-rolling here. Therefore our typeclass method won't need an `i p` parameter.
-
-But, we are going to be doing structural induction. Which means that we need
-some way of "tracking" where we are in the type. Since we want to be generating
-lenses at the end of the day, the most obvious way of doing this is to construct
-a lens as we go, capable of getting us from `Person' Identity` to our current
-point in the type induction. We'll add this lens as a parameter to our method.
-
-At the end of the day, our `GLenses` typeclass looks like this:
+Unfortunately, we're unable to partially apply type-synonyms, so we'll need to
+introduce a new type constructor that we *can* partially apply. Enter
+`LensesFor`:
 
 ```haskell
-{-# LANGUAGE RankNTypes #-}
+data LensFor s a = LensFor
+  { getLensFor :: Lens' s a
+  }
+```
 
-class GLenses z i o where
+The next step is to *think really hard* about what our lens-providing type-class
+should look like. At the risk of sounding like a scratched CD in a walkman, I
+consider the design of the typeclass to be by far the hardest part of this
+approach. So we'll work through the derivation together:
+
+I always begin with my "template" generic-deriving class:
+
+```haskell
+class GLensesFor i o where
+  glenses :: i p -> o p
+```
+
+where `p` is a mysterious existentialized type parameter "reserved for future
+use" by the `GHC.Generics` interface. Recall that `i` is the incoming type for
+the transformation (*not* the original `Person'` type), and `o` is
+correspondingly the output type of the transformation.
+
+Since lenses don't depend on a particular "input" record -- they should be able
+to be generated *ex nihilo* -- we can drop the `i p` parameter from `glenses`.
+Furthermore, since eventually our lenses are going to depend on our "original"
+type (the `Person'` in our desired `LensesFor (Person' Identity)`), we'll need
+another parameter in our typeclass to track that. Let's call it `z`.
+
+```haskell
+class GLensesFor z i o where
+  glenses :: o p
+```
+
+As far as methods go, `glenses` is pretty unsatisfactory right now; it leaves
+most of its type parameters ambiguous. No good. We can resolve this issue by
+realizing that we're going to need to actually provide lenses at the end of the
+day, and because `GHC.Generics` doesn't give us any such functionality, we'll
+need to write it ourselves. Which implies we're going to need to do structural
+induction as we traverse our generic `Rep`resentation.
+
+The trick here is that in order to provide a lens, we're going to need to have a
+lens to give. So we'll add a `Lens'` to our `glenses` signature -- but what type
+should it have? At the end of the day, we want to provide a `Lens' (z Identity)
+a` where `a` is the type of the field we're trying to get. Since we always want
+a lens starting from `z Identity`, that pins down one side of our lens
+parameter.
+
+```haskell
+class GLensesFor z i o where
+  glenses :: Lens' (z Identity) _ -> o p
+```
+
+We still have the notion of an `i`nput to our `glenses`, which we want to
+transform into our `o`utput. And that's what tears it; if we have a lens from
+our original type where we currently are in our Generic traversal, we can
+transform that into a Generic structure which contains the lenses we want.
+
+```haskell
+class GLensesFor z i o where
   glenses :: Lens' (z Identity) (i p) -> o p
 ```
 
-which we can interpret as "if you give me a lens from `z Identity` to the point
-in the induction I'm working over, I can give you the desired output type." Like
-in our `flay` example, we'll keep `i` and `o` in tight lock-step.
+Don't worry if you're not entirely sure about the reasoning here; I wasn't
+either until I worked through the actual implementation. It took a few
+iterations to get right. Like I said, figuring out what this method should look
+like is by far the hardest part. Hopefully going through the rest of the
+exercise will help convince us that we got our interface correct.
 
-We begin with a helper definition:
+With our typeclass pinned down, we're ready to begin our implementation. We
+start, as always, with the base case, which here is "what should happen if we
+have a `K1` type?" Recall a `K1` corresponds to the end of our generic
+structural induction, which is to say, this is a type that isn't ours. It's the
+`HKD f String` in `pName :: HKD f String` from our example.
 
-```haskell
-data LensFor t x = LensFor (Lens' t x)
-```
-
-which hides the existentialized functor inside the definition of `Lens'`. This
-is some necessary bookkeeping because GHC won't allow us to have rank-N
-polymorphic instances. If you don't understand what that means, don't worry --
-it's not important.
-
-So, with this knowledge, we can write our base case. We want to transform a
-constant type into a lens which will get back that constant type.
+So, if we have an `a` wrapped in a `K1`, we want to instead produce a `LensFor
+(z Identity) a` wrapped in the same.
 
 ```haskell
 instance GLenses z (K1 _x a)
                    (K1 _x (LensFor (z Identity) a)) where
-  glenses l = K1 $ LensFor $ \f -> l $ fmap K1 . f . unK1
+  glenses l = K1                            -- [3]
+            $ LensFor                       -- [2]
+            $ \f -> l $ fmap K1 . f . unK1  -- [1]
   {-# INLINE glenses #-}
 ```
 
-Our transformation here will turn an `a` somewhere in our datatype into a
-`LensFor (z Identity) a` -- aka a `Lens' (z Identity) a`. The actual
-implementation isn't particularly interesting, I just played
-[type-tetris][tetris] until it compiled.
-
-[tetris]: /blog/love-types
+Egads there's a lot going on here. Let's work through it together. In [1], we
+transform the lens we were given (`l`) so that it will burrow through a `K1`
+constructor -- essentially turning it from a `Lens' (z Identity) (K1 _x a)` into
+a `Lens' (z Identity) a`. At [2], we wrap our generated lens in the `LensFor`
+constructor, and then in [3] we wrap our generated lens back in the
+`GHC.Generics` machinery so we can transform it back into our HKD representation
+later.
 
 And now for our induction. The general idea here is that we're going to need to
 transform the lens we got into a new lens that focuses down through our generic
-structure as we traverse it. We can look at the `M1` case because it's quite
-trivial:
+structure as we traverse it. We can look at the `M1` case because it's
+babby's first instance when compared to `K1`:
 
 ```haskell
 instance (GLenses z i o)
@@ -102,32 +188,42 @@ instance (GLenses z i o)
   {-# INLINE glenses #-}
 ```
 
-All we do here is construct a lens that zooms in on the `M1` constructor, pass
-it to `glenses`, and then wrap the result of that in our own `M1` constructor.
-Wrapping it ourselves is what allows us to generate a value at the end of the
-day.
+Here we're saying we can lift a `GLenses z i o` over an `M1` constructor by
+calling `glenses` with an updated lens that will burrow through the `M1`-ness.
+This transformation is completely analogous to the one we did for `K1`. Once we
+have our generated lenses, we need to re-wrap the structure in an `M1`
+constructor so we can transform it back into our HKD representation.
 
-The instance for products is similar, though a little messier since we don't
-have helper functions to map over `(:*:)`:
+The product case looks a little trickier, but it's only because `GHC.Generics`
+doesn't provide us with any useful un/wrapping combinators for the `(:*:)`
+constructor.
 
 ```haskell
 instance (GLenses z i o, GLenses z i' o')
     => GLenses z (i :*: i') (o :*: o') where
-  glenses l = glenses (\f -> l (\(a :*: b) -> (:*: b) <$> f a))
-          :*: glenses (\f -> l (\(a :*: b) -> (a :*:) <$> f b))
+  glenses l = glenses (\f -> l (\(a :*: b) -> fmap (:*: b) $ f a))
+          :*: glenses (\f -> l (\(a :*: b) -> fmap (a :*:) $ f b))
   {-# INLINE glenses #-}
 ```
 
-Again, the implementation here was mostly type-tetris and a healthy amount of
-copy-pasting code from `beam`.
+We finish it off with the trivial instances for `V1` and `U1`:
 
-It's worth noting that we are unable to provide an instance of `GLenses` for
-`(:+:)`, since lenses are not defined over coproducts. This is no problem for us
-and our `Person'` example, but it will in fact explode at compile time if you
-try to generate lenses for a type that has coproducts.
+```haskell
+instance GLenses z V1 V1 where
+  glenses l = undefined
 
-With this out of the way, we need to write our function that will use all of the
-generic machinery and provide a nice interface to all of this machinery. We're
+instance GLenses z U1 U1 where
+  glenses l = U1
+```
+
+And voila! Our induction is complete. Notice that we *did not* write an instance
+for `(:+:)` (coproducts), because lenses are not defined for coproduct types.
+This is fine for our `Person'` case, which has no coproducts, but types that do
+will simply be unable to find a `GLenses` instance, and will fail to compile. No
+harm, no foul.
+
+With this out of the way, we need to write our final interface that will use all
+of the generic machinery and provide nice access to all of this machinery. We're
 going to need to call `glenses` (obviously), and pass in a `Lens' (z Identity)
 (Rep (z Identity))` in order to get the whole thing running. Then, once
 everything is build, we'll need to call `to` to turn our generic representation
@@ -155,7 +251,8 @@ getLenses = to $ glenses @z $ iso from to
 ```
 
 where I just wrote the `z (LensFor (z Identity))` part of the type signature,
-and copy-pasted constraints until the compiler was happy.
+and copy-pasted constraints from the error messages until the compiler was
+happy.
 
 OK, so let's take it for a spin, shall we? We can get our lenses thusly:
 
@@ -171,19 +268,30 @@ experience:
 lName :: Lens' (Person' Identity) String
 ```
 
-Pretty sweet, huh? Now that `getLenses` has been implemented generically, it can
+Pretty sweet, ne? Now that `getLenses` has been implemented generically, it can
 become library code that will work for any product-type we can throw at it.
-Which means free lenses without `TemplateHaskell` for any types we define in the
+Which means free lenses without TemplateHaskell for any types we define in the
 HKD form.
 
-This pattern is useful enough that I've begun implement literally all of my
+This HKD pattern is useful enough that I've begun implement literally all of my
 "data" (as opposed to "control") types as higher-kinded data. With an extra type
 synonym `type X = X' Identity`, and `{-# LANGUAGE TypeSynonymInstances #-}`,
 nobody will ever know the difference, except that it affords me the ability to
 all of this stuff in the future if I want it.
 
-As [Conal][deno] says, it might not necessarily be "for free" but at least it's
-"already paid for."
+As [Conal][deno] says, all of this stuff might not necessarily be "for free" but
+at least it's "already paid for."
 
 [deno]: https://www.youtube.com/watch?v=bmKYiUOEo2A
+
+---
+
+More shoutouts to [Travis Athougies][travis], whose sweet library [beam][beam]
+uses this approach to generate lenses for working with SQL tables. I consulted
+the [beam source][src] more than a couple times in writing this post. Thanks
+again, Travis!
+
+[travis]: http://travis.athougies.net/
+[beam]: http://travis.athougies.net/projects/beam.html
+[src]: https://github.com/tathougies/beam
 
