@@ -277,10 +277,10 @@ This HKD pattern is useful enough that I've begun implement literally all of my
 "data" (as opposed to "control") types as higher-kinded data. With an extra type
 synonym `type X = X' Identity`, and `{-# LANGUAGE TypeSynonymInstances #-}`,
 nobody will ever know the difference, except that it affords me the ability to
-all of this stuff in the future if I want it.
+use all of this stuff in the future should I want to.
 
 As [Conal][deno] says, all of this stuff might not necessarily be "for free" but
-at least it's "already paid for."
+at the very least, it's "already paid for."
 
 [deno]: https://www.youtube.com/watch?v=bmKYiUOEo2A
 
