@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Free Lenses for Higher-Kinded Data"
-date: TO_BE_DETERMINED
+date: 2018-03-31 12:42
 comments: true
 tags: haskell, technical, programming
 ---
