@@ -39,7 +39,7 @@ code][lib] from the spiffy [`one-liner`][oneliners] package.
 
 [constr]: https://stackoverflow.com/a/49620701/4793220
 [lib]: https://hackage.haskell.org/package/one-liner-1.0/docs/Generics-OneLiner.html#t:Constraints
-[one-liners]: https://hackage.haskell.org/package/one-liner/
+[oneliners]: https://hackage.haskell.org/package/one-liner/
 
 After adding `one-liner` as a dependency, we can lift our instances over a
 polymorphic `f` using the `Constraints` type-synonym:
