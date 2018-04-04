@@ -3,7 +3,7 @@ layout: post
 title: "Free Lenses for Higher-Kinded Data"
 date: 2018-03-31 12:42
 comments: true
-tags: haskell, technical, programming
+tags: haskell, technical, programming, hkd
 ---
 
 In the [previous blog post][hkd], we discussed *higher-kinded data* (HKD), the
