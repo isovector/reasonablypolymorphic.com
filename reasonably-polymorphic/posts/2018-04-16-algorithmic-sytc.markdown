@@ -170,7 +170,6 @@ we will generate a dictionary type for this class:
 data @Functor f = @Functor
   { @fmap :: (a -> b) -> f a -> f b
   }
--- =>
 ```
 
 (I'm using the `@` signs here because these things are essentially type
