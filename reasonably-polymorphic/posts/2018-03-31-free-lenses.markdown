@@ -95,7 +95,7 @@ approach. So we'll work through the derivation together:
 I always begin with my "template" generic-deriving class:
 
 ```haskell
-class GLensesFor i o where
+class GLenses i o where
   glenses :: i p -> o p
 ```
 
@@ -111,7 +111,7 @@ type (the `Person'` in our desired `LensesFor (Person' Identity)`), we'll need
 another parameter in our typeclass to track that. Let's call it `z`.
 
 ```haskell
-class GLensesFor z i o where
+class GLenses z i o where
   glenses :: o p
 ```
 
@@ -130,7 +130,7 @@ a lens starting from `z Identity`, that pins down one side of our lens
 parameter.
 
 ```haskell
-class GLensesFor z i o where
+class GLenses z i o where
   glenses :: Lens' (z Identity) _ -> o p
 ```
 
@@ -140,7 +140,7 @@ our original type where we currently are in our Generic traversal, we can
 transform that into a Generic structure which contains the lenses we want.
 
 ```haskell
-class GLensesFor z i o where
+class GLenses z i o where
   glenses :: Lens' (z Identity) (i p) -> o p
 ```
 
