@@ -121,14 +121,15 @@ sup{
 nav {
     margin-top: 0;
     padding: 0 20px 16px 20px;
-    width: 25em;
+    min-width: 312px;
+    max-width: 312px;
+    width: 312px;
     color: #fff;
 
     font-family: 'Muli', sans-serif;
     text-align: justify;
     min-height: 100vh;
     background-color: #111;
-    align-self: stretch;
 
     /*background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAQCAYAAAA8qK60AAAAF0lEQVQIW2NkgALGgWWUl5f/7+zsZAQAGOgEEZMPrH4AAAAASUVORK5CYII=); /* */
 }
@@ -251,7 +252,47 @@ ul {
 
     article {
         margin-right: 0px;
+        margin-left: 0px;
+        width: inherit;
     }
+
+    #smallnav {
+      display: block !important;
+    }
+
+    .prev {
+      display: none !important;
+    }
+
+    .next {
+      display: none !important;
+    }
+}
+
+#smallnav {
+  display: none;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  padding: 6px 0;
+  background-color: #000;
+  color: white;
+  font-family: 'Muli', sans-serif;
+  font-weight: bold;
+}
+
+#smallnav a {
+  color: white;
+}
+
+.smallhome {
+  float: left;
+  margin-left: 2em;
+}
+
+.smallarchives {
+  float: right;
+  margin-right: 2em;
 }
 
 table {
