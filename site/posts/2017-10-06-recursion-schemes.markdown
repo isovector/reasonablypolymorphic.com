@@ -3,7 +3,7 @@ layout: post
 title: "Review: Bananas, Lenses, Envelopes and Barbed Wire"
 date: 2017-10-06 23:07
 comments: true
-tags:
+tags: haskell, recursion-schemes, technical, review, papers
 ---
 
 Today's classic functional programming paper we will review is Meijer et al.'s

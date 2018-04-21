@@ -3,7 +3,7 @@ layout: post
 title: "Higher-Kinded Data"
 date: 2018-03-29 23:23
 comments: true
-tags: haskell, technical, programming
+tags: haskell, technical, programming, hkd
 ---
 
 Today I want to demonstrate a "well-known" Haskell technique among library

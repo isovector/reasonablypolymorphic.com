@@ -12,9 +12,9 @@ maintainer:         sandy@sandymaguire.me
 category:           Web
 
 executable poly
-  main-is:          Poly.hs
+  main-is:          Main.hs
   build-depends:    base
-                  , hakyll
+                  , sitepipe
                   , datetime
                   , parsec
                   , pandoc
@@ -26,7 +26,6 @@ executable poly
                   , old-locale
                   , regex-compat
                   , time
-                  , hint
                   , diagrams
                   , circuitry
                   , directory
@@ -35,6 +34,10 @@ executable poly
                   , bytestring
                   , string-conv
                   , here
+                  , lens
+                  , text
+                  , aeson
+                  , regex-tdfa
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010

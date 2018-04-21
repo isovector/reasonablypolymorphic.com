@@ -1,11 +1,6 @@
 /.cabal*
 /.stack-work/
-/cabal.sandbox.config
-/_cache/
-_site/
-_live/
 *.o
 *.hi
-/site
-/octo-clip-it/output
+/dist
 *.swo

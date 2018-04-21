@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
+  <title>Reasonably Polymorphic</title>
+  <updated>{{last_updated}}</updated>
+  <author><name>Sandy Maguire</name></author>
+  <id>{{domain}}</id>
+  <link rel='self' href='{{url}}'/>
+
+  {{#posts}}
+    <entry>
+      <title>{{title}}</title>
+      <id>{{url}}</id>
+      <link href='{{url}}'/>
+      <published>{{zulu}}</published>
+      <updated>{{zulu}}</updated>
+
+      <content type="html">
+        <![CDATA[
+        {{{content}}}
+        ]]>
+      </content>
+    </entry>
+  {{/posts}}
+</feed>
+

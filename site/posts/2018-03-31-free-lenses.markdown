@@ -3,7 +3,7 @@ layout: post
 title: "Free Lenses for Higher-Kinded Data"
 date: 2018-03-31 12:42
 comments: true
-tags: haskell, technical, programming
+tags: haskell, technical, programming, hkd
 ---
 
 In the [previous blog post][hkd], we discussed *higher-kinded data* (HKD), the
@@ -17,7 +17,7 @@ previously was transforming this type:
 data Person = Person
   { pName :: String
   , pAge  :: Int
-  }
+  } deriving (Generic)
 ```
 
 into its HKD representation:
@@ -25,8 +25,8 @@ into its HKD representation:
 ```haskell
 data Person' f = Person
   { pName :: HKD f String
-  , pAge  :: HKD Int
-  }
+  , pAge  :: HKD f Int
+  } deriving (Generic)
 ```
 
 Recall that `HKD` is a type family given by
