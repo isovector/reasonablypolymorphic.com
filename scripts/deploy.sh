@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "deploying on server..."
-make test
-rsync -r -a -v -e "ssh -i $HOME/.ssh/santino.pem" _live/ "ubuntu@$SERENADE:/data/blog/_live/"
+stack build
+stack exec poly
+rsync -r -a -v -e "ssh -i $HOME/.ssh/santino.pem" dist/ "ubuntu@$SERENADE:/data/blog/_live/reasonably-polymorphic/"
 

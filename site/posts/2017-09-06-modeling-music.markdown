@@ -3,7 +3,7 @@ layout: post
 title: "Modeling Music"
 date: 2017-09-06 19:03
 comments: true
-tags:
+tags: music, haskell
 ---
 
 One of my long-term goals since forever has been to get good at music. I can
