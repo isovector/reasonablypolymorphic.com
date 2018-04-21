@@ -269,6 +269,17 @@ ul {
     }
 }
 
+@media (max-width: 720px) {
+    article {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .content pre {
+      margin-left: 0;
+    }
+}
+
 #smallnav {
   display: none;
   position: fixed;
