@@ -3,7 +3,7 @@
 <channel>
   <title>Reasonably Polymorphic</title>
   <link>{{domain}}</link>
-  <atom:link href="{{domain}}{{url}}" rel="self" type="application/rss+xml" />
+  <atom:link href="{{domain}}/{{url}}" rel="self" type="application/rss+xml" />
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
@@ -18,8 +18,8 @@
   <item>
       <title>{{title}}</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>{{domain}}{{url}}</link>
-      <guid>{{domain}}{{url}}</guid>
+      <link>{{domain}}/{{url}}</link>
+      <guid>{{domain}}/{{url}}</guid>
       <pubDate>{{zulu}}</pubDate>
       <content:encoded><![CDATA[
         {{{content}}}
