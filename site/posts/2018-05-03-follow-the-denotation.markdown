@@ -181,7 +181,7 @@ While this is indeed a `Monoid`, it looks like we're already in trouble. The
 types, instead looks like this:
 
 ```haskell
-instance Monoid v => k -> Maybe v where
+instance Monoid v => Monoid (k -> Maybe v) where
 ```
 
 There's absolutely no way that these two instances could be the same. Darn.
