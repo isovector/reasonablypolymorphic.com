@@ -243,10 +243,9 @@ version of `ecstasy`.
 
 While all of this virtual stuff worked, it didn't work particularly quickly. I
 noticed some significant regressions in performance in my RTS upon upgrading to
-the new version I noticed some significant regressions in performance in my RTS
-upon upgrading to the new version. What was up? I dug in with the profiler and
-saw that my `GHC.Generics`-derived code was no longer being inlined. [HKD was
-performing more terribly than I thought!][terrible]
+the new version. What was up? I dug in with the profiler and saw that my
+`GHC.Generics`-derived code was no longer being inlined. [HKD was performing
+more terribly than I thought!][terrible]
 
 [terrible]: /blog/hkd-not-terrible/
 
