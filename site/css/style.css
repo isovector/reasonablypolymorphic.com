@@ -186,6 +186,16 @@ nav ul {
     list-style-type: square;
 }
 
+.subheader {
+    font-size: 44px !important; /* 44px */
+    line-height: 60px !important; /* 60px */
+    margin-top: 0 !important;
+    margin-bottom: 0.0000em !important;
+    font-weight: normal !important;
+    padding-top: 80px !important;
+    padding-bottom: 21px !important;
+}
+
 header {
     padding-top: 40px;
     padding-bottom: 21px;
