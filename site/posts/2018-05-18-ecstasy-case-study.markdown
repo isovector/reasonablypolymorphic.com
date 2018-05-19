@@ -13,7 +13,7 @@ time. As a result, I'm learning a lot about doing performance haggling with the
 compiler, as well as getting opportunities for [even more][trickery]
 type-trickery. I thought both might make for interesting topics of discussion.
 
-[retirement]: https://github.com/isovector/typecraft
+[retirement]: http://sandymaguire.me/blog/reaching-climbing/
 [typecraft]: https://github.com/isovector/typecraft
 [ecstasy]: https://github.com/isovector/ecstasy
 [trickery]: /tags/haskell.html

@@ -19,7 +19,7 @@ find any music education resources that communicate on my wavelength.
 Music education usually comes in the form of "here are a bunch of facts about
 music; memorize them and you will now know music." As someone who got good at
 math because it was the only subject he could find that didn't require a lot of
-memorization, this is a frustrating situation to be in for me. Math education,
+memorization, this is a frustrating situation to be in for me. Music education,
 in other words, presents too many theorems and too few axioms.
 
 My learning style prefers to know the governing fundamentals, and derive results
