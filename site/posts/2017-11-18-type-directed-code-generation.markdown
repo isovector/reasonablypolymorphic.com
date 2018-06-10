@@ -386,7 +386,7 @@ variety as well as the request and response, so we'll define it as follows, and
 go back and fix `HasServer` later.
 
 ```haskell
-class HasMethodHandler input output cs ss where
+class HasMethodHandler input output (cs :: Bool) (ss :: Bool) where
   type MethodHandler input output cs ss :: *
 ```
 
@@ -404,7 +404,7 @@ instance HasMethodHandler input output 'False 'False where
     input -> IO output
 
 -- server-streaming
-instance HasMethodHandler input output 'False 'False where
+instance HasMethodHandler input output 'False 'True where
   type MethodHandler input output 'False 'True =
     input -> (output -> IO ()) -> IO ()
 
