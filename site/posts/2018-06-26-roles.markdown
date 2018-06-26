@@ -146,9 +146,13 @@ can also get asymptotic performance gains out of `coerce`:
 
 If `f :: Coercible a b => a -> b` (common if `f` is a newtype un/wrapper, or
 composition of such), then `fmap f` $O(n)$ is equivalent to `coerce` $O(1)$ in
-most cases. In fact, [mpickering][mpickering] has written a GHC source plugin
+most cases[^1]. In fact, [mpickering][mpickering] has written a GHC source plugin
 that will [tell you if you can apply this transformation][hashtag-coerce]. Cool!
+
+[^1]: Assuming `f`'s type parameter `a` is not `nominal` role.
 
 [mpickering]: https://github.com/mpickering
 [hashtag-coerce]: https://github.com/mpickering/hashtag-coerce
+
+
 
