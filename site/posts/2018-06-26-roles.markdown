@@ -1,0 +1,154 @@
+---
+layout: post
+title: Coercions and Roles for Dummies
+date: 2018-06-26 10:07
+comments: true
+tags: haskell, beginner
+---
+
+A discussion about roles broke out yesterday on [fpchat][fpchat] which is a
+great place to hang out and talk about nerdy functional programming stuff if you
+don't already know about it. Go sign up! Anyway, people suggested I clean up my
+little soliloquy about roles and turn it into a blog post, so here we are.
+
+[fpchat]: https://functionalprogramming.slack.com/
+
+You've heard of the type system, which makes sure your terms are sane. Maybe
+you're also aware of the kind system, whose job it is is to make sure your types
+are reasonable! But did you know Haskell has an even more obscure system than
+these? It's called the role system, and its purpose in life is to prevent you
+from shooting yourself in the foot when dealing with *coercions.*
+
+Coercions and roles have been around since 2014, but there's been surprisingly
+little discussion about them in the blogosphere. In short, if two types have the
+same representation at runtime, then it should be safe to coerce a value of one
+into a value of the other. The role system is used to describe under what
+circumstances such a coercion is legal.
+
+To illustrate the point, let's talk about newtypes. Consider the following:
+
+```haskell
+newtype AnInt = AnInt Int
+```
+
+The promise of a newtype in Haskell is that it is zero-overhead; at runtime,
+`AnInt` is exactly identical to `Int`. Newtypes are often used for adding
+type-safety; it's nice if you have a `newtype Temperature = Temperature Int` and
+a `newtype Money = Money Int` because the extra type wrappers ensure you can't
+accidentally add the weather to your bank account, even if at the end of the day
+they *are* both just integers.
+
+`AnInt` and `Int` are not *literally* the same type, but they don't actually
+differ at runtime. This property is known as being *representationally equal.*
+If two types are representationally equal, we should be able to do the
+equivalent of C++'s `reinterpret_cast` and just pretend like a value of one is
+in fact a value of the other. Since these types correspond exactly at runtime,
+this is usually a safe thing to do.
+
+If `AnInt` and `Int` are the same type at runtime, it means we should be able to
+`coerce :: AnInt -> Int` (and backwards) freely between the two types without
+any problems. Morally, this `coerce` function is just `id`, because we're not
+actually doing any work to the value.
+
+Consider now the slightly more interesting type:
+
+```haskell
+newtype Identity a = Identity a
+```
+
+Again, because `Identity` is a newtype, we should expect `Identity a` to be
+*representationally equal* to `a`. Since this is true, we expect that `Identity
+AnInt` also be representationally equal to `Identity Int`, via `Identity AnInt
+--> AnInt --> Int --> Identity Int`. And thus, we should be able to `coerce ::
+Identity AnInt -> Identity Int`. We can see that `Identity a` preserves the
+coercion relationship of its type parameter `a`, and this property is known as
+the `a` having role `representational`.
+
+More generally, if the type parameter `a` in `F a` has role `representational`,
+then `F X` is representationally equal to `F Y` whenever `X` is
+representationally equal to `Y`. This works whether `F` be a `data` or a
+`newtype`.
+
+However, not all type parameters have role `representational`! Consider
+`Data.Map.Map k v` which has keys `k` and values `v`. Because `Map` is
+implemented as a balanced tree, it uses the `Ord k` instance to figure out where
+to store a kv-pair.
+
+One of the reasons we write newtypes is to give a different typeclass instance
+than the underlying type has. For example, `newtype ZipList a = ZipList [a]` has
+a different `Applicative` instance than `[]` does. In general, we have no reason
+to expect that a newtype and its underlying type have instances that agree with
+one another.
+
+Which leads us to a problem. Because a value of `Map k v` is a balanced tree
+which depends on the `Ord k` instance, we can't simply swap in `SomeOtherK` and
+expect everything to work hunky-dory. They have different `Ord` instances, and
+things would go screwy at runtime. All of this is to say that we **do not** want
+to be able to `coerce :: Map AnInt v -> Map Int v` because it's likely to crash
+at runtime.
+
+However, it is still fine to `coerce :: Map k AnInt -> Map k Int`, because the
+values don't have this implicit dependency on any typeclass instances. There are
+no invariants to maintain on the `v` parameter, and so we are free to `coerce` to
+our hearts' content.
+
+The role system is what describes this difference between the `k` and `v` type
+parameters of `Data.Map.Map`. While `v` is still role `representational`, `k`
+has role `nominal`.
+
+`nominal` coercions of the form `coerce :: a -> b` are allowed iff you already
+have a proof that `a ~ b`, which is to say that `a` and `b` are literally the
+same type.
+
+There's also a third role, `phantom`, which, you guessed it, is given to phantom
+type parameters (eg. the `a` in `data Const x a = Const x`.) Because phantom
+types are by-definition not referenced in the data definition of a type, we are
+always free to coerce a `phantom` type to any other type.
+
+All of this cashes out in the form of `Data.Coerce`'s `coerce :: Coercible a b
+=> a -> b`. GHC will automatically provide instances of `Coercible a b` whenever
+`a` and `b` are representationally coercible. That means you get these
+instances (and all of their symmetries):
+
+* Given `a ~ b`, `Coercible a b`
+* If `NT` is a newtype over `T`, `Coercible NT T`
+* If `p` in `F p` has role `phantom`, `Coercible (F a) (F b)`
+* If `r` in `F r` has role `representational`, `Coercible a b => Coercible (F a) (F b)`
+* If `n` in `F n` has role `nominal`, `(a ~ b) => Coercible (F a) (F b)`
+
+GHC is pretty clever, and has a role-inference mechanism. It works by knowing
+that `(->)` has two `representational` roles, that `(~)` has two `nominal`
+roles, and propagates from there. Every type parameter is assumed to have role
+`phantom` until it is used, whence it gets upgraded to the more restrictive role
+corresponding to the position it was used in. For example, if `a` is used in `a
+~ Bool`, `a` gets role `nominal` since both of `(~)`'s parameters have `nominal`
+roles.
+
+GADTs are syntactic sugar on top of `(~)` so expect GADTs to have `nominal` role
+type parameters. Furthermore, any parameters of a `type family` that are
+scrutinized will also have role `nominal` (the motivated reader will be able to
+find an interesting implementation of `unsafeCoerce :: forall a b. a -> b` if
+this were not the case.)
+
+This inference mechanism will give you the most permissible roles that don't
+*obviously* destroy the type system, but sometimes it's necessary to explicitly
+give a role annotation, like in the `Data.Map.Map` example. Role annotations can
+be given by eg. `type role Map nominal representational` after turning on `{-#
+LANGUAGE RoleAnnotations #-}`. It's worth pointing out that you can only give
+*less* permissive roles than GHC has inferred; there's no fighting with it on
+this one.
+
+---
+
+At the end of the day, why is any of this stuff useful? Besides being nice to
+know, custom role annotations can provide type-safety ala `Data.Map.Map`. But we
+can also get asymptotic performance gains out of `coerce`:
+
+If `f :: Coercible a b => a -> b` (common if `f` is a newtype un/wrapper, or
+composition of such), then `fmap f` $O(n)$ is equivalent to `coerce` $O(1)$ in
+most cases. In fact, [mpickering][mpickering] has written a GHC source plugin
+that will [tell you if you can apply this transformation][hashtag-coerce]. Cool!
+
+[mpickering]: https://github.com/mpickering
+[hashtag-coerce]: https://github.com/mpickering/hashtag-coerce
+
