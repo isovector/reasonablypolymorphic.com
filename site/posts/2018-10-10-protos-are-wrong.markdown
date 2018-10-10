@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Protobuffers Are Wrong
-date: TO_BE_DETERMINED
+date: 2018-10-10 15:06
 comments: true
 tags: rebuttal, technical, programming
 ---
