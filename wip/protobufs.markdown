@@ -3,7 +3,7 @@ layout: post
 title: Protobuffers Are Wrong
 date: TO_BE_DETERMINED
 comments: true
-tags: foo, bar
+tags: rebuttal, technical, programming
 ---
 
 I've spent a good deal of my professional life arguing against using
@@ -17,7 +17,7 @@ into your code as well.
 
 ## Ad-Hoc and Built By Amateurs
 
-Stop. Put away your email client that is half way through writing me about how
+Stop. Put away your email client that is half-way through writing me about how
 "Google is filled with the world's best engineers," and that "anything they
 build is, by definition, not built by amateurs." I don't want to hear it.
 
@@ -48,7 +48,9 @@ to widely-known and already-solved problems.*
 
 Protobuffers offer several "features", but none of them see to work with one
 another. For example, look at the list of orthogonal-yet-constrained typing
-features that I found by skimming the documentation.
+features that I found by skimming the [documentation][spec].
+
+[spec]: https://developers.google.com/protocol-buffers/docs/proto3
 
 * `oneof` fields can't be `repeated`.
 * `map<k,v>` fields have dedicated syntax for their keys and values, but this
@@ -118,7 +120,7 @@ Of course, the actual serialization logic is allowed to do something smarter
 than pushing linked-lists across the network---after all, [implementations and
 semantics don't need to align one-to-one][denotation].
 
-[denotation]:
+[denotation]: /blog/follow-the-denotation/
 
 
 ### Questionable Choices
@@ -135,7 +137,10 @@ mention that (at least in proto3[^1]) all protobuffers can be zero-initialized
 with absolutely no data in them? Scalar fields get false-y values---`uint32` is
 initialized to `0` for example, and `string` is initialized as `""`.
 
-[^1]: proto2 optional/required
+[^1]: To this day, there's a raging debate inside Google itself about proto2 and
+  whether fields should ever be marked as `required`. Manifestos with both
+  titles "`optional` considered harmful" *and* "`required` considered harmful."
+  Good luck sorting that out.
 
 It's impossible to differentiate a field that was missing in a protobuffer from
 one that was assigned to the default value. Presumably this decision is in place
@@ -143,7 +148,7 @@ in order to allow for an optimization of not needing to send default scalar
 values over the wire. Presumably, though the [encoding guide][encoding] makes no
 mention of this optimization being performed, so your guess is as good as mine.
 
-[encoding]:
+[encoding]: https://developers.google.com/protocol-buffers/docs/encoding
 
 As we'll see when we discuss protobuffers' claim to being god's gift to
 backwards- and forwards-compatible APIs, this inability to distinguish between
@@ -297,11 +302,68 @@ bytes.
 
 Outside of the top five tech companies, none of us is within five orders of
 magnitude of being Google scale. Your startup *cannot afford* to waste engineer
-hours on shaving off bytes. But shaving off bytes is exactly what protobuffers
-are optimized for!
+hours on shaving off bytes. But shaving off bytes and wasting programmers' time
+in the process is exactly what protobuffers are optimized for.
+
+Let's face it. You are not Google scale and you never will be. Stop
+cargo-culting technology just because "Google uses it" and therefore "it's an
+industry best-practice."
 
 
 ## Protobuffers Contaminate Codebases
 
+If it were possible to restrict protobuffer usage to network-boundaries I
+wouldn't be nearly as hard on it as a technology. Unfortunately, while there are
+a few solutions in principle, none of them is good enough to actually be used in
+real software.
 
+Protobuffers correspond to the data you want to send over the wire, which is
+often *related* but not *identical* to the actual data the application would
+like to work with. This puts us in the uncomfortable position of needing to
+choose between one of three bad alternatives:
+
+1. Maintain a separate type that describes the data you actually want, and
+   ensure that the two evolve simultaneously.
+2. Pack rich data into the wire format for application use.
+3. Derive rich information every time you need it from a terse wire format.
+
+Option 1 is clearly the "right" solution, but its untenable with protobuffers.
+The language isn't powerful enough to encode types that can perform double-duty
+as both wire and application formats. Which means you'd need to write a
+completely separate datatype, evolve it synchronously with the protobuffer, and
+*explicitly write serialization code between the two.* Seeing as most people
+seem to use protobuffers in order to not write serialization code, this is
+obviously never going to happen.
+
+Instead, code that uses protobuffers allows them to proliferate throughout the
+codebase. True story, my main project at Google was a compiler that took
+"programs" written in one variety of protobuffer, and spit out an equivalent
+"program" in another. Both the input and output formats were expressive enough
+that maintaining proper parallel C++ versions of them could never possibly work.
+As a result, my code was unable to take advantage of any of the rich techniques
+we've discovered for writing compilers, because protobuffer data (and resulting
+code-gen) is simply too rigid to do anything interesting.
+
+The result is that a thing that could have been 50 lines of [recursion
+schemes][recursion] was instead 10,000 lines of ad-hoc buffer-shuffling. The
+code I wanted to write was literally impossible when constrained by having
+protobuffers in the mix.
+
+[recursion]: https://github.com/passy/awesome-recursion-schemes
+
+While this is an anecdote, it's not in isolation. By virtue of their rigid
+code-generation, manifestations of protobuffers in languages are never
+idiomatic, nor can they be made to be---short of rewriting the code-generator.
+
+But even then, you still have the problem of needing to embed a shitty
+type-system into the targeted language. Because most of protobuffers' features
+are ill-conceived, these unsavory properties leak into our codebases. It means
+we're forced to not only implement, but also use these bad ideas in any project
+which hopes to interface with protobuffers.
+
+While it's easy to implement inane things out of a solid foundation, going the
+other direction is challenging at best and the dark path of Eldrich madness at
+worst.
+
+In short, abandon all hope ye who introduce protobuffers into your projects.
 
