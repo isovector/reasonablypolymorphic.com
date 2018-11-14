@@ -12,4 +12,4 @@ interest, as well as get feedback on its style. If this sounds like something
 that interests you, I'd love to hear from you. Thanks for your time!
 
 You can find a very early pre-release of it
-[here](http://reasonablypolymorphic.com/types.pdf).
+[here](http://samples.leanpub.com/thinking-with-types-sample.pdf).

@@ -14,12 +14,14 @@ import qualified Data.Map as M
 import           Data.Maybe (isJust)
 import           Data.Monoid ((<>))
 import           Data.Ord (comparing)
+import           Data.Set (insert)
 import           Data.Text.Lens (_Text)
 import           Data.Time.Format (formatTime, defaultTimeLocale)
 import           Data.Time.Parse (strptime)
 import           Data.Traversable (for)
 import           GHC.Exts (fromList)
 import           SitePipe hiding (getTags)
+import           Text.Pandoc.Options
 import           Utils
 
 
@@ -149,3 +151,17 @@ main = site $ do
 writeTemplate' :: ToJSON a => String -> [a] -> SiteM ()
 writeTemplate' a = writeTemplate ("templates/" <> a)
 
+
+pandocMathCompiler =
+  let mathExtensions =
+          [ Ext_tex_math_dollars
+          , Ext_tex_math_double_backslash
+          , Ext_latex_macros
+          ]
+      defaultExtensions = writerExtensions def
+      newExtensions = foldr insert defaultExtensions mathExtensions
+      writerOptions = def
+          { writerExtensions = newExtensions
+          , writerHTMLMathMethod = MathJax ""
+          }
+   in writerOptions
