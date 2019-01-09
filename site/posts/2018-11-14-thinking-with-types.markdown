@@ -6,8 +6,7 @@ comments: true
 tags: haskell, announcement, book
 ---
 
-<a href="http://thinkingwithtypes.com">It's done.</a>
+After five months of work, I'm happy to announce that <a href="http://thinkingwithtypes.com">it's done.</a>
 
-<a href="http://thinkingwithtypes.com"><img src="/thinking-with-types.png" alt="Thinking with Types"></a>
-
+<center><a href="http://thinkingwithtypes.com"><img src="/thinking-with-types.png" alt="Thinking with Types"></a></center>
 
