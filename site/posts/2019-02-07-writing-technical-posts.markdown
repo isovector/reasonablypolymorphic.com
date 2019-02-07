@@ -169,7 +169,7 @@ might be worth a short sentence saying "that funny bar thing is a functional
 dependency." Give a tiny summary of its purpose, and provide a link for them to
 learn more if they need to.
 
-[fundep]:
+[fundep]: https://en.wikipedia.org/wiki/Functional_dependency
 
 Another illustration: if *you* originally got confused that an "algebra in
 recursion schemes" is not the same thing as the algebra you learned in
