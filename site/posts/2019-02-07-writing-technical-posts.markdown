@@ -119,9 +119,9 @@ one idea.
 Roughly speaking, the hierarchy of your document should look like this:
 
 * Document
-  * Heading
-    * First sentence
-      * Rest of paragraph
+    * Heading
+        * First sentence
+            * Rest of paragraph
 
 Maybe you feel like it's hard to know how much knowledge to assume your
 readership knows. Understanding how people read makes this a non-issue. Present
@@ -219,8 +219,9 @@ And finally, end on a high note. Leave people with a good feeling, and it will
 incentivize them to get to the bottom of your next piece. Inspirational calls to
 action are a good way to go out.
 
-> Tell them what you're going to tell them. Then tell them. Finally, tell them
-> what you told them.
+> Tell them what you're going to tell them.
+> Then tell them.
+> Finally, tell them what you told them.
 >
 > -Unknown
 
