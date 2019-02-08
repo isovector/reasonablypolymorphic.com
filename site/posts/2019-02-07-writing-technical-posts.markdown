@@ -71,12 +71,12 @@ to their solutions for you to read later):
 [book]: http://thinkingwithtypes.com/
 
 Bad examples of motivating documents are things that assume you care *simply
-because they exist.* This is [pretty][pipes] [common][yesod] of library's
+because they exist.* This is [pretty][pipes] [common][yesod] of libraries'
 tutorials.  The same document that convinces you to use a technology should also
 show you how.
 
 [pipes]: http://hackage.haskell.org/package/pipes-4.3.9/docs/Pipes-Tutorial.html
-[yesod]: https://www.yesodweb.com/page/quickstart
+[yesod]: http://yannesposito.com/Scratch/en/blog/Yesod-tutorial-for-newbies/
 
 As a more general rule, focusing on *why* is going to be more valuable than on
 *how.*
