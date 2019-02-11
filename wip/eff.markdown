@@ -330,3 +330,124 @@ done. Now to deal with the `Output`s of our ingestion program.
 There are several arguments against freer monad, some of which are good, but
 most of which are terrible.
 
+
+### Free Monads Have Bad Performance
+
+*Free* monads suffer from $O(n^2)$ complexity [when used naively][codensity],
+which is unfortunately what you get by default.  Freer monads are optimized via
+a queue which provides constant-time construction of the default case.
+
+[codensity]:
+
+Yes, freer monads are today somewhere around 30x slower than the equivalent
+`mtl` code. That's [roughly on par with Python][speed], but be honest, you've deployed
+Python services in the past and they were fast enough. And besides, the network
+speed already dominates your performance---you're IO-bound anyway.
+
+[speed]: https://benchmarksgame-team.pages.debian.net/benchmarksgame/which-programs-are-fast.html
+
+If you are writing real-time services maybe this will be an issue, but you're
+probably not. And if you are, optimizing Haskell is likely a skill you already
+have.
+
+Worry about writing good code first, and deal with performance when it becomes
+an issue.
+
+
+### Purescript Abandoned Eff
+
+Purescript _had a thing called `Eff`_, but it was not the same as this. From the
+`purescript-eff` [readme][purescript-eff]:
+
+[purescript-eff]: https://github.com/purescript-deprecated/purescript-eff
+
+> As of PureScript 0.12 the default type for handling effects is Effect from
+> purescript-effect. This differs from Eff by removing the row of effect types.
+> This decision was made as getting the effect rows to line up was sometimes
+> quite tricky, without providing a great deal of benefit.
+>
+> There is also purescript-run now, which uses a similar effect row mechanic
+> **but provides true algebraic effect handling.** [emphasis mine]
+
+The `Eff` described in this document is equivalent to `purescript-run`.
+
+
+### It's Too Complicated
+
+Yes, it's complicated, but learning how to use `mtl` was complicated too. The
+only difference is that you've already paid that cost, and haven't yet paid this
+one.
+
+
+## Reasonably Good Arguments Against Freer Monads
+
+### `ContT` is Not an Algebraic Effect
+
+I never really understood this one as stated---I've never actually used `ContT`
+in a real monad stack. Have you?
+
+But the sentiment behind this argument is better stated in human as "`Eff` is
+unable to model resource bracketing." Which is to say, it's hard to make sure an
+`Eff` program calls all of its finalizers.
+
+The good news is that there's a solution if your allocation and cleanup code
+only requires `IO`---you can just interpret your entire `Eff` monad directly
+into [`ResourceT`][resourcet]:
+
+[resourcet]:
+
+```haskell
+bracket
+    :: Member ResourceT r
+    => IO a
+    -> (a -> IO ())
+    -> (a -> Eff r b)
+    -> Eff r b
+bracket alloc dealloc m = do
+  (key, a) <- send $ allocate alloc dealloc
+  m a
+  send $ release key
+```
+
+Specialize `bracket` with your own first two parameters to taste.
+
+More annoyingly, the lack of `ContT`-support means that it's hard to write
+effects that imply asynchronicity. That's not to say it's impossible, merely
+that it doesn't compose in the same nice way that synchronous effects do.
+
+This is bad, but not disastrously so. You can spin up a thread pool elsewhere,
+and add a capability that sends effects to it:
+
+```haskell
+data AsyncEff capabilities a where
+  AsyncEff
+      :: Members capabilities r
+      => Eff r a
+      -> AsyncEff capabilities ()
+
+
+startAsyncTaskSlave
+    :: Members capabilities r
+    => (forall x. Eff r x -> IO x)
+    -> IO (InChan (AsyncEff capabilities))
+startThreadPool runEff = do
+  (in, out) <- newChan 10
+  void . async . forever $ do
+    m <- readChan out
+    async $ runEff m
+  pure in
+
+
+asyncEff
+    :: Member IO r
+    => InChan (AsyncEff capabilities)
+    -> Eff (AsyncEff capabilities ': r) a
+    -> Eff r a
+asyncEff chan = handleRelay pure bind
+  where
+    bind eff k = send (writeChan chan eff) >>= k
+```
+
+Changing the interface to fill an `MVar` upon completion of the task and make it
+available to the original `Eff` program is an exercise left to the reader.
+
