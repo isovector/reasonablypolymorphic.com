@@ -121,9 +121,32 @@ the big changes we were being mandated to make. I haven't touched the codebase
 for a few years now, but my understanding is that people are *still* unraveling
 this mess of spaghetti.
 
-
-
 http://magnus.therning.org/posts/2019-02-02-000-the-readert-design-pattern-or-tagless-final-.html
+
+
+## Understanding Freer Monads
+
+Traditional monad stacks can be understood as "a small, established toolbox for
+side effects." You say "I want some state, so I will add a `StateT`
+transformer," with the understanding that *this state is isomorphic to `s -> (s,
+a)`.* That means it only ever does *local state.*
+
+I'd suggest we instead think about freer monads as "implementation mix-ins." You
+say "I want some state, so I will add a `State` capability." The crucial
+difference is that this thing *isn't* just `s -> (s, a)`. It might run locally,
+but it also might write to a database. Or it might issue `GET` and `POST` HTTP
+requests. Who knows? Who cares?
+
+Most of the people reading the code, most of the time, don't actually care what
+are the semantics behind the state. Those semantics are implementation details,
+interesting only to the people who care about the implementation. If you're
+tracing a program flow, and *aren't* interested in the database side of things,
+it's a lot nicer to not need to wade through a bunch of irrelevant database
+code.
+
+In short, freer monads let you separate the high-level "what am I trying to do"
+from the low-level "how to actually do it."
+
 
 ## What Are Freer Monads?
 
@@ -340,24 +363,30 @@ a queue which provides constant-time construction of the default case.
 [codensity]:
 
 Yes, freer monads are today somewhere around 30x slower than the equivalent
-`mtl` code. That's [roughly on par with Python][speed], but be honest, you've deployed
-Python services in the past and they were fast enough. And besides, the network
-speed already dominates your performance---you're IO-bound anyway.
-
-[speed]: https://benchmarksgame-team.pages.debian.net/benchmarksgame/which-programs-are-fast.html
+`mtl` code. That's [roughly on par with Python][speed], but be honest, you've
+deployed Python services in the past and they were fast enough. And besides, the
+network speed already dominates your performance---you're IO-bound anyway.
 
 If you are writing real-time services maybe this will be an issue, but you're
 probably not. And if you are, optimizing Haskell is likely a skill you already
 have.
 
-Worry about writing good code first, and deal with performance when it becomes
-an issue.
+[speed]: https://benchmarksgame-team.pages.debian.net/benchmarksgame/which-programs-are-fast.html
+
+A subtle point to notice is that it's the *monadic* bits of the code that are
+30x slower. Not "your program is 30x slower if you import
+`Control.Monad.Freer`"---but simply that you will spend more time in binds than
+you would in another monad. But your program isn't only monadic in `Eff`; it
+also needs to compute expressions and wait for `IO` and all of that stuff.
+
+In short: worry about writing good code first, and deal with performance if it
+becomes an issue.
 
 
 ### Purescript Abandoned Eff
 
-Purescript _had a thing called `Eff`_, but it was not the same as this. From the
-`purescript-eff` [readme][purescript-eff]:
+Purescript _had a thing called `Eff`_, *but it was not the same as this.* From
+the `purescript-eff` [readme][purescript-eff]:
 
 [purescript-eff]: https://github.com/purescript-deprecated/purescript-eff
 
@@ -371,12 +400,6 @@ Purescript _had a thing called `Eff`_, but it was not the same as this. From the
 
 The `Eff` described in this document is equivalent to `purescript-run`.
 
-
-### It's Too Complicated
-
-Yes, it's complicated, but learning how to use `mtl` was complicated too. The
-only difference is that you've already paid that cost, and haven't yet paid this
-one.
 
 
 ## Reasonably Good Arguments Against Freer Monads
@@ -398,15 +421,16 @@ into [`ResourceT`][resourcet]:
 
 ```haskell
 bracket
-    :: Member ResourceT r
+    :: Member (ResourceT IO) r
     => IO a
     -> (a -> IO ())
     -> (a -> Eff r b)
     -> Eff r b
 bracket alloc dealloc m = do
   (key, a) <- send $ allocate alloc dealloc
-  m a
+  result   <- m a
   send $ release key
+  pure result
 ```
 
 Specialize `bracket` with your own first two parameters to taste.
@@ -450,4 +474,54 @@ asyncEff chan = handleRelay pure bind
 
 Changing the interface to fill an `MVar` upon completion of the task and make it
 available to the original `Eff` program is an exercise left to the reader.
+
+
+### The Error Messages Are Bad / It's Too Complicated
+
+This has historically been true. While `freer-simple` makes the situation
+significantly better, there is definitely room for improvement on this front.
+
+First things first, `Eff` eschews the functional dependencies that `mtl` has.
+This means you can have multiple `Writer` effects in the same stack in `Eff`
+(but not in `mtl`) at the cost of type-inference.
+
+This is both a feature, and, I won't lie to you, _amazingly annoying at times._
+It's a feature because lots of things *are* just `Writer` effects. It's annoying
+as heck because *polymorphism makes it eat shit.*
+
+For example, consider the following innocuous looking program:
+
+```haskell
+foo :: Member (Writer Int) r => Eff r ()
+foo = tell 15
+```
+
+Seems fine, right? _Wrong._ Because `15` is actually `fromInteger 15 :: Num a =>
+a`, this program will complain about not having a `Writer a` capability. You as
+a human know what should happen here, but the compiler is stupid.
+
+Thankfully the solution is simple, but it requires knowing what's wrong and how
+to fix it.
+
+```haskell
+foo' :: Member (Writer Int) r => Eff r ()
+foo' = tell @Int 15
+```
+
+If you're going to be doing a lot of work with polymorphic effects, a low-energy
+solution is to just provide a locally-bound monomorphic type:
+
+```haskell
+foo'' :: Member (Writer Int) r => Eff r ()
+foo'' = do
+  let tellInt = tell @Int
+  tellInt 1
+  tellInt 2
+  tellInt 3
+```
+
+All of this is much less user-friendly than it should be. However, in my
+experience, people quickly learn how to debug problems like this. It was enough
+to have an "Eff mentor" on our team, whose job it was was to promptly reply to
+"I don't know why this doesn't work."
 
