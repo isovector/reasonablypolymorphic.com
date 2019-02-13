@@ -292,14 +292,16 @@ ftpFileProvider
     :: Member FTP r
     => Eff (FileProvider ': r) a
     -> Eff r a
-ftpFileProvider = interpret $ \GetFile filename ->
+ftpFileProvider = interpret $ \(GetFile filename) ->
   ftpGet filename
+```
 
+```haskell
 localFileProvider
     :: Member IO r
     => Eff (FileProvider ': r) a
     -> Eff r a
-localFileProvider = interpret $ \GetFile filename ->
+localFileProvider = interpret $ \(GetFile filename) ->
   send $ Data.Bytestring.readFile filename
 ```
 
@@ -333,7 +335,7 @@ decryptFileProvider
     => Eff (FileProvider ': r) a
     -> Eff (FileProvider ': r) a
 decryptFileProvider =
-  interpose $ \GetFile filename = do
+  interpose $ \(GetFile filename) -> do
     cyphertext <- getFile filename
     decrypt cyphertext
 ```
