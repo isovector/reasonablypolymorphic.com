@@ -1,9 +1,9 @@
 ---
 layout: post
-title: eff
+title: "Freer Monads, More Better Programs"
 date: TO_BE_DETERMINED
 comments: true
-tags: foo, bar
+tags: freer-monads, extensible-effects
 ---
 
 Every two weeks in the [functional programming slack][fpchat], we get into a big
@@ -11,131 +11,67 @@ argument about "the right way to structure programs." The debate goes around and
 around in circles; names get called; feelings get hurt. We never get anywhere,
 and the whole process starts again 14 days later. Frankly, it's exhausting.
 
-[fpchat]:
+[fpchat]: https://functionalprogramming.slack.com
 
-As best I can tell, the community fragments itself along three lines---those who
-like [mtl][mtl], those who say ["just do everything in a Reader over IO"][rio],
-and those who think [free(r) monads][freer] are worth their weight in gold.
+As best I can tell, the community roughly fragments itself along four
+lines---those who like [mtl][mtl], those who say "[just do everything in Reader
+IO][rio]", those who like [the three layer cake][cake], and those who think
+[free(r) monads][freer-simple] are worth their weight in gold.
 
-[mtl]:
-[rio]:
-[freer]:
+[mtl]: https://github.com/haskell/mtl
+[rio]: https://www.fpcomplete.com/blog/2017/06/readert-design-pattern
+[cake]: https://www.parsonsmatt.org/2018/03/22/three_layer_haskell_cake.html
+[freer-simple]: https://github.com/lexi-lambda/freer-simple
 
 Being in the latter camp is frustrating, because everyone has strongly negative
 opinions on freer monads, and as best I can tell, nobody seems to have ever
 actually used them.
 
 As one of the few people in the Haskell-sphere who has actually used freer
-monads both *in anger* and *in production,* I wanted to set the record straight.
-So today, let's talk about freer monads---what they are, what they buy you, how
-they work, what wide-scale adoption could buy us, and yes, I'll talk about what
-their weaknesses are.
+monads in both anger *and* production, I wanted to set the record straight. So
+today, let's talk about freer monads---what they are, what they buy you, how
+they work, and what wide-scale adoption could buy us. Yes, I'll also talk about
+what their weaknesses are.
 
 
-## What's the Problem?
+## Criminally Misunderstood
 
-Before diving in, I think it's worth mentioning where I'm coming from with all
-of this. My professional background has significantly shaped what problems I'm
-optimizing for solving.
+Freer monads are amazingly powerful. Much more so than I think anyone
+realizes---including many of the *people who maintain the libraries.* There's a
+lot of free, super-common, crazy-generic functionality that exists, but isn't
+anywhere useful.
 
-I've worked at some pretty dysfunctional places.
-
-One place in particular had a legacy codebase rapidly put together. It was the
-result of an extremely aggressive first-to-market strategy---managed by
-non-technical execs and built by contractors who didn't know any Haskell "best
-practices." Contractors who wanted to get the thing done as quickly as possible.
-
-TODO talk about jason being the one guy who knew anything
-
-The result was what you'd expect; lots of odd monad stacks and `IO` everywhere.
-It was directed by a leadership team that was willing to sacrifice everything in
-the name of getting the next release out on time. Which meant that *nobody had
-time* to do things the right way---people simply fixed bugs wherever was most
-convenient, without any foresight as to how that would affect the future of the
-project.
-
-Because `IO` was always available, people started doing bad things with it.
-Functions that could have been pure weren't, and then someone thought "hey,
-let's just call an external service in the middle of it."
-
-But that got slow, so they built a caching layer that also operated in `IO` and
-was entirely localized in this part of the code base.
-
-In its defense, all of this code *was* tested, but only via integration
-tests---because nobody knew how to test it in any other way. Everything did `IO`
-everywhere; unit testing was more-or-less impossible. But the services had too
-many dependencies to do any sort of real integration testing, so someone
-copy-and-pasted the `main` function and hacked around in it so that it do the
-right thing. They called it `debugMain`.
-
-Whenever you changed `main`, you needed to remember to keep it up to date with
-`debugMain`. God help you if you didn't.
-
-TODO: eventually the contractors took off
-
-And then, one day, somebody accidentally introduced a heinous bug. A bug that
-essentially started printing money for our customers---at our expense. It was a
-mistake that *easily* could have bankrupted the company. Luckily we caught it in
-time, but it was a rude wake-up call.
-
-The codebase was too complicated to test thoroughly, and so nobody did. You can
-sort of get away with informal reasoning for a while, but sooner or later you're
-going to have a problem. Like when you have a codebase on the order of 100k SLOC
-that is doing arbitrary IO in arbitrary places.
-
-It was obvious that dramatic refactoring as necessary to get the codebase in
-shape, but refactoring an untested system is rarely a wise idea. If you don't
-know how the system behaves before the refactor, how will you know if it behaves
-the same afterwards? NB: Usually refactoring Haskell is quite a joy, but less so
-when everything runs in `IO` to begin with.
-
-Clearly the first step was to write tests for the system. Which meant untangling
-a year of rabidly built spaghetti. My first goal was to see if I could run the
-service entirely locally, which was much harder than it sounds. For example, the
-binary would refuse to start if it couldn't talk to the monitoring API. This is
-good in production, but locally I don't give a shit about monitoring. There were
-lots of other dependencies that the core logic didn't care about, but got in the
-way of testing it regardless.
-
-So I started stubbing out the monitoring machinery. I moved all of the
-monitoring stuff into `MonadMonitoring`, and then moved its implementation into
-an instance `MonadMonitoring IO`. This worked fine.
-
-But now I wanted to *disable* monitoring, so I made a new monad transformer
-`NoMonitoringT` and gave it a vacuous instance of `MonadMonitoring`. But because
-our codebase was huge and spanned tens of services written by tens of different
-people, it meant I needed a gamut of weird typeclasses for `NoMonitoringT`. I
-spent probably a day tracking down and writing all of the instances I needed.
-
-A few days later I got to the point where I could successfully stub out our
-monitoring. The next week I spent doing the same thing to stub out our logging.
-And then our statistics.
-
-The statistics stuff is actually pretty useful though; especially in a testing
-environment. I might not want to log these statistics to our dashboards, but in
-the absence of unit tests, it's pretty cool to be able to test "this code path
-should attempt to do X exactly 9 times."
-
-Over time, our codebase slowly got to the point where we could actually test
-the big changes we were being mandated to make. I haven't touched the codebase
-for a few years now, but my understanding is that people are *still* unraveling
-this mess of spaghetti.
-
-http://magnus.therning.org/posts/2019-02-02-000-the-readert-design-pattern-or-tagless-final-.html
-
-
-## Understanding Freer Monads
+Freer monads are *so much more* than just a different way of expressing monad
+transformers. They're a completely orthogonal means of composition that doesn't
+really exist anywhere else in the Haskell ecosystem. By not using them, you are
+condemning yourself to writing a significant amount more of significantly more
+complicated code than you need to be.
 
 Traditional monad stacks can be understood as "a small, established toolbox for
 side effects." You say "I want some state, so I will add a `StateT`
-transformer," with the understanding that *this state is isomorphic to `s -> (s,
-a)`.* That means it only ever does *local state.*
+transformer," with the understanding that *this is isomorphic to `s -> (s, a)`.*
+That means it only ever does *local state.*
 
-I'd suggest we instead think about freer monads as "implementation mix-ins." You
-say "I want some state, so I will add a `State` capability." The crucial
-difference is that this thing *isn't* just `s -> (s, a)`. It might run locally,
-but it also might write to a database. Or it might issue `GET` and `POST` HTTP
-requests. Who knows? Who cares?
+I'd suggest we instead think about freer monads as "implementation mix-ins," or
+equivalently, as "compiler passes." Code written against freer monads is
+exceptionally high-level and doesn't mix concerns. It's all "business logic",
+where the implementation details are handled in layers, each one performed by a
+pass that simplifies the representation.
+
+These passes are type-safe, independent and composable. You can mix-and-match
+which ones you want---which means testing is often just swapping in a test pass
+somewhere near the bottom of the stack. By mocking out different layers, it's
+easy to get 100% test coverage, without ever needing to write full-scale
+integration tests.
+
+The beauty of this system is that the testability itself also composes. If your
+program runs properly under the test pass, and you can prove that both your test
+and real pass are also correct, this correctness composes to the entire program.
+
+Having an exceptionally high-level representation of your program's intent is
+valuable in another way. Let's take a `State` capability as an example. This
+thing might correspond to local state, or a database, or maybe even just
+`GET`/`POST` HTTP requests. Who knows? But also, who *cares?*
 
 Most of the people reading the code, most of the time, don't actually care what
 are the semantics behind the state. Those semantics are implementation details,
@@ -148,7 +84,67 @@ In short, freer monads let you separate the high-level "what am I trying to do"
 from the low-level "how to actually do it."
 
 
-## What Are Freer Monads?
+## Understanding Freer Monads
+
+The `Eff` monad is parameterized by a type-level list of *effects* (or
+*capabilities* as I will also call them.) This list is kept polymorphic, and
+constraints are enforced on it to ensure that certain effects are available.
+
+For example, the type `StateT String (ReaderT Int IO) Bool` is analogous to `Eff
+'[State String, Reader Int, IO] Bool`.
+
+However, the type `(MonadState String m, MonadReader Int m, MonadIO m) => m
+Bool` in the `mtl` style also has an analogue: `(Member (State String) r, Member
+(Reader Int) r, Member IO r) => Eff r Bool`.
+
+Freer monads are extensible in their effects---that means you can write your
+own, and use them completely interchangeably with existing effects. It's trivial
+to write a new effect, as they're just GADTs:
+
+```haskell
+data Teletype a where
+  GetLine ::           Teletype String
+  PutLine :: String -> Teletype ()
+```
+
+This is all it takes to define a new effect. We now have a `Teletype` effect,
+and we can use it after a small amount of ([freely derivable][th]) boilerplate:
+
+[th]: https://hackage.haskell.org/package/freer-simple-1.2.1.0/docs/Control-Monad-Freer-TH.html#v:makeEffect
+
+```haskell
+getLine :: Member Teletype r => Eff r String
+getLine = send GetLine
+
+putLine :: Member Teletype r => String -> Eff r ()
+putLine = send . PutLine
+```
+
+Notice that the `a` in `Teletype a` describes *the type you get back from
+calling this operation.*
+
+Our new `Teletype` effect corresponds to a domain specific language that can
+talk about reading and writing lines on a teletype. It's important to keep in
+mind that *there is no meaning associated with this effect.* We get no
+semantics, other than an implicit, unverified guarantee that "it probably does
+what you expect."
+
+However, this lack of pre-established semantics is a feature, rather than a bug.
+The semantics are given after the fact by *interpretations* of the effects. One
+interpretation of `Teletype` might be to perform it in `IO`, interacting
+directly with the console. Another might be in the form of `POST`ing `putLine`s
+to an HTTP server, and returning the results of a `GET` for `getLine`. Another
+could just do everything purely in memory.
+
+Freer monads are extensible not only in their effects, but also in their
+interpretations. You can give new interpretations for existing effects, and for
+your own.
+
+`freer-simple` offers several combinators for constructing new effects, which
+we'll explore in the example below.
+
+
+## Solving Problems with Freer Monads
 
 > Organizations which design systems are constrained to produce designs which
 > are copies of the communication structures of these organizations.
@@ -172,19 +168,21 @@ an external pipeline, and tracks its stats in Redis.
 ```haskell
 ingest
     :: ( Member (Input Record) r
-       , Member (Output Record) r
+       , Member (Output [Record]) r
        , Member (Output Stat) r
        )
     => Eff r ()
 ingest = nextInput >>= \case
   Nothing     -> pure ()
   Just record -> do
-    output record
+    output [record]
     output ProcessedRecordStat
     ingest
 ```
 
-Done! Pretty easy, hey?
+Done![^2] Pretty easy, hey?
+
+[^2]: `Input` and `Output` are called `Reader` and `Writer` respectively in `freer-simple`. I decided to not use this terminology in order to prevent people from thinking that these are the same monads they're used to.
 
 "Now hold on a minute, Sandy! That program you wrote doesn't do what you said!
 It doesn't fetch files from FTP, it doesn't decrypt them, and it doesn't do
@@ -237,7 +235,7 @@ csvInput
 csvInput file m = do
     contents <- getFile file
     let csvData = toList $ parseCSV contents
-    handleRelayS csvData (const pure) bind m
+    handleRelayS csvData (const pure) bind m  -- discussed immediately after
   where
     --  bind :: [i] -> Input i x -> (i -> Eff r a) -> Eff r a
     bind (row : rows) NextInput k = k rows $ Just row
@@ -247,6 +245,18 @@ csvInput file m = do
 `csvInput` takes a file name, reads that file in terms of some abstract
 `FileProvider` capability, and then returns one row of the result every time
 `nextInput` is called in the higher-level application.
+
+This function is implemented in terms of the [`handleRelayS`][handleRelayS] combinator. You can
+think of `handleRelayS` as being parameterized on what `return` and `(>>=)` mean
+for the effect being interpreted. In addition, it allows you to thread a piece
+of state between binds and the final `return`.
+
+[handleRelayS]: https://hackage.haskell.org/package/freer-simple-1.2.1.0/docs/Control-Monad-Freer-Internal.html#v:handleRelayS
+
+Our implementation of `bind` is to return a new row of the CSV file for every
+subsequent call to `nextInput` in the original program. We accomplish this by
+returning the head of the list of rows, and then passing the tail as the next
+piece of state.
 
 In effect, we've described what it means to have an `Input` capability in terms
 of what it means to have a `FileProvider` capability. Notice that this isn't the
@@ -282,19 +292,22 @@ ftpFileProvider
     :: Member FTP r
     => Eff (FileProvider ': r) a
     -> Eff r a
-ftpFileProvider = handleRelay pure bind
-  where
-    bind (GetFile filename) k = ftpGet filename >>= k
+ftpFileProvider = interpret $ \GetFile filename ->
+  ftpGet filename
 
 localFileProvider
     :: Member IO r
     => Eff (FileProvider ': r) a
     -> Eff r a
-localFileProvider = handleRelay pure bind
-  where
-    bind (GetFile filename) k =
-      send (Data.Bytestring.readFile filename) >>= k
+localFileProvider = interpret $ \GetFile filename ->
+  send $ Data.Bytestring.readFile filename
 ```
+
+Often you just want to reinterpret an effect in terms of some other effect you
+already have (here, `FTP` and `IO`, respectively). In this case, it's sufficient
+to just use the `interpret` combinator, which takes implements your
+interpretation via a *natural transformation* (something of the form `forall x.
+effect x -> Eff r x`.)
 
 For testing, you might also want a mock filesystem---`pureFileProvider :: Map
 FilePath ByteString -> _`.
@@ -307,45 +320,118 @@ concern is largely orthogonal to `FileProvider`s; we'd like to be able to mix-in
 the capability to deal with encrypted files regardless of what the actual
 mechanism for files looks like.
 
-For that, rather than using `handleRelay`, we can instead use `interpose`. While
-`handleRelay` provides a capability in terms of *other* capabilities,
-`interpose` allows us to provide a capability in terms of itself. Which means,
-we can *intercept* calls to a capability without necessarily *handling* them.
-Providing decrypted files is a good use case for this---we can intercept
-requests for files, and silently decrypt them before giving them back.
+For that, we're exposed to yet another combinator for writing interpretations;
+`interpose`. This combinator allows us to interpret a capability in terms of
+itself.  Which means, we can *intercept* calls to a capability without
+necessarily *handling* them. Providing decrypted files is a good use case for
+this---we can intercept requests for files, and silently decrypt them before
+giving them back.
 
 ```haskell
 decryptFileProvider
     :: Member Encryption r
     => Eff (FileProvider ': r) a
     -> Eff (FileProvider ': r) a
-decryptFileProvider = interpose pure bind
-  where
-    -- bind
-    --     :: FileProvider x
-    --     -> (x -> Eff (FileProvider ': r) a)
-    --     -> Eff (FileProvider ': r) a
-    bind (GetFile filename) k = do
-      cyphertext <- getFile filename
-      plaintext  <- decrypt cyphertext
-      k plaintext
+decryptFileProvider =
+  interpose $ \GetFile filename = do
+    cyphertext <- getFile filename
+    decrypt cyphertext
 ```
 
 We've gained the ability to inject logic _around_ other interpretations!
 
 Assuming we have an FTP implementation, the `Input` side of the coin is
-done. Now to deal with the `Output`s of our ingestion program.
+done. Now to deal with the `Output`s of our ingestion program. Remember, we want
+to put our records into some external streaming service. We can naively provide
+an interpreter that `POST`s these records against our service.
 
+```haskell
+postOutput
+    :: ( Member HTTP r
+       , ToJSON i
+       )
+    => (i -> HttpRequest 'POST)
+    -> Eff (Output i ': r) a
+    -> Eff r a
+postOutput mkReq = interpret $ \Output i ->
+  postHttp $ mkReq i
+```
 
+Assuming we have another interpretation `HTTP ~> IO`, we're now good to go!
 
+This works, but accounting comes back a few days later and complains---our
+streaming bill is suddenly really big. Apparently we pay *per API call.* Uh oh.
+The good news is that the API can handle up to 500 records per `POST`. So, we
+can just write another interpret that batches writes before posting them.
 
+```haskell
+batch
+    :: Int
+    -> Eff (Output [i] ': r) a
+    -> Eff (Output [i] ': r) a
+batch size = interposeS (0, []) finalize bind
+  where
+    -- finalize :: (Int, [i]) -> a -> Eff (Writer [i] ': r) a
+    finalize (_, acc) a = do
+      output acc
+      pure a
 
+    -- bind
+    --     :: (Int, [i])
+    --     -> Output [i] x
+    --     -> ((Int, [i]) -> x -> Eff (Writer [i] ': r) a)
+    --     -> Eff (Writer [i] ': r) a
+    bind (nacc, acc) (Output o) k = do
+      let no     = length o
+          total  = acc <> o
+          ntotal = nacc + no
+      if (ntotal >= size)
+        then do
+          let (emit, acc') = splitAt size total
+          output emit
+          k (ntotal - size, acc') ()
+        else k (ntotal, total) ()
+```
 
+Cool. Now sticking a `bach 500` pass before `postOutput` will batch all of our
+transactions sent to the API. Again, our business-logic doesn't change, because
+it need to care about this implementation detail.
 
+We could continue on, but at this point you've seen most of the machinery freer
+monads give us. At the end of the day, `main` will end up looking like this:
 
+```haskell
+main :: IO ()
+main = runM
+     . runRedis
+     . runFTP
+     . runHTTP
+     . runEncryption
+     . redisOuput @Stat   mkRedisKey
+     . postOutput @Record mkApiCall
+     . batch      @Record 500
+     . ftpFileProvider
+     . decryptFileProvider
+     . csvInput "file.csv"
+     $ ingest
+```
 
-> TODO
-> freer monads are better understood as implementation mixins
+It composes nicely, and the compiler will yell at you if you forget to handle
+any of required capabilities.
+
+Behavior can be mixed in at will; some other common things you might want
+include retry-with-backoff, service discovery, chaos-injection, etc.
+
+Over time and scale, you'll realize that *most of your application code* is the
+same crap over and over again---read configuration, connect to a database, deal
+with retry, shuffle data from one buffer to another. It's often hard to see this
+when it's written with a traditional monad stack, because traditional monad
+stacks don't give you the tools to abstract it away.
+
+As you get into the habit of building new effects and interpretations for those
+effects, you'll see that new applications are often ready to ship after 25 lines
+of business logic and another 25 lines of choosing the right interpretations for
+it.
 
 
 ## Bad Arguments Against Freer Monads
@@ -360,7 +446,7 @@ most of which are terrible.
 which is unfortunately what you get by default.  Freer monads are optimized via
 a queue which provides constant-time construction of the default case.
 
-[codensity]:
+[codensity]: https://www.stackage.org/haddock/lts-11.7/kan-extensions-5.1/Control-Monad-Codensity.html#t:Codensity
 
 Yes, freer monads are today somewhere around 30x slower than the equivalent
 `mtl` code. That's [roughly on par with Python][speed], but be honest, you've
@@ -378,6 +464,13 @@ A subtle point to notice is that it's the *monadic* bits of the code that are
 `Control.Monad.Freer`"---but simply that you will spend more time in binds than
 you would in another monad. But your program isn't only monadic in `Eff`; it
 also needs to compute expressions and wait for `IO` and all of that stuff.
+
+If it makes you feel better, [I recently got a 15% performance increase][perf]
+by just more aggressively inlining some of the combinators. This suggests
+there's a lot of low-hanging optimization wins for anyone willing to go through
+the work to pluck it.
+
+[perf]: https://github.com/lexi-lambda/freer-simple/pull/21
 
 In short: worry about writing good code first, and deal with performance if it
 becomes an issue.
@@ -417,7 +510,7 @@ The good news is that there's a solution if your allocation and cleanup code
 only requires `IO`---you can just interpret your entire `Eff` monad directly
 into [`ResourceT`][resourcet]:
 
-[resourcet]:
+[resourcet]: https://www.stackage.org/haddock/lts-13.7/resourcet-1.2.2/Control-Monad-Trans-Resource.html#t:ResourceT
 
 ```haskell
 bracket
@@ -453,12 +546,13 @@ data AsyncEff capabilities a where
 startAsyncTaskSlave
     :: Members capabilities r
     => (forall x. Eff r x -> IO x)
+       -- ^ An interpretation stack from `Eff r` into `IO`
     -> IO (InChan (AsyncEff capabilities))
 startThreadPool runEff = do
   (in, out) <- newChan 10
   void . async . forever $ do
     m <- readChan out
-    async $ runEff m
+    void . async $ runEff m
   pure in
 
 
@@ -467,9 +561,7 @@ asyncEff
     => InChan (AsyncEff capabilities)
     -> Eff (AsyncEff capabilities ': r) a
     -> Eff r a
-asyncEff chan = handleRelay pure bind
-  where
-    bind eff k = send (writeChan chan eff) >>= k
+asyncEff chan = interpret $ send . writeChan chan
 ```
 
 Changing the interface to fill an `MVar` upon completion of the task and make it
@@ -524,4 +616,39 @@ All of this is much less user-friendly than it should be. However, in my
 experience, people quickly learn how to debug problems like this. It was enough
 to have an "Eff mentor" on our team, whose job it was was to promptly reply to
 "I don't know why this doesn't work."
+
+
+### Jesus Help Me There Are A Lot of Unmaintained Free(r) Monad Packages
+
+Tell me about it. Even as someone who is keenly interested in this stuff I have
+a hard time keeping up with the situation.
+
+Here's the skinny---I'd strongly recommend [`freer-simple`][freer-simple].
+Failing that, if you *really, really, really* need the performance, take a look
+at [`fused-effects`][fused-effects].
+
+[fused-effects]: https://github.com/robrix/fused-effects
+
+Ignore the other ones.[^1]
+
+[^1]: If you're the maintainer of another effects package and want me to include it here, shoot me an email and make an argument!
+
+
+## Conclusion
+
+Freer monads are *fucking sick* and you'd be foolish to not at least consider
+them for your next project.
+
+Furthermore, if you're going to continue insisting on saying that \$technology
+is better, I **strongly** encourage you to write up a similar argument stating
+your case. My mind is open on this; if you make a strong argument, I'm more than
+happy to denounce this article and jump on the \$technology train too.
+
+It's worth keeping in mind that despite our small differences; we're all on the
+same team here. We all love functional programming and want to do our best to
+make it more popular. As best I can tell, the best strategy towards that aim is
+to come up with a consensus on how to do things, and to stop the needless
+infighting.
+
+One love.
 
