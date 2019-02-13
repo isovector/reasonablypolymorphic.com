@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Freer Monads, More Better Programs"
-date: TO_BE_DETERMINED
+date: 2019-02-13 11:40
 comments: true
 tags: freer-monads, extensible-effects
 ---
