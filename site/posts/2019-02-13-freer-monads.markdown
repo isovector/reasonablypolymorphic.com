@@ -395,7 +395,7 @@ batch size = interposeS (0, []) finalize bind
         else k (ntotal, total) ()
 ```
 
-Cool. Now sticking a `bach 500` pass before `postOutput` will batch all of our
+Cool. Now sticking a `batch 500` pass before `postOutput` will batch all of our
 transactions sent to the API. Again, our business-logic doesn't change, because
 it need to care about this implementation detail.
 
