@@ -6,6 +6,14 @@ comments: true
 tags: freer-monads, extensible-effects
 ---
 
+If you consider yourself a Haskell beginner, this post is not aimed at you!
+You're going to want to understand [`DataKinds`][datakinds] and
+[`RankNTypes`][rankn] in order to get things done. Feel free to read anyway, but
+keep in mind that the technical solutions described here are tricky.
+
+[datakinds]: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#datatype-promotion
+[rankn]: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#arbitrary-rank-polymorphism
+
 Every two weeks in the [functional programming slack][fpchat], we get into a big
 argument about "the right way to structure programs." The debate goes around and
 around in circles; names get called; feelings get hurt. We never get anywhere,
@@ -237,7 +245,7 @@ csvInput file m = do
     let csvData = toList $ parseCSV contents
     handleRelayS csvData (const pure) bind m  -- discussed immediately after
   where
-    --  bind :: [i] -> Input i x -> (i -> Eff r a) -> Eff r a
+    --  bind :: [i] -> Input i x -> ([i] -> x -> Eff r a) -> Eff r a
     bind (row : rows) NextInput k = k rows $ Just row
     bind rows@[]      NextInput k = k rows Nothing
 ```
@@ -276,7 +284,7 @@ pureInput
     -> Eff r a
 pureInput is = handleRelayS is (const pure) bind
   where
-    --  bind :: [i] -> Input i x -> (x -> Eff r a) -> Eff r a
+    --  bind :: [i] -> Input i x -> ([i] -> x -> Eff r a) -> Eff r a
     bind (row : rows) NextInput k = k rows $ Just row
     bind rows@[]      NextInput k = k rows Nothing
 ```
