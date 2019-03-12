@@ -16,7 +16,7 @@ I've been hammering on this for about 50 hours now. It's been driving me slowly
 crazy, and promised myself I'd stop if I hadn't solved it by now. That being
 said, before putting this project to rest, I wanted to do a quick write-up
 detailing what I've learned, how everything fits together, and where I'm hoping
-someone will pick up the ball.
+someone will pick up the ball. [Here's the repository.][github]
 
 
 ## Higher Order Effects
@@ -411,6 +411,10 @@ optimize away and we will make merry and the freer monad revolution will be
 complete.
 
 I'm very tired.
+
+[Here's the repository again][github].
+
+[github]: https://github.com/isovector/too-fast-too-free/tree/higher-rank
 
 
 ## What a Real Solution Would Look Like
