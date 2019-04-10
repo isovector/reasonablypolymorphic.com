@@ -1,0 +1,19 @@
+---
+layout: post
+title: polysemy
+date: 2019-04-10 17:33
+comments: true
+tags: foo, bar
+---
+
+[Just kidding.](/blog/freer-yet-too-costly/) Turns out I couldn't put it down.
+
+I want to announce my new library
+[`polysemy`](https://github.com/isovector/polysemy#readme) --- it's
+higher-order, no-boilerplate, zero-cost free monads.
+
+I've been working nonstop on this for a few months now, so the commentary for
+what the heck is going on will come after a little vacation.
+
+Stay tuned.
+
