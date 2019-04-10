@@ -1,9 +1,9 @@
 ---
 layout: post
-title: polysemy
+title: Announcing Polysemy
 date: 2019-04-10 17:33
 comments: true
-tags: foo, bar
+tags: free, monads
 ---
 
 [Just kidding.](/blog/freer-yet-too-costly/) Turns out I couldn't put it down.
