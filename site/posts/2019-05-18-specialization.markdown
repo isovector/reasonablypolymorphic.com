@@ -21,10 +21,9 @@ popularly known as "the reason why `mtl` is so fast."
 
 At a high level, the specialization pass is responsible for optimizing away uses
 of ad-hoc polymorphism (typeclasses) in Haskell source code. When `-fspecialise`
-is enabled, GHC will make a monomorphic copy of every `INLINE`-able class
-method --- one for every unique type it's called with. The result should feel
-similar to anyone who's written modern C++, as it's completely analogous to how
-templates work.
+is enabled, GHC will make a monomorphic copy of every polymorphic method --- one
+for every unique type it's called with. The result should feel similar to anyone
+who's written modern C++, as it's completely analogous to how templates work.
 
 While polymorphic functions are great for *humans to write*, they're
 significantly slower for *machines to execute,* since you need to pass around
