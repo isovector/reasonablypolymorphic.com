@@ -518,7 +518,7 @@ foo :: Int -> forall a. Eq a => ...
 
 Again, humans would never write such a thing, but the optimizer is more than
 happy to spit these things out. Additionally, code like this often shows up
-whenever you use a newtype to get around GHC's annoying error that it " does not
+whenever you use a newtype to get around GHC's annoying error that it "does not
 (yet) support impredicative polymorphism".
 
 Anyway, all of this is to say that in 8.10.1, the specialization pass is smart
