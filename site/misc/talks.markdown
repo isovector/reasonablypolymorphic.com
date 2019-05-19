@@ -13,4 +13,5 @@ Sometimes I give talks. You can find them here.
 * Some1 Like You - [Video](https://www.youtube.com/watch?v=PNkoUv74JQU) / [Slides](http://reasonablypolymorphic.com/some1-like-you)
 * Existentialization - Video / [Slides](http://reasonablypolymorphic.com/existentialization)
 * Interview with Leanpub Frontmatter - [Audio](https://leanpub.com/podcasts/frontmatter/sandy-maguire-09-01-19)
+* Polysemy - [Video](https://www.youtube.com/watch?v=-dHFOjcK6pA) / [Slides](https://reasonablypolymorphic.com/polysemy-talk)
 
