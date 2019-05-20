@@ -62,8 +62,9 @@ main = S.evalStateT countdown 10
 When compiled via `ghc Example.hs -O -fno-specialise`[^1], we can
 look directly at the resulting Core of this program. If you're unfamiliar with
 Core, it's GHC's intermediate language between source-level Haskell and the
-generated machine code. Core differs in two notable ways from source Haskell: it
-isn't lazy, and both types and typeclass instances are explicitly passed around.
+generated machine code. Core differs in two notable ways from source Haskell:
+its evaluation is explicit via `case` expressions, and both types and typeclass
+instances are explicitly passed around.
 
 [^1]: The meaning of the flags is --- `-O`: enable optimizations; `-fno-specialise`: disable the specialization pass.
 
@@ -287,7 +288,7 @@ From all of this that we see that, under the hood, `class` definitions are just
 `data` definitions, and that constraints are just invisible parameters.
 
 
-### Case of Known Case
+### Case of Known Constructor
 
 Consider the following program:
 
@@ -306,9 +307,9 @@ pattern match expression with `foo`:
 blah = foo
 ```
 
-This transformation is known as the *case of known case* optimization. While
-humans would never write such a thing by hand, expressions like these often come
-up as the result of other optimizing transformations.
+This transformation is known as the *case of known constructor* optimization.
+While humans would never write such a thing by hand, expressions like these
+often come up as the result of other optimizing transformations.
 
 
 ### Rewrite Rules
@@ -480,8 +481,8 @@ which can obviously be simplified to
 
 This is already a great improvement! But it gets better, recall that we're
 binding in the `StateT` monad, which in turn is calling bind in `IO`. But bind
-in `IO` is itself implemented as a pattern match, and so case-of-known-case
-applies there too!
+in `IO` is itself implemented as a pattern match, and so
+case-of-known-constructor applies there too!
 
 The end result is that GHC spins for a while, alternatingly specializing,
 inlining, case-of-known-casing, and performing a few other optimizations. Each
@@ -521,8 +522,10 @@ happy to spit these things out. Additionally, code like this often shows up
 whenever you use a newtype to get around GHC's annoying error that it "does not
 (yet) support impredicative polymorphism".
 
-Anyway, all of this is to say that in 8.10.1, the specialization pass is smart
-enough to specialize functions like `foo`. As a result, we should see very real
-performance improvements in libraries like `polysemy` and `lens`, and,
-excitingly, *any programs which use them!*
+Anyway, all of this is to say that in 8.10.1, the specialization pass is [now
+smart enough][patch] to specialize functions like `foo`. As a result, we should
+see very real performance improvements in libraries like `polysemy` and `lens`,
+and, excitingly, *any programs which use them!*
+
+[patch]: https://gitlab.haskell.org/ghc/ghc/merge_requests/668
 
