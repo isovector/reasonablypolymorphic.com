@@ -3,7 +3,7 @@ layout: post
 title: "GHC's Specializer: Much More Than You Wanted to Know"
 date: 2019-05-18 21:59
 comments: true
-tags: ghc, haskell, polysemy
+tags: ghc, haskell, polysemy, optimization
 ---
 
 In the course of [tracking down why free monads were so slow][slow], I fell into
