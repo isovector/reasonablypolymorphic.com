@@ -49,7 +49,7 @@ foo :: MonadState Int m => m ()
 foo = modify (+ 1)
 ```
 
-Such a thing compilers and runs no problem. There are no surprises here for any
+Such a thing compiles and runs no problem. There are no surprises here for any
 Haskell programmers who have ever run into `mtl`. But the reason it works is
 actually quite subtle. If we look at the type of `modify` we see:
 
@@ -296,7 +296,7 @@ singleListToJust _ = Nothing
 ```
 
 `findMatchingEffect` takes the output of `allFindCts` for a *single wanted
-constraint*, and *all of the given* constraint, and sees if there's a single
+constraint*, and *all of the given* constraints, and sees if there's a single
 match between the two. If so, it returns the matching effect.
 
 We need one last helper before we're ready to put everything together. We wanted
