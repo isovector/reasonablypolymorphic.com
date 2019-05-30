@@ -6,6 +6,14 @@ comments: true
 tags: haskell, design, type trickery
 ---
 
+> Update 2019-05-30:
+>
+> Formation finally got around to opensourcing the work done here.
+>
+> https://github.com/formationai/proto-lens-grpc
+
+---
+
 > aka "Type-Level Icing Sugar"
 
 
