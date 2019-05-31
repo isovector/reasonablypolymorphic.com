@@ -9,7 +9,7 @@ tags: polysemy, internals, haskell, technical
 > aka "what the hell is that `Yo` type?"
 
 This is the first post in a series of implementation details in
-[`polysemy`][polysemy] --- a fast, performant and low-boilerplate effect-system
+[`polysemy`][polysemy] --- a fast, powerful and low-boilerplate effect-system
 library.
 
 [polysemy]: https://github.com/isovector/polysemy
@@ -410,9 +410,9 @@ is what puts the "simple" in `freer-simple`[^1].
 
 The free functor is called [`Coyoneda`][coyoneda][^2], and it looks like this:
 
+[thinking]: https://thinkingwithtypes.com/
 [coyoneda]: https://www.stackage.org/haddock/lts-13.23/kan-extensions-5.2/Data-Functor-Coyoneda.html
 [^2]: For further discussion of `Coyoneda` and how it can help performance, perhaps you might be interested in [my book][thinking].
-[thinking]: https://thinkingwithtypes.com/
 
 ```haskell
 data Coyoneda f b where
