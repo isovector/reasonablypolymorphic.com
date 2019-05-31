@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Polysemy Internals: Freer Interpretations of Higher-Order Effects"
-date: TO_BE_DETERMINED
+date: 2019-05-31 01:11
 comments: true
 tags: polysemy, internals, haskell, technical
 ---
