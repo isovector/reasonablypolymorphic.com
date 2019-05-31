@@ -1,31 +1,34 @@
 ---
 layout: post
-title: yo
+title: "Polysemy Internals: Freer Interpretations of Higher-Order Effects"
 date: TO_BE_DETERMINED
 comments: true
-tags: foo, bar
+tags: polysemy, internals, haskell, technical
 ---
+
+> aka "what the hell is that `Yo` type?"
 
 This is the first post in a series of implementation details in
 [`polysemy`][polysemy] --- a fast, performant and low-boilerplate effect-system
 library.
 
-# TODO is it valuable to read?
+[polysemy]: https://github.com/isovector/polysemy
 
-[polysemy]:
+Even if you're not particularly interested in `polysemy`, there are some
+functional pearls here --- and a crash course on the history on the
+implementations of free monads in Haskell.
+
+---
 
 
 Critics of free monads often make the claim that higher-order effects aren't
 possible. This has historically been true, but Wu, Schrijvers and Hinze's
 paper [Effect Handlers in Scope][effects] gives a technique for lifting the
 restriction. Today I want to illustrate the problem, discuss Wu et al.'s
-solution, and then show what changes `polysemy` makes. In the process, we'll
-look at finding free constructions for tricky typeclasses.
+solution, and then show what changes `polysemy` makes to remove the boilerplate.
+In the process, we'll look at finding free constructions for tricky typeclasses.
 
 [effects]: https://www.cs.ox.ac.uk/people/nicolas.wu/papers/Scope.pdf
-
-Even if you're not particularly interested in `polysemy`, there are some
-functional pearls here.
 
 
 ## The Problem
@@ -64,7 +67,7 @@ In first-order effect systems such as [`freer-simple`][freer-simple], our
 effects have kind `* -> *`. With such a kind, we can easily model `throw`, but
 it's less clear how to model `catch`:
 
-[freer-simple]:
+[freer-simple]: http://hackage.haskell.org/package/freer-simple
 
 ```haskell
 data Error e a where
@@ -125,9 +128,10 @@ untenable in the first-order world.
 
 ## Effect Handlers in Scope
 
-Wu et al. give us a real solution for the problem above. Instead of modeling our
-effects with kind `* -> *`, we give them a kind `(* -> *) -> * -> *`. This extra
-`(* -> *)` is enough to hold a monad in. As such, `Error e` is now modeled as:
+[Wu et al. give us a real solution][effects] for the problem above. Instead of
+modeling our effects with kind `* -> *`, we give them a kind `(* -> *) -> * ->
+*`. This extra `(* -> *)` is enough to hold a monad in. As such, `Error e` is
+now modeled as:
 
 ```haskell
 data Error e m a where
@@ -378,7 +382,7 @@ Back in the bad old days of [`free`][free], we would have had to model the
 first-order version of `Error e` above (the one that just has `Throw`) as
 follows:
 
-[free]:
+[free]: http://hackage.haskell.org/package/free
 
 ```haskell
 data Error e a = forall x. Throw (x -> a)
@@ -392,8 +396,8 @@ data State s a
   | Put s (() -> a)
 ```
 
-*and* you'd need to give `Functor` instances for both. *AND* you can't even
-derive `Functor` for `Error e` due to the existential.
+It's gross, *and* you'd need to give `Functor` instances for both. *AND* you
+can't even derive `Functor` for `Error e` due to the existential.
 
 The specifics here aren't very important, but the point is that this was a bunch
 of boilerplate that got in the way of doing any work. The main contribution of
@@ -404,9 +408,11 @@ is what puts the "simple" in `freer-simple`[^1].
 [freer]: https://okmij.org/ftp/Haskell/extensible/more.pdf
 [^1]: Plus, it provides better combinators and more helpful error messages.
 
-The free functor is called [`Coyoneda`][coyoneda], and it looks like this:
+The free functor is called [`Coyoneda`][coyoneda][^2], and it looks like this:
 
-[coyoneda]:
+[coyoneda]: https://www.stackage.org/haddock/lts-13.23/kan-extensions-5.2/Data-Functor-Coyoneda.html
+[^2]: For further discussion of `Coyoneda` and how it can help performance, perhaps you might be interested in [my book][thinking].
+[thinking]: https://thinkingwithtypes.com/
 
 ```haskell
 data Coyoneda f b where
@@ -424,4 +430,113 @@ This got me to thinking. Maybe there's a free `Effect` that can likewise
 accumulate all of the `weave`ing we'd like to do, so that library users don't
 need to write those instances themselves.
 
+The "trick" to making a free construction is to just make a datatype that stores
+each parameter to the characteristic function. In the `Functor` example, you'll
+notice a similarity between the types of (flipped) `fmap` and `Coyoneda`:
+
+```haskell
+flip fmap :: f a -> (a -> b) -> f b
+Coyoneda  :: f a -> (a -> b) -> Coyoneda f b
+```
+
+So let's do the same thing, for `weave`, and construct an equivalent datatype.
+Recall the type of `weave`:
+
+```haskell
+weave
+    :: (Functor f, Functor m, Functor n)
+    => f ()
+    -> (∀ x. f (m x) -> n (f x))
+    -> e m a
+    -> e n (f a)
+```
+
+As a first attempt, let's just turn this thing into a GADT and see what happens.
+I called it `Yo` a little because it's sorta like `Coyoneda`, but mostly because
+naming things is hard.
+
+```haskell
+data Yo e m a where
+  Yo :: Functor f
+     => e m a
+     -> f ()
+     -> (forall x. f (m x) -> n (f x))
+     -> Yo e n (f a)
+```
+
+While this looks right, it turns out to be a no-go. We can't actually give an
+instance of `Effect` for `Yo e`. We can get close, by realizing that the
+composition of any two functors is also a functor (given via the `Compose`
+newtype). With that in mind, it's just a little work to make all of the types
+line up:
+
+```haskell
+instance Effect (Yo e) where
+  weave s' elim' (Yo e s elim) =
+    Yo e (Compose $ s <$ s')
+         (fmap Compose . elim' . fmap elim . getCompose)
+```
+
+Unfortunately, this definition doesn't quite work. The problem is that `weave s
+elim` is supposed to result in a `e m a -> e n (f a)`, but ours has type `e m (g
+a) -> e n (Compose f g a)`! By hard-coding that `f` into the result of our GADT,
+we've painted ourselves into a corner. Similar problems would crop up if we
+wanted to give a `Functor` instance to `Yo e m`.
+
+As is so often the case in this line of work, the solution is to make `f`
+existential, and to take another function which is responsible for producing the
+desired type. We add a `(f a -> b)` parameter to `Yo`, and make it return `Yo e
+n b`:
+
+```haskell
+data Yo e m a where
+  Yo :: Functor f
+     => e m a
+     -> f ()
+     -> (forall x. f (m x) -> n (f x))
+     -> (f a -> b)
+     -> Yo e n b
+```
+
+We can now call `getCompose` in this last function --- in order to undo our
+trick of packing the two pieces of state together.
+
+```haskell
+instance Effect (Yo e) where
+  weave s' elim' (Yo e s elim f) =
+    Yo e (Compose $ s <$ s')
+         (fmap Compose . elim' . fmap elim . getCompose)
+         (fmap f . getCompose)
+```
+
+Giving an instance of `Functor (Yo e m)` can also riff on this final parameter,
+exactly in the same way that `Coyoneda` did:
+
+```haskell
+instance Functor (Yo e m) where
+  fmap f' (Yo e s elim f) = Yo e s elim (f' . f)
+```
+
+(The real implementation also needs `hoist :: (forall x. m x -> n x) -> e m a ->
+e n a`, which turns out to be a special case of `weave`. This is left as an
+exercise for the ambitious reader.)
+
+All that's left is be able to lift `e m a`s into `Yo e m a`s. In every free
+construction I've ever seen, this operation is to just fill all of your
+parameters with identity --- and this case is no different!
+
+```haskell
+liftYo :: Functor m => e m a -> Yo e m a
+liftYo e = Yo e (Identity ()) (fmap Identity . runIdentity) runIdentity
+```
+
+We're done! This funny `Yo` construction is powerful enough to coalesce entire
+chains of effect interpreters into a single call. We haven't done anything
+magical here --- someone still needs to figure out what these functions actually
+mean for their interpretation. By collecting it all into a single place, we can
+cut down on boilerplate and find easier ways to express these concepts to the
+end-user.
+
+But that's a tale for another time, when we talk about `polysemy`'s `Tactics`
+machinery.
 
