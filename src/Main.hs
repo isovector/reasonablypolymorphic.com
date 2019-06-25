@@ -159,7 +159,7 @@ pandocMathCompiler =
           , Ext_latex_macros
           ]
       defaultExtensions = writerExtensions def
-      newExtensions = foldr insert defaultExtensions mathExtensions
+      newExtensions = foldr enableExtension defaultExtensions mathExtensions
       writerOptions = def
           { writerExtensions = newExtensions
           , writerHTMLMathMethod = MathJax ""

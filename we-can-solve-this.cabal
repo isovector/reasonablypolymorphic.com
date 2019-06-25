@@ -26,14 +26,14 @@ executable poly
                   , old-locale
                   , regex-compat
                   , time
-                  , diagrams
-                  , circuitry
-                  , directory
-                  , temporary
-                  , process
+                  -- , diagrams
+                  -- , circuitry
+                  -- , directory
+                  -- , temporary
+                  -- , process
                   , bytestring
                   , string-conv
-                  , here
+                  -- , here
                   , lens
                   , text
                   , aeson
