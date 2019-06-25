@@ -69,7 +69,7 @@ called a type hole.
 jonk ab aii = _
 ```
 
-Try to compile this (consider using something like [ghcid][ghicd] so you don't
+Try to compile this (consider using something like [ghcid][ghcid] so you don't
 need to call `ghc` by hand.) The compiler will yell at you:
 
 [ghcid]: https://github.com/ndmitchell/ghcid
