@@ -164,7 +164,7 @@ The insight here is that maybe we can just make these combinators a part of the
 each interpreter. It doesn't help the horrifying types:
 
 ```haskell
-interpretH1
+interpret
     :: (∀ x m f
            . Functor f
           => (∀ y. m y -> Sem (e ': r) (f y))
@@ -174,7 +174,7 @@ interpretH1
        )
     -> Sem (e ': r) a
     -> Sem r a
-interpretH1 f (Sem m) = m $ \u ->
+interpret f (Sem m) = m $ \u ->
   case decomp u of
     Right (Yo eff state distrib y) ->
       fmap y $ f (distrib . (<$ state))
@@ -193,7 +193,7 @@ runResource
     => (∀ x. Sem r x -> IO x)
     -> Sem (Resource ': r) a
     -> Sem r a
-runResource lower = interpretH1 $ \start continue -> \case
+runResource lower = interpret $ \start continue -> \case
   Bracket alloc finalize use -> do
     let toIO :: Sem (Resource ': r) x -> IO x
         toIO = lower . runResource lower
