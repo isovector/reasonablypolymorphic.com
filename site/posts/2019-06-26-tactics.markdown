@@ -1,0 +1,311 @@
+---
+layout: post
+title: "Polysemy Internals: The Effect-Interpreter Effect"
+date: 2019-06-26 17:26
+comments: true
+tags: polysemy, internals, haskell, technical
+---
+
+> aka "what the hell is that `Tactics` stuff?"
+
+This is the second post in a series of implementation details in
+[polysemy][polysemy] — a fast, powerful and low-boilerplate effect-system
+library.
+
+[polysemy]: https://github.com/polysemy-research/polysemy
+
+---
+
+In the [last post][freer-higher] we discussed the `Yo` type, which accumulates
+weaving functions of the form `Functor f => f () -> (∀ x. f (m x) -> n (f
+x)) -> e m a -> e n (f a)`. As a quick reminder, the `f` functor corresponds to
+some piece of (possibly trivial) state, and the `∀ x. f (m x) -> n (f x)`
+is a distribution function, roughly analogous to a function like `runStateT`.
+
+[freer-higher]: /blog/freer-higher-order-effects/
+
+Where our story left off, we had accumulated all of our desired `weave`s into
+`Yo`, but hadn't yet used them for anything. The developer experience around
+`Yo` is fraught with peril, and even as the guy who implemented it, I'm often
+stymied about how to get all the types to line up. Such a detail is not the sort
+of thing you can expose in a library that you expect people to actually use.
+
+```haskell
+data Yo e m a where
+  Yo :: Functor f
+     => e m a
+     -> f ()
+     -> (∀ x. f (m x) -> n (f x))
+     -> (f a -> b)
+     -> Yo e n b
+```
+
+At the types `Yo` usually gets instantiated, it looks something like `Yo (State
+s) (Sem r) Int`. Which looks easy enough, until you realize that packed inside
+of this thing is an existential `m` (which was originally a `Sem r0` for some
+unknown effect row `r0`), and an existential functor `f` which is all of the
+initial state we're carrying around from other effects who have already run.
+
+`Yo` is the free `Effect`, which means that like all free structures, it
+provides dependency injection so you can later decide what that `Effect` means.
+It's not a magic bullet --- you still need to actually write code somewhere.
+*Somebody* needs to actually use that `f ()` and `∀ x. f (m x) -> n (f x)`
+to actually do something!
+
+As a first attempt, let's see what happens if we just expose them in the
+interpretation API. We'll write a quick `interpret` function which can handle an
+effect `e m x` by producing a `Sem r (f x)`. The implementation is given below.
+Don't worry too much about its body; but pay attention to just how gruesome the
+type is.
+
+```haskell
+interpret
+    :: (∀ x m f
+           . Functor f
+          => f ()                                  -- initial state
+          -> (∀ y. f (m y) -> Sem (e ': r) (f y))  -- distrib function
+          -> e m x                                 -- effect constructor
+          -> Sem r (f x)
+       )
+    -> Sem (e ': r) a
+    -> Sem r a
+interpret f (Sem m) = m $ \u ->
+  case decomp u of
+    Right (Yo eff state distrib y) ->
+      fmap y $ f state distrib eff
+    Left  another_effect ->
+      liftSem $ hoist (interpret f) another_effect
+```
+
+For example, we can use it to implement an interpretation of the `Reader`
+effect:
+
+```haskell
+data Reader i m a where
+  Ask :: Reader i m i
+  Local :: (i -> i) -> m a -> Reader i m a
+
+
+runReader :: i -> Sem (Reader i ': r) a -> Sem r a
+runReader i = interpret $ \state distrib -> \case
+  Ask        -> pure $ i <$ state
+  Local f ma -> runReader (f i) $ distrib $ ma <$ state
+```
+
+Because `Ask` doesn't have any embedded computations, it doesn't need to do
+anything fancy. It can just the ice-cream cone to put `i` inside of the state it
+was given, and return that. But `Local` is a more complicated beast! It must
+ice-cream cone its `ma` computation into the state, and then `distrib` that
+thing into a `Sem (Reader i '; r)`, and then run the `Reader` effect off of
+that!
+
+It's not the end of the world, but it's a nontrivial amount of boilerplate *that
+needs to be duplicated for every interpreter.* Combined with the terrifying
+types, this feels like a no-go.
+
+Let's look at an interpretation for the `Resource` effect (which gives `bracket`
+semantics.) `Resource` is more complicated than `Reader`, and this complexity
+serves to illustrate some common patterns that come up and up again when writing
+interpreters.
+
+```haskell
+data Resource m a where
+  Bracket
+      :: m a         -- allocate
+      -> (a -> m b)  -- finalize
+      -> (a -> m c)  -- use
+      -> Resource m c
+
+
+runResource
+    :: ∀ r a
+     . Member (Lift IO) r
+    => (∀ x. Sem r x -> IO x)  -- irrelevant to the discussion
+    -> Sem (Resource ': r) a
+    -> Sem r a
+runResource lower = interpret $ \state distrib -> \case
+  Bracket alloc finalize use -> do
+    let toIO :: Sem (Resource ': r) x -> IO x
+        toIO = lower . runResource lower
+
+    sendM $ X.bracket
+      (toIO $ distrib $ alloc <$ state)         -- 1
+      (\a -> toIO $ distrib $ fmap finalize a)
+      (\a -> toIO $ distrib $ fmap use a)
+
+```
+
+The `bracket` function allocates some resource of type `a`, provides it to the
+`use` block for some computation, and ensures that it will be cleaned up via
+`finalize` --- even if the `use` block crashed.
+
+There are a few subtleties in the type instantiation here. In the comment marked
+`-- 1`, we run `distrib` on our `m a` parameter, which transforms it into an
+`Sem (Resource ': r) (f a)`. Note that we've introduced an `f` here! This in
+turn unifies our `finalize` and `use` types as `f a -> m b` and `f a -> m c`,
+respectively. Because we later need to distribute to turn those `m`s into `Sem
+(Resource ': r)`s, we also introduce `f`s into `b` and `c`.
+
+In essence, we end up with functions `alloc :: Sem (Resource ': r) (f a)`,
+`finalize :: f a -> Sem (Resource ': r) (f b)` and `use :: f a -> Sem (Resource
+': r) (f c)`. This threading of `f` evident in the types corresponds directly to
+the fact that we need to keep track of other people's state. As we'll see in a
+future post, is indicative of a huge problem with the naive semantics we've
+given to `Resource` here.
+
+Anyway, looking at `runReader` and `runResource`, we see two particular patterns
+emerge in our interpreters:
+
+1. `distrib $ ma <$ state` for the case of an `m a` argument
+2. `\fa -> distrib $ fmap mb fa` for the case of an `a -> m b` argument
+
+The insight here is that maybe we can just make these combinators a part of the
+`interpret` interface directly, rather than have people write them by hand for
+each interpreter. It doesn't help the horrifying types:
+
+```haskell
+interpretH1
+    :: (∀ x m f
+           . Functor f
+          => (∀ y. m y -> Sem (e ': r) (f y))
+          -> (∀ y z. (y -> m z) -> f y -> Sem (e ': r) (f z))
+          -> e m x
+          -> Sem r (f x)
+       )
+    -> Sem (e ': r) a
+    -> Sem r a
+interpretH1 f (Sem m) = m $ \u ->
+  case decomp u of
+    Right (Yo eff state distrib y) ->
+      fmap y $ f (distrib . (<$ state))
+                 (\mf -> distrib . fmap mf)
+                 eff
+    Left  another_effect ->
+      liftSem $ hoist (interpret f) another_effect
+```
+
+But it sure as heck improves the ergonomics:
+
+```haskell
+runResource
+    :: ∀ r a
+     . Member (Lift IO) r
+    => (∀ x. Sem r x -> IO x)
+    -> Sem (Resource ': r) a
+    -> Sem r a
+runResource lower = interpretH1 $ \start continue -> \case
+  Bracket alloc finalize use -> do
+    let toIO :: Sem (Resource ': r) x -> IO x
+        toIO = lower . runResource lower
+
+    sendM $ X.bracket
+      (toIO $ start alloc)
+      (toIO . continue finalize)
+      (toIO . continue use)
+```
+
+Much nicer! If only we could do something about those gnarly types, we'd be in
+business!
+
+The last conceptual step here is to realize that the `start :: ∀ y. m y -> Sem
+(e ': r) (f y)` and `continue :: ∀ y z. (y -> m z) -> f y -> Sem (e ': r) (f z)`
+parameters are static. That means we could stick them into a reader monad --- or
+perhaps more mind-crushingly, an *effect.*
+
+And so, we can provide the two following primitive actions in our `Tactics`
+effect, and then derive `start` and `continue` from them:
+
+```haskell
+data Tactics f n r m a where
+  GetInitialState     :: Tactics f n r m (f ())
+  HoistInterpretation :: (a -> n b) -> Tactics f n r m (f a -> Sem r (f b))
+
+type WithTactics e f m r = Tactics f m (e ': r) ': r
+```
+
+This thing is a mess of type parameters, but `f` is exactly what you'd expect.
+The `n` corresponds to what `m` used to be (it's standard operating
+procedure in polysemy to use `m` as the name of the second-last type argument.)
+And we introduce `r` which corresponds to the effect row that we're trying to
+interpret.
+
+Interpreters for effect actions `e m` end up running with the `∀ f. Functor
+f => WithTactics e f m r` effect row. This thing gives us access to a `Tactics`
+capable of producing `Sem (e ': r)`s, but doesn't *itself* have access to `e`
+effects.
+
+Finally, we use a type synonym to hide most of the nasty details.
+
+```haskell
+type Tactical e m r x =
+  ∀ f. Functor f => Sem (WithTactics e f m r) (f x)
+```
+
+Given an appropriate `runTactics` interpreter:
+
+```haskell
+runTactics
+   :: Functor f
+   => f ()
+   -> (∀ x. f (m x) -> Sem r2 (f x))
+   -> Sem (Tactics f m r2 ': r) a
+   -> Sem r a
+runTactics state distrib (Sem m) = m $ \u ->
+  case decomp u of
+    Left x -> liftSem $ hoist (runTactics state distrib) x
+    Right (Yo GetInitialState state' _ y _) ->
+      pure $ y $ state <$ state'
+    Right (Yo (HoistInterpretation na) state' _ y _) ->
+      pure $ y $ (distrib . fmap na) <$ state'
+```
+
+We can finally implement `interpret`:
+
+```haskell
+interpret
+    :: (∀ x m . e m x -> Tactical e m r x)
+    -> Sem (e ': r) a
+    -> Sem r a
+interpret f (Sem m) = m $ \u ->
+  case decomp u of
+    Left  x -> liftSem $ hoist (interpret f) x
+    Right (Yo eff state distrib y) -> do
+      a <- runTactics state distrib $ f eff
+      pure $ y a
+```
+
+We've hid all of the nasty type inside of that `Tactical` synonym (which
+admittedly is still gross, but at least it's not rank 3.) And we've create an
+effect interpreter effect in which we can put any combinators people will need
+for writing interpreters.
+
+After renaming `start` to `runT` and `continue` to `bindT` for branding
+purposes, `runResource` ends up in its final form:
+
+```haskell
+runResource
+    :: ∀ r a
+     . Member (Lift IO) r
+    => (∀ x. Sem r x -> IO x)
+    -> Sem (Resource ': r) a
+    -> Sem r a
+runResource lower = interpret $ \case
+  Bracket alloc dealloc use -> do
+    let toIO :: Sem (Resource ': r) x -> IO x
+        toIO = lower . runResource lower
+
+    a <- runT  alloc
+    d <- bindT dealloc
+    u <- bindT use
+    sendM $ X.bracket (toIO a) (toIO . d) (toIO . u)
+```
+
+I'm unable to properly express the amount of joy I get in using a library to
+implement core features in itself. The result is one of the most mind-crushingly
+meta things I've ever written, but it elegantly solves a real problem --- so why
+not?
+
+In the next post in this series, we'll discuss the semantics behind the order in
+which you interpret effects, and how this can get you into trouble with things
+like `runResource`. Stay tuned.
+
