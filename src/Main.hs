@@ -15,12 +15,16 @@ import           Data.Maybe (isJust)
 import           Data.Monoid ((<>))
 import           Data.Ord (comparing)
 import           Data.Set (insert)
+import           Data.Text (pack, unpack)
 import           Data.Text.Lens (_Text)
 import           Data.Time.Format (formatTime, defaultTimeLocale)
 import           Data.Time.Parse (strptime)
 import           Data.Traversable (for)
 import           GHC.Exts (fromList)
 import           SitePipe hiding (getTags)
+import           SitePipe.Readers
+import           Text.Pandoc
+import           Text.Pandoc.Highlighting
 import           Text.Pandoc.Options
 import           Utils
 
@@ -38,7 +42,7 @@ main :: IO ()
 main = site $ do
   let l = _Object . at "url" . _Just . _String . _Text
 
-  rawMisc <- resourceLoader markdownReader ["misc/*.markdown"]
+  rawMisc <- resourceLoader sandyReader ["misc/*.markdown"]
   let misc =
         flip fmap rawMisc $
           \x ->
@@ -56,7 +60,7 @@ main = site $ do
                   & _Object . at "date"          ?~ _String . _Text # ""
 
   rawPosts <- sortBy (comparing (^?! l))
-          <$> resourceLoader markdownReader ["posts/*.markdown"]
+          <$> resourceLoader sandyReader ["posts/*.markdown"]
 
   let urls = fmap (^?! l) rawPosts
       getEm' = getNextAndPrev urls
@@ -152,16 +156,31 @@ writeTemplate' :: ToJSON a => String -> [a] -> SiteM ()
 writeTemplate' a = writeTemplate ("templates/" <> a)
 
 
+sandyReader :: String -> IO String
+sandyReader =
+  mkPandocReaderWith
+    (\ro -> readMarkdown ro { readerExtensions = foldr enableExtension
+                                                       pandocExtensions
+                                                       extensions
+                            } . pack)
+    pure
+    (fmap unpack . writeHtml5String pandocMathCompiler)
+
+extensions :: [Extension]
+extensions =
+  [ Ext_tex_math_dollars
+  -- , Ext_latex_macros
+  , Ext_footnotes
+  ]
+
+pandocMathCompiler :: WriterOptions
 pandocMathCompiler =
-  let mathExtensions =
-          [ Ext_tex_math_dollars
-          , Ext_tex_math_double_backslash
-          , Ext_latex_macros
-          ]
-      defaultExtensions = writerExtensions def
-      newExtensions = foldr enableExtension defaultExtensions mathExtensions
+  let mathExtensions = extensions
+      newExtensions = foldr enableExtension pandocExtensions mathExtensions
       writerOptions = def
           { writerExtensions = newExtensions
           , writerHTMLMathMethod = MathJax ""
+          , writerHighlightStyle = Just haddock
           }
    in writerOptions
+
