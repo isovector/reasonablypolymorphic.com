@@ -193,7 +193,7 @@ This can be understood as related functions take a related values in the domain
 to related values in the codomain.
 
 Wadler is careful to point out that even if $\reln{\hat{g}}$ and
-$\reln{\reln{h}}$ are functions, the resulting relation
+$\reln{\hat{h}}$ are functions, the resulting relation
 $\reln{\hat{g}\to\hat{h}}$ is *not* a function, but instead a proof that $f'
 \circ g = h \circ f$, given any pair $(f, f')\in\reln{\hat{g}\to\hat{h}}$.
 
