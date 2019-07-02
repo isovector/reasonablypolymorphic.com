@@ -206,7 +206,7 @@ F z = [z] -> [z]` in order to denote the Haskell type `forall x. [x] -> [x]`.
 
 Wadler:
 
-> Let $\reln{F(X)}$ be a relation depending on $X$. Then $\reln{F}$ corresponds
+> Let $\reln{F(X)}$ be a relation depending on $\reln{X}$. Then $\reln{F}$ corresponds
 > to a function from relations to relations, such that for every relation
 > $\rel{A}{A}{A'}$ there is a corresponding relation $\rel{F(A)}{F(A)}{F(A')}$.
 
