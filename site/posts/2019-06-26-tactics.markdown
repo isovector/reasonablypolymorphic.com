@@ -93,8 +93,8 @@ runReader i = interpret $ \state distrib -> \case
 ```
 
 Because `Ask` doesn't have any embedded computations, it doesn't need to do
-anything fancy. It can just the ice-cream cone to put `i` inside of the state it
-was given, and return that. But `Local` is a more complicated beast! It must
+anything fancy. It can just ice-cream cone to put `i` inside of the state it was
+given, and return that. But `Local` is a more complicated beast! It must
 ice-cream cone its `ma` computation into the state, and then `distrib` that
 thing into a `Sem (Reader i '; r)`, and then run the `Reader` effect off of
 that!
