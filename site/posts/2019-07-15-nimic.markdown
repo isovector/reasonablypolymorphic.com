@@ -10,7 +10,7 @@ If you haven't heard, [I recently solicited couches to stay on][erdos]. The idea
 is to cruise around the globe, meeting cool programmers, and collaborating with
 them on whatever project they're most excited about.
 
-[erdos]:
+[erdos]: https://isovector.github.io/erdos/
 
 This weekend I spent time with the inimitable [David Rusu][david]. The bar for
 my trip has been set extremely high; not only is David an amazing host, but we
