@@ -261,6 +261,7 @@ macro expansion of your program. It's even smart enough to colorize the
 variables in your source tree that are being matched by the current macro.
 
 ![The Glorious Nimic Stepper][stepper]
+
 [stepper]: /images/nimic.png
 
 Not bad for a weekend of work. I can barely contain my excitement for what other
