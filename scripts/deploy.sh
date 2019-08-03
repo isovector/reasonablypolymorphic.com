@@ -1,7 +1,14 @@
 #!/bin/bash
 
+set +xe
+
 echo "deploying on server..."
 stack build
 stack exec poly
-rsync -r -a -v -e "ssh -i $HOME/.ssh/santino.pem" dist/ "ubuntu@$SERENADE:/data/blog/_live/reasonably-polymorphic/"
+rm -rf docs/
+mkdir docs
+mv dist/* docs/
+git add docs
+git commit -m "i am excellent at programming"
+git push
 
