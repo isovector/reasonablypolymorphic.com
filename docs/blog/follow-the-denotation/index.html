@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Follow the Denotation :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+          <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+          ga('create', 'UA-76834556-1', 'auto');
+          ga('send', 'pageview');
+          </script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/follow-the-denotation">Follow the Denotation</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/algorithmic-sytc">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/ecstasy-case-study">&rarr;</a>
+    </span>
+    <time>May  3, 2018</time>
+
+    <span class="tags">
+        <a href="/tags/papers.html">papers</a>, <a href="/tags/review.html">review</a>, <a href="/tags/elliott.html">elliott</a>, <a href="/tags/haskell.html">haskell</a>, <a href="/tags/denotational design.html">denotational design</a>
+    </span>
+</p>
+<div class="content">
+    <blockquote>
+<p>Your scientists were so preoccupied with whether or not they could, they didn’t stop to think if they should.</p>
+<p>Ian, Jurassic Park</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>Designing an abstraction or library often feels wonderfully unconstrained; it is the task of the engineer (or logician) to create something from nothing. With experience and training, we begin to be able to consider and make trade-offs: efficiency vs simplicity-of-implementation vs ease-of-use vs preventing our users from doing the wrong thing, among many other considerations. Undeniably, however, there seems to be a strong element of “taste” that goes into design as well; two engineers with the same background, task, and sensibilities will still come up with two different interfaces to the same abstraction.</p>
+<p>The tool of denotational design aims to help us nail down exactly what is this “taste” thing. Denotational design gives us the ability to look at designs and ask ourselves whether or not they are <em>correct.</em></p>
+<p>However, it’s important to recognize that having a tool to help us design doesn’t need to take the <em>fun</em> out of the endeavor. Like any instrument, it’s up to the craftsman to know when and how to apply it.</p>
+<p>This essay closely works through <a href="http://conal.net/">Conal Elliott</a>’s fantastic paper <a href="http://conal.net/papers/type-class-morphisms/type-class-morphisms-long.pdf">Denotational design with type class morphisms</a>.</p>
+<h2 id="example-maps">Example: Maps</h2>
+<p>Consider the example of <code>Data.Map.Map</code>. At it’s essence, the interface is given by the following “core” pieces of functionality:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">empty  ::</span> <span class="dt">Map</span> k v</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ot">insert ::</span> k <span class="ot">-&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Map</span> k v <span class="ot">-&gt;</span> <span class="dt">Map</span> k v</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="fu">lookup</span><span class="ot"> ::</span> k <span class="ot">-&gt;</span> <span class="dt">Map</span> k v <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="ot">union  ::</span> <span class="dt">Map</span> k v <span class="ot">-&gt;</span> <span class="dt">Map</span> k v <span class="ot">-&gt;</span> <span class="dt">Map</span> k v</a></code></pre></div>
+<p>With the laws:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- get back what you put in</span></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="fu">lookup</span> k   (insert k v m) <span class="fu">=</span> <span class="dt">Just</span> v</a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">-- keys replace one another</span></a>
+<a class="sourceLine" id="cb2-5" title="5">insert k b (insert k a m) <span class="fu">=</span> insert k b m</a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="co">-- empty is an identity for union</span></a>
+<a class="sourceLine" id="cb2-8" title="8">union empty m <span class="fu">=</span> m</a>
+<a class="sourceLine" id="cb2-9" title="9">union m empty <span class="fu">=</span> m</a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co">-- union is just repeated inserts</span></a>
+<a class="sourceLine" id="cb2-12" title="12">insert k v m <span class="fu">=</span> union (insert k v empty) m</a></code></pre></div>
+<p>These laws correspond with our intuitions behind what a <code>Map</code> is, and furthermore, capture exactly the semantics we’d like. Although it might seem silly to explicitly write out such “obvious” laws, it is the laws that give your abstraction meaning.</p>
+<p>Consider instead the example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">empathy ::</span> r <span class="ot">-&gt;</span> f <span class="ot">-&gt;</span> <span class="dt">X</span> r f <span class="ot">-&gt;</span> <span class="dt">X</span> r f</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="ot">fear    ::</span> e <span class="ot">-&gt;</span> <span class="dt">X</span> e m <span class="ot">-&gt;</span> <span class="dt">Either</span> () m</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="ot">taste   ::</span> <span class="dt">X</span> o i <span class="ot">-&gt;</span> <span class="dt">X</span> o i <span class="ot">-&gt;</span> <span class="dt">X</span> o i</a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="ot">zoo     ::</span> <span class="dt">X</span> z x</a></code></pre></div>
+<p>It might take you some time to notice that this <code>X</code> thing is just the result of me randomly renaming identifiers in <code>Map</code>. The names are valuable to us only because they suggest meanings to us. Despite this, performing the same substitutions on the <code>Map</code> laws would still capture the semantics we want. The implication is clear: names are helpful, but laws are invaluable.</p>
+<h2 id="meanings">Meanings</h2>
+<p>Our quick investigation into the value of laws has shown us one example of how to assert meaning on our abstractions. We will now take a more in-depth look at another way of doing so.</p>
+<p>Let us consider the concept of a “meaning functor.” We can think of the term <code>μ(Map k v)</code> as “the meaning of <code>Map k v</code>.” <code>μ(Map k v)</code> asks not how is <code>Map k v</code> implemented, but instead, how should we think about it? What metaphor should we use to think about a <code>Map</code>? The <span class="math inline">\(\mu(\cdot)\)</span> operator, like any functor, will map types to types, and functions to functions.</p>
+<p>We can encode this mapping as a function, and the partiality with <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1">μ(<span class="dt">Map</span> k v) <span class="fu">=</span> k <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v</a></code></pre></div>
+<p>With the meaning of our type nailed down, we can now also provide meanings for our primitive operations on <code>Map</code>s:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1">  μ(empty) <span class="fu">=</span> \k <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a></code></pre></div>
+<p>An empty map is one which assigns <code>Nothing</code> to everything.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">  μ(<span class="fu">lookup</span> k m) <span class="fu">=</span> μ(m) k</a></code></pre></div>
+<p>Looking up a key in the map is just giving back the value at that key.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">  μ(insert k&#39; v m) <span class="fu">=</span> \k <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    <span class="kw">if</span> k <span class="fu">==</span> k&#39;</a>
+<a class="sourceLine" id="cb7-3" title="3">      <span class="kw">then</span> <span class="dt">Just</span> v</a>
+<a class="sourceLine" id="cb7-4" title="4">      <span class="kw">else</span> μ(m) k</a></code></pre></div>
+<p>If the key we ask for is the one we inserted, give back the value associated with it.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">  μ(union m1 m2) <span class="fu">=</span> \k <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    <span class="kw">case</span> μ(m1) k <span class="kw">of</span></a>
+<a class="sourceLine" id="cb8-3" title="3">      <span class="dt">Just</span> v  <span class="ot">-&gt;</span> <span class="dt">Just</span> v</a>
+<a class="sourceLine" id="cb8-4" title="4">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> μ(m2) k</a></code></pre></div>
+<p>Attempt a lookup in a union by looking in the left map first.</p>
+<p>Looking at these definitions of meaning, it’s clear to see that they capture an intuitive (if perhaps, naive) meaning and implementation of a <code>Map</code>. Regardless of our eventual implementation of <code>Map</code>, <span class="math inline">\(\mu(\cdot)\)</span> is a functor that transforms it into the same “structure” (whatever that means) over <em>functions.</em></p>
+<p>Herein lies the core principle of denotational design: for any type <code>X</code> designed in this way, <code>X</code> <em>must be isomorphic</em> to <code>μ(X)</code>; literally no observational (ie. you’re not allowed to run a profiler on the executed code) test should be able to differentiate one from the other.</p>
+<p>This is not to say that it’s necessary that <code>X = μ(X)</code>. Performance or other engineering concerns may dissuade us from equating the two – after all, it would be insane if <code>Map</code> were actually implemented as a big chain of nested if-blocks. All we’re saying is that nothing in the implementation is allowed to break our suspension of believe that we are actually working with <code>μ(Map)</code>. Believe it or not, this is a desirable property; we all have a lot more familiarity with functions and other fundamental types than we do with the rest of the (possibly weird corners of) ecosystem.</p>
+<p>The condition that <code>X</code> <span class="math inline">\(\cong\)</span> <code>μ(X)</code> is much more constraining than it might seem at first glance. For example, it means that all instances of our type-classes must agree between <code>X</code> and <code>μ(X)</code> – otherwise we’d be able to differentiate the two.</p>
+<p>Our <code>Map</code> has some obvious primitives for building a <code>Monoid</code>, so let’s do that:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">instance</span> <span class="dt">Monoid</span> (<span class="dt">Map</span> k v) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  <span class="fu">mempty</span>  <span class="fu">=</span> empty</a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="fu">mappend</span> <span class="fu">=</span> union</a></code></pre></div>
+<p>While this is indeed a <code>Monoid</code>, it looks like we’re already in trouble. The <code>Monoid</code> instance definition for <code>μ(Map)</code>, after specializing to our types, instead looks like this:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">instance</span> <span class="dt">Monoid</span> v <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (k <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v) <span class="kw">where</span></a></code></pre></div>
+<p>There’s absolutely no way that these two instances could be the same. Darn. Something’s gone wrong along the way; suggesting that <code>μ(Map)</code> isn’t in fact a denotation of <code>Map</code>. Don’t panic; this kind of thing happens. We’re left with an intriguing question; is it our meaning functor that’s wrong, or the original API itself?</p>
+<h2 id="homomorphisms">Homomorphisms</h2>
+<p>Our instances of <code>Monoid Map</code> and <code>Monoid μ(Map)</code> do not agree, leading us to the conclusion that <code>μ(Map)</code> <em>cannot be</em> the denotation for <code>Map</code>. We are left with the uneasy knowledge that at least one of them is incorrect, but without further information, we are unable to do better.</p>
+<p>A property of denotations is that their instances of typeclasses are always homomorphisms, which is to say that they are <em>structure preserving.</em> Even if you are not necessarily familiar with the word, you will recognize the concept when you see it. It’s a pattern that often comes up when writing instances over polymorphic datastructures.</p>
+<p>For example, let’s look at the <code>Functor</code> instance for a pair of type <code>(a, b)</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">instance</span> <span class="dt">Functor</span> ((,) a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="fu">fmap</span> f (a, b) <span class="fu">=</span> (a, f b)</a></code></pre></div>
+<p>This is a common pattern; unwrap your datatype, apply what you’ve got anywhere you can, and package it all up again in the same shape. It’s this “same shape” part that makes the thing structure preserving.</p>
+<p>The principle to which we must adhere can be expressed with a pithy phrase: <em>the meaning of the instance is the instance of the meaning.</em> This is true for any meaning functor which is truly a denotation. What this means, for our hypothetical type <code>μ(X)</code>, is that all of our instances must be of this form:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">instance</span> <span class="dt">Functor</span> μ(<span class="dt">X</span>) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  μ(<span class="fu">fmap</span> f x) <span class="fu">=</span> <span class="fu">fmap</span> f μ(x)</a>
+<a class="sourceLine" id="cb12-3" title="3"></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="kw">instance</span> <span class="dt">Applicative</span> μ(<span class="dt">X</span>) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-5" title="5">  μ(<span class="fu">pure</span> x)  <span class="fu">=</span> <span class="fu">pure</span> x</a>
+<a class="sourceLine" id="cb12-6" title="6">  μ(f <span class="fu">&lt;*&gt;</span> x) <span class="fu">=</span> μ(f) <span class="fu">&lt;*&gt;</span> μ(x)</a></code></pre></div>
+<p>and so on.</p>
+<p>Having such a principle gives us an easy test for whether or not our meaning functor is correct; if any of our instances do not reduce down to this form, we know our meaning must be incorrect. Let’s take a look at our implementation of <code>mempty</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1">μ(<span class="fu">mempty</span>) <span class="fu">=</span> \k <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb13-2" title="2">          <span class="fu">=</span> \k <span class="ot">-&gt;</span> <span class="fu">mempty</span></a>
+<a class="sourceLine" id="cb13-3" title="3">          <span class="fu">=</span> <span class="fu">const</span> <span class="fu">mempty</span></a>
+<a class="sourceLine" id="cb13-4" title="4">          <span class="fu">=</span> <span class="fu">mempty</span>  <span class="co">-- (1)</span></a></code></pre></div>
+<p>At (1), we can collapse our <code>const mempty</code> with <code>mempty</code> because that is the definition of the <code>Monoid ((-&gt;) a)</code> instance. So far, our meaning is looking like a true denotation. Let’s also look at <code>mappend</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1">μ(<span class="fu">mappend</span> m1 m2) <span class="fu">=</span> \k <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb14-2" title="2">  <span class="kw">case</span> μ(m1) k <span class="kw">of</span></a>
+<a class="sourceLine" id="cb14-3" title="3">    <span class="dt">Just</span> v  <span class="ot">-&gt;</span> <span class="dt">Just</span> v</a>
+<a class="sourceLine" id="cb14-4" title="4">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> μ(m2) k</a></code></pre></div>
+<p>It’s not immediately clear how to wrestle this into a homomorphism, so let’s work backwards and see if we can go backwards:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="fu">mappend</span> μ(m1) μ(m2)</a>
+<a class="sourceLine" id="cb15-2" title="2">    <span class="fu">=</span> <span class="fu">mappend</span> (\k <span class="ot">-&gt;</span> v1) (\k <span class="ot">-&gt;</span> v2)</a>
+<a class="sourceLine" id="cb15-3" title="3">    <span class="fu">=</span> \k <span class="ot">-&gt;</span> <span class="fu">mappend</span> v1 v2</a>
+<a class="sourceLine" id="cb15-4" title="4">    <span class="fu">=</span> \k <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb15-5" title="5">        <span class="kw">case</span> v1 <span class="kw">of</span>   <span class="co">-- (2)</span></a>
+<a class="sourceLine" id="cb15-6" title="6">          z<span class="fu">@</span>(<span class="dt">Just</span> a) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb15-7" title="7">            <span class="kw">case</span> v2 <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-8" title="8">              <span class="dt">Just</span> b  <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="fu">mappend</span> a b</a>
+<a class="sourceLine" id="cb15-9" title="9">              <span class="dt">Nothing</span> <span class="ot">-&gt;</span> z</a>
+<a class="sourceLine" id="cb15-10" title="10">          <span class="dt">Nothing</span> <span class="ot">-&gt;</span> v2</a></code></pre></div>
+<p>At (2) we inline the definition of <code>mappend</code> for <code>Maybe</code>.</p>
+<p>That’s as far as we can go, and, thankfully, that’s far enough to see that our instances do not line up. While <code>mappend</code> for <code>μ(Map)</code> is left-biased, the one for our denotation may not be.</p>
+<p>We’re left with the conclusion that our meaning functor <span class="math inline">\(\mu(\cdot)\)</span> must be wrong; either the representation of <code>μ(Map)</code> is incorrect, or our meaning <code>μ(mappend)</code> is. Fortunately, we are free to change either in order to make them agree. Because we’re sure that the left-bias in <code>mappend</code> is indeed the semantics we want, we must change the representation.</p>
+<p>Fortunately, this is an easy fix; <code>Data.Monoid</code> provides the <code>First</code> newtype wrapper, which provides the left-biased monoid instance we want. Substituting it in gives us:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1">μ(<span class="dt">Map</span> k v) <span class="fu">=</span> k <span class="ot">-&gt;</span> <span class="dt">First</span> v</a></code></pre></div>
+<p>Subsequent analysis of this revised definition of <code>μ(Map)</code> reveals that indeed it satisfies the homomorphism requirement. This is left as an exercise to the reader.</p>
+<h2 id="decomposition-of-functors">(De)composition of Functors</h2>
+<p>We have now derived a denotation behind <code>Map</code>, one with a sensible <code>Monoid</code> instance. This gives rise to a further question—which other instances should we provide for <code>Map</code>?</p>
+<p><code>Map</code> is obviously a <code>Functor</code>, but is it an <code>Applicative</code>? There are certainly <em>implementations</em> for <code>Applicative (Map k)</code>, but it’s unclear which is the one we should provide. To make the discussion concrete, what should be the semantics behind <code>pure 17</code>? Your intuition probably suggests we should get a singleton <code>Map</code> with a value of 17, but what should it’s key be? There’s no obvious choice, unless we ensure <code>k</code> is a <code>Monoid</code>.</p>
+<p>Another alternative is that we return a <code>Map</code> in which <em>every</em> key maps to 17. This is implementation suggested by the <code>Applicative</code> homomorphism of <code>μ(Map)</code>, but it doesn’t agree with our intuition. Alternatively, we could follow in the footsteps of <code>Data.Map.Map</code>, whose solution to this predicament is to sit on the fence, and not provide any <code>Applicative</code> instance whatsoever.</p>
+<p>Sitting on the fence is not a very satisfying solution, however. <code>Applicative</code> is a particularly useful class, and having access to it would greatly leverage the Haskell ecosystem in terms of what we can do with our <code>Map</code>. As a general rule of thumb, any type which <em>can</em> be an instance of the standard classes <em>should</em> be, even if it requires a little finagling in order to make happen.</p>
+<p>We find ourselves at an impasse, and so we can instead turn to other tweaks in our meaning functor, crossing our fingers that they will elicit inspiration.</p>
+<p>Given the <code>Compose</code> type from <code>Data.Functor.Compose</code>, we can re-evaluate our choices once more (as we will see, this is a common theme in denotational design.)</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">data</span> <span class="dt">Compose</span> f g a <span class="fu">=</span> <span class="dt">Compose</span></a>
+<a class="sourceLine" id="cb17-2" title="2">  {<span class="ot"> getCompose ::</span> f (g a)</a>
+<a class="sourceLine" id="cb17-3" title="3">  }</a></code></pre></div>
+<p><code>Compose</code> is a fantastic tool when building new types that are composites of others. For example, consider the meaning of <code>μ(Map k v) = \k -&gt; First v</code>. If we’d like to <code>fmap</code> over the <code>v</code> here, we’ll need to perform two of them:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="ot">             f  ::</span>         v  <span class="ot">-&gt;</span>         w</a>
+<a class="sourceLine" id="cb18-2" title="2">  <span class="fu">fmap</span> (<span class="fu">fmap</span> f)<span class="ot"> ::</span> μ(<span class="dt">Map</span> k v) <span class="ot">-&gt;</span> μ(<span class="dt">Map</span> k w)</a></code></pre></div>
+<p>Although it seems minor, this is in fact quite a large inconvenience. Not only does it require us two <code>fmap</code> through two layers of functors, more egregiously, it allows us to use a <em>single</em> <code>fmap</code> to break the abstraction. Consider the case of <code>fmap (const 5)</code> – this will transform a <code>μ(Map k v)</code> into a <code>k -&gt; 5</code>, which is obviously <em>not</em> a functor. Yikes.</p>
+<p>We instead can re-redefine <code>μ(Map k v)</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1"><span class="ot">`μ(Map k v) = Compose ((-&gt;) k) First v`</span></a></code></pre></div>
+<p>Presented in this form, we are exposed to another interpretation of what our type means. <code>μ(Map)</code> is a composition of some sort of <em>mapping-ness</em> <code>((-&gt;) k)</code> and of <em>partiality</em> (<code>First</code>). The mapping-ness is obviously crucial to the underlying concept, but it’s harder to justify the partiality. One interpretation is that we use the <code>Nothing</code> value to indicate there was no corresponding key, but another is that we use <code>Nothing</code> as a <em>default value</em>.</p>
+<p>When viewed as a default, a few minutes’ pondering on this thought reveals that a partial map (<code>k -&gt; Maybe v</code>) is just a special case of a total map (<code>k -&gt; v</code>) where the value itself is partial. Maybe—if you’ll excuse the pun—partiality is completely orthogonal to the semantics we want to express.</p>
+<p>As our final (and ultimately correct) attempt, we define</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" title="1">μ(<span class="dt">Map</span> k v) <span class="fu">=</span> \k <span class="ot">-&gt;</span> v</a></code></pre></div>
+<p>From here, the problem of “what typeclasses should this thing have” becomes quite trivial—we should provide equivalent instances for all of those of <code>k -&gt; v</code>. The question about what should our <code>Applicative</code> instance do is resolved: the same thing arrows do.</p>
+<p>A point worth stressing here is that just because the <em>meaning</em> of <code>Map k v</code> is <code>k -&gt; v</code>, it doesn’t mean our <em>representation</em> must be. For example, we could conceive implementing <code>Map</code> as the following:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" title="1"><span class="kw">data</span> <span class="dt">Map</span> k v <span class="fu">=</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb21-2" title="2">  {<span class="ot"> mapDefVal ::</span> v</a>
+<a class="sourceLine" id="cb21-3" title="3">  ,<span class="ot"> mapTree   ::</span> <span class="dt">BalancedTree</span> k v</a>
+<a class="sourceLine" id="cb21-4" title="4">  }</a>
+<a class="sourceLine" id="cb21-5" title="5"></a>
+<a class="sourceLine" id="cb21-6" title="6"><span class="fu">lookup</span><span class="ot"> ::</span> <span class="dt">Ord</span> k <span class="ot">=&gt;</span> <span class="dt">Map</span> k v <span class="ot">-&gt;</span> k <span class="ot">-&gt;</span> v</a>
+<a class="sourceLine" id="cb21-7" title="7"><span class="fu">lookup</span> m <span class="fu">=</span> fromMaybe (mapDefVal m) <span class="fu">.</span> treeLookup (mapTree m)</a></code></pre></div>
+<p>Such an implementation gives us all of the asymptotics of a tree-based map, but the denotations of (and therefore the <em>intuitions</em> behind) functions.</p>
+<p>Hopefully this worked example has given you some insight into how the process of denotational design works. Guess at a denotation and then ruthlessly refine it until you get something that captures the real essence of what you’re trying to model. It’s an spectacularly rewarding experience to find an elegant solution to a half-baked idea, and your users will thank you to boot.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/algorithmic-sytc">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/ecstasy-case-study">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "follow-the-denotation";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2019 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
