@@ -38,6 +38,7 @@ executable poly
                   , text
                   , aeson
                   , regex-tdfa
+  other-modules: Utils, Erdos
   ghc-options:      -threaded
   hs-source-dirs:   src
   default-language: Haskell2010

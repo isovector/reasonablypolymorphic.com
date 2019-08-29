@@ -1,0 +1,16 @@
+{{> templates/header.html}}
+
+<article>
+  {{#spans}}
+    <h1>{{city}}, {{country}}</h1>
+    {{#erdos}}
+    <h2>{{host}} (<a href="https://github.com/{{github-user}}">{{github-user}}</a>)</h2>
+      <div class="meta">Project: <a href="{{project-url}}">{{project}}</a></div>
+      <div class="meta">Dates: {{arrival-date}} &rarr; {{departure-date}}</div>
+
+      {{{content}}}
+    {{/erdos}}
+  {{/spans}}
+</article>
+
+{{> templates/footer.html}}
