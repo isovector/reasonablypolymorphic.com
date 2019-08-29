@@ -1,6 +1,10 @@
 {{> templates/header.html}}
 
 <article>
+<header>
+  <h1><a href="/{{canonical_url}}">{{title}}</a></h1>
+</header>
+
   {{#spans}}
     <h1>{{city}}, {{country}}</h1>
     {{#erdos}}
