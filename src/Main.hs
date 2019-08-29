@@ -13,13 +13,14 @@ import           Data.List (sortBy)
 import qualified Data.Map as M
 import           Data.Maybe (isJust)
 import           Data.Monoid ((<>))
-import           Data.Ord (comparing)
+import           Data.Ord (comparing, Down (..))
 import           Data.Set (insert)
 import           Data.Text (pack, unpack)
 import           Data.Text.Lens (_Text)
 import           Data.Time.Format (formatTime, defaultTimeLocale)
 import           Data.Time.Parse (strptime)
 import           Data.Traversable (for)
+import           Erdos
 import           GHC.Exts (fromList)
 import           SitePipe hiding (getTags)
 import           SitePipe.Readers
@@ -27,6 +28,11 @@ import           Text.Pandoc
 import           Text.Pandoc.Highlighting
 import           Text.Pandoc.Options
 import           Utils
+
+
+fromResult :: Result a -> a
+fromResult (Success a) = a
+fromResult (Error a) = error a
 
 
 postFormat :: String
@@ -134,6 +140,23 @@ main = site $ do
             ]
         )
       ]
+
+  erdos <- sortBy (comparing $ Down
+                             . read @Int . takeWhile (/= '-')
+                                         . drop (length $ id @String "/erdos/")
+                                         . emUrl)
+        . fmap (fromResult . fromJSON)
+      <$> resourceLoader markdownReader ["erdos/*.markdown"]
+
+
+  writeTemplate' "erdos.html" . pure
+    $ object
+      [ "url" .= ("/erdos/index.html" :: String)
+      , "page_title" .= ("Erdos Project" :: String)
+      , "spans" .= buildCitySpan erdos
+      , "slug" .= ("erdos" :: String)
+      ]
+
 
   writeTemplate' "post.html" $ posts ++ misc
   writeTemplate' "tag.html"  tags
