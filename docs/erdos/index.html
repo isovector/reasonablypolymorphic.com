@@ -51,6 +51,34 @@
   <h1><a href="/"></a></h1>
 </header>
 
+    <h1>Leipzig, Germany</h1>
+    <h2>Soares Chen (<a href="https://github.com/maybevoid">maybevoid</a>)</h2>
+      <div class="meta">Project: <a href="https://github.com/isovector/compiling-to-categories-redux">Compiling to Categories, Canonical Type Pragmas</a></div>
+      <div class="meta">Dates: 2019-09-18 &rarr; 2019-09-20</div>
+
+      <p>Soares and I worked our way through Conal's <a href="https://github.com/conal/concat">Compiling to Categories</a> paper, and came to the conclusion that he was doing <em>far too much work.</em> Conal's implementation is written as a core plugin, which means he needs to do all of the hard work of synthesizing dictionaries and fighting against the optimizer.</p>
+<p>Thankfully, today we have source plugins --- meaning we can implement syntactic transformations (such as compiling to categories) as actual syntactic transformations!</p>
+<p>Our implementation is pretty tiny, but falls apart in all of the same ways as Conal's --- namely, you need to be able to inline all the definitions for any functions you call. We figured we could get around this by looking up unfoldings and then implementing a quick <code>CoreExpr</code> to <code>HsExpr</code> pass + aggressively turning on <code>-fexpose-all-unfoldings</code>. We lost steam on the project after realizing how poorly the paper describes the actual implementation. Fun project, but it didn't really go anywhere.</p>
+<p>After that, I suggested we implement a pragma for telling GHC "this is the type I want to see in my error messages." GHC will "helpfully" decompose types into constituent pieces --- which admittedly is usually the right behavior --- but this prevents you from hiding implementation details when it comes to <code>Constraint</code>s.</p>
+<p>The idea: mark abstraction types with a special <code>{-# CANONICAL #-}</code> pragma, that tells error messages to never expand this type. If there's an issue with a subconstraint, report just the canonical type instead!</p>
+<p>We actually got most of this working, though there are still a few bugs in propagating the pragma information from the parse tree all the way into the constraint solver. But once the flag is in place, the error messages do the right thing. Pretty cool, and hopefully coming soon to a GHC release near you.</p>
+<p>In addition to all of this, Soares is the implementer of the <a href="https://github.com/maybevoid/implicit-effects">implicit-effects</a> package, and so we spent a lot of time nerding out about effects systems. We're both convinced that such things are the solutions to most programming problems, and just need to figure out how to convince others of that fact.</p>
+<p>Furthermore, Soares comes from the Javascript world, and has a refreshing take on some of the problems we run into in Haskell that aren't in Javascript. In particular, we got chatting about Haskell's concurrency model, and how we could change it in order to make effect systems work better.</p>
+    <h1>Munich, Germany</h1>
+    <h2>Jan van Bruegge (<a href="https://github.com/jvanbruegge">jvanbruegge</a>)</h2>
+      <div class="meta">Project: <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/1730">GHC</a></div>
+      <div class="meta">Dates: 2019-09-14 &rarr; 2019-09-18</div>
+
+      <p>Jan and I spent a lot of time chatting about row types; he showed me his new implementation in GHC and I asked lots of stupid questions about it. Together, we worked on some patches to GHC's custom <code>TypeError</code> machinery. The <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/1730">first of which</a> only emits custom type errors when they're derived constraints, rather than the givens that cause excessively loud errors today.</p>
+<p><a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/1739">The second</a> was to add a priority to type errors. Today, whenever a custom type error shows up, it completely erases legitimate errors from GHC. That means an insoluble type equality (eg. asking for <code>String ~ Bool</code>) will get swallowed up by a custom type error that happens at the same time. It's never helpful, and means type errors are often <em>actively unhelpful.</em></p>
+<p>But GHC already produces two error reports --- the first is for really bad errors that happen (insoluble type equalities), and the second is for other things it would like to comment on. Notably, the second report doesn't show up if the first one happened. Jan and my work was to expose this to the type errors API:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">data</span> <span class="dt">ErrorPriorty</span> <span class="fu">=</span> <span class="dt">HighPriority</span> <span class="fu">|</span> <span class="dt">LowPriority</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">type</span> <span class="kw">family</span> <span class="dt">TypeErrorPriorty</span> (<span class="ot">priority ::</span> <span class="dt">ErrorPriority</span>) (<span class="ot">msg ::</span> <span class="dt">ErrorMessage</span>)</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">type</span> <span class="dt">TypeError</span> a <span class="fu">=</span> <span class="dt">TypeErrorPriority</span> <span class="dt">&#39;HighPriority</span> a</a></code></pre></div>
+<p>This change is completely backwards compatible with <code>TypeError</code>s as they're used today, but means we can now selectively control when a type error should be emitted. Nice!</p>
+<p>Besides all of the great Haskell-ing, Jan and his roommates turned out to be some of the smartest, kindest and most fun people I've had the pleasure to ever meet. They invited me to their band practice, we saw some break dancing competitions, and ate an aggressive amount of traditional Bavarian food. Thanks everyone, I love you all!</p>
     <h1>Vancouver, Canada</h1>
     <h2>Andrew McKnight (<a href="https://github.com/amcknight">amcknight</a>)</h2>
       <div class="meta">Project: <a href="https://github.com/amcknight/scont">GHC</a></div>
