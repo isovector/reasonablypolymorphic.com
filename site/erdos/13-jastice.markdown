@@ -31,8 +31,10 @@ future.
 [unison]: https://www.unisonweb.org/
 
 Hanging out with Justin was a true joy. Not only is he excellent company, but
-he's a great story teller, and an exceptional host. He went out of town for a
-few days during my visit, and was kind enough to let me stay in his absence. I
-considered replacing all of his art with portraits of my face, but it seemed
-like too much work. Thanks again for a great time, Justin!
+he's a great story teller, and an exceptional host. He took me to Oktoberfest,
+introduced me to lots of his friends, and showed me motorcycles that drive on
+the fucking *walls.* Furthermore, Justin went out of town for a few days during
+my visit, and was kind enough to let me stay in his absence. I considered
+replacing all of his art with portraits of my face, but it seemed like too much
+work. Thanks again for a great time, Justin!
 
