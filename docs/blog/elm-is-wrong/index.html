@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Elm Is Wrong :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+          <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+          ga('create', 'UA-76834556-1', 'auto');
+          ga('send', 'pageview');
+          </script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/elm-is-wrong">Elm Is Wrong</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/ideas-and-men">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/free-stories">&rarr;</a>
+    </span>
+    <time>April 12, 2016</time>
+
+    <span class="tags">
+        <a href="/tags/rebuttal.html">rebuttal</a>, <a href="/tags/technical.html">technical</a>, <a href="/tags/programming.html">programming</a>
+    </span>
+</p>
+<div class="content">
+    <p>A few weeks ago, on a whim <a href="https://github.com/asweingarten">my friend</a> and I decided to hackathon our way through an <a href="https://github.com/isovector/afro-kravitz">app to help us learn how to play guitar</a>. In a stroke of inspiration, we decided to learn something new, and do the project in the <a href="http://elm-lang.org">Elm programming language</a>, about which I had heard many good things.</p>
+<p>Consider this post to be <em>what I wished I knew about Elm before deciding to write code in it.</em> Since I can’t send this information into the past and save myself a few weeks of frustration, it’s too late for me, but perhaps you, gentle reader, can avoid this egregious tarpit of a language where abstraction goes to die.</p>
+<p>I jest. Elm’s not really that bad.</p>
+<p>It’s worse.</p>
+<p>I realize that such harsh words are going to require a supporting argument. I’ll get there, but in the idea of fairness I want to first talk about the things I really like in Elm:</p>
+<ol type="1">
+<li>It’s got great documentation.</li>
+<li>As a <em>library</em>, it’s really pleasant to work with.</li>
+<li>…and well, that’s about it.</li>
+</ol>
+<p>Unfortunately, Elm isn’t a library. It’s a language, which just happens to have a great library. Elm qua the language is an unsurmountable pile of poorly-thought-out and impossible-to-compose new ideas on top of the least interesting pieces of Haskell.</p>
+<h2 id="scrapping-my-typeclasses">Scrapping my Typeclasses</h2>
+<p>I’ve got a really appropriate word for dealing with dicts in Elm. <em>Painful.</em> It’s not any fault of the library, but of the language. Let’s look at an example of working with one:</p>
+<pre class="elm"><code>insert : comparable -&gt; v -&gt; Dict comparable v -&gt; Dict comparable v</code></pre>
+<p>“What is this <code>comparable</code> thing?” you might ask. A little documentation searching leads to:</p>
+<blockquote>
+<p>This includes numbers, characters, strings, lists of comparable things, and tuples of comparable things. Note that tuples with 7 or more elements are not comparable; why are your tuples so big?</p>
+</blockquote>
+<p>First of all, ever heard of the <a href="http://www.catb.org/jargon/html/Z/Zero-One-Infinity-Rule.html">zero-one-infinity</a> rule? Second of all, fuck you and your 6-element-max comparable tuples<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. Anyway. The real thing I want to discuss is how <code>comparable</code> is magical compiler stuff. I’d argue that whenever magical compiler stuff rears its head, things are going to get arbitrary and stupid.</p>
+<p>Lo and behold, things get arbitrary and stupid around <code>comparable</code>. Since it’s compiler magic, we mere mortals are unable to make our instances of <code>comparable</code>, which is to say, you can’t use any custom data-types as the key of a dictionary in Elm.</p>
+<p>Did you hear that? That was the sound of type-safety dying.</p>
+<p>Haskell solves this problem with what seams like a similar solution. In Haskell:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="ot">insert ::</span> <span class="dt">Ord</span> k <span class="ot">=&gt;</span> k <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</a></code></pre></div>
+<p>Here, the bit before the <code>=&gt;</code> is a constraint that <code>k</code> must be comparable. The difference is that programmers in Haskell (as opposed to compiler writers) can define their own instances of <code>Ord k</code>, and so in Haskell, the only limit is our imagination. In Haskell, these constraints are called “typeclasses”, and they’re roughly equivalent to interfaces in OOP languages (except that you don’t need to be part of the typeclass at declaration time).</p>
+<p>Elm currently doesn’t have typeclasses. Evan Czaplicki, the primary author/designer/benevolent dictator of Elm, <a href="http://elm-lang.org/blog/announce/0.7">suggests</a> that typeclasses might be coming, but that was back in early 2013. As of early 2016, they’re still not around.</p>
+<p>The Elm mores <a href="https://github.com/elm-lang/elm-compiler/issues/38#issuecomment-116748295">direct</a> questions of “why doesn’t Elm have type classes” to <a href="http://www.haskellforall.com/">Gabriel Gonzalez</a>’s essay “<a href="http://www.haskellforall.com/2012/05/scrap-your-type-classes.html">Scrap Your Typeclasses</a>” (henceforth referred to as SYTC). I was coming to Elm to learn new things, so I decided to suspend my disbelief and give it a try. After all, the <a href="http://www.paulgraham.com/avg.html">blub paradox</a> indicates we don’t know recognize ideas until it’s way too late. And so I decided to play along.</p>
+<p>If you don’t want to read the essay, SYTC essentially says “hey, why don’t we pass around an object that describes the implementation of the contract that we care about, rather than having the compiler infer it for us?”. If you’re familiar with Scala, this is how they implement typeclasses in terms of <a href="http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html">implicit parameters</a>. If you’re not, SYTC is equivalent to passing around a <a href="https://en.wikipedia.org/wiki/Virtual_method_table">vtable</a> whenever you want to invoke code on a dynamic target.</p>
+<p>It’s a reasonable approach, and I can sympathize with the fact that actually writing a typeclass mechanism into your language is a lot a work, especially when you have something which accomplish the same thing.</p>
+<p>Unfortunately for me, after a few days of fighting with the typesystem trying to get SYTC working, it became glaringly obvious that nobody advocating SYTC in Elm had actually implemented it. The original essay is written for Haskell, after all.</p>
+<p>So what went wrong? Let’s look at a contrived example to get in the mood. The following type alias might capture some of our intuitions about an enum type:</p>
+<pre class="elm"><code>type alias Enum a = { elements : Array a }</code></pre>
+<p>This can be read as, a type <code>a</code> is an enum consisting of the unique values specified by <code>elements</code>. We make no claims about the ordering of this <code>Array</code>. (We can’t use <code>Set</code> because it requires a <code>comparable</code> value, which is the whole problem.)</p>
+<p>Using it might look like this:</p>
+<pre class="elm"><code>enumCount : Enum a -&gt; Int
+enumCount witness = Array.length witness.elements</code></pre>
+<p>This function takes a witness (proof) that <code>a</code> is an enum type (encoded by the parameter of type <code>Enum a</code>). It then uses the known <code>elements</code> of that witness to figure out how many different enum values of type <code>a</code> there are.</p>
+<p>To do something a little more useful, let’s wrap up a pair of functions <code>fromInt</code> and <code>toInt</code> into a new “typeclass”, which we’ll call <code>Ord a</code>. <code>Ord a</code> is a witness that type <code>a</code> is <a href="https://en.wikipedia.org/wiki/Well-order">well-ordered</a>, which is to say that for any two <code>a</code>s, one is definitely less than or equal to another<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>.</p>
+<p>In Elm:</p>
+<pre class="elm"><code>type alias Ord a = { fromInt : Int -&gt; a
+                   , toInt   : a -&gt; Int
+                   }</code></pre>
+<p>We’re kind of cheating here by getting this property via a bijection with the integers, but it’s for a good reason: you can put integers into a dictionary in Elm (they <em>are</em> <code>comparable</code>, so with one we can emulate Haskell’s constraints on dictionary keys).</p>
+<p>For sake of example, now imagine we want to implement <a href="https://en.wikipedia.org/wiki/Bucket_sort">bucket sort</a> as generically as possible:</p>
+<pre class="elm"><code>bucketSort : [a] -&gt; [a]</code></pre>
+<p>But what should <code>a</code> be, here? Clearly we can’t bucket sort arbitrary data structures. Promising <code>a</code> be an enum seems like a good start, so we add a witness:</p>
+<pre class="elm"><code>bucketSort : Enum a -&gt; [a] -&gt; [a]</code></pre>
+<p>Unfortunately, this is breaking our abstraction barrier: the semantics we adopted for <code>Enum a</code> are only sufficient to know that there are a finite number of <code>a</code> values, but we don’t have a canonical means of arranging buckets. For that, we require an <code>Ord a</code> witness too:</p>
+<pre class="elm"><code>bucketSort : Ord a -&gt; Enum a -&gt; [a] -&gt; [a]</code></pre>
+<p>Our function is now implementable, but at the cost of having to pass around an additional two arguments everywhere we go. Unpleasant, but manageable. We have this extra problem now, is that our witnesses must be passed to the function in the right order. The more powerful the abstractions you write, the more constraints you need on your types, and thus the heavier these burdens become. Haskell98, for example, defines <a href="https://www.haskell.org/onlinereport/basic.html#standard-classes">16 basic typeclasses</a>. This is before you start writing your <em>own</em> abstractions.</p>
+<p>To digress for a moment, One of Elm’s features that I was genuinely excited about was its so-called <a href="http://elm-lang.org/docs/records#record-types">extensible records</a>. These are types which allow you to do things like this:</p>
+<pre class="elm"><code>type alias Positioned a = { a | x : Float
+                              , y : Float
+                              }</code></pre>
+<p>This says that a <code>Positioned a</code> is any <code>a</code> type which has <code>x</code> and <code>y</code> fields that are <code>Float</code>s. Despite being exceptionally poorly named (think about it – saying something is <code>: Positioned a</code> is strictly less information than saying it is <code>: a</code> for any non-polymorphic <code>a</code>), it’s a cool feature. It means we can project arbitrarily big types down to just the pieces that we need.</p>
+<p>This gave me a thought. If I can build arbitrarily large types and enforce that they have certain fields, it means we can collapse all of our witnesses into a single “directory” which contains all of the typeclass implementations we support. We add a new parameter to our earlier typeclass signatures, whose only purpose is to be polymorphic.</p>
+<pre class="elm"><code>type alias Enum t a = { t | elements : Array a
+                          }
+
+type alias Ord t a = { t | fromInt : Int -&gt; a
+                         , toInt   : a -&gt; Int
+                         }</code></pre>
+<p>We can look at this as now saying, a type <code>a</code> is well-ordered if and only if we can provide a witness record of type <code>t</code> containing fields <code>fromInt</code> and <code>toInt</code> with the correct type signatures. This record might <em>only</em> contain those fields, but it can also contain other fields – maybe like, fields for other typeclasses?</p>
+<p>Let’s do a quick sanity check to make sure we haven’t yet done anything atrocious.</p>
+<pre class="elm"><code>type Directions = North | East | West | South
+witness = { elements = fromList [ North, East, West, South ]
+          , fromInt  = -- elided for brevity
+          , toInt    = -- elided for brevity
+          }</code></pre>
+<p>To my dismay, in writing this post I learned that Elm’s repl (and presumably Elm as a language) doesn’t support inline type annotations. That is to say, it’s a syntax error to write <code>witness : Enum t Directions</code> at the term-level. This is an obvious inconsistency where these constraints can be declared at the type-level and then evaluated with the same terms. But I digress. Suffice to say, our witness magic is all valid, working Elm – so far, at least.</p>
+<p>Let’s take a moment to stop and think about what this extra type <code>t</code> has bought us. <code>Enum t a</code> is a proof that <code>a</code> is an enum, as indicated by a witness of type <code>t</code>. Since <code>t</code> has heretofore been polymorphic, it has conveyed no information to us, but this is not a requirement. Consider the type <code>Enum (Ord t a) a</code>, in which we have expanded our old polymorphic parameter into a further constraint on our witness – any <code>w : Enum (Ord t a) a</code> is now a witness that <code>a</code> is both an enum <em>and</em> well-ordered.</p>
+<p>This is a significant piece of the puzzle in our quest to <em>Scrap Our Typeclasses</em>. We can now bundle <em>all</em> of our typeclass witnesses into a single structure, which can be passed around freely. It’s still a little more work than having the compiler do it for us, but we’ve gone a long way in abstracting the problem away from user code.</p>
+<p>The final piece, is to provide an automatic means of deriving typeclasses and bundling our results together. Consider this: in our toy example, <code>Enum t a</code> already has an (ordered) array of the <code>elements</code> in the type. This ordering is <em>completely arbitrary</em> and just happened to be the same as which order the programmer typed them in, but it <em>is</em> an ordering. Knowing this, we should be able to get Elm to write us an <code>Ord t a</code> instance for any <code>Enum t a</code> we give it – if we don’t feel particularly in the mood to write it ourselves:</p>
+<pre class="elm"><code>derivingOrd : Enum t a -&gt; Ord (Enum t a) a
+derivingOrd w = { w
+                | fromInt = \i -&gt; get i w.elements
+                | toInt   = -- elided, but in the other direction
+                }</code></pre>
+<p>We send it off to Elm, and…</p>
+<pre>
+The type annotation for `derivingOrd` does not match its
+definition.
+
+13│ derivingOrd : Enum t a -> Ord (Enum t a) a
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+</pre>
+<p>…uh oh. We’ve broken Elm! The issue is that <code>{a | b = c}</code> is strictly record <em>update</em> syntax – it requires <code>a</code> to <em>already have</em> a <code>b</code> field. There is no corresponding syntax to <em>add</em> fields – not even if <code>a</code> is polymorphic and we don’t know that it <em>doesn’t</em> have field <code>b</code>.</p>
+<p><em>Prima facie</em>, it’s reasonable to stop here and think to ourselves, “oh, well I guess we can’t do this – there’s probably a good reason.” Regrettably, there is not a good reason. Nothing we’ve done so far is an unreasonable expectation of the type-checker; in fact, the only thing in our way is the parser. To reiterate, all we’re missing is the ability to add fields to a record.</p>
+<p><a href="https://github.com/elm-lang/elm-compiler/issues/1283">So I filed a bug</a>.</p>
+<p>As it turns out, <a href="http://elm-lang.org/blog/compilers-as-assistants">Elm used to support this feature</a>, but it was removed because “pretty much no one ever used field addition or deletion.” Forgive me for being pedantic here, let’s look at some statistics. At time of writing, there are <a href="https://github.com/search?o=desc&amp;q=language%3AElm&amp;ref=searchresults&amp;s=repositories&amp;type=Users&amp;utf8=%E2%9C%93">119 people who write Elm on GitHub</a>, who had written a total of <a href="https://github.com/search?q=created%3A%3C2015-11-19+language%3AElm+extension%3Aelm+language%3AElm+elm&amp;type=Repositories&amp;ref=searchresults">866 repositories</a> before this feature was removed.</p>
+<p>119 people<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a> failing to find a use-case for a bleeding-edge new feature shouldn’t be an extreme surprise to anyone, especially given that they had no guidance from the original authors on how to use this feature. Furthermore, the first mention of an open-union type facility (essentially what we’re trying to implement here) I can find reference to <a href="http://okmij.org/ftp/Haskell/extensible/exteff.pdf">was published in 2013</a> – not a huge amount of time to work its way into the cultural memeplex.</p>
+<p>My bug was closed with the explanation “<a href="https://github.com/elm-lang/elm-compiler/issues/1283#issuecomment-183515916">I don’t want to readd this feature.</a>” If I sound salty about this, it’s because I am. Here’s why:</p>
+<p>The thing that separates good programmers from OK ones is the ability to which they can develop abstractions. From the <a href="http://www.boost.org/">best</a> <a href="https://github.com/ekmett/lens">programmers</a> we get <a href="https://jquery.com/">libraries</a>, and the rest of us write applications that use those libraries. The reason we have libraries is to fix holes in the standard library, and to allow us to accomplish things we otherwise couldn’t.</p>
+<p>Elm takes a very peculiar stance on libraries. Libraries which don’t have the blessing of Czaplicki himself <a href="https://github.com/xdissent/elm-localstorage/issues/1#issuecomment-122585560">allegedly aren’t allowed to be published</a>.</p>
+<p>What. The. Fuck.</p>
+<p>But again I digress. Libraries exist to overcome shortcomings of the language. It’s okay to make library authors do annoying, heavy-lifting so that users don’t have to. Which is why I’m particularly salty about the whole “we couldn’t figure out a use for it” thing.</p>
+<p>Elm doesn’t have typeclasses, and doesn’t have a first-class solution in their interim. Instead, the naive approach requires a linear amount of boilerplate <em>per-use</em>, which is developer time being wasted continually reinventing the wheel. If Elm’s syntax supported it, we could solve this problem once and for all, put it in a library somewhere, get Czaplicki’s explicit go-ahead, and be done with it. But we can’t.</p>
+<p>In the worst case, given <span class="math inline">\(n\)</span> typeclasses, the naive solution requires <span class="math inline">\(O(n)\)</span> additional witnesses to be passed around at every function call. The proposal presented in this essay would bring this boilerplate to <span class="math inline">\(O(1)\)</span>. Definitely an improvement.</p>
+<p>But here’s the most deplorable state of affairs. Trying to power through with our witness approach <em>and retain type-safety while doing it</em> requires in a super-exponential amount of code to be written. Let’s see why:</p>
+<p>Given <span class="math inline">\(n\)</span> typeclasses, there are <span class="math inline">\(2^n\)</span> different combinations of having-them-or-not. Let’s group these sets by size – ie. how many typeclasses they contain – and assume we only need to lift from size <span class="math inline">\(k\)</span> to size <span class="math inline">\(k+1\)</span>. In this case, we’re left with <span class="math inline">\(2^{n-1}n\)</span> separate lifting functions we need to write in order to add any typeclass to any set of other typeclasses. Notice that this is not a worst-case, this is the exact solution to that problem. This is just the number of functions. Since each lift is required to explicitly reimplement all of the existing typeclasses, it grows at <span class="math inline">\(O(n)\)</span>, giving us a tight upper bound on the amount of code we need to write in order to achieve type-safety and witness compacting. Ready for it?</p>
+<p><span class="math inline">\(O(2^{n-1}n^2)\)</span></p>
+<p>That function grows so quickly it’s no longer super-exponential. It’s officially reached super-duper-exponential. We’ve hit ludicrous speed here, people. And the worst part is that it’s <em>all</em> boilerplate that we know how to write (because we already did it), but aren’t allowed to because Czaplicki can’t find a use-case for this feature.</p>
+<p>Hey! I found one! Pick me! Pick me!</p>
+<p>Elm gets around all of this complexity by ignoring it and making us do everything the hard way. There is no <code>map</code> function, but there are <code>List.map</code>, <code>Dict.map</code>, <code>Array.map</code> among others, and <em>none of them are related to one another</em>. This is not only annoying, but also breaks the abstract data-type guarantee: our call-sites are now tightly coupled to our implementation details. If I decide to change from a <code>List a</code> to an <code>Array a</code> for efficiency reasons, my <em>whole codebase needs to know about it</em>.</p>
+<p>Haskell solved this problem with typeclasses. OOP with single-dispatch. Elm mysteriously seems to follow in PHP’s footsteps of having lots-and-lots of really similar functions (for all intents and purposes being in the same namespace), saying “fuck it! we’ll do it live!”.</p>
+<p>I have another million complaints about other semantics of Elm’s design, but in comparison they seem small and this post is already long enough. It’s such a shame that Elm is so terrible from a PL standpoint. Its rendering primitives are state-of-the-art, and I really wanted to like it despite myself.</p>
+<p>Too bad. As it turns out that really wanting to like Elm isn’t enough to actually like Elm.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Haskell’s tuples stop working in a very real way at 63 elements, but that’s at least far into the realm of <a href="http://mindingourway.com/respect-for-large-numbers/">unimaginably large</a>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>Integers have this property. Shapes don’t.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>Of whom, we can assume the majority are web-programmers, and, by association, that Elm’s is likely the strongest type-system to which they have been exposed.<a href="#fnref3" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/ideas-and-men">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/free-stories">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "elm-is-wrong";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2019 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

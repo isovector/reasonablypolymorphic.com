@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Devlog: Action Menus, Timers and Hit Detection :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+          <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+          ga('create', 'UA-76834556-1', 'auto');
+          ga('send', 'pageview');
+          </script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/action-menus">Devlog: Action Menus, Timers and Hit Detection</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/why-take-ecstasy">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/navigation">&rarr;</a>
+    </span>
+    <time>February  1, 2018</time>
+
+    <span class="tags">
+        <a href="/tags/devlog.html">devlog</a>, <a href="/tags/neptune.html">neptune</a>
+    </span>
+</p>
+<div class="content">
+    <p>The other day, I found myself working on the interaction subsystem of my game engine. I want the game to <a href="https://youtu.be/v8eNzUtCVlY?t=863">play like Monkey Island 3</a>, which means you can click on the ground to walk there. You can also click and hold on an interactive piece of scenery in order to have a context-sensitive menu pop-up, from which you can choose how to interact with the object in question. If you’re not familiar with the genre, watching a few minutes of the video linked above should give you some idea of what I’m trying to build.</p>
+<p>An adventure game in which you’re unable to interact with anything isn’t much of a game, and that’s where we left the engine. So it seemed like a thing to focus on next.</p>
+<p>I knew that click/hold interaction that I wanted formed some sort of <a href="https://en.wikipedia.org/wiki/Deterministic_finite_automaton">DFA</a>, so I unwisely headed down that garden path for a bit. After implementing a bit, I found a state machine with the denotation of <code>type DFA s e a = s -&gt; e -&gt; Either s a</code>, where <code>s</code> is the state of the machine, <code>e</code> is the type of an edge transition, and <code>a</code> is the eventual output of the machine. Upon the final result, however, it became clear that I had fallen into an abstraction hole. I spent a bunch of time figuring out the implementation of this thing, and then afterwards realized it didn’t actually solve my problem. Whoops. Amateur Haskell mistake :)</p>
+<p>The problem is that transitioning into some state might need to make a monadic action in order to generate the next edge. For example, when you press down on the mouse button, we need to start a timer which will open the action menu when it expires. This could be alleviated by changing <code>Either</code> to <code>These</code> and letting <code>a ~ (Monad m =&gt; m b)</code>, but that struck me as a pretty ugly hack, and getting the implementation of the denotation to work again was yucky.</p>
+<p>So I decided that instead maybe I should write a dumb version of what I wanted, and find out how to abstract it later if I should need similar machinery again in the future. I burned my <code>DFA</code> implementation in a fire.</p>
+<p>This posed a problem, though, because if I wanted to write this for real I was going to need things to actually interact with, and I didn’t yet have those. I decided to put the interaction sprint on hold, in order to focus more on having things with which to interact.</p>
+<p>One abstraction I think in terms of when working with adventure games is that of the <strong>hotspot</strong>. A hotspot is a mask on the background image which indicates a static piece of interesting geometry. For example, a window that never moves would be baked into the background image of the room, and then a hotspot would be masked on top of it to allow the character to interact with it.</p>
+<p>For example, if our room looks like this (thanks to MI2 for the temporary art):</p>
+<figure>
+<img src="/images/bg.png" alt="room background" /><figcaption>room background</figcaption>
+</figure>
+<p>Then our mask image would look like this:</p>
+<figure>
+<img src="/images/mask.png" alt="room mask" /><figcaption>room mask</figcaption>
+</figure>
+<p>We can add some logic to be able to read the mask:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1">mkHotspot</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ot">    ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    <span class="ot">-&gt;</span> (<span class="dt">Word8</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="ot">-&gt;</span> <span class="dt">Hotspot</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    <span class="ot">-&gt;</span> <span class="dt">Pos</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Hotspot</span></a>
+<a class="sourceLine" id="cb1-7" title="7">mkHotspot img f h <span class="fu">=</span> bool <span class="dt">Nothing</span> (<span class="dt">Just</span> h)</a>
+<a class="sourceLine" id="cb1-8" title="8">                  <span class="fu">.</span> f</a>
+<a class="sourceLine" id="cb1-9" title="9">                  <span class="fu">.</span> getHotspotByte</a>
+<a class="sourceLine" id="cb1-10" title="10">                  <span class="fu">.</span> <span class="fu">uncurry</span> (pixelAt img)</a>
+<a class="sourceLine" id="cb1-11" title="11">                  <span class="fu">.</span> (\(<span class="dt">V2</span> x y) <span class="ot">-&gt;</span> (x, y))</a>
+<a class="sourceLine" id="cb1-12" title="12">                  <span class="fu">.</span> clampToWorld</a>
+<a class="sourceLine" id="cb1-13" title="13">                  <span class="fu">.</span> <span class="fu">fmap</span> <span class="fu">round</span></a>
+<a class="sourceLine" id="cb1-14" title="14">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-15" title="15">    clampToWorld <span class="fu">=</span> clamp (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="fu">$</span> imageSize img</a>
+<a class="sourceLine" id="cb1-16" title="16">    getHotspotByte (<span class="dt">PixelRGBA8</span> _ g _ _) <span class="fu">=</span> g</a></code></pre></div>
+<p>and now bake the first three parameters of this function when we construct our level definition.</p>
+<p>In order to test these things, I gave added a field <code>_hsName :: Hotspot -&gt; String</code> in order to be able to test if my logic worked. The next step was to bind the click event to be able to call the <code>Pos -&gt; Maybe Hotspot</code> that I curried out of <code>mkHotspot</code> and stuck into my <code>Room</code> datastructure (<code>_hotspots :: Room -&gt; Pos -&gt; Maybe Hotspot</code>).</p>
+<p>I clicked around a bunch, and found that <code>print . fmap _hsName $ _hotspots currentRoom mousePos</code> lined up with the door when I clicked on it. It seemed to be working, so I considered my first yak shave successful: I now had something in the world that I could interact with.</p>
+<p>The next step was to code up a little bit of the DFA I was originally working on. I decided that I should make the avatar walk to the place you clicked if it wasn’t a hotspot.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">case</span> event <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  <span class="dt">MouseButton</span> <span class="dt">Down</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">    <span class="kw">case</span> _hotspots currentRoom mousePos <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-4" title="4">      <span class="dt">Just</span> hs <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">        <span class="fu">print</span> <span class="fu">$</span> _hsName hs</a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-8" title="8">        when (isWalkable (_navmesh currentRoom) mousePos) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-9" title="9">          emap <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-10" title="10">            with isAvatar</a>
+<a class="sourceLine" id="cb2-11" title="11">            <span class="fu">pure</span> defEntity&#39;</a>
+<a class="sourceLine" id="cb2-12" title="12">              { pathing <span class="fu">=</span> <span class="dt">Set</span> <span class="fu">$</span> <span class="dt">NavTo</span> mousePos</a>
+<a class="sourceLine" id="cb2-13" title="13">              }</a></code></pre></div>
+<p>So: when the mouse is pressed, see if it was over top of a hotspot. If so, print out the name of it. Otherwise, check the navmesh of the room, and see if that’s a valid place to walk. If so, update any entity who has the <code>isAvatar</code> component and set its <code>pathing</code> component to be the location we want.</p>
+<p>The engine at this point already has navigation primitives, which is why this works. We’ll discuss how the navmesh is generated and used in another devlog post.</p>
+<p>I ran this code and played around with it for a while. Everything looked good – after I remembered to set <code>isAvatar</code> on my player entity :)</p>
+<p>The next step was to implement timers that would have a callback, and could be started and stopped. I’d need support for these in order to wait a little bit before opening up the action menu. Thankfully, timers are super easy: just have an amount of time you decrement every frame until it hits zero, and then do the necessary action. I came up with this model for timers:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">data</span> <span class="dt">Timer</span> <span class="fu">=</span> <span class="dt">Timer</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  {<span class="ot"> _tTime     ::</span> <span class="dt">Time</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  ,<span class="ot"> _tCallback ::</span> <span class="dt">Game</span> ()</a>
+<a class="sourceLine" id="cb3-4" title="4">  }</a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw">data</span> <span class="dt">TimerType</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="fu">=</span> <span class="dt">TimerCoin</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</a>
+<a class="sourceLine" id="cb3-9" title="9"></a>
+<a class="sourceLine" id="cb3-10" title="10"><span class="kw">data</span> <span class="dt">GlobalState</span> <span class="fu">=</span> <span class="dt">GlobalState</span></a>
+<a class="sourceLine" id="cb3-11" title="11">  { <span class="fu">...</span> <span class="co">-- other stuff</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  ,<span class="ot"> _timers ::</span> <span class="dt">Map</span> <span class="dt">TimerType</span> <span class="dt">Timer</span></a>
+<a class="sourceLine" id="cb3-13" title="13">  }</a></code></pre></div>
+<p>A <code>Timer</code> is just an amount of remaining time and something to do afterwards. It’s stored in the <code>GlobalState</code> with a <code>TimerType</code> key. I originally thought about using a bigger type (such as <code>Int</code>) as my timer key, but realized that would make canceling specific timers harder as it would imply they’re given a non-deterministic key when started. The interface for starting and canceling timers turned out to be trivial:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="ot">startTimer ::</span> <span class="dt">TimerType</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> () <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</a>
+<a class="sourceLine" id="cb4-2" title="2">startTimer tt t cb <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  setGlobals <span class="fu">$</span> timers <span class="fu">.</span> at tt <span class="fu">?~</span> <span class="dt">Timer</span> t cb</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="ot">cancelTimer ::</span> <span class="dt">TimerType</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</a>
+<a class="sourceLine" id="cb4-6" title="6">cancelTimer tt <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  setGlobals <span class="fu">$</span> timers <span class="fu">.</span> at tt <span class="fu">.~</span> <span class="dt">Nothing</span></a></code></pre></div>
+<p>The only thing left is to update timers and run their callbacks when it’s time. I fucked around with this implementation too hard, trying to find a completely lensy way of doing it, but eventually settled on this ugly <code>fromList . toList</code> thing:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="ot">updateTimers ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</a>
+<a class="sourceLine" id="cb5-2" title="2">updateTimers dt <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  ts  <span class="ot">&lt;-</span> getGlobals <span class="fu">$</span> view timers</a>
+<a class="sourceLine" id="cb5-4" title="4">  ts&#39; <span class="ot">&lt;-</span> forOf <span class="fu">traverse</span> ts <span class="fu">$</span> \t <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb5-5" title="5">           <span class="kw">if</span> _tTime t <span class="fu">-</span> dt <span class="fu">&lt;=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb5-6" title="6">             <span class="kw">then</span> _tCallback t <span class="fu">$&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb5-7" title="7">             <span class="kw">else</span> <span class="fu">pure</span> <span class="fu">.</span> <span class="dt">Just</span></a>
+<a class="sourceLine" id="cb5-8" title="8">                       <span class="fu">$</span> t <span class="fu">&amp;</span> tTime <span class="fu">-~</span> dt</a>
+<a class="sourceLine" id="cb5-9" title="9"></a>
+<a class="sourceLine" id="cb5-10" title="10">  setGlobals <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-11" title="11">    timers <span class="fu">.~</span> M.fromList (catMaybes <span class="fu">.</span> <span class="fu">fmap</span> <span class="fu">sequence</span> <span class="fu">$</span> M.toList ts&#39;)</a></code></pre></div>
+<p><code>ts'</code> is a traversal over the <code>Map</code> of timers, that decrements each of their times, optionally runs their callbacks, then returns a <code>Mayber Timer</code> for each one. The last line is where the interesting bit is – <code>sequence</code> over a <code>(TimerType, Maybe Timer)</code> is a <code>Maybe (TimerType, Timer)</code>, which we can then insert back into our <code>Map</code> as we construct it – essentially filtering out any timers which have expired.</p>
+<p>Finally we can get back to our DFA. Instead of printing out the name of the hotspot you clicked on, we can now start a timer that will update our game state. I added a field to <code>GlobalState</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">data</span> <span class="dt">GlobalState</span> <span class="fu">=</span> <span class="dt">GlobalState</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  { <span class="fu">...</span> <span class="co">-- other stuff</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  ,<span class="ot"> _gInputDFA ::</span> <span class="dt">InputDFA</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  }</a>
+<a class="sourceLine" id="cb6-5" title="5"></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">data</span> <span class="dt">InputDFA</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="fu">=</span> <span class="dt">IStart</span></a>
+<a class="sourceLine" id="cb6-8" title="8">  <span class="fu">|</span> <span class="dt">IBeforeCoin</span></a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="fu">|</span> <span class="dt">ICoinOpen</span> <span class="dt">Pos</span> <span class="dt">HotSpot</span></a>
+<a class="sourceLine" id="cb6-10" title="10">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</a></code></pre></div>
+<p>The idea is that we start in state <code>IStart</code>, transition into <code>IBeforeCoin</code> when we start the timer, and into <code>ICoinOpen</code> when the timer expires. Additionally, if the user releases the mouse button, we want to cancel the timer. All of this becomes:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">case</span> (_gInputDFA globalState, event) <span class="kw">of</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  (<span class="dt">IStart</span>, <span class="dt">MouseButton</span> <span class="dt">Down</span>) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="kw">case</span> _hotspots currentRoom mousePos <span class="kw">of</span></a>
+<a class="sourceLine" id="cb7-4" title="4">      <span class="dt">Just</span> hs <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-5" title="5">        startTimer <span class="dt">TimerCoin</span> <span class="fl">0.5</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-6" title="6">          setGlobals <span class="fu">$</span> gInputDFA <span class="fu">.~</span> <span class="dt">ICoinOpen</span> mousePos hs</a>
+<a class="sourceLine" id="cb7-7" title="7">        setGlobals <span class="fu">$</span> gInputDFA <span class="fu">.~</span> <span class="dt">IBeforeCoin</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9">      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-10" title="10">        <span class="co">-- as before</span></a>
+<a class="sourceLine" id="cb7-11" title="11"></a>
+<a class="sourceLine" id="cb7-12" title="12">  (<span class="dt">IBeforeCoin</span>, <span class="dt">MouseButton</span> <span class="dt">Up</span>) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-13" title="13">    cancelTimer <span class="dt">TimerCoin</span></a>
+<a class="sourceLine" id="cb7-14" title="14">    setGlobals <span class="fu">$</span> gInputDFA <span class="fu">.~</span> <span class="dt">IStart</span></a>
+<a class="sourceLine" id="cb7-15" title="15"></a>
+<a class="sourceLine" id="cb7-16" title="16">  (<span class="dt">ICoinOpen</span> p hs, <span class="dt">MouseButton</span> <span class="dt">Up</span>) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-17" title="17">    <span class="kw">let</span> verb <span class="fu">=</span> getBBSurface (coinSurface p) mousePos</a>
+<a class="sourceLine" id="cb7-18" title="18">    for_ verb <span class="fu">$</span> doInteraction hs</a>
+<a class="sourceLine" id="cb7-19" title="19">    setGlobals <span class="fu">$</span> gInputDFA <span class="fu">.~</span> <span class="dt">IStart</span></a></code></pre></div>
+<p>If you care, try to trace through these cases and convince yourself that this logic is correct. The reason we have a position stored inside the <code>ICoinOpen</code> is so that we know where the mouse was when the user started holding their mouse down. This corresponds to where we should draw the action menu.</p>
+<p>This is done in the drawing routine by checking the current state of <code>_gInputDFA</code> – if it’s <code>ICoinOpen</code> it means the menu is up and we need to draw it.</p>
+<p>The only last thing is how can we map where you release your mouse button on the menu to what interaction we should do. Our action menu looks like this:</p>
+<figure>
+<img src="/images/actionbar.png" alt="the action menu" /><figcaption>the action menu</figcaption>
+</figure>
+<p>From left to right, these squares represent talking/eating, examining, and manipulating. We need some way of mapping a location on this image to a desired outcome.</p>
+<p>Doing rectangle collision is easy enough – we define a bounding box and a test to see if a point is inside of it (as well as some auxiliary functions for constructing and moving <code>BB</code>s, elided here):</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">data</span> <span class="dt">BB</span> <span class="fu">=</span> <span class="dt">BB</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  {<span class="ot"> leftX   ::</span> <span class="dt">Float</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  ,<span class="ot"> rightX  ::</span> <span class="dt">Float</span></a>
+<a class="sourceLine" id="cb8-4" title="4">  ,<span class="ot"> topY    ::</span> <span class="dt">Float</span></a>
+<a class="sourceLine" id="cb8-5" title="5">  ,<span class="ot"> bottomY ::</span> <span class="dt">Float</span></a>
+<a class="sourceLine" id="cb8-6" title="6">  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb8-7" title="7"></a>
+<a class="sourceLine" id="cb8-8" title="8"></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="ot">inBB ::</span> <span class="dt">BB</span> <span class="ot">-&gt;</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb8-10" title="10">inBB <span class="dt">BB</span>{<span class="fu">..</span>} (<span class="dt">V2</span> x y) <span class="fu">=</span> <span class="fu">and</span></a>
+<a class="sourceLine" id="cb8-11" title="11">  [ x <span class="fu">&gt;=</span> leftX</a>
+<a class="sourceLine" id="cb8-12" title="12">  , x <span class="fu">&lt;</span>  rightX</a>
+<a class="sourceLine" id="cb8-13" title="13">  , y <span class="fu">&gt;=</span> topY</a>
+<a class="sourceLine" id="cb8-14" title="14">  , y <span class="fu">&lt;</span>  bottomY</a>
+<a class="sourceLine" id="cb8-15" title="15">  ]</a>
+<a class="sourceLine" id="cb8-16" title="16"></a>
+<a class="sourceLine" id="cb8-17" title="17"><span class="ot">rectBB ::</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">BB</span></a>
+<a class="sourceLine" id="cb8-18" title="18"><span class="ot">moveBB ::</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">BB</span> <span class="ot">-&gt;</span> <span class="dt">BB</span></a></code></pre></div>
+<p>The final step is to somehow map these bounding boxes to things we want to return. This seems like it’ll be a recurring theme, so we build some machinery for it:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">data</span> <span class="dt">BBSurface</span> a <span class="fu">=</span> <span class="dt">BBSurface</span> [(<span class="dt">BB</span>, a)]</a>
+<a class="sourceLine" id="cb9-3" title="3">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb9-4" title="4"></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="ot">getBBSurface ::</span> <span class="dt">BBSurface</span> a <span class="ot">-&gt;</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
+<a class="sourceLine" id="cb9-6" title="6">getBBSurface (<span class="dt">BBSurface</span> bs) p <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-7" title="7">  getFirst <span class="fu">.</span> <span class="fu">flip</span> <span class="fu">foldMap</span> bs <span class="fu">$</span> \(b, a) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-8" title="8">    <span class="kw">if</span> inBB b p</a>
+<a class="sourceLine" id="cb9-9" title="9">       <span class="kw">then</span> <span class="dt">First</span> <span class="fu">$</span> <span class="dt">Just</span> a</a>
+<a class="sourceLine" id="cb9-10" title="10">       <span class="kw">else</span> <span class="dt">First</span> <span class="fu">$</span> <span class="dt">Nothing</span></a></code></pre></div>
+<p>The abstraction is my amazingly-named <code>BBSurface</code>, which is a mapping of <code>BB</code>s to values of some type <code>a</code>. We can find a <code>Maybe a</code> on the <code>BBSurface</code> by just checking if the point is in any of the bounding boxes. If it is, we return the first value we find.</p>
+<p>All that’s left is to construct one of these <code>BBSurface</code>s for the coin, and then to move it to the position indicated inside the <code>ICoinOpen</code>. Easy as pie. Pulling everything together, and our interactive menu works as expected. Great success!</p>
+<p>Next time we’ll talk about navigation. Thanks for reading!</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/why-take-ecstasy">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/navigation">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "action-menus";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2019 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

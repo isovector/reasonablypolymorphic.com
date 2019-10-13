@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Wake Up and Smell the Cofree Comonads :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+          <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+          ga('create', 'UA-76834556-1', 'auto');
+          ga('send', 'pageview');
+          </script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/cofree-comonads">Wake Up and Smell the Cofree Comonads</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/free-stories">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/zap">&rarr;</a>
+    </span>
+    <time>June  5, 2016</time>
+
+    <span class="tags">
+        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/dsl.html">dsl</a>, <a href="/tags/rpg.html">rpg</a>
+    </span>
+</p>
+<div class="content">
+    <p>In the last post in this series, we talked about the rough sketch of an idea on how we might be able to make procedurally generated RPG stories. The general approach is this: make a super simple core set of story primitives, and then build more interesting abstractions on top of them.</p>
+<p>Simplicity of our underlying language is desirable for a few reasons. The smaller our set of primitives, the easier a time we’re going to have proving things about what we can do with them. One thing we can do with them, particularly relevant to today’s discussion, is to provide an interpretation.</p>
+<p>If you haven’t read <a href="/blog/free-stories">the previous post in this series</a>, now would probably be a good time.</p>
+<p>Remember, the reason we wanted to build a DSL behind our story generation was so that we could use it to separate the <em>structure</em> of our story from its <em>interpretation</em>.</p>
+<p>Last time, we used free monads over our command functor to generate our DSL. I promised today we’d use cofree comonads to interpret our language, but there is a lot of intermediate motivating material I want to get through before we discuss that. So without further ado, let’s talk about duality.</p>
+<h2 id="duality">Duality</h2>
+<p>At first blush, duality can be understood as the mathematical version of bizarro world.</p>
+<p><img src="/images/bizarro.jpg" title="Duality is just like this." width="620" /></p>
+<p>As a good rule of thumb, if I have some interesting mathematical object <span class="math inline">\(X\)</span>, then its dual, co-<span class="math inline">\(X\)</span>, is the <em>opposite</em> mathematical object, and is also interesting.</p>
+<p>But what does opposite mean, here?</p>
+<p>I’m by no means a mathematician (yet!), but, to a (very) rough approximation, a dual is constructed by flipping all of your arrows backwards. What arrows, you might ask? Well, that’s a good question. Let’s look at an example. It’ll involve drawing pretty pictures, so make sure you have your copy book ready.</p>
+<h3 id="products-and-coproducts">Products and coproducts</h3>
+<p>Okay, so given <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>, we have <span class="math inline">\((a, b)\in A \times B\)</span>, and we call this <span class="math inline">\((a, b)\)</span> a (cartesian) product. Intuitively, a product is pair of two things, wrapped up together in a nice little package. The words “product” and “pair” are interchangeable, so go wild with it!</p>
+<p>More formally, we can encode the idea of a product thusly:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">prod ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> (b, c)</a>
+<a class="sourceLine" id="cb1-2" title="2">prod f g a <span class="fu">=</span> (f a, g a)</a></code></pre></div>
+<p>Which is to say, given two functions, <code>a -&gt; b</code> and <code>a -&gt; c</code>, we can create a new function which maps <code>a -&gt; (b, c)</code>. The fact that <code>prod</code> is polymorphic in all <code>a</code>, <code>b</code>, <code>c</code> <a href="/blog/love-types">should be telling</a> that we’re onto something here.</p>
+<p>Let’s dive in a little further, and investigate this notion as a <a href="https://en.wikipedia.org/wiki/Commutative_diagram">commutative diagram</a>, because the idea of duality is a little easier to investigate in that context. Our <code>prod</code> function above can also be encoded equivalently by this diagram:</p>
+<p><span class="math display">\[
+\begin{xy}
+\xymatrix {
+A \ar@/_/[ddr]_f \ar@{.&gt;}[dr]|{prod} \ar@/^/[drr]^g \\
+ &amp; B \times C \ar[d]^{fst} \ar[r]_{snd} &amp; C \\
+ &amp; B
+}
+\end{xy}
+\]</span></p>
+<p>If you view the capital letters as types and the arrows as functions, this corresponds perfectly with our <code>product</code> function as written above. The solid arrows are ones we know that exist, and the dashed line is our proposition: “if everything else in this picture holds, this arrow exists.”</p>
+<p>So: the million dollar question. What happens when we flip all of our arrows around? We get this diagram:</p>
+<p><span class="math display">\[
+\begin{xy}
+\xymatrix {
+&amp; C \ar@/^/[ddr]^g \ar[d] \\
+B \ar[r] \ar@/_/[drr]_f &amp; ? \ar@{.&gt;}[dr]|{coprod} \\
+&amp; &amp; A
+}
+\end{xy}
+\]</span></p>
+<p>Which of course corresponds with this in Haskell:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="ot">coprod ::</span> (b <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (c <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Coproduct</span> b c <span class="ot">-&gt;</span> a</a></code></pre></div>
+<p>You probably know what this is, but let’s pretend like we don’t, and see if Hoogle can answer this for us. Spoilers, <a href="https://www.haskell.org/hoogle/?hoogle=%28b+-%3E+a%29+-%3E+%28c+-%3E+a%29+-%3E+coproduct+b+c+-%3E+a">it can</a>. That’s right! It’s our old friend <code>either</code>!</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="fu">either</span><span class="ot"> ::</span> (b <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (c <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Either</span> b c <span class="ot">-&gt;</span> a</a></code></pre></div>
+<p>Cool! So a coproduct is a <a href="https://en.wikipedia.org/wiki/Tagged_union">sum type</a>, and is the dual to the product type. For the sake of completeness, let’s fill in all of the missing labels on our diagram.</p>
+<p><span class="math display">\[
+\begin{xy}
+\xymatrix {
+&amp; C \ar@/^/[ddr]^g \ar[d]_{Right} \\
+B \ar[r]^{Left} \ar@/_/[drr]_f &amp; B+C \ar@{.&gt;}[dr]|{either} \\
+&amp; &amp; A
+}
+\end{xy}
+\]</span></p>
+<p>Notice that our interesting product type had an interesting dual. This is theme we will continuously take advantage of.</p>
+<p>It is left as an exercise to the reader to prove that the dual of the coproduct is the product (this is not a very hard proof since arrows only have two ends).</p>
+<h3 id="monads-and-comonads">Monads and comonads</h3>
+<p>Lovely. Armed with our new superpower of duality, we’re now ready to take on comonads. Judging from the name, we should expect them to be dual to monads. Recall that a monad <code>m</code> is defined by two functions:</p>
+<ul>
+<li><code>return :: a -&gt; m a</code></li>
+<li><code>(&gt;&gt;=) :: m a -&gt; (a -&gt; m b) -&gt; m b</code></li>
+</ul>
+<p>Let’s flip the arrows around, and since we’re flipping everything else, we’ll refer to our comonad as <code>w</code>, which is defined by two functions dual to the monad’s:</p>
+<ul>
+<li><code>extract :: w a -&gt; a</code></li>
+<li><code>extend :: w b -&gt; (w b -&gt; a) -&gt; w a</code></li>
+</ul>
+<p>The full intuition behind comonads is left as an exercise to the reader (<a href="/blog/ideas-and-men">my monad tutorial</a> didn’t go too well), but a good starting point is this: while monads are for building up a computation <em>in</em> a context, comonads compute values <em>from</em> a context.</p>
+<p>The canonical example of a comonad is <a href="http://blog.emillon.org/posts/2012-10-18-comonadic-life.html">Conway’s game of life</a> (a cell is alive or dead based on how lively its neighborhood is.) Another particularly amazing example is <a href="https://vimeo.com/100176795">spreadsheets</a> (the value of a cell depends on the value of other cells it references.)</p>
+<h2 id="wake-up-and-smell-the-cofree">Wake up and smell the cofree</h2>
+<p>Recall the definition of the free monad:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">data</span> <span class="dt">Free</span> f a <span class="fu">=</span> <span class="dt">Pure</span> a</a>
+<a class="sourceLine" id="cb4-2" title="2">              <span class="fu">|</span> <span class="dt">Bind</span> (f (<span class="dt">Free</span> f a))</a></code></pre></div>
+<p>Now that I’ve primed you, it should be pretty clear that this is a sum type – <code>Free f a</code> is <em>either</em> a <code>Pure a</code> <em>or</em> a <code>Bind (f (Free f a))</code>. There are no function arrows to flip around, so we can dualize this trivially now that we know products and coproducts are duals of one another:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">data</span> <span class="dt">Cofree</span> f a <span class="fu">=</span> <span class="dt">Cofree</span> a (f (<span class="dt">Cofree</span> f a))</a></code></pre></div>
+<p>Again, it’s hard to get a sense of what this might mean just by looking at it. Let’s throw some concrete functors at it:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">data</span> <span class="dt">Cofree</span> <span class="dt">Maybe</span> a <span class="fu">=</span> <span class="dt">Cofree</span> a (<span class="dt">Maybe</span> (<span class="dt">Cofree</span> <span class="dt">Maybe</span> a))</a></code></pre></div>
+<p>Whoa! Look at that! <code>Cofree Maybe a</code> is at least one <code>a</code>, followed by maybe more. That’s just a non-null list in disguise! Veeeery interesting, no? I wonder what happens if we slap in the list functor instead:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">data</span> <span class="dt">Cofree</span> [] a <span class="fu">=</span> <span class="dt">Cofree</span> a [<span class="dt">Cofree</span> [] a]</a></code></pre></div>
+<p>Hey, this one is equivalent to a rose tree – an <code>n-ary</code> tree with data <em>at every branch</em>.</p>
+<p>We must be onto something here – those are pretty different data structures, and we got them just by changing the functor underlying our <code>Cofree</code>.</p>
+<p>As you might expect, <code>Cofree</code> is thusly named because it generates trivial comonads for free (as in time) given a functor <code>f</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">instance</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Comonad</span> (<span class="dt">Cofree</span> f) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" title="2">    extract   (<span class="dt">Cofree</span> a _ )   <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb8-3" title="3">    extend wb<span class="fu">@</span>(<span class="dt">Cofree</span> _ bc) f <span class="fu">=</span> <span class="dt">Cofree</span> (f wb) (<span class="fu">fmap</span> (<span class="ot">`extend`</span> f) bc)</a></code></pre></div>
+<p>It’s probably the dumbest comonad instance imaginable – there is no context to extract values from, we just pull out the <code>a</code> we have. But again, it’s good that our instance is stupid. That’s what we want – that’s why we made it.</p>
+<p>Unfortunately it’s a little harder for us to bask in the glory of having a cofree comonad – comonads don’t give rise to unique syntax in Haskell, so we’ll just have to be content with the fact that our instance compiles.</p>
+<p>This feels like a natural place to end off, so we will. Next time around we’ll take a look at adjunctions, how they give rise to pairings between functors, and how we can use that machinery to automatically pair our cofree comonads with our free monads into one mega DSL-implementing wonder device.</p>
+<p>Until then!</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/free-stories">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/zap">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "cofree-comonads";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2019 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

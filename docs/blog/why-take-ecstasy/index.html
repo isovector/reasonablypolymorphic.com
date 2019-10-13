@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Why Take Ecstasy :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+          <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+          ga('create', 'UA-76834556-1', 'auto');
+          ga('send', 'pageview');
+          </script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/why-take-ecstasy">Why Take Ecstasy</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/starting-a-game-engine">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/action-menus">&rarr;</a>
+    </span>
+    <time>January 28, 2018</time>
+
+    <span class="tags">
+        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/dsl.html">dsl</a>, <a href="/tags/design.html">design</a>, <a href="/tags/type trickery.html">type trickery</a>
+    </span>
+</p>
+<div class="content">
+    <p><a href="https://www.reddit.com/user/Ahri">/u/Ahri</a> asked on reddit about <a href="http://reasonablypolymorphic.com/blog/starting-a-game-engine">yesterday’s post</a>,</p>
+<blockquote>
+<p>Perhaps you could explain a little bit about your choice to write <a href="https://github.com/isovector/ecstasy">ecstasy</a> rather than to use apecs? I’ve not used apecs, I’m just interested as I had done some limited research into writing games in Haskell and apecs seemed to have traction.</p>
+</blockquote>
+<p>That seems like a really good idea, and combined with the fact that I really haven’t published anything about <a href="https://github.com/isovector/ecstasy"><code>ecstasy</code></a> suggested I actually write about it!</p>
+<h2 id="what-is-an-ecs">What is an ECS?</h2>
+<p>So before diving in, let’s take a look at the problem an entity-component-system (ECS) solves. Let’s say we’re writing a simple 2D platformer, we’ll have dudes who can run around and jump on platforms.</p>
+<p>The way I’d go about writing this before knowing about ECS would be to implement one feature at a time, generally using the player character to test it as I went. I write functions that look something like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">moveActor ::</span> <span class="dt">Controller</span> <span class="ot">-&gt;</span> <span class="dt">Actor</span> <span class="ot">-&gt;</span> <span class="dt">Actor</span></a>
+<a class="sourceLine" id="cb1-2" title="2">moveActor ctrl actor <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  actor <span class="fu">&amp;</span> actorPos <span class="fu">+~</span> movingDirection ctrl</a></code></pre></div>
+<p>and then provide some types to hold all of the world together:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">data</span> <span class="dt">Universe</span> <span class="fu">=</span> <span class="dt">Universe</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  {<span class="ot"> _uPlayer       ::</span> <span class="dt">Actor</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  ,<span class="ot"> _uPlayerCtrl   ::</span> <span class="dt">Controller</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  ,<span class="ot"> _uCurrentLevel ::</span> <span class="dt">Level</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  }</a>
+<a class="sourceLine" id="cb2-6" title="6"></a>
+<a class="sourceLine" id="cb2-7" title="7"><span class="kw">data</span> <span class="dt">Level</span> <span class="fu">=</span> <span class="dt">Level</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  {<span class="ot"> _lActors ::</span> [<span class="dt">Actor</span>]</a>
+<a class="sourceLine" id="cb2-9" title="9">  }</a></code></pre></div>
+<p>and finally write some glue code to lift <code>moveActor</code> over the universe.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">updateUniverse ::</span> <span class="dt">Universe</span> <span class="ot">-&gt;</span> <span class="dt">Universe</span></a>
+<a class="sourceLine" id="cb3-2" title="2">updateUniverse u<span class="fu">@</span><span class="dt">Universe</span>{<span class="fu">..</span>} <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  u <span class="fu">&amp;</span> uPlayer <span class="fu">%~</span> moveActor _uPlayerCtrl</a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="fu">&amp;</span> uCurrentLevel <span class="fu">.</span> lActors <span class="fu">.</span> <span class="fu">traverse</span> <span class="fu">%~</span> moveActor someCtrl</a></code></pre></div>
+<p>On the surface this feels good. We’ve reused the code for <code>moveActor</code> for both the player and any other dudes on the level who might want to walk around. It feels like we can build up from here, and compose pieces as we go.</p>
+<p>Which is true if you’re really patient, good at refactoring, or have spent a lot of time building things like this and know where you’re going to run afoul. Because you’re always going to run afoul in software.</p>
+<p>The problem with our first attempt at this code is that it codifies a lot of implicit assumptions about our game. For example, did you notice that it implies we’ll always have an <code>Actor</code> for the player? It seems like a reasonable assumption, but what if you want to play a cut-scene? Or how about if you don’t want to always have control over the player? Maybe you’ve just been hit by something big that should exert some acceleration on you, and you don’t want to be able to just press the opposite direction on the control stick to negate it.</p>
+<p>All of a sudden, as you try to code for these things, your simple <code>moveActor</code> function takes more and more parameters about the context of the circumstances in which it’s running. And what’s worse is that often the rules of how these behaviors should play out will change depending on whether its the player or some enemy in the level. We’re left with a conundrum – should we build ad-hoc infrastructure around the callers of <code>moveActor</code> or should we put all of the logic inside of it?</p>
+<p>As you can imagine, it pretty quickly becomes a mess.</p>
+<p>In one of the few times I’ll praise object-oriented programming, I have to say that its inheritance-based polymorphism lends itself well to this problem. You can build more complicated and specific behaviors out of your ancestors’ behaviors. Unfortunately, this approach bucks the OOP best-practice of “composition over inheritance.”</p>
+<p>ECS takes what I consider to be the functional-programming-equivalent of this OOP strategy. It’s fundamental stake in the ground is that rather than representing your universe of game objects as an array-of-structs, you instead represent it as a struct-of-arrays. Conceptually, this is a cognitive shift that means instead of looking like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">data</span> <span class="dt">GameObject</span> <span class="fu">=</span> <span class="dt">GameObject</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  {<span class="ot"> position ::</span> <span class="dt">V2</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  ,<span class="ot"> velocity ::</span> <span class="dt">V2</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  ,<span class="ot"> graphics ::</span> <span class="dt">Picture</span></a>
+<a class="sourceLine" id="cb4-5" title="5">  ,<span class="ot"> buffs    ::</span> [<span class="dt">Buff</span>]</a>
+<a class="sourceLine" id="cb4-6" title="6">  ,<span class="ot"> notAffectedByGravity ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb4-7" title="7">  }</a>
+<a class="sourceLine" id="cb4-8" title="8"></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="kw">type</span> <span class="dt">Universe</span> <span class="fu">=</span> [<span class="dt">GameObject</span>]</a></code></pre></div>
+<p>you instead model the domain like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">data</span> <span class="dt">Universe</span> <span class="fu">=</span> <span class="dt">Universe</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  {<span class="ot"> position ::</span> <span class="dt">Array</span> <span class="dt">V2</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  ,<span class="ot"> velocity ::</span> <span class="dt">Array</span> <span class="dt">V2</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  ,<span class="ot"> graphics ::</span> <span class="dt">Array</span> <span class="dt">Picture</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  ,<span class="ot"> buffs    ::</span> <span class="dt">Array</span> [<span class="dt">Buff</span>]</a>
+<a class="sourceLine" id="cb5-6" title="6">  ,<span class="ot"> notAffectedByGravity ::</span> <span class="dt">Array</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb5-7" title="7">  }</a></code></pre></div>
+<p>This has some profound repercussions. First of all, notice that we have no guarantee that our <code>Array</code>s are the same length, which implies that not every <code>GameObject</code> need have all of its possible components.</p>
+<p>All of a sudden, we can pick and choose which components an entity has. Entities, now instead of being explicitly modeled by a <code>GameObject</code> are implicitly defined by an <code>Int</code> corresponding to their index in all of the arrays.</p>
+<p>From here, we can now write specific, <em>global</em> behaviors that should manipulate the components of an entity. We can avoid a lot of our previous ad-hoc machinery by essentially running a <code>map</code> that performs pattern matching on only the components we want to care about. For example, we can say that we only want to draw entities who have both a <code>position</code> and a <code>graphics</code>. We want to apply gravity to all entities that have a <code>velocity</code>, but <em>don’t</em> have the <code>notAffectedByGravity</code> flag.</p>
+<h2 id="apecs">apecs</h2>
+<p><em>EDIT 2018-01-30</em>: <a href="https://www.reddit.com/r/haskell/comments/7tlwtl/why_and_how_i_wrote_my_own_entity_component_system/dtgzrab/">The author of apecs has replied to this post</a>. It’s worth reading through, as it gives a useful perspective from the other side.</p>
+<p>With an understanding of what ECS brings to the table, we’re now ready to take a look at different ways of implementing such a system. We first turn our attention to <a href="https://github.com/jonascarpay/apecs">apecs</a>.</p>
+<p>If we wanted to model our above <code>GameObject</code> via <code>apecs</code>, it might look something like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">newtype</span> <span class="dt">Position</span> <span class="fu">=</span> <span class="dt">Position</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">instance</span> <span class="dt">Component</span> <span class="dt">Position</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="kw">type</span> <span class="dt">Storage</span> <span class="dt">Position</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Position</span></a>
+<a class="sourceLine" id="cb6-4" title="4"></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="kw">newtype</span> <span class="dt">Velocity</span> <span class="fu">=</span> <span class="dt">Velocity</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">instance</span> <span class="dt">Component</span> <span class="dt">Velocity</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-7" title="7">  <span class="kw">type</span> <span class="dt">Storage</span> <span class="dt">Velocity</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Velocity</span></a>
+<a class="sourceLine" id="cb6-8" title="8"></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="kw">newtype</span> <span class="dt">Graphics</span> <span class="fu">=</span> <span class="dt">Graphics</span> <span class="dt">Picture</span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="kw">instance</span> <span class="dt">Component</span> <span class="dt">Graphics</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="kw">type</span> <span class="dt">Storage</span> <span class="dt">Graphics</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Graphics</span></a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="kw">newtype</span> <span class="dt">Buffs</span> <span class="fu">=</span> <span class="dt">Buffs</span> [<span class="dt">Buff</span>]</a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="kw">instance</span> <span class="dt">Component</span> <span class="dt">Buffs</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-15" title="15">  <span class="kw">type</span> <span class="dt">Storage</span> <span class="dt">Buffs</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Buffs</span></a>
+<a class="sourceLine" id="cb6-16" title="16"></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="kw">newtype</span> <span class="dt">NotAffectedByGravity</span> <span class="fu">=</span> <span class="dt">NotAffectedByGravity</span></a>
+<a class="sourceLine" id="cb6-18" title="18"><span class="kw">instance</span> <span class="dt">Flag</span> <span class="dt">NotAffectedByGravity</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-19" title="19">  flag <span class="fu">=</span> <span class="dt">NotAffectedByGravity</span></a>
+<a class="sourceLine" id="cb6-20" title="20"><span class="kw">instance</span> <span class="dt">Component</span> <span class="dt">NotAffectedByGravity</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-21" title="21">  <span class="kw">type</span> <span class="dt">Storage</span> <span class="dt">NotAffectedByGravity</span> <span class="fu">=</span> <span class="dt">Set</span> <span class="dt">NotAffectedByGravity</span></a>
+<a class="sourceLine" id="cb6-22" title="22"></a>
+<a class="sourceLine" id="cb6-23" title="23">makeWorld <span class="st">&quot;World&quot;</span></a>
+<a class="sourceLine" id="cb6-24" title="24">  [ &#39;<span class="dt">&#39;Position</span></a>
+<a class="sourceLine" id="cb6-25" title="25">  , &#39;<span class="dt">&#39;Velocity</span></a>
+<a class="sourceLine" id="cb6-26" title="26">  , &#39;<span class="dt">&#39;Graphics</span></a>
+<a class="sourceLine" id="cb6-27" title="27">  , &#39;<span class="dt">&#39;Buffs</span></a>
+<a class="sourceLine" id="cb6-28" title="28">  , &#39;<span class="dt">&#39;NotAffectedByGravity</span></a>
+<a class="sourceLine" id="cb6-29" title="29">  ]</a></code></pre></div>
+<p>You’ll have to admit it’s a lot of boilerplate, which in turn would use Template Haskell to generate something similar to our conceptual <code>Universe</code> above:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">data</span> <span class="dt">World</span> <span class="fu">=</span> <span class="dt">World</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  {<span class="ot"> position ::</span> <span class="dt">Array</span> (<span class="dt">Maybe</span> <span class="dt">Position</span>)</a>
+<a class="sourceLine" id="cb7-3" title="3">  ,<span class="ot"> velocity ::</span> <span class="dt">Array</span> (<span class="dt">Maybe</span> <span class="dt">Velocity</span>)</a>
+<a class="sourceLine" id="cb7-4" title="4">  ,<span class="ot"> graphics ::</span> <span class="dt">Array</span> (<span class="dt">Maybe</span> <span class="dt">Graphics</span>)</a>
+<a class="sourceLine" id="cb7-5" title="5">  ,<span class="ot"> buffs    ::</span> <span class="dt">Array</span> (<span class="dt">Maybe</span> <span class="dt">Buffs</span>)</a>
+<a class="sourceLine" id="cb7-6" title="6">  ,<span class="ot"> notAffectedByGravity ::</span> <span class="dt">Set</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb7-7" title="7">  }</a></code></pre></div>
+<p>I haven’t dug too much into the internals of <code>apecs</code>, so this representation might not be perfect, but it’s good enough for us to get an understanding of what’s going on here.</p>
+<p>We can now use some of <code>apecs</code>’ primitives to, for example, transfer our velocity over to our position:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">rmap <span class="fu">$</span> \(<span class="dt">Position</span> p, <span class="dt">Velocity</span> v) <span class="ot">-&gt;</span> <span class="dt">Position</span> <span class="fu">$</span> p <span class="fu">+</span> v</a></code></pre></div>
+<p>This <code>rmap</code> function is something I’d describe as “fucking magic.” You pass it a lambda, it inspects the type of the lambda, uses the tuple of its input to determine which components an entity must have, and then will update the components of the corresponding output tuple.</p>
+<p>At first, this seems like a fine abstraction, but it breaks down pretty quickly when used in anger. For example, what if you want to run a function over <code>Position</code> that only works if you <em>don’t</em> have a <code>Velocity</code>? Or if you want to remove a component from an entity? <code>apecs</code> can do it, but <a href="https://hackage.haskell.org/package/apecs-0.2.4.7/docs/Apecs.html#v:cmap">good luck finding the right function</a>. Do you want <code>cmap</code>, <code>cmapM</code>, <code>cmapM_</code>, <code>cimapM</code>, <code>cimapM_</code>, <code>rmap'</code>, <code>rmap</code>, <code>wmap</code>, <code>wmap'</code> or <code>cmap'</code>? After a week of working with the library, I still couldn’t come up with heads or tails for which function I needed in any circumstance. I’m sure there’s a mnemonic here somewhere, but I’m not bright enough to figure it out.</p>
+<p>When you do eventually find the right function, doing anything other than a pure map from one component to another becomes an exercise in futility and magic pattern matching. There’s this thing called <code>Safe</code> you sometimes need to pattern match over, or produce, and it roughly corresponds to when you’re not guaranteed to have all of the components you asked for.</p>
+<p>There are several other gotchas, too. For example, you can construct an entity by providing a tuple of the components you want to set. Unfortunately, due to <code>apecs</code>’ design, this thing <em>must be type-safe.</em> Which means you can’t construct one based on runtime data if you’re loading the particular components from e.g. a level editor. Well, you can, if you’re willing to play “existentialize the dictionary” and learn enough of the underlying library (and quirks of Haskell’s type inference algorithm) in order to convince the compiler what you’re doing is sound.</p>
+<p>One final gotcha I’ll mention is that this magic tuple stuff is provided through typeclasses which are generated for the library by template haskell. Out of the box, you only get support for 5-tuples, which means you can’t easily construct entities with more components than that. Furthermore, changing the TH to generate more results in exponential growth of your compile times.</p>
+<p>None of this is to say that <code>apecs</code> is bad software. It’s actually pretty brilliant in terms of its technology; I just feel as though its execution is lacking. It depends on a lot of tricks that I wouldn’t consider to be idiomatic Haskell, and its usability suffers as a consequence.</p>
+<h2 id="ecstasy">Ecstasy</h2>
+<p>So with all of the above frustrations in mind, and a lot of time to kill in a Thai airport, I felt like I could make a better ECS. Better is obviously subjective for things like this, but I wanted to optimize it for being used by humans.</p>
+<p>My explicit desiderata were:</p>
+<ol type="1">
+<li>Keep boilerplate to a minimum.</li>
+<li>The user shouldn’t ever bump into any magic.</li>
+</ol>
+<p>I think <a href="https://github.com/isovector/ecstasy"><code>ecstasy</code></a> knocks it out of the park on both of these fronts. Before diving into how it all works, let’s take a peek at how it’s used. We can define our components like so:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">data</span> <span class="dt">EntWorld</span> f <span class="fu">=</span> <span class="dt">Entity</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  {<span class="ot"> position ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">V2</span></a>
+<a class="sourceLine" id="cb9-3" title="3">  ,<span class="ot"> velocity ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">V2</span></a>
+<a class="sourceLine" id="cb9-4" title="4">  ,<span class="ot"> graphics ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">Picture</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  ,<span class="ot"> buffs    ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> [<span class="dt">Buff</span>]</a>
+<a class="sourceLine" id="cb9-6" title="6">  ,<span class="ot"> notAffectedByGravity ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> ()</a>
+<a class="sourceLine" id="cb9-7" title="7">  } <span class="kw">deriving</span> (<span class="dt">Generic</span>)</a>
+<a class="sourceLine" id="cb9-8" title="8"></a>
+<a class="sourceLine" id="cb9-9" title="9"><span class="kw">type</span> <span class="dt">Entity</span> <span class="fu">=</span> <span class="dt">EntWorld</span> <span class="dt">&#39;FieldOf</span></a></code></pre></div>
+<p>That’s it! No template haskell, no typeclasses, no nothing. You get everything for free just out of this one <code>deriving Generic</code> statement. We’ll talk about how it works in just a second.</p>
+<p>We can implement the velocity/position behavior as follows:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1">emap <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  p <span class="ot">&lt;-</span> get position</a>
+<a class="sourceLine" id="cb10-3" title="3">  v <span class="ot">&lt;-</span> get velocity</a>
+<a class="sourceLine" id="cb10-4" title="4">  <span class="fu">pure</span> defEnt&#39;</a>
+<a class="sourceLine" id="cb10-5" title="5">    { position <span class="fu">=</span> <span class="dt">Set</span> <span class="fu">$</span> p <span class="fu">+</span> v</a>
+<a class="sourceLine" id="cb10-6" title="6">    }</a></code></pre></div>
+<p>Ecstasy clearly wins on minimizing the definition-side of boilerplate, but it seems like we’ve gained some when we actually go to use these things. This is true, but what we buy for that price is flexibility. In fact, <code>emap</code> is powerful enough to set, unset and keep components, as well as branch on whether or not a component is actually there. Compare this to the ten functions with different signatures and semantics that you need to keep in mind when working with <code>apecs</code>, and it feels like more of a win than the syntax feels like a loss.</p>
+<p>So the question I’m sure you’re wondering is “how does any of this work?” And it’s a good question. Part of the reason I wrote this library was to get a feel for the approach and for working with <a href="">GHC.Generics</a>.</p>
+<p>The idea comes from my colleague <a href="http://travis.athougies.net/">Travis Athougies</a> and his mind-meltingly cool library <a href="https://github.com/tathougies/beam"><code>beam</code></a>. The trick is to get the library user to define one semantic type that makes sense in their domain, and then to use tricky type system extensions in order to corral it into everything you need. <code>beam</code> uses this approach to model database tables; <code>ecstasy</code> uses it to provide both a struct-of-arrays for your components, as well as just a struct corresponding to a single entity.</p>
+<p>As you’d expect, the sorcery is inside of the <code>Component</code> type family. We can look at its definition:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">type</span> <span class="kw">family</span> <span class="dt">Component</span> (<span class="ot">s ::</span> <span class="dt">StorageType</span>)</a>
+<a class="sourceLine" id="cb11-2" title="2">                      (<span class="ot">c ::</span> <span class="dt">ComponentType</span>)</a>
+<a class="sourceLine" id="cb11-3" title="3">                      (<span class="ot">a ::</span> <span class="fu">*</span>)<span class="ot"> ::</span> <span class="fu">*</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-4" title="4">  <span class="dt">Component</span> <span class="dt">&#39;FieldOf</span>  c      a <span class="fu">=</span> <span class="dt">Maybe</span> a</a>
+<a class="sourceLine" id="cb11-5" title="5">  <span class="dt">Component</span> <span class="dt">&#39;SetterOf</span> c      a <span class="fu">=</span> <span class="dt">Update</span> a</a>
+<a class="sourceLine" id="cb11-6" title="6"></a>
+<a class="sourceLine" id="cb11-7" title="7">  <span class="dt">Component</span> <span class="dt">&#39;WorldOf</span> <span class="dt">&#39;Field</span>  a <span class="fu">=</span> <span class="dt">IntMap</span> a</a>
+<a class="sourceLine" id="cb11-8" title="8">  <span class="dt">Component</span> <span class="dt">&#39;WorldOf</span> <span class="dt">&#39;Unique</span> a <span class="fu">=</span> <span class="dt">Maybe</span> (<span class="dt">Int</span>, a)</a></code></pre></div>
+<p>This <code>Component</code> thing spits out different types depending on if you want a record for the entity (<code>'FieldOf</code>), an updater to change which components an entity has (<code>'SetterOf</code>), or the actual universe container to hold all of this stuff (<code>'WorldOf</code>). If we’re building an entity record, every component is a <code>Maybe</code>. If we’re describing a change to an entity, we use <code>data Update a = Set a | Unset | Keep</code>. If we want a place to store all of our entities, we generate an <code>IntMap</code> for every <code>'Field</code>. There’s also support for adding components that are uniquely owned by a single entity, but we won’t get into that today.</p>
+<p>The trick here is that we get the user to fill in the <code>c :: ComponentType</code> when they define the components, and ask them to keep the <code>s :: StorageType</code> polymorphic. The library then can instantiate your <code>EntWorld f</code> with different <code>StorageType</code>s in order to pull out the necessary types for actually plumbing everything together.</p>
+<p>We use the <code>Generic</code> derivation on <code>EntWorld</code> in order to allow ourselves to construct the underlying machinery. For example, when you’re defining an entity, you don’t want to be able to <code>Keep</code> the old value of its components, since it didn’t have any to begin with. We can use our <code>Generic</code> constraint in order to generate a function <code>toSetter :: EntWorld 'FieldOf -&gt; EntWorld 'SetterOf</code> which takes an entity record and turns it into an entity update request, so that we don’t actually need special logic to construct things. The <code>Generic</code> constraint also helps generate default values of the <code>EntWorld 'WorldOf</code> and other things, so that you don’t need to write out any boilerplate at the value level in order to use these things.</p>
+<p>The actual how-to-do of the <code>GHC.Generics</code> is outside of the scope of today’s post, but you can <a href="https://github.com/isovector/ecstasy/blob/c59109ec38c9b440a6aacfa0d6540adb9ed8df00/src/Data/Ecstasy/Deriving.hs">read through the source code</a> if you’re curious.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/starting-a-game-engine">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/action-menus">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "why-take-ecstasy";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2019 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
