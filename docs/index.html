@@ -48,134 +48,35 @@
 
 <article>
 <header>
-  <h1><a href="/blog/nimic">Nimic: A language about nothing</a></h1>
+  <h1><a href="/blog/design-and-interpretation">New Book: Design and Interpretation of Haskell Programs</a></h1>
 </header>
 <p class="meta">
     <span class="prev">
-        <a href="/blog/steering">&larr;</a>
+        <a href="/blog/nimic">&larr;</a>
     </span>
-    <time>July 15, 2019</time>
+    <time>October 13, 2019</time>
 
     <span class="tags">
-        <a href="/tags/erdos.html">erdos</a>, <a href="/tags/nimic.html">nimic</a>
+        <a href="/tags/book.html">book</a>, <a href="/tags/annoucement.html">annoucement</a>
     </span>
 </p>
 <div class="content">
-    <p>If you haven’t heard, <a href="https://isovector.github.io/erdos/">I recently solicited couches to stay on</a>. The idea is to cruise around the globe, meeting cool programmers, and collaborating with them on whatever project they’re most excited about.</p>
-<p>This weekend I spent time with the inimitable <a href="https://github.com/davidrusu">David Rusu</a>. The bar for my trip has been set extremely high; not only is David an amazing host, but we hashed out a particularly interesting project in a couple of days. We call it <a href="https://github.com/isovector/nimic">nimic</a>.</p>
-<p>Nimic is a free-form macro language, without any real syntax, or operational semantics. We have a super bare bones parser that groups parenthetical expressions, and otherwise admits any tokens, separated by whitespace. The language will attempt to run each of its macros on the deepest, leftmost part of this grouping structure. If nothing matches, the program is stuck and we just leave it.</p>
-<p>Therefore, hello world in nimic is just the stuck program:</p>
-<pre><code>hello world</code></pre>
-<p>which you have to admit is about as small as you can get it. The core language installs four built-in macros; the most interesting of which is <code>macro</code> — allowing you to define new macros. The syntax is <code>macro pattern rewrite</code>, which itself will be rewritten as the stuck term <code>defined</code>.</p>
-<p>As a first program, we can use <code>macro</code> to rewrite the <code>defined</code> term:</p>
-<pre><code>macro defined (nimic is weird)</code></pre>
-<p>which will step to <code>defined</code> via the definition of <code>macro</code>, and then step to <code>nimic is weird</code> via the new <code>defined</code> rule. Here it gets stuck and does no more work.</p>
-<p>You can use the special tokens <code>#foo</code> to perform pattern matching in a macro. These forms are available in the rewrite rule. For example,</p>
-<pre><code>macro (nimic is #adjective) (nimic is very #adjective)</code></pre>
-<p>will replace our <code>nimic is weird</code> term with <code>nimic is very weird</code>. You can bind as many subterms in a macro as you’d like.</p>
-<p>Because nimic attempts to run all of its macros on the deepest, leftmost part of the tree it can, we can exploit this fact to create statements. Consider the program:</p>
-<pre><code>(macro (#a ; #b) #b)
-; ( (macro (what is happening?) magic)
-  ; (what is happening?)
-  )</code></pre>
-<p>Here we’ve built a cons list of the form <code>(head ; tail)</code>. Our default evaluation order will dive into the leftmost leaf of this tree, and evaluate the <code>(macro (#a ; #b) #b)</code> term there, replacing it with <code>defined</code>. Our tree now looks like this:</p>
-<pre><code>(defined
-; ( (macro (what is happening?) magic)
-  ; (what is happening?)
-  )</code></pre>
-<p>where our new <code>#a : #b</code> rule now matches, binding <code>#a</code> to <code>defined</code>, and <code>#b</code> to the tail of this cons cell. This rule will drop the <code>defined</code>, and give us the new tree:</p>
-<pre><code>( (macro (what is happening?) magic)
-; (what is happening?)
-)</code></pre>
-<p>whereby we now can match on the leftmost macro again. After a few more steps, our program gets stuck with the term <code>magic</code>. We’ve defined sequential evaluation!</p>
-<p>But writing cons cells by hand is tedious. This brings us to the second of our built-in macros, which is <code>rassoc #prec #symbol</code>. The evaluation of this will also result in <code>defined</code>, but modifies the parser so that it will make <code>#symbol</code> be right-associative with precedence <code>#prec</code>. As a result, we can use <code>rassoc 1 ;</code> to modify the parser in order to turn <code>a ; b ; c</code> into <code>a ; (b ; (c))</code>.</p>
-<p>Therefore, the following program will correctly get stuck on the term <code>finished</code>:</p>
-<pre><code>(macro (#a ; #b) #b)
-; ((rassoc 1 ;)
-;
-( this is now
-; parsed correctly as a cons cell
-; finished
-)))</code></pre>
-<p>The final primitive macro defined in <code>nimic</code> is <code>bash #cmd</code>, which evaluates <code>#cmd</code> in bash, and replaces itself with the resulting output. To illustrate, the following program is another way of writing hello world:</p>
-<pre><code>bash (echo &quot;hellozworld&quot; | tr &quot;z&quot; &quot; &quot;)</code></pre>
-<p>Note that the <code>bash</code> command isn’t doing any sort of bash parsing here. It just takes the symbols <code>echo</code> <code>"hellozworld"</code> <code>|</code> <code>tr</code> <code>"z"</code> <code>"</code> and <code>"</code>, and dumps them out pretty printed into bash. There are no string literals.</p>
-<p>We can use the <code>bash</code> command to do more interesting things. For example, we can use it to define an <code>import</code> statement:</p>
-<pre><code>macro (import #file) (bash (cat #file))</code></pre>
-<p>which when you evaluate <code>import some/file.nim</code>, will be replaced with <code>(bash (cat some/file.nim))</code>, which in turn with the contents of <code>some/file.nim</code>. You have to admit, there’s something appealing about <em>even the module system</em> being defined in library code.</p>
-<p>But we can go further. We can push our math runtime into bash!</p>
-<pre><code>macro (math #m) (bash (bc &lt;&lt;&lt; &quot; #m &quot;))</code></pre>
-<p>which will correctly evaluate any math expressions you shoot its way.</p>
-<p>Personally, I’m not a big fan of the <code>macro #a #b</code> notation. So instead I defined my own sequent notation:</p>
-<pre><code>  rassoc 2 ----------
-; macro (#a ---------- #b) (macro #a #b)</code></pre>
-<p>This thing defines a macro, which, when expanded, will itself define a macro. Now David and I don’t need to have any discussions bikeshedding over syntax. We can just define whatever we want!</p>
-<p>For a longer example, I wanted to implement pattern matching a la Haskell.</p>
-<p>My first step was to define a lazy <code>if</code> statement. Because macros are tried most-recently-defined first, I can define my operational semantics first. The rule is to force the condition:</p>
-<pre><code>; if #cond then #a else #b
-  ----------
-  if !#cond then #a else #b</code></pre>
-<p>(the exclamation marks here are magic inside of the <code>macro</code> macro, which will force macro expansion at whatever it’s attached to) Next, I give two more expansion rules for what to do if my condition is true and false:</p>
-<pre><code>; if True then #a else #b
-  ----------
-  #a
-
-; if False then #a else #b
-  ----------
-  #b</code></pre>
-<p>Great! We can define syntactic equality of stuck terms by forcing two subterms, and then checking them in bash for string equality:</p>
-<pre><code>; judge #a #b
-  ----------
-  is zero !(bash ([[ &quot; !#a &quot; == &quot; !#b &quot; ]]; echo $?))
-
-; is zero #n
-  ----------
-  False
-
-; is zero 0
-  ----------
-  True</code></pre>
-<p>We can try this out. <code>judge hello hello</code> and <code>judge (macro (a a a) b) defined</code> both step to <code>True</code>, but <code>judge foo bar</code> steps to <code>False</code>.</p>
-<p>Finally, we’re ready to define pattern matching. We start with the base case in which there is only one pattern we can match on:</p>
-<pre><code>; match #a of (#m1 -&gt; #r1)
-  ----------
-  if !(judge #a #m1) then #r1 else (failed match)</code></pre>
-<p>We replace our match statement with an equality test, and produce <code>failed match</code> if the two things aren’t identical.</p>
-<p>There’s also an induction case, where we want to match on several possibilities.</p>
-<pre><code>; match #a of (#m1 -&gt; #r1 ; #z)
-  ----------
-  if !(judge #a #m1) then #r1 else (match !#a of #z)</code></pre>
-<p>Here we’d like to perform the same rewrite, but the else case should pop off the failed match.</p>
-<p>Amazingly, this all <em>just works</em>. Let’s try it:</p>
-<pre><code>; rassoc 3 =
-
-; #a = #b
-  ----------
-  #a
-  ----------
-  #b
-
-; not #t =
-    match #t of
-      ( True -&gt; False
-      ; False -&gt; True
-      )
-
-; match (not True) of
-    ( True -&gt; hello
-    ; False -&gt; it works!
-    )</code></pre>
-<p>This program will get stuck at <code>it works!</code>. Pretty sweet!</p>
+    <p><a href="https://www.patreon.com/designandinterpretation">I’m writing a new book</a>, on how to write good, real-world Haskell applications! The announcement copy is below.</p>
 <hr />
-<p>The core nimic implementation is 420 lines of Haskell code, including a hand-rolled parser and macro engine. But wait, there’s more! There’s also an additional 291 line interactive debugger, which allows you to step through the macro expansion of your program. It’s even smart enough to colorize the variables in your source tree that are being matched by the current macro.</p>
-<figure>
-<img src="/images/nimic.png" alt="The Glorious Nimic Stepper" /><figcaption>The Glorious Nimic Stepper</figcaption>
-</figure>
-<p>Not bad for a weekend of work. I can barely contain my excitement for what other cool projects are on the horizon.</p>
+<p>Hi there! My name is Sandy Maguire — you might know me from my work on Polysemy and Thinking with Types.</p>
+<p>One of purely functional programming’s greatest strengths is its powerful abstraction capabilities. We proudly exclaim that our functions are referentially transparent, and because of that, our bugs will always be shallow. And this is often true.</p>
+<p>10x is often cited as the magic number beyond which technology is good enough to overcome network effects. I’m personally convinced that writing Haskell is 10x better than any other popular programming language I’ve tried. But if functional programming is so good, why hasn’t it yet taken over the world?</p>
+<p>This is a very serious question. If we’re right about this, why haven’t we won?</p>
+<p>Design and Interpretation of Haskell Programs is my answer to this question. Haskell hasn’t taken market share because we collectively don’t yet know how to write real applications with it. Abstraction is our language’s greatest strength, but all of our “best practices” evangelize doing everything directly in IO. Is it really any wonder that nonbelievers aren’t convinced when we show them an imperative C program that just happens to be compiled with GHC?</p>
+<p>Instead of giving up, this book encourages us to take a heavy focus on designing leak-free abstractions, on building programs that can be reasoned about algebraically, and on completely separating business logic from interpretation details.</p>
+<p>But I can’t do it all by myself. Writing a book is a hard, gruelling process, that’s made much easier by knowing that people care about the end result. If you’re a conscientious engineer, unhappy with the status-quo of large, unmaintainable, “production-grade” Haskell, then this book is for you. By pledging, you let me know that this book is worth writing. In addition, your early feedback will help make this book the best it can possibly be.</p>
+<p>Not sure if this is the book for you? Take a look at the sample before committing to anything!</p>
+<p>With your help, together we can tame software complexity and write codebases we’re proud of.</p>
+<p>One love, Sandy</p>
 
 <p class="meta">
     <span class="prev">
-        <a href="/blog/steering">&larr;</a>
+        <a href="/blog/nimic">&larr;</a>
     </span>
 </p>
 
@@ -185,7 +86,7 @@
     <div id="disqus_thread"></div>
     <script>
     var disqus_config = function () {
-        var slug = "nimic";
+        var slug = "design-and-interpretation";
         this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
         this.page.identifier = slug;
     };
