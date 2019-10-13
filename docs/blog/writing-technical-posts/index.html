@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>How to Write Technical Posts (so people will read them) :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+          <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        
+          ga('create', 'UA-76834556-1', 'auto');
+          ga('send', 'pageview');
+          </script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/writing-technical-posts">How to Write Technical Posts (so people will read them)</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/thinking-with-types">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/freer-monads">&rarr;</a>
+    </span>
+    <time>February  7, 2019</time>
+
+    <span class="tags">
+        <a href="/tags/non-technical.html">non-technical</a>, <a href="/tags/writing.html">writing</a>, <a href="/tags/advice.html">advice</a>, <a href="/tags/guide.html">guide</a>
+    </span>
+</p>
+<div class="content">
+    <p>One of today’s best bloggers in the functional programming space is <a href="https://chrispenner.ca/">Chris Penner</a>. Despite this, Chris is criminally underrated—nobody I talk to seems to know of his work. Go check him out as soon as you finish reading this post!</p>
+<p>This is reasonably pervasive phenomenon in our subculture; there’s lots of fantastic work being produced, but for one reason or another, it falls between the cracks. I’d propose the biggest obstacle is that most FP writing <em>isn’t optimized to be read.</em></p>
+<p>So I’d like to take some time today and talk about common failure modes in technical writing. If you don’t have a checklist you run through before publishing a post, you’ll probably get a lot of benefit from internalizing this advice.</p>
+<p>The value? You’ll make it easier for people to understand what you’re trying to tell them. Which is why you’re writing in the first place, right? The good news is that none of this is magic—just some simple guidelines for structuring your content.</p>
+<h2 id="the-guiding-principle">The Guiding Principle</h2>
+<p>Here’s the biggest thing to keep in mind: your reader doesn’t really care what you have to say. You get maybe four sentences to convince them that your essay is worth their time. If you haven’t made your case by then, you’ve probably lost them to the next tab they binge-opened.</p>
+<p>Even after you’ve convinced them that it’s a valuable read, you need to continue assuring them that you’re not wasting their time. If you take too long to get to the point, or if you make the information too hard to find on a quick skim, you’ve lost them again.</p>
+<p>As a result, alongside your technical content, you have two primary goals to focus on:</p>
+<ul>
+<li>Provide strong, concise motivations for everything you want to talk about.</li>
+<li>Make it easy to skim.</li>
+</ul>
+<p>If you can do these two things, you’re already most of the way to better engagement.</p>
+<h2 id="writing-strong-motivations">Writing Strong Motivations</h2>
+<p>People care about solutions to problems they have, or expect to have one day. They care about other things too, but it’s not really relevant to us today.</p>
+<p>With this in mind, you want to tailor your motivations in terms of <em>solutions to problems.</em></p>
+<p>Here are some good examples of problems that you’ve probably run into (and links to their solutions for you to read later):</p>
+<ul>
+<li><a href="https://chrispenner.ca/posts/adjunction-battleship">Ed Kmett writes shitty documentation</a></li>
+<li><a href="/blog/higher-kinded-data/">I have lots of types that need to evolve at the same time</a></li>
+<li><a href="http://thinkingwithtypes.com/">There is no good place to learn type-level programming</a></li>
+</ul>
+<p>Bad examples of motivating documents are things that assume you care <em>simply because they exist.</em> This is <a href="http://hackage.haskell.org/package/pipes-4.3.9/docs/Pipes-Tutorial.html">pretty</a> <a href="http://yannesposito.com/Scratch/en/blog/Yesod-tutorial-for-newbies/">common</a> of libraries’ tutorials. The same document that convinces you to use a technology should also show you how.</p>
+<p>As a more general rule, focusing on <em>why</em> is going to be more valuable than on <em>how.</em></p>
+<p>Why should someone care, and why your solution is a good one.</p>
+<p>“How” without a “why” suggests a contrived solution to a made-up problem. In other words, it’s easily read as “who cares?”</p>
+<h2 id="understanding-how-people-read">Understanding How People Read</h2>
+<p>People who spend lots of time reading have good heuristics for skipping lots of text. If you understand these heuristics, you can make it easy for people to find what they’re looking for. And remember: they’re looking for reasons to continue reading.</p>
+<p>There are two behaviors here. The first is what I call “skimming for concepts”—which is that people will attempt to determine what text is about at a high-level. They’re looking for <em>what you’re trying to tell them</em>, as opposed to <em>what you’re actually saying.</em></p>
+<p>When skimming, people are likely to read only the headings and the first two sentences of a paragraph. If they’re convinced they know what you have to say, they’ll skip to the next paragraph. If several paragraphs in a row don’t seem relevant, they’ll skip to the next heading.</p>
+<p>If the next heading also fails to grab their attention, they’ll probably give up.</p>
+<p>The solution is to structure your argument as a tree. Headings must provide enough information to let someone know whether or not they care about the following prose.</p>
+<p>This also means that the first sentence of each paragraph should be sufficient to understand the rest of the paragraph. The remaining sentences are only allowed to reinforce or give details of the first sentence. One paragraph equals one idea.</p>
+<p>Roughly speaking, the hierarchy of your document should look like this:</p>
+<ul>
+<li>Document
+<ul>
+<li>Heading
+<ul>
+<li>First sentence
+<ul>
+<li>Rest of paragraph</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<p>Maybe you feel like it’s hard to know how much knowledge to assume your readership knows. Understanding how people read makes this a non-issue. Present as much information as is necessary to understand your point, but make it easy to skip if people already know it. Those who don’t yet know will learn, those who do can skip past, and both camps will appreciate it.</p>
+<p>After you’ve convinced your reader that they care what you have to say, they’re more willing to read what you <em>actually have to say.</em> When the reader is ready to dive in, that’s when you can make the finer points of your argument.</p>
+<p>It’s unlikely that anyone is going to read every word of your essay. It’s even less likely that they’ll read them all in order.</p>
+<h2 id="stumbling-blocks">Stumbling Blocks</h2>
+<p>Now that you’ve got people ready to listen to you, it’s important to keep them on the same page as you. You really need to stay on top of anything that might break their focus.</p>
+<p>Use short sentences. If it’s too hard to parse, people won’t.</p>
+<p>Make sure your spelling and grammar have no egregious problems. You don’t need to have perfect command of the language, but you need to be able to signal that you’re trustworthy-enough to listen to. Don’t underestimate how much credibility you’ll lose from blatantly bad spelling and grammar.</p>
+<p>This stuff is relatively common-sense.</p>
+<p>What might be less so is that you also need to stay on top of conceptual stumbling blocks. If your argument makes a jump that feels poorly motivated or references something potentially unfamiliar, expect that your reader will experience vertigo.</p>
+<p>Most of the ideas we talk about in functional programming <em>are not easy,</em> and it doesn’t do anyone any favors to pretend this isn’t so. Expect that your readers will be pretty similar to you; if you had a problem understanding a piece of your topic, <em>call that out.</em> Point out the obstacle. Point out what they might be thinking, and then very explicitly show them what they should be thinking instead.</p>
+<p>For example, if your code sample uses a <a href="https://en.wikipedia.org/wiki/Functional_dependency">functional dependency</a>, it might be worth a short sentence saying “that funny bar thing is a functional dependency.” Give a tiny summary of its purpose, and provide a link for them to learn more if they need to.</p>
+<p>Another illustration: if <em>you</em> originally got confused that an “algebra in recursion schemes” is not the same thing as the algebra you learned in high-school, your readers probably will too. The first time you say “algebra” in the new context, say “this is a misleading term. This has nothing to do with solving equations like you did in high-school.”</p>
+<p>More important than what you’re saying is what you’re <em>not saying.</em> If you’re giving examples of something that fits a pattern, make sure you give examples of things that <em>do not</em> fit the pattern. A concept that is applicable everywhere is useful nowhere.</p>
+<p>Give lots of examples. Nobody I know learns via mathematical statements, nor do they learn via long, wordy, abstract prose. People learn by seeing lots of examples, and being told explicitly how these examples relate to one another. The mathematical statements are only useful <em>after</em> you have the intuition, so save them for an appropriate time.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The takeaway advice from this essay is that <em>if you want lots of readers, you must make it easy for them to read.</em></p>
+<p>To that end, pay lots of attention to motivation. Why should people care what you have to say? What value does it give <em>them?</em></p>
+<p>Focus your energy on the beginnings—both of the essay as a whole, and of each paragraph. People who are unconvinced by your essay’s value will skim their way through it, and they will do that by reading only the beginnings of things.</p>
+<p>Make your information easy to find. Structure your argument in a tree, and make sure it supports random-access. Nobody is going to read the whole thing from start to finish. Instead they’re going to jump around, ignoring the pieces they already know, and looking for the bits they don’t.</p>
+<p>Use lots of short paragraphs. A paragraph should correspond to a single idea.</p>
+<p>Anticipate which parts of your argument will be difficult for your readers, and be proactive in trying to assuage those difficulties. Give lots of examples of what you’re talking about, and more importantly, what you’re not talking about.</p>
+<p>Point out where you went into the weeds while learning this stuff. Steer readers away from common mistakes and misconceptions.</p>
+<p>And finally, end on a high note. Leave people with a good feeling, and it will incentivize them to get to the bottom of your next piece. Inspirational calls to action are a good way to go out.</p>
+<blockquote>
+<p>Tell them what you’re going to tell them. Then tell them. Finally, tell them what you told them.</p>
+<p>-Unknown</p>
+</blockquote>
+<p>Funny and poignant quotes are too.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/thinking-with-types">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/freer-monads">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "writing-technical-posts";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2019 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
