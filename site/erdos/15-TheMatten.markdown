@@ -1,5 +1,5 @@
 ---
-host: Matej Nižník
+host: "Matej Niznik"
 github-user: TheMatten
 city: Bratislava
 country: Slovakia
