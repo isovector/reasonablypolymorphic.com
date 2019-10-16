@@ -7,6 +7,7 @@ project: nimic
 project-url: "https://github.com/isovector/nimic"
 arrival-date: 2019-07-12
 departure-date: 2019-07-15
+excellent: True
 ---
 
 Nimic is a tiny macro language, with no built-in syntax or operational

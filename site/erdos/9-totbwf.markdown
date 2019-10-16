@@ -7,6 +7,7 @@ project: Refinery
 project-url: "https://github.com/TOTBWF/refinery"
 arrival-date: 2019-08-24
 departure-date: 2019-08-27
+excellent: True
 ---
 
 (dates are approximate, I actually spent this week staying with Travis Willis,

@@ -7,6 +7,7 @@ project: Weft
 project-url: "https://github.com/JonathanLorimer/weft"
 arrival-date: 2019-07-15
 departure-date: 2019-07-18
+excellent: True
 ---
 
 Weft is a GraphQL implementation for Haskell, based around the idea that Haskell

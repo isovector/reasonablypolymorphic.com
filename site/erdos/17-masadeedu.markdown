@@ -7,6 +7,7 @@ project: Haskell eXchange
 project-url: "#"
 arrival-date: 2019-10-11
 departure-date: 2019-10-13
+excellent: True
 ---
 
 My roommate for Haskell eXchange got the plague and spent the entire night
