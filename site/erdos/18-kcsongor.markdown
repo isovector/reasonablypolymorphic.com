@@ -7,6 +7,7 @@ project: GHC
 project-url: "https://github.com/ghc-proposals/ghc-proposals/"
 arrival-date: 2019-10-13
 departure-date: 2019-10-13
+excellent: True
 ---
 
 Csongor and I headed down to his (and hopefully, one day, my) office at

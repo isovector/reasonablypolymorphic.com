@@ -7,6 +7,7 @@ project: GHC
 project-url: "https://github.com/amcknight/scont"
 arrival-date: 2019-09-07
 departure-date: 2019-09-09
+excellent: True
 ---
 
 Andrew has some loft goals about getting AIs to optimize bad algorithms into

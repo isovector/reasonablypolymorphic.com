@@ -7,6 +7,7 @@ project: Just Hanging Out
 project-url: "#"
 arrival-date: 2019-08-03
 departure-date: 2019-08-03
+excellent: True
 ---
 
 Asad and I met on the University of Toronto campus. We were planning on

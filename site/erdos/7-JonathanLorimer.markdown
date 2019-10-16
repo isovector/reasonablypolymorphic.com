@@ -7,6 +7,7 @@ project: Weft
 project-url: "https://github.com/JonathanLorimer/weft"
 arrival-date: 2019-08-06
 departure-date: 2019-08-09
+excellent: True
 ---
 
 Back at Jonathan's, in a second push attempting to get `weft` finished. We had a
