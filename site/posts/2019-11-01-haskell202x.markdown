@@ -1,0 +1,120 @@
+---
+layout: post
+title: "Haskell2020 Is Dead, but All Hope Is Not Lost"
+date: 2019-11-01 10:39
+comments: true
+tags: haskell, haskell202x
+---
+
+Haskell2020 is the long-awaited sequel to Haskell2010 --- a formal, prescriptive
+standard of the Haskell language, that all implementations should adhere to.
+Today we have two previous standards, Haskell2010 and Haskell98, but neither is
+particularly in-line with the language as it's written in this day and age. The
+aim of Haskell2020 is to bring these older standards in line with the way the
+language is actually practiced.
+
+Today, there is only one real implementation of Haskell: the Glasgow Haskell
+Compiler (GHC). GHC is a Haskell2010-compliant compiler, but extends Haskell via
+*language extensions* --- explicitly opt-in features that deviate from the
+standard. In GHC 8.6.5, there are 125 different language extensions, and [an
+analysis][tondwalkar] shows that 10% of Haskell files in the wild enable 10 or
+more extensions.
+
+[tondwalkar]: https://gist.github.com/atondwal/ee869b951b5cf9b6653f7deda0b7dbd8
+
+All of this is to say that a good chunk of the Haskell being written in the real
+world *is not Haskell2010 compatible.* And the situation is only going to get
+worse.
+
+It might not be immediately evident to you why this is a bad thing. As excellent
+a piece of software as GHC is, tying our language to a single implementation is
+unwise and shortsighted. As long as Haskell is defined implicitly by its
+implementation in GHC, no other implementation has a chance --- they will always
+be forever playing catch-up.
+
+C++ was in a similar situation in the early naughties; the de facto C++ compiler
+GCC was the only heavy-hitter in town. While it got the job done, it had some
+pretty terrible ergonomics --- so bad that it spun up a cottage industry of
+attempting to [generate the worst error messages][gcc]. In 2007, Clang --- an
+alternative industrial-strength compiler --- was released, which strove to be
+compatible with GCC, but also to dramatically improve the ergonomics. This
+friendly competition has spurred both projects to become significantly better.
+
+[gcc]: https://codegolf.stackexchange.com/questions/1956/generate-the-longest-error-message-in-c
+
+And we have seen similar beneficial competition (albeit certainly less friendly)
+in the Haskell world. Five years ago, Cabal sort-of got the job done for
+building Haskell projects, but there was this thing called "Cabal Hell" that bit
+*everyone.* It got the job done if you knew how it worked, which all the
+developers did, but the pain was felt by everyone else. Then Stack was released,
+which elegantly solved Cabal Hell, and *just worked.* It wasn't perfect, but my
+god was it an improvement on the state of the world. In recent memory, Cabal has
+seen unparalleled improvements in its usability, after languishing for *years*
+with respect to usability complaints.
+
+My point? Competition is a good thing, not just for users, but for the health of
+the ecosystem at large. And by extension, we should look at the status quo of
+today's Haskell world with suspicion. And getting a good, prescriptive
+specification of what Haskell *is* would go a long way towards alleviating this
+issue.
+
+So why do I bring all of this up? It's my impression that the current
+Haskell2020 efforts are dead in all but name. The [official mailing list][mail]
+didn't see any activity for 12 of the last 24 months. Of the months that did see
+activity, several of their volumes are measured in *bytes.* At time of writing,
+the official Haskell2020 website's certificates are expired, and have been for
+two weeks.
+
+[mail]: https://mail.haskell.org/pipermail/haskell-prime/
+
+None of this is meant to demonize the standards committee. But for whatever
+reason, it's pretty clear that Haskell2020 is not going to happen in its current
+incarnation. After all, 2020 is coming up pretty dang soon!
+
+Forgive the melodrama, but I truly believe that this situation is an existential
+risk for our beloved language and community. There are already well-founded
+[murmurings of dissatisfaction][murmur], and *lots* of complaints about the lack
+of good tooling (though regrettably I can't find any links right now.)
+
+[murmur]: https://www.reddit.com/r/haskell/comments/dpr276/what_is_the_status_of_ghc_linear_types/f5yjg67/
+
+So what's the real problem here? As a complete outsider --- reading between the
+lines of discussions I've had with a few of the Haskell2020 committee members
+--- my guess is this: **a lack of leadership.** It's not that the committee
+members don't care, it's that nobody cares *sufficiently* to overcome the
+momentum and push the thing through to completion. Furthermore, these people are
+busy with their own cool projects, and committee work is always a thankless job.
+
+The good news: a lack of leadership is a *very easy problem to solve.* If you
+care about this problem, **just take the reigns.** That's all there is to it.
+*Anyone can do it.* Yes, even you, gentle reader! Nobody needs to elevate you to
+a position of power. There's no admissions process. You don't need to be given
+any *authority* in order to take the lead here. This is a thing that everybody
+wants, but there's a coordination problem, and the only reason it hasn't been
+done yet is that nobody has done it.
+
+If you want more assurance about that: as a member of the GHC Steering
+Committee, **I will personally ratify any reasonable draft standard of Haskell
+202x** and vote in favor that GHC adheres to that standard. I have confirmation
+from at least two other members of the committee that they will also do so.
+
+As a rough estimate, the effort involved in Haskel202x is about half a
+person-year. Most of that will be spent doing unsexy, administrative things like
+setting deadlines, cajoling the right people for opinions, and writing a big,
+boring document. Not a lot of fun, to be sure, but *very doable.* The only
+challenge here is to not lose motivation for six months.
+
+Should you still have doubts, I'd like to give another example: the GHC Steering
+Committee. Despite some (fair) criticisms, all things considered, the Steering
+Committee is a pretty successful organization. But *literally the only reason*
+for that success is Joachim's unyielding desire for it to succeed. Without his
+monthly emails reminding everyone of the work to be done, and who is responsible
+for what, the Committee would collapse in three months. Nobody gave Joachim this
+responsibility, he just took it and owned it. In my opinion, the entire Haskell
+community is deeply indebted to Joachim on this front.
+
+If all of this sounds inspiring to you, I urge you to take up the mantle and
+*make this thing happen.* It's the first step towards a much better Haskell
+world, and it's an amazingly actionable one. You can help change the world for
+the better, and we will all be indebted to you when you pull it off.
+
