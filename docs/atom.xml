@@ -1,11 +1,105 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2019-11-01T10:39:00Z</updated>
+  <updated>2019-11-27T22:15:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='atom.xml'/>
 
+    <entry>
+      <title>Low-Tech AST Extensibility with Extension Patterns</title>
+      <id>blog/extension-patterns/index.html</id>
+      <link href='blog/extension-patterns/index.html'/>
+      <published>2019-11-27T22:15:00Z</published>
+      <updated>2019-11-27T22:15:00Z</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p>Today I want to share a common pattern I’ve been using for extending AST-like data structures that I don’t own. It’s an extremely low-tech solution to the problem (as opposed to something like the dreaded <a href="https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pdf">Trees That Grow</a>, which is more far complicated than any problem is worth.)</p>
+<p>A common problem I run into is wanting to add custom annotations to abstract syntax trees. As one example, a while back I was writing a Haskell editor that would <em>write Haskell code for you.</em> The idea was to get rid of the text representation of code entirely, and work directly with the Haskell AST. However, it’s often useful to insert metadata into the AST — for example, which bit of the tree you’re currently editing.</p>
+<p>As another example, I’m currently writing a book in markdown, and want to express high-level concepts that markdown doesn’t have any primitives for — things like <em>exercises</em> or <em>inline this snippet of code from a real codebase</em> or <em>this thing is like a footnote, but should have a special graphic.</em> If I were a pleb, I’d just manually write the low-level markdown necessary to achieve the visual goal I want.</p>
+<p>But: two problems. Firstly, I did that on the last book, and it turned out to be the biggest mistake I’ve made in quite a long time. The issue is that while this works for the representation you’re currently looking at, it all falls apart when you want to change the representation. My book looked great as a PDF, but it took me weeks and literal tears to turn that thing into an e-book.</p>
+<p>Secondly, this book I’m writing is <em>all about</em> how the root of all evil is a premature loss of precision — which is to say, it’s about designing and using abstractions. The irony would be too salty if I didn’t take my own advice here and build my book out of the abstractions I claim are so valuable.</p>
+<p>So this is the question: how can we add new abstraction primitives to a datatype that we don’t control?</p>
+<p>Let’s take a particular example that I implemented today. In <a href="http://journal.stuffwithstuff.com/2015/09/08/the-hardest-program-ive-ever-written/">The Hardest Program I’ve Ever Written</a>, Bob Nystrom walks through the implementation of an interesting program. Throughout the prose, there are little skulls which are footnotes describing a wrong path he took during the implementation. These mistakes are, in my opinion, more interesting than the essay itself.</p>
+<p>My book has a few case studies in which I work through building a real program using the techniques I’m advocating. The idea is to give readers an actual taste of how it works in practice, and to show that often times the journey is more valuable than the destination. As such, I thought Bob’s skull footnotes would make an excellent addition to these chapters.</p>
+<p>I dug in to see how Bob had implement his, and I was amazed! <a href="https://raw.githubusercontent.com/munificent/journal/master/_posts/2015-09-08-the-hardest-program-ive-ever-written.md">The poor bastard had done it all by hand!</a> My god, if that’s not commitment, I don’t know what is. There are like seventeen footnotes in that blog post. Someone should probably make Bob a saint for just how how patient he must be.</p>
+<p>While this is commendable, it is antithetical to our purposes. This is clearly an abstraction leak; markdown is supposed to be human-readable format that eschews 15th-century technology like HTML. As soon as you have an abstraction leak, your abstraction is worth nothing. At this point it will only bring you pain.</p>
+<p>But what can we do instead?</p>
+<p>Well, my book is being authored in markdown, and then processed via <a href="https://pandoc.org/">pandoc</a> to turn it into pretty PDFs. I’ve separated the semantic bits from the presentation bits, in an act of forward thinking for when I make an e-book copy. What this means is that, <em>even though I’m writing markdown,</em> my book is actually a Pandoc document. Which is to say, there is a <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Block">Text.Pandoc.Definition.Block</a> somewhere in the platonic realm that describes my book.</p>
+<p>And so we return to the question of how to annotate ASTs. The <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Block">Pandoc AST</a> is a rather expressive format, but it primarily describes basic typographic elements. It primarily captures meaning as to how to layout a document, rather than capturing the meaning of <em>what is being expressed.</em></p>
+<p>While Pandoc already has the option to <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Inline">annotate a Footnote</a>, I don’t want to replace all footnotes with deathnotes (as I’ve taken to calling these little skull things.)</p>
+<p>The trick is a rather stupid one. While usual footnotes are written in markdown like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode markdown"><code class="sourceCode markdown"><a class="sourceLine" id="cb1-1" title="1">This is some prose<span class="ot">[^1]</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ot">[^1]</span>: This is a footnote.</a></code></pre></div>
+<p>I’ve decided to annotate my deathnotes like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode markdown"><code class="sourceCode markdown"><a class="sourceLine" id="cb2-1" title="1">This is some prose<span class="ot">[^1]</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="ot">[^1]</span>: death This is a deathnote.</a></code></pre></div>
+<p>The only difference is that the text of a deathnote starts with the word <code>death</code>. That’s it. There is nothing clever going on here. When parsed into a <code>Block</code>, the above has this structure:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="dt">Para</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  [ <span class="dt">Str</span> <span class="st">&quot;This&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  , <span class="dt">Str</span> <span class="st">&quot;is&quot;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  , <span class="dt">Str</span> <span class="st">&quot;some&quot;</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  , <span class="dt">Str</span> <span class="st">&quot;prose&quot;</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  , <span class="dt">Note</span></a>
+<a class="sourceLine" id="cb3-10" title="10">    [ <span class="dt">Para</span></a>
+<a class="sourceLine" id="cb3-11" title="11">      [ <span class="dt">Str</span> <span class="st">&quot;death&quot;</span></a>
+<a class="sourceLine" id="cb3-12" title="12">      , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-13" title="13">      , <span class="dt">Str</span> <span class="st">&quot;This&quot;</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-15" title="15">      , <span class="dt">Str</span> <span class="st">&quot;is&quot;</span></a>
+<a class="sourceLine" id="cb3-16" title="16">      , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-17" title="17">      , <span class="dt">Str</span> <span class="st">&quot;a&quot;</span></a>
+<a class="sourceLine" id="cb3-18" title="18">      , <span class="dt">Space</span></a>
+<a class="sourceLine" id="cb3-19" title="19">      , <span class="dt">Str</span> <span class="st">&quot;deathnote.&quot;</span></a>
+<a class="sourceLine" id="cb3-20" title="20">      ]</a>
+<a class="sourceLine" id="cb3-21" title="21">    ]</a>
+<a class="sourceLine" id="cb3-22" title="22">  ]</a></code></pre></div>
+<p>The bit of interest to us is the part of the AST that begins <code>Note [ Para [ Str "death"</code>. Because this is an easy thing to annotate directly in markdown, and because it won’t happen by accident, we can decide that this is the canonical representation for annotating a deathnote.</p>
+<p>Here’s the trick: we can reify that decision in Haskell via a pattern synonym. If you’re unfamiliar with pattern synonyms, they allow you to “create” “new” data constructors, which are just synonyms for arbitrary patterns you’d like to pick out. In our case, we want to pick out that <code>Note [ Para [ Str "death"</code> structure.</p>
+<p>We begin by writing a little function that will pattern match on the part we want, and remove the word <code>"death"</code> from the first paragraph.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="ot">splitDeathNote ::</span> [<span class="dt">Block</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Block</span>]</a>
+<a class="sourceLine" id="cb4-2" title="2">splitDeathNote (<span class="dt">Para</span> (<span class="dt">Str</span> <span class="st">&quot;death&quot;</span> <span class="fu">:</span> ps) <span class="fu">:</span> bs)</a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Para</span> (<span class="fu">dropWhile</span> (<span class="fu">==</span> <span class="dt">Space</span>) ps) <span class="fu">:</span> bs)</a>
+<a class="sourceLine" id="cb4-4" title="4">splitDeathNote _ <span class="fu">=</span> <span class="dt">Nothing</span></a></code></pre></div>
+<p>The function <code>splitDeathNote</code> will try to match our deathnote pattern, and if it succeeds, give back the rest of the content. As a second step, we enable <code>-XViewPatterns</code> and <code>-XPatternSynonyms</code> and write a pattern:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">pattern</span> <span class="dt">DeathNote</span><span class="ot"> ::</span> [<span class="dt">Block</span>] <span class="ot">-&gt;</span> <span class="dt">Inline</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">pattern</span> <span class="dt">DeathNote</span> bs <span class="ot">&lt;-</span> <span class="dt">Note</span> (splitDeathNote <span class="ot">-&gt;</span> <span class="dt">Just</span> bs)</a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="dt">DeathNote</span> (<span class="dt">Para</span> ps <span class="fu">:</span> bs) <span class="fu">=</span> <span class="dt">Note</span> <span class="fu">$</span> <span class="dt">Para</span> (<span class="dt">Str</span> <span class="st">&quot;death&quot;</span> <span class="fu">:</span> <span class="dt">Space</span> <span class="fu">:</span> ps) <span class="fu">:</span> bs</a>
+<a class="sourceLine" id="cb5-5" title="5">    <span class="dt">DeathNote</span> bs             <span class="fu">=</span> <span class="dt">Note</span> <span class="fu">$</span> <span class="dt">Para</span> [<span class="dt">Str</span> <span class="st">&quot;death&quot;</span>] <span class="fu">:</span> bs</a></code></pre></div>
+<p>Patterns have egregious syntax, but it can be read in two parts. The first bit is the <code>pattern DeathNote bs &lt;- Note ...</code> bit, which is used for defining a <em>pattern match.</em> It says, “if you do a pattern match on the thing left of the <code>&lt;-</code>, instead replace it with the pattern match on the right. This weird <code>-&gt;</code> thing is a <em>view pattern,</em> which says”run the <code>splitDeathNote</code> function, and only match if it returns a <code>Just</code>."</p>
+<p>The other part of the pattern synonym, the part after the <code>where</code>, allows us to <em>build an <code>Inline</code> out of a <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Block">Block</a>.</em> Which is to say, it works like a data constructor; we can write something like <code>let foo = DeathNote blah</code>.</p>
+<p>In other words, after defining the <code>DeathNote</code> pattern synonym, for all intents and purposes it’s like we’ve added a new data constructor to the pandoc <code>Inline</code> type. For example, we can write a function that pattern matches on it:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="ot">isDeathNote ::</span> <span class="dt">Inline</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb6-2" title="2">isDeathNote (<span class="dt">DeathNote</span> _) <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-3" title="3">isDeathNote _ <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
+<p>GHC will happily compile this thing, and it will work as expected! Cool!</p>
+<p>The final step to actually getting these things working is to walk the pandoc AST, and transform our nice, newly-annotated deathnotes into something more amenable for a PDF. But! We want to do this <em>as part of generating a PDF.</em> That way we hold onto our semantic annotations until the <em>very last moment,</em> i.e., when we send our document to the printers.</p>
+<p>We can get this transformation for free via <a href="https://www.stackage.org/lts-14.16/package/syb-0.7.1">Scrap Your Boilerplate</a>(SYB for short.) SYB lets us write tiny transformations that operate only on a piece of data that we care about, and then lift that into a leaf-first transformation over arbitrarily large data structures.</p>
+<p>In our case, we can write a function like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="ot">renderDeathNoteForLatex ::</span> <span class="dt">Inline</span> <span class="ot">-&gt;</span> <span class="dt">Inline</span></a>
+<a class="sourceLine" id="cb7-2" title="2">renderDeathNoteForLatex (<span class="dt">DeathNote</span> bs) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-3" title="3">  <span class="dt">RawInline</span> <span class="st">&quot;latex&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="fu">mconcat</span></a>
+<a class="sourceLine" id="cb7-5" title="5">      [ <span class="st">&quot;\\deathnote{&quot;</span></a>
+<a class="sourceLine" id="cb7-6" title="6">      , <span class="fu">show</span> bs  <span class="co">-- the real implementation doesn&#39;t use show</span></a>
+<a class="sourceLine" id="cb7-7" title="7">      , <span class="st">&quot;}&quot;</span></a>
+<a class="sourceLine" id="cb7-8" title="8">      ]</a>
+<a class="sourceLine" id="cb7-9" title="9">renderDeathNoteForLatex x <span class="fu">=</span> x  <span class="co">-- just id for all other nodes</span></a></code></pre></div>
+<p>And then use SYB to lift it over the entire <code>Pandoc</code> structure</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="ot">latexPreProcess ::</span> <span class="dt">Pandoc</span> <span class="ot">-&gt;</span> <span class="dt">Pandoc</span></a>
+<a class="sourceLine" id="cb8-2" title="2">latexPreProcess <span class="fu">=</span> everywhere (mkT renderDeathNoteForLatex)</a>
+<a class="sourceLine" id="cb8-3" title="3">  <span class="co">-- we can potentially run other transformations here at the same time</span></a></code></pre></div>
+<p>And just like that, we’ve added a custom annotation to markdown, and separately given a presentation strategy for it. We can use <a href="http://hackage.haskell.org/package/pandoc-types-1.20/docs/Text-Pandoc-JSON.html#v:toJSONFilter"><code>toJSONFilter</code></a> to connect our little <code>latePreProcess</code> transformation to <code>pandoc</code>, and no one is any the wiser.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Haskell2020 Is Dead, but All Hope Is Not Lost</title>
       <id>blog/haskell202x/index.html</id>
@@ -1226,309 +1320,6 @@ Ok, one module loaded.</code></pre>
 <ol>
 <li id="fn1"><p>GHC has a bad habit of using type synonyms. A <code>CoreExpr</code> is just a <code>Expr CoreBndr</code>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
 <li id="fn2"><p>I’m not sure this part is necessary, but it doesn’t seem to hurt.<a href="#fnref2" class="footnote-back">↩</a></p></li>
-</ol>
-</section>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>GHC&#39;s Specializer: Much More Than You Wanted to Know</title>
-      <id>blog/specialization/index.html</id>
-      <link href='blog/specialization/index.html'/>
-      <published>2019-05-18T21:59:00Z</published>
-      <updated>2019-05-18T21:59:00Z</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p>In the course of <a href="/blog/freer-yet-too-costly/">tracking down why free monads were so slow</a>, I fell into a deep labyrinth of scary GHC internals. Six weeks later, I emerged, significantly more knowledgeable, and having implemented some changes in the compiler that will allow <a href="https://hackage.haskell.org/package/polysemy"><code>polysemy</code></a> to be optimized much better. The improvements will be available in 8.10.1.</p>
-<p>All of this seems like a good opportunity to share what I’ve learned, so today let’s talk about GHC’s <em>specialization pass.</em> This optimization is more popularly known as “the reason why <code>mtl</code> is so fast.”</p>
-<p>At a high level, the specialization pass is responsible for optimizing away uses of ad-hoc polymorphism (typeclasses) in Haskell source code. When <code>-fspecialise</code> is enabled, GHC will make a monomorphic copy of every polymorphic method — one for every unique type it’s called with. The result should feel similar to anyone who’s written modern C++, as it’s completely analogous to how templates work.</p>
-<p>While polymorphic functions are great for <em>humans to write</em>, they’re significantly slower for <em>machines to execute,</em> since you need to pass around vtables and perform dynamic dispatches, and all sorts of crazy things. This is exactly the purpose of GHC’s specialization pass, to simply get rid of all of that machinery and keep only the pieces that are explicitly used.</p>
-<p>Let’s take an example. Consider the following program:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="ot">{-# OPTIONS_GHC</span></a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="ot">      -ddump-simpl</span></a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="ot">      -dsuppress-idinfo</span></a>
-<a class="sourceLine" id="cb1-5" title="5"><span class="ot">      -dsuppress-coercions</span></a>
-<a class="sourceLine" id="cb1-6" title="6"><span class="ot">      -dsuppress-module-prefixes</span></a>
-<a class="sourceLine" id="cb1-7" title="7"><span class="ot">      -fforce-recomp</span></a>
-<a class="sourceLine" id="cb1-8" title="8"><span class="ot">      #-}</span></a>
-<a class="sourceLine" id="cb1-9" title="9"></a>
-<a class="sourceLine" id="cb1-10" title="10"><span class="kw">import</span>           <span class="dt">Control.Monad.State.Class</span></a>
-<a class="sourceLine" id="cb1-11" title="11"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.Trans.State</span> <span class="kw">as</span> <span class="dt">S</span></a>
-<a class="sourceLine" id="cb1-12" title="12"></a>
-<a class="sourceLine" id="cb1-13" title="13"><span class="ot">countdown ::</span> <span class="dt">S.StateT</span> <span class="dt">Int</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb1-14" title="14">countdown <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-15" title="15">  v <span class="ot">&lt;-</span> get</a>
-<a class="sourceLine" id="cb1-16" title="16">  <span class="kw">case</span> v <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-17" title="17">    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> ()</a>
-<a class="sourceLine" id="cb1-18" title="18">    _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-19" title="19">      put <span class="fu">$</span> v <span class="fu">-</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb1-20" title="20">      countdown</a>
-<a class="sourceLine" id="cb1-21" title="21"></a>
-<a class="sourceLine" id="cb1-22" title="22"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb1-23" title="23">main <span class="fu">=</span> S.evalStateT countdown <span class="dv">10</span></a></code></pre></div>
-<p>When compiled via <code>ghc Example.hs -O -fno-specialise</code><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, we can look directly at the resulting Core of this program. If you’re unfamiliar with Core, it’s GHC’s intermediate language between source-level Haskell and the generated machine code. Core differs in two notable ways from source Haskell: its evaluation is explicit via <code>case</code> expressions, and both types and typeclass instances are explicitly passed around.</p>
-<p>Anyway, here’s the relevant Core for our above program:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="dt">Rec</span> {</a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="co">-- RHS size: {terms: 14, types: 13, coercions: 0, joins: 0/0}</span></a>
-<a class="sourceLine" id="cb2-3" title="3"><span class="fu">$</span>wcountdown</a>
-<a class="sourceLine" id="cb2-4" title="4"><span class="ot">  ::</span> <span class="dt">Int</span><span class="fu">#</span> <span class="ot">-&gt;</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>, ((), <span class="dt">Int</span>) <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb2-5" title="5"><span class="fu">$</span>wcountdown</a>
-<a class="sourceLine" id="cb2-6" title="6">  <span class="fu">=</span> \ (<span class="ot">ww_s49L ::</span> <span class="dt">Int</span><span class="fu">#</span>) (<span class="ot">w_s49I ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb2-7" title="7">      <span class="kw">case</span> ww_s49L <span class="kw">of</span> ds_X2I1 {</a>
-<a class="sourceLine" id="cb2-8" title="8">        __DEFAULT <span class="ot">-&gt;</span> <span class="fu">$</span>wcountdown (<span class="fu">-#</span> ds_X2I1 <span class="dv">1</span><span class="fu">#</span>) w_s49I;</a>
-<a class="sourceLine" id="cb2-9" title="9">        <span class="dv">0</span><span class="fu">#</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> w_s49I, lvl1_r4ap <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb2-10" title="10">      }</a>
-<a class="sourceLine" id="cb2-11" title="11">end <span class="dt">Rec</span> }</a>
-<a class="sourceLine" id="cb2-12" title="12"></a>
-<a class="sourceLine" id="cb2-13" title="13"><span class="co">-- RHS size: {terms: 12, types: 29, coercions: 0, joins: 0/0}</span></a>
-<a class="sourceLine" id="cb2-14" title="14"><span class="ot">main1 ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>, () <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb2-15" title="15">main1</a>
-<a class="sourceLine" id="cb2-16" title="16">  <span class="fu">=</span> \ (<span class="ot">s_a2Ks ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb2-17" title="17">      <span class="kw">case</span> <span class="fu">$</span>wcountdown <span class="dv">10</span><span class="fu">#</span> s_a2Ks <span class="kw">of</span> { (<span class="fu">#</span> ipv_a2Kv, ipv1_a2Kw <span class="fu">#</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb2-18" title="18">      (<span class="fu">#</span> ipv_a2Kv,</a>
-<a class="sourceLine" id="cb2-19" title="19">         <span class="kw">case</span> ipv1_a2Kw <span class="kw">of</span> { (a1_a2I6, ds2_a2I7) <span class="ot">-&gt;</span> a1_a2I6 } <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb2-20" title="20">      }</a></code></pre></div>
-<p>As you can see, this is very short and to the point. Reading Core is a bit of an art, but the gist of it is this: <code>main1</code> calls <code>$wcountdown</code>, which recursively calls itself, until the value of <code>w_s49I</code> is <code>0#</code> when it stops. It’s probably exactly the same code you’d write by hand, if for some reason you were writing Core by hand.</p>
-<p>Our program above is written directly against <code>transformers</code>, but nobody actually writes code against <code>transformers</code> in the real world. Choosing a concrete monad transformer stack is limiting, and at the same time, prevents you from restricting access to pieces of the stack. Instead, we’re encouraged to write code against abstract monad capabilities, traditionally <code>mtl</code>.</p>
-<p>So let’s subtly change the type of <code>countdown</code> above:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">countdown ::</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">=&gt;</span> m ()</a></code></pre></div>
-<p>Nothing else in the program needs to change. Let’s now compile this program again via <code>ghc Example.hs -O -fno-specialise</code>. The result is <em>horrendously</em> worse Core:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="dt">Rec</span> {</a>
-<a class="sourceLine" id="cb4-2" title="2"><span class="co">-- RHS size: {terms: 35, types: 47, coercions: 0, joins: 0/2}</span></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="fu">$</span>wcountdown</a>
-<a class="sourceLine" id="cb4-4" title="4"><span class="ot">  ::</span> <span class="kw">forall</span> (<span class="ot">m ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">.</span></a>
-<a class="sourceLine" id="cb4-5" title="5">     <span class="dt">Applicative</span> m <span class="ot">=&gt;</span></a>
-<a class="sourceLine" id="cb4-6" title="6">     (<span class="kw">forall</span> a b<span class="fu">.</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b)</a>
-<a class="sourceLine" id="cb4-7" title="7">     <span class="ot">-&gt;</span> (<span class="kw">forall</span> a b<span class="fu">.</span> m a <span class="ot">-&gt;</span> m b <span class="ot">-&gt;</span> m b)</a>
-<a class="sourceLine" id="cb4-8" title="8">     <span class="ot">-&gt;</span> m <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb4-9" title="9">     <span class="ot">-&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> m ())</a>
-<a class="sourceLine" id="cb4-10" title="10">     <span class="ot">-&gt;</span> m ()</a>
-<a class="sourceLine" id="cb4-11" title="11"><span class="fu">$</span>wcountdown</a>
-<a class="sourceLine" id="cb4-12" title="12">  <span class="fu">=</span> \ (<span class="fu">@</span> (<span class="ot">m_s4WK ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>))</a>
-<a class="sourceLine" id="cb4-13" title="13">      (<span class="ot">ww_s4WR ::</span> <span class="dt">Applicative</span> m_s4WK)</a>
-<a class="sourceLine" id="cb4-14" title="14">      (<span class="ot">ww1_s4WS ::</span> <span class="kw">forall</span> a b<span class="fu">.</span> m_s4WK a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m_s4WK b) <span class="ot">-&gt;</span> m_s4WK b)</a>
-<a class="sourceLine" id="cb4-15" title="15">      (<span class="ot">ww2_s4WT ::</span> <span class="kw">forall</span> a b<span class="fu">.</span> m_s4WK a <span class="ot">-&gt;</span> m_s4WK b <span class="ot">-&gt;</span> m_s4WK b)</a>
-<a class="sourceLine" id="cb4-16" title="16">      (<span class="ot">ww3_s4WX ::</span> m_s4WK <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb4-17" title="17">      (<span class="ot">ww4_s4WY ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m_s4WK ()) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-18" title="18">      <span class="kw">let</span> {</a>
-<a class="sourceLine" id="cb4-19" title="19"><span class="ot">        lvl6_s4W1 ::</span> m_s4WK ()</a>
-<a class="sourceLine" id="cb4-20" title="20">        lvl6_s4W1</a>
-<a class="sourceLine" id="cb4-21" title="21">          <span class="fu">=</span> <span class="fu">$</span>wcountdown</a>
-<a class="sourceLine" id="cb4-22" title="22">              <span class="fu">@</span> m_s4WK ww_s4WR ww1_s4WS ww2_s4WT ww3_s4WX ww4_s4WY } <span class="kw">in</span></a>
-<a class="sourceLine" id="cb4-23" title="23">      <span class="kw">let</span> {</a>
-<a class="sourceLine" id="cb4-24" title="24"><span class="ot">        lvl7_s4W2 ::</span> m_s4WK ()</a>
-<a class="sourceLine" id="cb4-25" title="25">        lvl7_s4W2 <span class="fu">=</span> <span class="fu">pure</span> <span class="fu">@</span> m_s4WK ww_s4WR <span class="fu">@</span> () () } <span class="kw">in</span></a>
-<a class="sourceLine" id="cb4-26" title="26">      ww1_s4WS</a>
-<a class="sourceLine" id="cb4-27" title="27">        <span class="fu">@</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb4-28" title="28">        <span class="fu">@</span> ()</a>
-<a class="sourceLine" id="cb4-29" title="29">        ww3_s4WX</a>
-<a class="sourceLine" id="cb4-30" title="30">        (\ (<span class="ot">v_a192 ::</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-31" title="31">           <span class="kw">case</span> v_a192 <span class="kw">of</span> { <span class="dt">I</span><span class="fu">#</span> ds_d3xJ <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-32" title="32">           <span class="kw">case</span> ds_d3xJ <span class="kw">of</span> ds1_X3xT {</a>
-<a class="sourceLine" id="cb4-33" title="33">             __DEFAULT <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-34" title="34">               ww2_s4WT <span class="fu">@</span> () <span class="fu">@</span> () (ww4_s4WY (<span class="dt">I</span><span class="fu">#</span> (<span class="fu">-#</span> ds1_X3xT <span class="dv">1</span><span class="fu">#</span>))) lvl6_s4W1;</a>
-<a class="sourceLine" id="cb4-35" title="35">             <span class="dv">0</span><span class="fu">#</span> <span class="ot">-&gt;</span> lvl7_s4W2</a>
-<a class="sourceLine" id="cb4-36" title="36">           }</a>
-<a class="sourceLine" id="cb4-37" title="37">           })</a>
-<a class="sourceLine" id="cb4-38" title="38">end <span class="dt">Rec</span> }</a>
-<a class="sourceLine" id="cb4-39" title="39"></a>
-<a class="sourceLine" id="cb4-40" title="40"><span class="co">-- RHS size: {terms: 17, types: 32, coercions: 21, joins: 0/0}</span></a>
-<a class="sourceLine" id="cb4-41" title="41"><span class="ot">main1 ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>, () <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb4-42" title="42">main1</a>
-<a class="sourceLine" id="cb4-43" title="43">  <span class="fu">=</span> \ (<span class="ot">s_a3z5 ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-44" title="44">      <span class="kw">case</span> ((((<span class="fu">$</span>wcountdown</a>
-<a class="sourceLine" id="cb4-45" title="45">                 <span class="fu">@</span> (<span class="dt">StateT</span> <span class="dt">Int</span> <span class="dt">IO</span>)</a>
-<a class="sourceLine" id="cb4-46" title="46">                 lvl_r4VN</a>
-<a class="sourceLine" id="cb4-47" title="47">                 lvl1_r50i</a>
-<a class="sourceLine" id="cb4-48" title="48">                 lvl2_r50j</a>
-<a class="sourceLine" id="cb4-49" title="49">                 (lvl3_r50k <span class="ot">`cast`</span> <span class="fu">&lt;</span><span class="dt">Co</span><span class="fu">:</span><span class="dv">13</span><span class="fu">&gt;</span>)</a>
-<a class="sourceLine" id="cb4-50" title="50">                 lvl4_r50l)</a>
-<a class="sourceLine" id="cb4-51" title="51">              <span class="ot">`cast`</span> <span class="fu">&lt;</span><span class="dt">Co</span><span class="fu">:</span><span class="dv">4</span><span class="fu">&gt;</span>)</a>
-<a class="sourceLine" id="cb4-52" title="52">               lvl5_r50m)</a>
-<a class="sourceLine" id="cb4-53" title="53">            <span class="ot">`cast`</span> <span class="fu">&lt;</span><span class="dt">Co</span><span class="fu">:</span><span class="dv">4</span><span class="fu">&gt;</span>)</a>
-<a class="sourceLine" id="cb4-54" title="54">             s_a3z5</a>
-<a class="sourceLine" id="cb4-55" title="55">      <span class="kw">of</span></a>
-<a class="sourceLine" id="cb4-56" title="56">      { (<span class="fu">#</span> ipv_a3z8, ipv1_a3z9 <span class="fu">#</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-57" title="57">      (<span class="fu">#</span> ipv_a3z8,</a>
-<a class="sourceLine" id="cb4-58" title="58">         <span class="kw">case</span> ipv1_a3z9 <span class="kw">of</span> { (a1_a3y3, ds2_a3y4) <span class="ot">-&gt;</span> a1_a3y3 } <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb4-59" title="59">      }</a></code></pre></div>
-<p>Yikes! What a mess! It’s amazing how much of a difference that one type signature made! Our simple <code>mtl</code> program above has turned into an unholy mess of passing around overly-polymorphic functions. We’ve paid an awful price to abstract away our monad stack, <em>even though the actual program being run didn’t change!</em></p>
-<p>Of course, this isn’t a <em>real problem</em> in the wild. Compile the program again, this time without the <code>-fno-specialise</code> flag<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> — <code>ghc Example.hs -O</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="dt">Rec</span> {</a>
-<a class="sourceLine" id="cb5-2" title="2"><span class="co">-- RHS size: {terms: 14, types: 13, coercions: 0, joins: 0/0}</span></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="fu">$</span>w<span class="fu">$</span>scountdown</a>
-<a class="sourceLine" id="cb5-4" title="4"><span class="ot">  ::</span> <span class="dt">Int</span><span class="fu">#</span> <span class="ot">-&gt;</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>, ((), <span class="dt">Int</span>) <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb5-5" title="5"><span class="fu">$</span>w<span class="fu">$</span>scountdown</a>
-<a class="sourceLine" id="cb5-6" title="6">  <span class="fu">=</span> \ (<span class="ot">ww_s5dY ::</span> <span class="dt">Int</span><span class="fu">#</span>) (<span class="ot">w_s5dV ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb5-7" title="7">      <span class="kw">case</span> ww_s5dY <span class="kw">of</span> ds_X3xU {</a>
-<a class="sourceLine" id="cb5-8" title="8">        __DEFAULT <span class="ot">-&gt;</span> <span class="fu">$</span>w<span class="fu">$</span>scountdown (<span class="fu">-#</span> ds_X3xU <span class="dv">1</span><span class="fu">#</span>) w_s5dV;</a>
-<a class="sourceLine" id="cb5-9" title="9">        <span class="dv">0</span><span class="fu">#</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> w_s5dV, lvl1_r5jV <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb5-10" title="10">      }</a>
-<a class="sourceLine" id="cb5-11" title="11">end <span class="dt">Rec</span> }</a>
-<a class="sourceLine" id="cb5-12" title="12"></a>
-<a class="sourceLine" id="cb5-13" title="13"><span class="co">-- RHS size: {terms: 12, types: 29, coercions: 0, joins: 0/0}</span></a>
-<a class="sourceLine" id="cb5-14" title="14"><span class="ot">main1 ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="fu">#</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>, () <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb5-15" title="15">main1</a>
-<a class="sourceLine" id="cb5-16" title="16">  <span class="fu">=</span> \ (<span class="ot">s_X3Bw ::</span> <span class="dt">State</span><span class="fu">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb5-17" title="17">      <span class="kw">case</span> <span class="fu">$</span>w<span class="fu">$</span>scountdown <span class="dv">10</span><span class="fu">#</span> s_X3Bw <span class="kw">of</span> { (<span class="fu">#</span> ipv_a3z9, ipv1_a3za <span class="fu">#</span>) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb5-18" title="18">      (<span class="fu">#</span> ipv_a3z9,</a>
-<a class="sourceLine" id="cb5-19" title="19">         <span class="kw">case</span> ipv1_a3za <span class="kw">of</span> { (a1_a3y4, ds2_a3y5) <span class="ot">-&gt;</span> a1_a3y4 } <span class="fu">#</span>)</a>
-<a class="sourceLine" id="cb5-20" title="20">      }</a></code></pre></div>
-<p>Whew! We’re back to the speedy program we started with. <code>-fspecialise</code> has done the hard work of transforming our <em>abstract code</em> into <em>fast code</em> for us — exactly as a good compiler should.</p>
-<h2 id="whats-going-on">What’s Going On?</h2>
-<p>It’s amazing how drastic the differences are in the generated code, just from flipping a switch!</p>
-<p>Before we can discuss exactly how this transformation helps, we need to first go over some details of how GHC implements a few source-level Haskell features. The first is <em>dictionaries</em>, which are how typeclass dispatch works.</p>
-<h3 id="dictionaries">Dictionaries</h3>
-<p>Consider the following program in source-level Haskell:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">class</span> <span class="dt">Eq</span> a <span class="kw">where</span></a>
-<a class="sourceLine" id="cb6-2" title="2"><span class="ot">  (==) ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb6-3" title="3"></a>
-<a class="sourceLine" id="cb6-4" title="4"><span class="kw">instance</span> <span class="dt">Eq</span> () <span class="kw">where</span></a>
-<a class="sourceLine" id="cb6-5" title="5">  (<span class="fu">==</span>) _ _ <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb6-6" title="6"></a>
-<a class="sourceLine" id="cb6-7" title="7"><span class="ot">equate ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb6-8" title="8">equate a1 a2 <span class="fu">=</span> a1 <span class="fu">==</span> a2</a>
-<a class="sourceLine" id="cb6-9" title="9"></a>
-<a class="sourceLine" id="cb6-10" title="10"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb6-11" title="11">main <span class="fu">=</span> <span class="fu">print</span> <span class="fu">$</span> equate () ()</a></code></pre></div>
-<p>Internally, GHC will generate the equivalent program:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">data</span> <span class="dt">Eq</span> a <span class="fu">=</span> <span class="dt">Eq</span>  <span class="co">-- #1</span></a>
-<a class="sourceLine" id="cb7-2" title="2">  (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb7-3" title="3"></a>
-<a class="sourceLine" id="cb7-4" title="4"><span class="ot">(==) ::</span> <span class="dt">Eq</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb7-5" title="5">(<span class="fu">==</span>) dEq&#39;a <span class="fu">=</span>  <span class="co">-- #2</span></a>
-<a class="sourceLine" id="cb7-6" title="6">  <span class="kw">case</span> dEq&#39;a <span class="kw">of</span></a>
-<a class="sourceLine" id="cb7-7" title="7">    <span class="dt">Eq</span> eqMethod <span class="ot">-&gt;</span> eqMethod</a>
-<a class="sourceLine" id="cb7-8" title="8"></a>
-<a class="sourceLine" id="cb7-9" title="9"><span class="ot">eqUnit ::</span> <span class="dt">Eq</span> ()  <span class="co">-- # 3</span></a>
-<a class="sourceLine" id="cb7-10" title="10">eqUnit <span class="fu">=</span> <span class="dt">Eq</span></a>
-<a class="sourceLine" id="cb7-11" title="11">  (\_ _ <span class="ot">-&gt;</span> <span class="dt">True</span>)</a>
-<a class="sourceLine" id="cb7-12" title="12"></a>
-<a class="sourceLine" id="cb7-13" title="13"><span class="ot">equate ::</span> <span class="dt">Eq</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>  <span class="co">-- #4</span></a>
-<a class="sourceLine" id="cb7-14" title="14">equate dEq&#39;a a1 a2 <span class="fu">=</span> (<span class="fu">==</span>) dEq&#39;a a1 a2  <span class="co">-- #5</span></a>
-<a class="sourceLine" id="cb7-15" title="15"></a>
-<a class="sourceLine" id="cb7-16" title="16"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb7-17" title="17">main <span class="fu">=</span> <span class="fu">print</span> <span class="fu">$</span> equate eqUnit () ()  <span class="co">-- #6</span></a></code></pre></div>
-<p>Notably, the following changes occur:</p>
-<ol type="1">
-<li>The <code>class Eq a</code> is transformed into <code>data Eq a</code>, with each class method becoming a field.</li>
-<li>The class method <code>(==)</code> receives a new <code>Eq a</code> parameter, and becomes a function which pattern matches on it.</li>
-<li>The <code>instance Eq ()</code> becomes a top-level declaration of an <code>Eq ()</code> value.</li>
-<li>The <code>Eq a</code> <em>constraint</em> on <code>equate</code> becomes a <em>parameter</em> of the new <code>Eq a</code> datatype.</li>
-<li>The usage of <code>(==)</code> in <code>equate</code> receives the new <code>dEq'a</code> parameter.</li>
-<li>The usage of <code>equate</code> at type <code>a ~ ()</code> in <code>main</code> receives the new top-level <code>eqUnit :: Eq ()</code> value as an argument.</li>
-</ol>
-<p>We call the values <code>eqUnit</code> and <code>dEq'a</code> <em>dictionaries</em>. More precisely, a dictionary is any value whose type is a data type corresponding to a typeclass. Dictionaries do not exist in source-level Haskell, only in the generated Core. In real Core, dictionaries have names that start with <code>$d</code>, but we’ll omit the leading <code>$</code> today, so we don’t get it confused with the <code>($)</code> operator.</p>
-<p>From all of this that we see that, under the hood, <code>class</code> definitions are just <code>data</code> definitions, and that constraints are just invisible parameters.</p>
-<h3 id="case-of-known-constructor">Case of Known Constructor</h3>
-<p>Consider the following program:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">blah <span class="fu">=</span></a>
-<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">case</span> <span class="dt">True</span> <span class="kw">of</span></a>
-<a class="sourceLine" id="cb8-3" title="3">    <span class="dt">True</span>  <span class="ot">-&gt;</span> foo</a>
-<a class="sourceLine" id="cb8-4" title="4">    <span class="dt">False</span> <span class="ot">-&gt;</span> bar</a></code></pre></div>
-<p>Because we’re scrutinizing on a constant value here, the result of this expression must always be <code>foo</code>. As such, it’s safe to replace the entire pattern match expression with <code>foo</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1">blah <span class="fu">=</span> foo</a></code></pre></div>
-<p>This transformation is known as the <em>case of known constructor</em> optimization. While humans would never write such a thing by hand, expressions like these often come up as the result of other optimizing transformations.</p>
-<h3 id="rewrite-rules">Rewrite Rules</h3>
-<p>One final thing to discuss is GHC’s term rewriting mechanism, known as <em>rewrite rules</em>.</p>
-<p>Rewrite rules are little statements that say “<em>this thing</em> can be written as <em>that thing</em>.” Whenever GHC encounters <em>this thing</em>, it will duly rewrite it as <em>that thing</em>. The motivating use case is to allow library authors to implement domain-specific optimizations — such as ensuring composing functions don’t generate intermediate structures. You might have heard of “list fusion,” which is implemented via rewrite rules.</p>
-<p>Rewrite rules must preserve the type of the expression, but besides that are free to do anything they’d like. Just as an example, we can write a program which prints <code>hello world</code> seemingly from nowhere:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="ot">{-# RULES</span></a>
-<a class="sourceLine" id="cb10-2" title="2"><span class="ot">  &quot;it&#39;s magic!&quot;</span></a>
-<a class="sourceLine" id="cb10-3" title="3"><span class="ot">    pure () = putStrLn &quot;hello world&quot;</span></a>
-<a class="sourceLine" id="cb10-4" title="4"><span class="ot">  #-}</span></a>
-<a class="sourceLine" id="cb10-5" title="5"></a>
-<a class="sourceLine" id="cb10-6" title="6"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-7" title="7">main <span class="fu">=</span> <span class="fu">pure</span> ()</a></code></pre></div>
-<p>Compiling this with <code>-O0</code> won’t print any message when run, but will print <code>hello world</code> when compiled with <code>-O</code>. Spooky!</p>
-<p>When <code>-XTypeApplications</code> is enabled, rewrite rules are allowed to match on types too! For example, the following program will print <code>2 1 1</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="ot">{-# LANGUAGE AllowAmbiguousTypes #-}</span></a>
-<a class="sourceLine" id="cb11-2" title="2"><span class="ot">{-# LANGUAGE RankNTypes          #-}</span></a>
-<a class="sourceLine" id="cb11-3" title="3"><span class="ot">{-# LANGUAGE TypeApplications    #-}</span></a>
-<a class="sourceLine" id="cb11-4" title="4"></a>
-<a class="sourceLine" id="cb11-5" title="5"><span class="ot">magic ::</span> <span class="kw">forall</span> b a<span class="fu">.</span> a <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb11-6" title="6">magic <span class="fu">=</span> <span class="fu">id</span></a>
-<a class="sourceLine" id="cb11-7" title="7"><span class="ot">{-# NOINLINE magic #-}</span></a>
-<a class="sourceLine" id="cb11-8" title="8"></a>
-<a class="sourceLine" id="cb11-9" title="9"><span class="ot">{-# RULES &quot;it&#39;s magic!&quot;</span></a>
-<a class="sourceLine" id="cb11-10" title="10"><span class="ot">      forall (a :: Int).</span></a>
-<a class="sourceLine" id="cb11-11" title="11"><span class="ot">        magic @String a = a + 1</span></a>
-<a class="sourceLine" id="cb11-12" title="12"><span class="ot">      #-}</span></a>
-<a class="sourceLine" id="cb11-13" title="13"></a>
-<a class="sourceLine" id="cb11-14" title="14"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-15" title="15">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-16" title="16">  <span class="fu">print</span> <span class="fu">$</span> magic <span class="fu">@</span><span class="dt">String</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb11-17" title="17">  <span class="fu">print</span> <span class="fu">$</span> magic <span class="fu">@</span><span class="dt">Bool</span>   (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</a>
-<a class="sourceLine" id="cb11-18" title="18">  <span class="fu">print</span> <span class="fu">$</span> magic <span class="fu">@</span><span class="dt">String</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Integer</span>)</a></code></pre></div>
-<p>Of course, you shouldn’t abuse rewrite rules like this — make sure any rules you write are just more efficient versions of an equivalent program — but it’s helpful to demonstrate what’s going on.</p>
-<p>Internally, GHC uses lots of rewrite rules itself! All of its constant-folding (e.g. replacing <code>2 + 3</code> with <code>5</code> at compile time) is done via rewrite rules, which helps separate that logic from the main compiler.</p>
-<h2 id="specialization">Specialization</h2>
-<p>So with all of that background information out of the way, we’re finally ready to talk about how the specializer works.</p>
-<p>Recall our our original <code>mtl</code> program, transformed so it has its dictionaries explicitly passed:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="ot">countdown ::</span> <span class="dt">Monad</span> m <span class="ot">-&gt;</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">-&gt;</span> m ()</a>
-<a class="sourceLine" id="cb12-2" title="2"><span class="co">-- There is a `Monad m` constraint on `MonadState s m`, which is where this</span></a>
-<a class="sourceLine" id="cb12-3" title="3"><span class="co">-- extra constraint comes from.</span></a>
-<a class="sourceLine" id="cb12-4" title="4">countdown dMonad&#39;m dMonadState&#39;m <span class="fu">=</span> <span class="kw">do</span> dMonad&#39;m</a>
-<a class="sourceLine" id="cb12-5" title="5">  v <span class="ot">&lt;-</span> get dMonadState&#39;m</a>
-<a class="sourceLine" id="cb12-6" title="6">  <span class="kw">case</span> v <span class="kw">of</span></a>
-<a class="sourceLine" id="cb12-7" title="7">    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> dMonad&#39;m ()</a>
-<a class="sourceLine" id="cb12-8" title="8">    _ <span class="ot">-&gt;</span> <span class="kw">do</span> dMonad&#39;m</a>
-<a class="sourceLine" id="cb12-9" title="9">      put dMonadState&#39;m <span class="fu">$</span> v <span class="fu">-</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb12-10" title="10">      countdown dMonad&#39;m dMonadState&#39;m</a>
-<a class="sourceLine" id="cb12-11" title="11"></a>
-<a class="sourceLine" id="cb12-12" title="12"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb12-13" title="13">main <span class="fu">=</span></a>
-<a class="sourceLine" id="cb12-14" title="14">  S.evalStateT</a>
-<a class="sourceLine" id="cb12-15" title="15">    (countdown</a>
-<a class="sourceLine" id="cb12-16" title="16">      (dMonadStateT dMonadIO)</a>
-<a class="sourceLine" id="cb12-17" title="17">      (dMonadStateStateT dMonadIO))</a>
-<a class="sourceLine" id="cb12-18" title="18">    <span class="dv">10</span></a></code></pre></div>
-<p>When <code>-fspecialise</code> is set, the specializer will look for any calls to polymorphic functions with all of their dictionaries saturated by “interesting” dictionaries. The dictionaries <code>dMonad'm</code> and <code>dMonadState'm</code> in <code>countdown</code> aren’t interesting, since they’re just opaque dictionary variables; we don’t know anything about them.</p>
-<p>However, GHC notices that <code>countdown</code> is called with <code>m ~ StateT Int IO</code>, and that all of its dictionaries are statically known. As such, it emits a <em>specialized</em> version of <code>countdown</code>, monomorphized to <code>StateT Int IO ()</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1"><span class="ot">scountdown_StateT ::</span> <span class="dt">StateT</span> <span class="dt">Int</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb13-2" title="2">scountdown_StateT <span class="fu">=</span> <span class="kw">do</span> (dMonadStateT dMonadIO)</a>
-<a class="sourceLine" id="cb13-3" title="3">  v <span class="ot">&lt;-</span> get (dMonadStateStateT dMonadIO)</a>
-<a class="sourceLine" id="cb13-4" title="4">  <span class="kw">case</span> v <span class="kw">of</span></a>
-<a class="sourceLine" id="cb13-5" title="5">    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> (dMonadStateT dMonadIO) ()</a>
-<a class="sourceLine" id="cb13-6" title="6">    _ <span class="ot">-&gt;</span> <span class="kw">do</span> (dMonadStateT dMonadIO)</a>
-<a class="sourceLine" id="cb13-7" title="7">      put (dMonadStateStateT dMonadIO) <span class="fu">$</span> v <span class="fu">-</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb13-8" title="8">      scountdown_StateT</a></code></pre></div>
-<p>In addition, the specializer will emit a rewrite rule:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="ot">{-# RULES &quot;SPEC countdown @ (StateT Int IO)&quot;</span></a>
-<a class="sourceLine" id="cb14-2" title="2"><span class="ot">      forall (dMonad&#39;m :: Monad (StateT Int IO))</span></a>
-<a class="sourceLine" id="cb14-3" title="3"><span class="ot">             (dMonadState&#39;m :: MonadState Int (StateT Int IO)).</span></a>
-<a class="sourceLine" id="cb14-4" title="4"><span class="ot">        countdown @(StateT Int IO) dMonad&#39;m dMonadState&#39;m =</span></a>
-<a class="sourceLine" id="cb14-5" title="5"><span class="ot">          scountdown_StateT</span></a>
-<a class="sourceLine" id="cb14-6" title="6"><span class="ot">      #-}</span></a></code></pre></div>
-<p>This rewrite rule will find any call to countdown at <code>m ~ StateT Int IO</code>, ignore the dictionaries passed to it, and replace the entire expression with the specialized <code>scountdown_StateT</code> function.</p>
-<p>In particular, this means that <code>main</code> becomes:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb15-2" title="2">main <span class="fu">=</span> S.evalStateT scountdown_StateT <span class="dv">10</span></a></code></pre></div>
-<p>The rule takes advantage of the fact that dictionaries are known to be consistent (all expressions for a dictionary of a given type eventually evaluate to the same record), so it can completely ignore its two dictionary arguments. However, in principle there’s <em>absolutely no reason</em> this same technique couldn’t be used to specialize on other, non-dictionary, arguments!</p>
-<p>Notice now that <code>pure</code>, <code>get</code>, and the two do-blocks in <code>scountdown_StateT</code> are now called with interesting dictionaries, so <code>pure</code>, <code>get</code> and <code>&gt;&gt;=</code> can now all also be specialized at <code>StateT Int IO</code>.</p>
-<p>Eventually the concrete dictionaries and corresponding specializations have propagated throughout the entire program. The optimizer can take advantage of two other properties now, namely that class methods were already transformed into pattern matches, and that all of the dictionaries are statically known. Which means, we have created several places in which we can now <em>case of known case!</em></p>
-<p>For example, let’s consider the <code>get</code> in <code>countdown</code>. It now looks something like this:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1">  v <span class="ot">&lt;-</span> <span class="kw">case</span> <span class="dt">MonadState</span> (<span class="dt">StateT</span> <span class="fu">$</span> \s <span class="ot">-&gt;</span> implOfPureForIO (s, s)) <span class="fu">...</span> <span class="kw">of</span></a>
-<a class="sourceLine" id="cb16-2" title="2">         <span class="dt">MonadState</span> getMethod _ _ <span class="ot">-&gt;</span> getMethod</a></code></pre></div>
-<p>which can obviously be simplified to</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1">  v <span class="ot">&lt;-</span> <span class="dt">StateT</span> <span class="fu">$</span> \s <span class="ot">-&gt;</span> implOfPureForIO (s, s)</a></code></pre></div>
-<p>This is already a great improvement! But it gets better, recall that we’re binding in the <code>StateT</code> monad, which in turn is calling bind in <code>IO</code>. But bind in <code>IO</code> is itself implemented as a pattern match, and so case-of-known-constructor applies there too!</p>
-<p>The end result is that GHC spins for a while, alternatingly specializing, inlining, case-of-known-casing, and performing a few other optimizations. Each of these in turn opens up additional opportunities for the others to fire. After a few iterations of this, the resulting code is often <em>orders of magnitude</em> faster!</p>
-<h2 id="coming-in-8.10.1">Coming in 8.10.1…</h2>
-<p>Everything described above is how the compiler behaves today in GHC 8.6.5 (and has, since like 2007 or something.) However, when digging into the performance of my free monad library <a href="https://hackage.haskell.org/package/polysemy"><code>polysemy</code></a>, I noticed that code written against my library wasn’t benefiting from the specialization pass! As a result, my library was performing anywhere between 10x and 1000x <em>worse</em> than <code>mtl</code>, even though <em>the eventual code being run was identical to <code>mtl</code>.</em></p>
-<p>Like our experiments above into <code>mtl</code>, I was paying a performance cost for abstraction, even though the concrete program was identical.</p>
-<p>Some investigation by the indefatigable <a href="https://mpickering.github.io/">mpickering</a> pointed out that the specializer was failing to specialize. As it happens, the specializer is more than happy to optimize away dictionaries that are passed as the <em>first</em> non-type arguments to a function, but no others.</p>
-<p>That means it will go home early if it runs into a function whose signature is of the form:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="ot">foo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="kw">forall</span> a<span class="fu">.</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="fu">...</span></a></code></pre></div>
-<p>Again, humans would never write such a thing, but the optimizer is more than happy to spit these things out. Additionally, code like this often shows up whenever you use a newtype to get around GHC’s annoying error that it “does not (yet) support impredicative polymorphism”.</p>
-<p>Anyway, all of this is to say that in 8.10.1, the specialization pass is <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/668">now smart enough</a> to specialize functions like <code>foo</code>. As a result, we should see very real performance improvements in libraries like <code>polysemy</code> and <code>lens</code>, and, excitingly, <em>any programs which use them!</em></p>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>The meaning of the flags is — <code>-O</code>: enable optimizations; <code>-fno-specialise</code>: disable the specialization pass.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p><code>-fspecialise</code> is included in <code>-O</code>.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 </ol>
 </section>
         ]]>
