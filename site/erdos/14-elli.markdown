@@ -1,5 +1,5 @@
 ---
-host: Elli Konstantinova
+host: Elli K
 github-user: github890
 city: Munich
 country: Germany
