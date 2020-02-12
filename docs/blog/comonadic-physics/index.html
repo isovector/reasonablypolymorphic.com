@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Comonadic Collision Resolution :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/comonadic-physics">Comonadic Collision Resolution</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/book-announcement">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/dont-eff-it-up">&rarr;</a>
+    </span>
+    <time>January  1, 2017</time>
+
+    <span class="tags">
+        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/comonads.html">comonads</a>, <a href="/tags/physics.html">physics</a>, <a href="/tags/game.html">game</a>
+    </span>
+</p>
+<div class="content">
+    <p>I have a sinful, guilty pleasure – I like a sports video-game: <a href="https://en.wikipedia.org/wiki/NBA_Jam">NBA Jam Tournament Edition</a>. Regrettably, I don’t own a copy, and all of my attempts to acquire one have ended in remarkable misfortune.</p>
+<p>Obviously my only recourse was to make a tribute game that I could play to my heart’s desire.</p>
+<p>And so that’s what I set out to do, back in 2013. My jam-loving then-coworker and I drafted up the barest constituent of a design document, and with little more thought about the whole thing we dove right in.</p>
+<p>We “decided” on Python as our language of choice, and off we went. There was no game engine, so we rolled everything by hand: drawing, collision, you name it. We got a little demo together, and while it was definitely basketball-like, it certainly wasn’t a game. Eventually my partner lost interest, and the code sits mostly forgotten in the <a href="https://github.com/isovector/jam-time">back recesses of my Github repositories</a>.</p>
+<p>I say mostly forgotten because over the last three years, I’ve occasionally spent a sleepless night here or there working on it, slowly but surely turning midnight fuel into reality.</p>
+<p>Three years is a long time to spend on a toy project, and it’s an even longer amount of time for a junior engineer’s sensibilities to stay constant. As I learned more and more computer science tools, I found myself waging a constant battle against Python. The details aren’t important, but it was consistently a headache in order to get the language to allow me to express the things I wanted to. It got to the point where I stopped work entirely on the project due to it no longer being fun.</p>
+<p>But this basketball video-game of mine was too important to fail, and so I came up with a solution.</p>
+<p>If you’re reading this blog, you probably already know what the solution to my problem was – I decided to port the game over to Haskell. Remarkable progress was made: within a few days I had the vast majority of it ported. At first my process looked a lot like this:</p>
+<ol type="1">
+<li>Read a few lines of Python.</li>
+<li>Try to understand what they were doing.</li>
+<li>Copy them line-by-line into Haskell syntax.</li>
+</ol>
+<p>and this worked well enough. If there were obvious improvements that could be made, I would do them, but for the most part, it was blind and mechanical. At time of writing I have a bunch of magical constants in my codebase that I dare not change.</p>
+<p>However, when I got to the collision resolution code, I couldn’t in good conscience port the code. It was egregious, and would have been an abomination upon all that is good and holy if that imperative mess made it into my glorious new Haskell project.</p>
+<p>The old algorithm was like so:</p>
+<ol type="1">
+<li>Attempt to move the capsule<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to the desired location.</li>
+<li>If it doesn’t intersect with any other capsules, 👍.</li>
+<li>Otherwise, perform a sweep from the capsule’s original location to the desired location, and stop at the point just before it would intersect.</li>
+<li>Consider the remaining distance a “force” vector attempting to push the other capsule out of the way.</li>
+<li>Weight this force by the mass of the moving capsule relative to the total weight of the capsules being resolved.</li>
+<li>Finish moving the capsule by its share of weighted force vector.</li>
+<li>Recursively move all capsules it intersects with outwards by their shares of the remaining force.</li>
+</ol>
+<p>I mean, it’s not the greatest algorithm, but it was fast, simple, and behaved well-enough that I wasn’t going to complain.</p>
+<p>Something you will notice, however, is that this is definitively <em>not</em> a functional algorithm. It’s got some inherent state in the position of the capsules, but also involves directly moving other capsules out of your way.</p>
+<p>Perhaps more worryingly is that in aggregate, the result of this algorithm isn’t necessarily deterministic – depending on the order in which the capsules are iterated we may or may not get different results. It’s not an apocalyptic bug, but you have to admit that it is semantically annoying.</p>
+<p>I spent about a week mulling over how to do a better (and more functional) job of resolving these physics capsules. The key insight was that at the end of the day, the new positions of all the capsules depend on the new (and old) positions of all of the other capsules.</p>
+<p>When phrased like that, it sounds a lot like we’re looking for a comonad, doesn’t it? I felt it in my bones, but I didn’t have enough comonadic kung-fu to figure out what this comonad must actually look like. I was stumped – nothing I tried would simultaneously solve my problem and satisfy the comonadic laws.</p>
+<p>Big shout-outs to <a href="http://blog.higher-order.com/">Rúnar Bjarnason</a> for steering me into the right direction: what I was looking for was not in fact a comonad (a data-type with a <code>Comonad</code> instance), but instead a <em>specific</em> Cokleisli arrow (a function of type <code>Comonad w =&gt; w a -&gt; b</code>).</p>
+<p>Comonadic co-actions such as these can be thought of the process of answering some query <code>b</code> about an <code>a</code> in some context <code>w</code>. And so, in my case, I was looking for the function <code>w Capsule -&gt; Capsule</code>, with some <code>w</code> suitable to the cause. The <code>w Capsule</code> obviously needed the semantics of “be capable of storing all of the relevant <code>Capsule</code>s.” Implicitly in these semantics are that <code>w</code> need also have a <em>specific</em> <code>Capsule</code> under focus<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p>To relieve the unbearable tension you’re experience about what comonad <code>w</code> is, it’s a <code>Store</code>. If you’re unfamiliar with <code>Store</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Store</span> s a <span class="ot">=</span> <span class="dt">Store</span> s (s <span class="ot">-&gt;</span> a)</span></code></pre></div>
+<p>which I kind of think of as a warehouse full of <code>a</code>s, ordered by <code>s</code>es, with a forklift that drives around but is currently ready to get a particular <code>a</code> off the shelves.</p>
+<p>With all of this machinery in place, we’re ready to implement the Cokleisli arrow, <code>stepCapsule</code>, for resolving physics collisions. The algorithm looks like this:</p>
+<ol type="1">
+<li>For each other object <code>:: s</code>, extract its capsule from the <code>Store</code>.</li>
+<li>Filter out any which are not intersecting with the current capsule.</li>
+<li>Model these intersecting capsules as a spring-mass system, and have each other object exert a displacement “force” exactly necessary to make the two objects no longer collide (weighted by their relative masses).</li>
+<li>Sum these displacement vectors, and add it to the current capsule’s position.</li>
+</ol>
+<p>This algorithm is easy to think about: all it does is compute the new location of a particular capsule. Notice that it explicitly <em>doesn’t</em> attempt to push other capsules out of its way.</p>
+<p>And here’s where the magic comes in. We can use the comonadic co-bind operator <code>extend :: (w a -&gt; b) -&gt; w a -&gt; w b</code> to lift our “local”-acting function <code>stepCapsule</code> over all the capsules simultaneously.</p>
+<p>There’s only one problem left. While <code>extend stepCapsule</code> ensures that if any capsules were previously colliding no longer do, it doesn’t enforce that the newly moved capsules don’t collide with something new!</p>
+<p>Observe of the algorithm that if no objects are colliding, no objects will be moved after running <code>extend stepCapsule</code> over them. And this is in fact just the trick we need! If we can find a fix point of resolving the capsules, that fix point must have the no-collisions invariant we want.</p>
+<p>However, notice that this is not the usual least-fixed point we’re used to dealing with in Haskell (<code>fix</code>). What we are looking for is an iterated fixed point:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">iterFix ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb2-2"><a href="#cb2-2"></a>iterFix f <span class="ot">=</span> <span class="fu">head</span> <span class="op">.</span> <span class="fu">filter</span> (<span class="op">==</span>) <span class="op">.</span> ap <span class="fu">zip</span> <span class="fu">tail</span> <span class="op">.</span> <span class="fu">iterate</span> f</span></code></pre></div>
+<p>And voila, <code>iterFix (unpack . extend stepCapsule . pack)</code> is our final, functional solution to resolving collisions. It’s surprisingly elegant, especially when compared to <a href="https://github.com/isovector/jam-time/blob/master/jam/game/CapsuleManager.py#L18-L56">my original imperative solution</a>. For bonus points, it feels <em>a lot</em> like the way I understand actual real-life physics to work: somehow running a local computation everywhere, simultaneously.</p>
+<p>While time forms a monad, physics forms a comonad. At least in this context.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Lots of physics engines model complicated things as pill-shaped capsules, since these are mathematically simple and usually “good enough”.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>Otherwise we’d be pretty hard-pressed to find a useful <code>extract :: w a -&gt; a</code> function for it.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/book-announcement">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/dont-eff-it-up">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "comonadic-physics";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2020 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

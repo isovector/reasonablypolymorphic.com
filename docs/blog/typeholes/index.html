@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Implement With Types, Not Your Brain! :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/typeholes">Implement With Types, Not Your Brain!</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/freer-higher-order-effects">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/tactics">&rarr;</a>
+    </span>
+    <time>June 25, 2019</time>
+
+    <span class="tags">
+        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/beginner.html">beginner</a>
+    </span>
+</p>
+<div class="content">
+    <p>When asked about the virtues of Haskell’s strong type system, most people will say the best part is that it lets you refactor with a zen-like tranquility, or that it stops your program from crashing at runtime. I mean, those are both great. But my favorite part is that having a strong type system means I don’t need to use my brain to do programming.</p>
+<p>It sounds snide, but it’s true. Here’s a function from <a href="https://github.com/polysemy-research/polysemy">my library polysemy</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>hoistStateIntoStateT</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">    ::</span> <span class="dt">Sem</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r) a</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="ot">-&gt;</span> <span class="dt">S.StateT</span> s (<span class="dt">Sem</span> r) a</span>
+<span id="cb1-4"><a href="#cb1-4"></a>hoistStateIntoStateT (<span class="dt">Sem</span> m) <span class="ot">=</span> m <span class="op">$</span> \u <span class="ot">-&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">case</span> decomp u <span class="kw">of</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="dt">Left</span> x <span class="ot">-&gt;</span> <span class="dt">S.StateT</span> <span class="op">$</span> \s <span class="ot">-&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>      liftSem <span class="op">.</span> <span class="fu">fmap</span> swap</span>
+<span id="cb1-8"><a href="#cb1-8"></a>              <span class="op">.</span> weave (s, ())</span>
+<span id="cb1-9"><a href="#cb1-9"></a>                      (\(s&#39;, m&#39;) <span class="ot">-&gt;</span> <span class="fu">fmap</span> swap</span>
+<span id="cb1-10"><a href="#cb1-10"></a>                                  <span class="op">$</span> S.runStateT m&#39; s&#39;)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>                      (<span class="dt">Just</span> <span class="op">.</span> <span class="fu">snd</span>)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>              <span class="op">$</span> hoist hoistStateIntoStateT x</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> <span class="dt">Get</span> z _ y _)     <span class="ot">-&gt;</span> <span class="fu">fmap</span> (y <span class="op">.</span> (<span class="op">&lt;$</span> z)) <span class="op">$</span> S.get</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> (<span class="dt">Put</span> s) z _ y _) <span class="ot">-&gt;</span> <span class="fu">fmap</span> (y <span class="op">.</span> (<span class="op">&lt;$</span> z)) <span class="op">$</span> S.put s</span></code></pre></div>
+<p>Gee, that’s complicated! I must be really smart to have written such a function, right?</p>
+<p>Wrong! I just have a trick!</p>
+<p>The technique is called “just use type holes,” and for my money, it’s the most important skill in a Haskeller’s tool-belt. The idea is to implement the tiny part of a function that you know how to do, and then ask the compiler for help on the rest of it. It’s an iterative process. It’s a discussion with the compiler. Each step of the way, you get a little closer to the right answer, and after enough iterations your function has written itself — even if you’re not entirely sure <em>how.</em></p>
+<p>Let’s go through an example together. Consider the random type signature that I just made up:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">jonk ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> ((b <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Int</span>)</span></code></pre></div>
+<p>If you want a challenge, take a few minutes to try to implement this function. It’s tricky, and most people get lost along the way. When you’re convinced that it’s sufficiently hard, continue reading.</p>
+<p>The first step of writing a function is to bind all of the variables we have. That’s the <code>a -&gt; b</code> and <code>(a -&gt; Int) -&gt; Int</code> bits here. I usually give them names that help me remember their types — such as <code>ab</code> and <code>aii</code>, respectively.</p>
+<p>Then, bang out a <code>_</code> on the right hand side. This thing is a placeholder, and is called a type hole.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>jonk ab aii <span class="ot">=</span> _</span></code></pre></div>
+<p>Try to compile this (consider using something like <a href="https://github.com/ndmitchell/ghcid">ghcid</a> so you don’t need to call <code>ghc</code> by hand.) The compiler will yell at you:</p>
+<pre><code>    • Found hole: _ :: (b -&gt; Int) -&gt; Int
+      Where: ‘b’ is a rigid type variable bound by
+               the type signature for:
+                 jonk :: forall a b.
+                         (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+               at /home/sandy/Test.hs:3:1-62
+    • In the expression: _
+      In an equation for ‘jonk’: jonk ab aii = _
+    • Relevant bindings include
+        aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+        ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+        jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+          (bound at /home/sandy/Test.hs:4:1)
+  |
+4 | jonk ab aii = _
+  |</code></pre>
+<p>A common complaint from beginners is that GHC’s error messages are noisy. This is true. To a first approximation, the useful bit of this error message is this:</p>
+<pre><code>• Found hole: _ :: (b -&gt; Int) -&gt; Int
+• Relevant bindings include
+    aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+    ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>There’s no way of getting GHC to shut up about that other stuff, so you just need to train yourself to focus on this core piece of information. That’s not to say the other stuff <em>isn’t</em> helpful, just that this stuff is almost always enough.</p>
+<p>So what is the compiler telling us? Two things:</p>
+<ol type="1">
+<li>The expression we want to replace <code>_</code> with must have type <code>(b -&gt; Int) -&gt; Int</code>.</li>
+<li>We have some local binds (<code>aii</code>, <code>ab</code>, <code>jonk</code>, and their types) that we can use to help with the implementation.</li>
+</ol>
+<p>Using this information, our goal is to write the correct expression in place of the type hole. In most cases doing that in one step is unfeasible, but we can often write a little more of expression, and use a type hole in <em>that</em>.</p>
+<p>In this case, we notice that our hole has type <code>(b -&gt; Int) -&gt; Int</code>, which is to say, that it’s a function that takes a <code>(b -&gt; Int)</code> and returns an <code>Int</code>. As such, it means we should bind the <code>(b -&gt; Int)</code> in a lambda:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> _</span></code></pre></div>
+<p>The resulting error message in full is this:</p>
+<pre><code>    • Found hole: _ :: Int
+    • In the expression: _
+      In the expression: \ bi -&gt; _
+      In an equation for ‘jonk’: jonk ab aii = \ bi -&gt; _
+    • Relevant bindings include
+        bi :: b -&gt; Int (bound at /home/sandy/Test.hs:4:16)
+        aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+        ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+        jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+          (bound at /home/sandy/Test.hs:4:1)
+      Valid hole fits include
+        maxBound :: forall a. Bounded a =&gt; a
+          with maxBound @Int
+          (imported from ‘Prelude’ at /home/sandy/Test.hs:1:1
+           (and originally defined in ‘GHC.Enum’))
+        minBound :: forall a. Bounded a =&gt; a
+          with minBound @Int
+          (imported from ‘Prelude’ at /home/sandy/Test.hs:1:1
+           (and originally defined in ‘GHC.Enum’))
+  |
+4 | jonk ab aii = \bi -&gt; _
+  |</code></pre>
+<p>GHC now mentions “Valid hole fits”. In my experience, these are almost always useless, so I just exclude them. In GHCi, the following incantation will make them disappear.</p>
+<pre><code>:set -fmax-valid-hole-fits=0</code></pre>
+<p>(or you can just squint and ignore them manually!)</p>
+<p>Again, ignoring the irrelevant pieces of the error message, we can pare GHC’s response down to this:</p>
+<pre><code>• Found hole: _ :: Int
+• Relevant bindings include
+    bi :: b -&gt; Int (bound at /home/sandy/Test.hs:4:16)
+    aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+    ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>OK, great! Now we just need to produce an <code>Int</code>. While we could just put <code>0</code> here, that is a <em>clearly wrong</em> solution, since we wouldn’t be using any of <code>ab</code>, <code>aii</code> or <code>bi</code>. Don’t just return <code>0</code>.</p>
+<p>But we notice that both <code>aii</code> and <code>bi</code> will return an <code>Int</code>. Since that’s what we want to return, the odds are good that we want to call one of these functions in this hole. Let’s choose <code>aii</code> as a guess. Feel free to write in your notebook that you are guessing about <code>aii</code>, but also <code>bi</code> could have been chosen — we have no guarantees that <code>aii</code> is the right call!</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> aii <span class="op">$</span> _</span></code></pre></div>
+<pre><code>• Found hole: _ :: a -&gt; Int
+• Relevant bindings include
+    bi :: b -&gt; Int (bound at /home/sandy/Test.hs:4:16)
+    aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+    ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Our hole has a function type, so let’s introduce a lambda:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> aii <span class="op">$</span> \a <span class="ot">-&gt;</span> _</span></code></pre></div>
+<pre><code>• Found hole: _ :: Int
+• Relevant bindings include
+    a :: a (bound at /home/sandy/Test.hs:4:29)
+    bi :: b -&gt; Int (bound at /home/sandy/Test.hs:4:16)
+    aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+    ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>We need to produce an <code>Int</code> again. Since we don’t have one in scope, our only options are again <code>aii</code> and <code>bi</code>. But we’ve already used <code>aii</code>, so let’s try <code>bi</code> this time.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> aii <span class="op">$</span> \a <span class="ot">-&gt;</span> bi <span class="op">$</span> _</span></code></pre></div>
+<pre><code>• Found hole: _ :: b
+• Relevant bindings include
+    a :: a (bound at /home/sandy/Test.hs:4:29)
+    bi :: b -&gt; Int (bound at /home/sandy/Test.hs:4:16)
+    aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+    ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Great! Now we need to produce a <code>b</code>. We have a function that can do that, <code>ab :: a -&gt; b</code>. So let’s call <em>that</em>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> aii <span class="op">$</span> \a <span class="ot">-&gt;</span> bi <span class="op">$</span> ab <span class="op">$</span> _</span></code></pre></div>
+<pre><code>• Found hole: _ :: a
+• Relevant bindings include
+    a :: a (bound at /home/sandy/Test.hs:4:29)
+    bi :: b -&gt; Int (bound at /home/sandy/Test.hs:4:16)
+    aii :: (a -&gt; Int) -&gt; Int (bound at /home/sandy/Test.hs:4:9)
+    ab :: a -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    jonk :: (a -&gt; b) -&gt; ((a -&gt; Int) -&gt; Int) -&gt; (b -&gt; Int) -&gt; Int
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Finally, we have a hole whose type is <code>a</code>. And we <em>have</em> an <code>a</code>! Let’s just use that thing!</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> aii <span class="op">$</span> \a <span class="ot">-&gt;</span> bi <span class="op">$</span> ab <span class="op">$</span> a</span></code></pre></div>
+<pre><code>[1 of 1] Compiling Main             ( /home/sandy/Test.hs, interpreted )
+Ok, one module loaded.</code></pre>
+<p>Cool! It worked! We just wrote a non-trivial function without doing any thinking, really. Not bad! But can we be confident that our implementation is any good?</p>
+<p>The first line of defense against this is to enable <code>-Wall</code>. In GHCi, you can do this via:</p>
+<pre><code>:set -Wall</code></pre>
+<p>You’ll notice there are no warnings generated by our definition. This is usually enough of a sanity check that our implementation is fine. For example, let’s see what happens when we try the <em>obviously stupid</em> implementation:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a>jonk ab aii <span class="ot">=</span> \bi <span class="ot">-&gt;</span> <span class="dv">0</span></span></code></pre></div>
+<pre><code>/home/sandy/Test.hs:4:6: warning: [-Wunused-matches]
+    Defined but not used: ‘ab’
+  |
+4 | jonk ab aii = \bi -&gt; 0
+  |      ^^
+
+/home/sandy/Test.hs:4:9: warning: [-Wunused-matches]
+    Defined but not used: ‘aii’
+  |
+4 | jonk ab aii = \bi -&gt; 0
+  |         ^^^
+
+/home/sandy/Test.hs:4:16: warning: [-Wunused-matches]
+    Defined but not used: ‘bi’
+  |
+4 | jonk ab aii = \bi -&gt; 0
+  |</code></pre>
+<p>Those warnings are pointing out that we haven’t used everything available to us. If we assume that the <em>type of <code>jonk</code> is correct</em>, then any implementation of <code>jonk</code> which doesn’t use all of its variables is <em>extremely suspect.</em></p>
+<p>The other common way to go wrong here is that you’ll notice that <code>jonk</code> comes up in the relevant bindings <em>while trying to write <code>jonk</code>.</em> For example, this thing will happily typecheck:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1"></a>jonk <span class="ot">=</span> jonk</span></code></pre></div>
+<p>But this too is clearly wrong, since we haven’t done any work. The situation becomes more insidious when you call yourself recursively <em>after doing some work</em>, which can be correct. Let’s look at an example of that.</p>
+<p>Let’s try this type on for size:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a><span class="ot">zoop ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span></code></pre></div>
+<p>The first thing to do is to bind all of our variables:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1"></a>zoop abb b as <span class="ot">=</span> _</span></code></pre></div>
+<p>But we notice that <code>as</code> has type <code>[a]</code>. Since <code>[a]</code> has two constructors, let’s pattern match on those before going any further.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1"></a>zoop abb b []       <span class="ot">=</span> _</span>
+<span id="cb26-2"><a href="#cb26-2"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> _</span></code></pre></div>
+<pre><code>• Found hole: _ :: b
+• Relevant bindings include
+    b :: b (bound at /home/sandy/Test.hs:4:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)
+
+• Found hole: _ :: b
+• Relevant bindings include
+    as :: [a] (bound at /home/sandy/Test.hs:5:17)
+    a :: a (bound at /home/sandy/Test.hs:5:13)
+    b :: b (bound at /home/sandy/Test.hs:5:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:5:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Oh god! Too many holes at once. My brain is already exploding. You honestly expect me to keep this much information in my head at once?? Instead, we can replace one of the holes with <code>undefined</code> in order to get GHC to shut up and let us focus.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1"></a>zoop abb b []        <span class="ot">=</span> _</span>
+<span id="cb28-2"><a href="#cb28-2"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> <span class="fu">undefined</span></span></code></pre></div>
+<pre><code>• Found hole: _ :: b
+• Relevant bindings include
+    b :: b (bound at /home/sandy/Test.hs:4:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:4:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Much easier. We see that we need to produce a <code>b</code>, and hey, look at that. We already have one. Furthermore, <em>we don’t</em> have an <code>a</code>, and so we have <em>no chance</em> of calling <code>abb</code>. So we assume <code>b</code> is correct. Let’s fill it in, and then replace our <code>undefined</code> with a hole again:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1"></a>zoop abb b []       <span class="ot">=</span> b</span>
+<span id="cb30-2"><a href="#cb30-2"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> _</span></code></pre></div>
+<pre><code>• Found hole: _ :: b
+• Relevant bindings include
+    as :: [a] (bound at /home/sandy/Test.hs:5:17)
+    a :: a (bound at /home/sandy/Test.hs:5:13)
+    b :: b (bound at /home/sandy/Test.hs:5:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:5:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Again we want to produce a <code>b</code>. We <em>could</em> use the <code>b</code> we have, but that would mean <code>abb</code> is completely unused in our function. So let’s assume we want to call <code>abb</code> instead. Since it takes two arguments, let’s give the first one a hole, and the second <code>undefined</code>. One step at a time.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1"></a>zoop abb b []       <span class="ot">=</span> b</span>
+<span id="cb32-2"><a href="#cb32-2"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> abb _ <span class="fu">undefined</span></span></code></pre></div>
+<pre><code>• Found hole: _ :: a
+• Relevant bindings include
+    as :: [a] (bound at /home/sandy/Test.hs:5:17)
+    a :: a (bound at /home/sandy/Test.hs:5:13)
+    b :: b (bound at /home/sandy/Test.hs:5:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:5:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>We want an <code>a</code>. And we have an <code>a</code>. Since we have no guarantees that <code>as</code> isn’t <code>[]</code>, this <code>a</code> is our only choice. So it’s pretty safe to assume our hole should be filled with <code>a</code>.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1"></a><span class="ot">zoop ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span>
+<span id="cb34-2"><a href="#cb34-2"></a>zoop abb b []       <span class="ot">=</span> b</span>
+<span id="cb34-3"><a href="#cb34-3"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> abb a _</span></code></pre></div>
+<pre><code>• Found hole: _ :: b
+• Relevant bindings include
+    as :: [a] (bound at /home/sandy/Test.hs:5:17)
+    a :: a (bound at /home/sandy/Test.hs:5:13)
+    b :: b (bound at /home/sandy/Test.hs:5:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:5:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>So we need to produce a <code>b</code>, and we still have the unused <code>as :: [a]</code> to work with, so it’s unlikely to just be our binding <code>b</code>. Instead, our only option which takes a <code>[a]</code> is <code>zoop</code> itself! This is a recursive call, but we’ve already popped the head off our list, so it’s not going to be an infinite loop.</p>
+<p>Lets fill in our hole with <code>zoop _ _ as</code>. Or, <code>zoop _ undefined as</code> if you prefer.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1"></a>zoop abb b []       <span class="ot">=</span> b</span>
+<span id="cb36-2"><a href="#cb36-2"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> abb a <span class="op">$</span> zoop _ <span class="fu">undefined</span> as</span></code></pre></div>
+<pre><code>• Found hole: _ :: a -&gt; b -&gt; b
+• Relevant bindings include
+    as :: [a] (bound at /home/sandy/Test.hs:5:17)
+    a :: a (bound at /home/sandy/Test.hs:5:13)
+    b :: b (bound at /home/sandy/Test.hs:5:10)
+    abb :: a -&gt; b -&gt; b (bound at /home/sandy/Test.hs:5:6)
+    zoop :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+      (bound at /home/sandy/Test.hs:4:1)</code></pre>
+<p>Probably <code>abb</code>, because we’re recursing, and have no real reason to want to change this function. Fill it in, and, for the same argument, replace our <code>undefined</code> with <code>b</code>. Our final function in all its glory is this:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1"></a><span class="ot">zoop ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span>
+<span id="cb38-2"><a href="#cb38-2"></a>zoop abb b []       <span class="ot">=</span> b</span>
+<span id="cb38-3"><a href="#cb38-3"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> abb a <span class="op">$</span> zoop abb b as</span></code></pre></div>
+<p>And it works! Except that <code>-Wall</code> yells at us:</p>
+<pre><code>/home/sandy/Test.hs:4:6: warning: [-Wunused-matches]
+    Defined but not used: ‘abb’
+  |
+4 | zoop abb b []       = b
+  |</code></pre>
+<p>This is a little alarming, until we realize that <code>abb</code> isn’t <em>not</em> used in <code>zoop</code>, it’s just not used in this branch. We can put a wildcard to match <code>abb</code> here to get rid of this warning:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1"></a><span class="ot">zoop ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span>
+<span id="cb40-2"><a href="#cb40-2"></a>zoop _   b []       <span class="ot">=</span> b</span>
+<span id="cb40-3"><a href="#cb40-3"></a>zoop abb b (a <span class="op">:</span> as) <span class="ot">=</span> abb a <span class="op">$</span> zoop abb b as</span></code></pre></div>
+<p>(note that this <code>_</code> on the left-hand side of the equals sign is <em>not</em> a type hole, it’s a wildcard pattern match!)</p>
+<p>Finally we’re finished! A little experimentation will convince you that this <code>zoop</code> thing we just wrote is in fact just <code>foldr</code>! Pretty impressive for just blindly filling in holes, no?</p>
+<p>I’m not going to say that blindly filling in type holes <em>always</em> works, but I’d say maybe 95% of the time? It’s truly amazing just how far you can get by writing down the right type and making sure you use every variable.</p>
+<p>The reason why this works is known as <a href="/blog/theorems-for-free/">theorems for free</a>, which roughly states that we can infer lots of facts about a type signature (assuming it’s correct.) One of those facts we can infer is often the <em>the only possible implementation.</em> It’s cool as fuck, but you don’t need to understand the paper to use this idea in practice.</p>
+<p>One question you might have is “what the heck does it mean for a type to be correct?” Good question! It means your type should be <em>as polymorphic as possible</em>. For example, if you want a function that creates a list with length <span class="math inline">\(n\)</span>, where all elements are the same value, then that thing should have type <code>Int -&gt; a -&gt; [a]</code>, not <code>Int -&gt; Bool -&gt; [Bool]</code>. Because we can do this operation for any type, we don’t need to give it a monomorphic type. Here we would say <code>Int -&gt; a -&gt; [a]</code> is the correct type for this operation, while <code>Int -&gt; Bool -&gt; [Bool]</code> is not.</p>
+<p>You know when people say “types are not an alternative to documentation?” I think this is a pretty knock-down argument to that claim. Once you really understand the typesystem, most of the time, types <em>really are</em> the best documentation — they often tell you <em>exactly</em> what the function does, in a way that English comments never will.</p>
+<p>In conclusion, a strong type system is fucking awesome because it’s smart enough to know the necessary type of any given expression. Which means you can slowly use type holes to chip away at a difficult implementation, without ever really knowing what you’re doing. It’s <em>marvelous.</em> Get into the habit of using this technique, and you’ll quickly be amazed at just how good you get at Haskell.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/freer-higher-order-effects">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/tactics">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+    <div id="disqus_thread"></div>
+    <script>
+    var disqus_config = function () {
+        var slug = "typeholes";
+        this.page.url = "http://reasonablypolymorphic.com/blog/" + slug;
+        this.page.identifier = slug;
+    };
+    (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://reasonablypolymorphic.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+    </script>
+    <noscript>
+      Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2020 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
