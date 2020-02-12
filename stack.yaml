@@ -3,8 +3,8 @@ packages:
 - '.'
 
 extra-deps:
-- datetime-0.3.1@sha256:7e275bd0ce7a2f66445bedfa0006abaf4d41af4c2204c3f8004c17eab5480e74,1534
-- sitepipe-0.4.0.0@sha256:eada8cc7eb0730a5dd161869e27592ff295a8b74a3900217491b75d9ac9d6c93,1560
-- strptime-1.0.10@sha256:f7f0c3ffedbedbfebc4ce77e0015b4ad879d79dffe11a747da7a304900b09d13,1156
+- datetime-0.3.1
+- sitepipe-0.4.0.1
+- strptime-1.0.10
 
-resolver: lts-13.0
+resolver: lts-14.0
