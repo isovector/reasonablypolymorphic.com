@@ -1,0 +1,116 @@
+---
+layout: post
+title: A Working Linux DAW
+date: 2020-02-13 00:30
+comments: true
+tags: linux, daw, audio
+---
+
+I've recently been watching [Guy Michelmore's youtube videos on composing
+music][guy]. "That looks pretty easy" I thought to myself, which led to
+accidentally buying a [Native Instruments M32][m32] and attempting to compose
+music for myself.
+
+[guy]: https://www.youtube.com/channel/UCMHG0rJtVF1LohiP63FJakw
+[m32]: https://www.native-instruments.com/en/products/komplete/keyboards/komplete-kontrol-m32/
+
+As it happens, writing music is much harder than I gave it credit for. But an
+overwhelming amount of that difficulty is for bullshit reasons. You see, for
+whatever reason, the world of digital music production is a world awash in
+stupid [dial UIs][dial] and proprietary software.
+
+[dial]: https://i0.wp.com/www.macosaudio.com/wp-content/uploads/2018/06/Klevgrand-DAW-LP.jpg?resize=700%2C349&ssl=1
+
+When I say proprietary software, I don't just mean the mixing software itself. I
+also mean all of the drivers for the peripherals. I also also mean all of the
+digital instruments. Extremely frustratingly, I also also *also* mean even the
+software to *download this stuff.* EVEN THOUGH IT'S ALL JUST OVER HTTP ANYWAY!
+
+Anyway, I thought I should probably write down the things I've learned to
+hopefully help keep future linux musicians sane.
+
+
+## Digital Audio Workstation (DAW)
+
+**Go with [REAPER DAW][reaper].**
+
+[reaper]:
+
+I started with LMMS because a quick search for "linux daw" suggested I use it.
+After a few days of learning it, this turned out to be a bad idea. The UI is
+frustrating, and instrument plugins don't work very well.
+
+REAPER, on the other hand, feels really good. Once you get it working. I had a
+few issues getting sound working. I had to choose the "ALSA" backend, and turn
+off the "auto-disable PulseAudio" setting. Unfortunately the PulseAudio backend
+was introducing ~200ms of latency between hitting notes and hearing them. **Try
+using the ALSA backend if you are experiencing sound latency.**
+
+You can use the `ReaSynth` virtual instrument to try testing your audio.
+
+
+## Audio Plugins (VSTs)
+
+Out of the box, REAPER is pretty shit. It doesn't come with anything good, and
+so we'll need to add some before we can get to making music. There are lots of
+great VSTs out there, but almost all of them are Windows-only. But fear not!
+
+If you install [wine-staging][wine], you can use it to download some good, free
+instruments from [Spitfire LABS][labs]. You'll need to sign up for an account,
+install the (ahem) propriety software, and then press the "GET" button on the
+LABS website. That... somehow authorizes your account, and then the proprietary
+software will let you download your files.
+
+[wine]: https://wiki.winehq.org/Wine-Staging
+[labs]: https://www.spitfireaudio.com/labs/
+
+Particularly resourceful readers can also probably find copies of [Massive][massive] and
+[Kontakt][kontakt] too.
+
+[massive]: https://www.native-instruments.com/en/products/komplete/synths/massive/
+[kontakt]: https://www.native-instruments.com/en/products/komplete/samplers/kontakt-6/
+
+**Make sure you get the 32bit Windows editions of any VSTs you find.**
+
+Now, none of these VSTs actually work in REAPER, but thankfully, **there's a
+program called [Airwave][airwave] that can convert Windows VSTs into Linux
+ones.** Move your 32bit VST .dlls into `~/.wine/drive_c`, then ask Airwave to
+install them into `~/.vst` for you. Make sure this is the VST path for REAPER.
+
+[airwave]: https://github.com/psycha0s/airwave
+
+Back in REAPER, press `CTRL+P` and then `Plugins > VST`. Make sure the VST
+plugin path says `~/.vst`, and then hit the **Re-scan** button. If you're lucky,
+you should now be able to right-click in the main window and click "Insert
+virtual instrument on new track" and find your new VSTs under `All Plugins >
+New`.
+
+
+## MIDI Controller
+
+My M32 keyboard worked out of the box, sorta. The keys play keys in REAPER, and
+the dials are successfully recognized as inputs. But none of the useful "DAW
+control" buttons work. More proprietary software, hidden behind enough bullshit
+that I couldn't even find it to test if it worked under wine.
+
+**I would not recommend the NI M32 due to the amount of bullshit their lack of
+Linux support put me through.**
+
+But if you're stuck with one... I decided to [reverse engineer the protocol and
+write a little driver][free-m32]. This program requires `xdotool`, and maps
+button presses on the M32 into keypresses. At time of writing, it just types
+regular English characters --- unfortunate because they're likely to conflict
+with other bindings, but REAPER doesn't recognize most linux keysyms. Also, it
+only intermittently recognizes high-ASCII characters. What a piece of shit. I
+spent four hours today fighting with this.
+
+[free-m32]: https://github.com/isovector/free-m32
+
+---
+
+This is the critical path I took from not knowing anything about music
+production to having a mostly-working setup. Knowing what I do now, it would
+only take 30 minutes to setup, but this blog post is the culmination of about a
+week of pain! Not all of it was bad though --- I got to learn a lot about
+reverse engineering, and expect a blog post on that in the near future!
+
