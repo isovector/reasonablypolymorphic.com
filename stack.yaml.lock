@@ -10,24 +10,24 @@ packages:
       size: 334
       sha256: d41d182c143676464cb1774f0b7777e870ddeaf8b6cd5fee6ff0114997a1f504
   original:
-    hackage: datetime-0.3.1@sha256:7e275bd0ce7a2f66445bedfa0006abaf4d41af4c2204c3f8004c17eab5480e74,1534
+    hackage: datetime-0.3.1
 - completed:
-    hackage: sitepipe-0.4.0.0@sha256:eada8cc7eb0730a5dd161869e27592ff295a8b74a3900217491b75d9ac9d6c93,1560
+    hackage: sitepipe-0.4.0.1@sha256:5fc6cda5c34b68900d4dcbc4c69a812419d33aefe89705918f048ae16823afad,1470
     pantry-tree:
       size: 702
-      sha256: 4e18f2abf821f0a420233e641654942029f2f11d6b52e61a93abd1f04e99db3e
+      sha256: b96e437558da5a86e03650a434e4d516fbf8f1345b5a59655b7fa80c4f07222f
   original:
-    hackage: sitepipe-0.4.0.0@sha256:eada8cc7eb0730a5dd161869e27592ff295a8b74a3900217491b75d9ac9d6c93,1560
+    hackage: sitepipe-0.4.0.1
 - completed:
     hackage: strptime-1.0.10@sha256:f7f0c3ffedbedbfebc4ce77e0015b4ad879d79dffe11a747da7a304900b09d13,1156
     pantry-tree:
       size: 331
       sha256: fb752cf40a8ac7ac9f6590b93d37b9ad9f3b4252d04f237b9e9f201226c8004b
   original:
-    hackage: strptime-1.0.10@sha256:f7f0c3ffedbedbfebc4ce77e0015b4ad879d79dffe11a747da7a304900b09d13,1156
+    hackage: strptime-1.0.10
 snapshots:
 - completed:
-    size: 491155
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/0.yaml
-    sha256: 8d3c33e0feab8e04b9ed31452e0219a2b827ed1338c809f79d986c71a177e6ba
-  original: lts-13.0
+    size: 523443
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/0.yaml
+    sha256: 283773e7120f5446d961eab35ea95c9af9c24187cc178537bd29273200a05171
+  original: lts-14.0
