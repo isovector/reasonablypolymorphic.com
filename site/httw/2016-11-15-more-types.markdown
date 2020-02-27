@@ -42,10 +42,7 @@ Unfortunately for them, this is a skill that would make their day-to-day jobs
 tremendously easier, if only they knew it. I tell you this not to belittle them,
 but to inspire you. It's not a particularly difficult topic, and if you can
 manage to hold on just a little longer, you'll have the tools under your belt in
-order to compete with the best of them I tell you this not to belittle them, but
-to inspire you. It's not a particularly difficult topic, and if you can manage
-to hold on just a little longer, you'll have the tools under your belt in order
-to compete with the best of them. This is absolutely not hyperbole.
+order to compete with the best of them. This is absolutely not hyperbole.
 
 
 
