@@ -1,0 +1,209 @@
+---
+layout: post
+title: "Polysemy: Mea Culpa"
+date: 2020-06-14 22:36
+comments: true
+tags: polysemy
+---
+
+[Alexis King](https://lexi-lambda.github.io/) gave an [utterly fantastic
+talk](https://www.youtube.com/watch?v=0jI-AlWEwYI) today on the deep inner
+workings of Haskell programs' performance profiles. It's really very excellent
+and you should go watch it if you haven't already. I've been extremely [burned
+out](https://sandymaguire.me/blog/burnout/) on Polysemy and
+effect-system-related topics lately, but it seems like as good a time as any to
+discuss what's going on with the library. Why do Alexis' benchmarks clearly show
+something other than my claim that Polysemy was "zero cost?" In short:
+
+I screwed up.
+
+The core Haskell that's being run in Alexis' benchmark probably looks [like
+this](https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#file-t16473-dump-simpl),
+though at one point I did indeed get the countdown benchmark to completely
+[optimize
+away.](https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2883147)
+My claim to being zero-cost was based on this result, which was possible, but
+required [patching GHC](https://gitlab.haskell.org/ghc/ghc/merge_requests/668),
+enabling `-flate-specialise -O2 -fstatic-argument-transformation
+-fmax-simplifier-iterations=10` as well as a [GHC patch cajoling the optimizer
+into running extra
+hard.](https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2872671)
+
+My patch to GHC just barely missed the 8.8 deadline, which meant it wouldn't be
+publicly available until GHC 8.10, roughly a year away. And until then, Polysemy
+had no chance of being fast.
+
+The result of all this: fast code, relying on a house of cards of optimization,
+only on a compiler that didn't exist yet. It worked, but was a huge hassle to
+test, and because of that, I didn't do it very often, nor did I make it easy for
+others to verify my claims.
+
+My mindset has always been that the "free monads are too slow" argument is
+overblown and irrelevant to 99% of programs, and my original goal with Polysemy
+was to show that there was nothing fundamentally wrong with the approach; that
+if we tried hard enough, we really could pull amazing performance out of free
+monads.
+
+It's been about a year now, so my recollection is hazy, but I think I must have
+somehow conflated "fast programs are possible in Polysemy" with "Polysemy is
+zero-cost." There was absolutely no deception intended, but it appears I
+deceived myself, and the community because of that. I'm sorry.
+
+Sometime near the end of 2019, Lexi showed me her research into why the effect
+system benchmarks were extremely misleading (as mentioned in her talk.) Her
+research made it very evident that all effect systems were "cheating" in the
+benchmark shootout, and I attributed Polysemy's pre-super-optimized terrible
+benchmark numbers to "not cheating as much." If the optimizer was what was
+making other effect systems fast, but only in single-module programs, presumably
+they would also perform badly in real-world, multiple-module programs, and would
+see the same performance characteristics as Polysemy. I didn't confirm this
+experimentally.
+
+Plus, I figured, if performance *truly is* a problem, and not the overactive
+fear I thought it was, surely someone would have filed a bug complaining that
+Polysemy wasn't as fast as it claimed. To date, nobody has filed that bug, and I
+continue to believe it's an overblown issue --- though that isn't to say we
+shouldn't fix it if we can. Lexi's package [eff](https://github.com/hasura/eff)
+seems to be working towards that solution, and I applaud her for all of the
+work she's been putting into this problem.
+
+So that's more or less the story. But there are a few loose ends; such as why
+Lexi and I are seeing different benchmarking results. I realize this doesn't
+actually matter, and I agree with her that Polysemy *is in fact slow.* That
+being said, I feel like enough of my reputation is on the line that I'd like to
+put towards some more evidence that I didn't fabricate the whole thing. Also,
+the investigation will unearth some more systematic problems.
+
+First and foremost, the last time I looked at the source of Lexi's benchmarks, I
+noted that they don't use `polysemy-plugin`, which [the documentation states is
+necessary for the good
+performance](https://github.com/polysemy-research/polysemy#stellar-engineering---aligning-the-stars-to-optimize-polysemy-away).
+I don't remember where these benchmarks actually are, but it doesn't matter,
+because even if she had enabled the plugin, Polysemy *would still not optimize
+away.*
+
+Why not? Polysemy's performance was extremely reliant on unfolding of its
+recursive bind operation. As [described
+here](https://reasonablypolymorphic.com/blog/writing-custom-optimizations/#inlining-recursive-calls),
+you could trick GHC into unfolding a recursive call once by explicitly giving a
+loop-breaker. In essence, it required transforming the following recursive call:
+
+```haskell
+factorial :: Int -> Int
+factorial 0 = 1
+factorial n = n * factorial (n - 1)
+{-# INLINE factorial #-}
+```
+
+Into this:
+
+```haskell
+factorial :: Int -> Int
+factorial 0 = 1
+factorial n = n * factorial' (n - 1)
+{-# INLINE factorial #-}
+
+factorial' :: Int -> Int
+factorial' = factorial
+{-# NOINLINE factorial' #-}
+```
+
+For whatever reason, this trick exposes enough of Polysemy's bind so that the
+simplifier could inline away the expensive bits. But this was tedious! Every
+recursive call needed an explicit loop-breaker, and missing one would silently
+jeopardize your performance! Doing this by hand seemed antithetical to
+Polysemy's other goal of no-boilerplate, and so at some point we factored out
+this logic into a GHC plugin, and then [removed our hand-written
+loop-breakers.](https://github.com/polysemy-research/polysemy/commit/8bbd9dc7d6ff1d55c9f8ea5f7f160ecf337d0e6e#diff-a6a5069006aaf9c213df8bfcf538bda8).
+The initial implementation of that plugin is described [in this blog
+post](https://reasonablypolymorphic.com/blog/writing-custom-optimizations/).
+
+In retrospect, this explicit breaking-of-loops doesn't seem to be required in
+the benchmark --- only in Polysemy --- but that escaped my attention at the time
+and believing that user-code required this optimization was the main motivation
+in turning it into a GHC plugin. Anyway...
+
+As it turns out, this plugin *didn't actually work!* It was successfully
+rewriting the core into the explicitly loop-broken version, but for whatever
+reason, [the simplifier wasn't picking up where we left
+off.](https://github.com/polysemy-research/polysemy/pull/90#issuecomment-500090395)
+To this day I don't know why it doesn't work, but it doesn't. Instead we
+proposed to implement this plugin as a renamer pass, but that presents serious
+implementation problems. Since there was no way in hell Polysemy could possibly
+be fast before GHC 8.10 (to be released roughly a year in the future) motivation
+to find a solution to this problem was understandably low, and it fell by the
+wayside. It has never been fixed, and remains disabled and half-worked around in
+Polysemy to this day.
+
+Hopefully this is the only reason why Polysemy doesn't show the excellent
+(though, admittedly unrepresentative) countdown benchmark results I claimed it
+did. I'm not invested enough to check for myself, but if you're interested, I
+suspect you'll see excellent core produced by [my single-file
+repro](https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2883144)
+if you compile it on GHC 8.10 under `-O2` with the `polysemy-plugin` and the
+above flags enabled. If so, I suspect rolling back
+[#8bbd9dc](https://github.com/polysemy-research/polysemy/commit/8bbd9dc7d6ff1d55c9f8ea5f7f160ecf337d0e6e)
+would get the real Polysemy library also doing well on the benchmark. But again,
+*the benchmark performance is meaningless!*
+
+---
+
+Enough history for today. Before ending this post, I'd like to do a tiny
+[STAMP](https://www.hillelwayne.com/post/stamping-on-eventstream/) on what went
+wrong, in the hope that we can all learn something. The goal here is not to pass
+the buck, but to get a sense of just how much went wrong, how, and why.
+
+By my analysis, the following issues all contributed to Polysemy's colossal
+failure:
+
+* Haskell's performance is not well understood
+  * The effect system benchmarks were meaningless, and if anyone knew that, it was
+      not common knowledge.
+  * MTL is widely believed to be more performant than it is.
+  * Existing effect systems' performance is tied largely to GHC's optimizer
+      firing.
+  * Because of lack of understanding, I was tackling bad-performance symptoms
+      rather than causes.
+* Polysemy's performance was unreliable
+  * Required several interlocking pieces to work: a patched compiler, a core
+      plugin, explicit loop-breakers, obscure GHC options.
+  * Because the performance was hard to test, we didn't notice when these pieces
+      didn't work.
+    * Upon noticing the loop-breaking plugin didn't work, it was unclear how to
+        fix it.
+      * Because of requiring a patched GHC, it was not a priority to fix.
+        * Not being a priority meant it wasn't motivating, and so it didn't get
+            done.
+  * Debugging the simplifier is hard work. I was looking at thousands of lines of
+      generated core by eye. [Tooling exists](https://github.com/yav/dump-core),
+      but it is more helpful for navigating core than diffing it.
+* Polysemy's performance was too hard to test.
+  * I missed the GHC deadline
+    * My patch lingered for weeks in a finished state
+      * Only reviewable by one person, who was on vacation.
+      * Stuck doing drive-by improvements that were only suggestions, and not
+          blockers to being merged. This was not made clear to me.
+      * The simplifier is really hairy. It's under-documented, and the
+          function I was touching was over 150 lines of code.
+  * I use Stack for my development, Stack doesn't easily support custom-built
+      GHCs. Therefore I couldn't use my usual tools to test.
+  * I don't know how to use cabal
+    * The documentation is notoriously lacking. As best I can tell, there are no
+        "quick start" tutorials, and the relevant parts of the user manual are
+        mentioned only under a heading that mentions "Nix".
+  * Because of the above two points, I only tested on the single module, and
+      never on the library itself.
+* I had too much ego in the project.
+  * I wanted to believe I had accomplished something "impossible."
+  * I had invested several engineering-months of my time working on this
+      problem.
+  * I had invested a large chunk of my reputation into free monads.
+
+This post is long enough without diving into those points in more detail, but
+I'm happy to expand on individual points. Let me know in the comments if you're
+interested.
+
+All in all, this is has been the embarrassing affair. But then again, *if you
+haven't failed in recent memory, you're not trying hard enough.* I'll strive to
+do better in the future.
+
