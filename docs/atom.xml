@@ -1,11 +1,105 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2020-02-13T00:30:00Z</updated>
+  <updated>2020-06-14T22:36:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='atom.xml'/>
 
+    <entry>
+      <title>Polysemy: Mea Culpa</title>
+      <id>blog/mea-culpa/index.html</id>
+      <link href='blog/mea-culpa/index.html'/>
+      <published>2020-06-14T22:36:00Z</published>
+      <updated>2020-06-14T22:36:00Z</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p><a href="https://lexi-lambda.github.io/">Alexis King</a> gave an <a href="https://www.youtube.com/watch?v=0jI-AlWEwYI">utterly fantastic talk</a> today on the deep inner workings of Haskell programs’ performance profiles. It’s really very excellent and you should go watch it if you haven’t already. I’ve been extremely <a href="https://sandymaguire.me/blog/burnout/">burned out</a> on Polysemy and effect-system-related topics lately, but it seems like as good a time as any to discuss what’s going on with the library. Why do Alexis’ benchmarks clearly show something other than my claim that Polysemy was “zero cost?” In short:</p>
+<p>I screwed up.</p>
+<p>The core Haskell that’s being run in Alexis’ benchmark probably looks <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#file-t16473-dump-simpl">like this</a>, though at one point I did indeed get the countdown benchmark to completely <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2883147">optimize away.</a> My claim to being zero-cost was based on this result, which was possible, but required <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/668">patching GHC</a>, enabling <code>-flate-specialise -O2 -fstatic-argument-transformation -fmax-simplifier-iterations=10</code> as well as a <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2872671">GHC patch cajoling the optimizer into running extra hard.</a></p>
+<p>My patch to GHC just barely missed the 8.8 deadline, which meant it wouldn’t be publicly available until GHC 8.10, roughly a year away. And until then, Polysemy had no chance of being fast.</p>
+<p>The result of all this: fast code, relying on a house of cards of optimization, only on a compiler that didn’t exist yet. It worked, but was a huge hassle to test, and because of that, I didn’t do it very often, nor did I make it easy for others to verify my claims.</p>
+<p>My mindset has always been that the “free monads are too slow” argument is overblown and irrelevant to 99% of programs, and my original goal with Polysemy was to show that there was nothing fundamentally wrong with the approach; that if we tried hard enough, we really could pull amazing performance out of free monads.</p>
+<p>It’s been about a year now, so my recollection is hazy, but I think I must have somehow conflated “fast programs are possible in Polysemy” with “Polysemy is zero-cost.” There was absolutely no deception intended, but it appears I deceived myself, and the community because of that. I’m sorry.</p>
+<p>Sometime near the end of 2019, Lexi showed me her research into why the effect system benchmarks were extremely misleading (as mentioned in her talk.) Her research made it very evident that all effect systems were “cheating” in the benchmark shootout, and I attributed Polysemy’s pre-super-optimized terrible benchmark numbers to “not cheating as much.” If the optimizer was what was making other effect systems fast, but only in single-module programs, presumably they would also perform badly in real-world, multiple-module programs, and would see the same performance characteristics as Polysemy. I didn’t confirm this experimentally.</p>
+<p>Plus, I figured, if performance <em>truly is</em> a problem, and not the overactive fear I thought it was, surely someone would have filed a bug complaining that Polysemy wasn’t as fast as it claimed. To date, nobody has filed that bug, and I continue to believe it’s an overblown issue — though that isn’t to say we shouldn’t fix it if we can. Lexi’s package <a href="https://github.com/hasura/eff">eff</a> seems to be working towards that solution, and I applaud her for all of the work she’s been putting into this problem.</p>
+<p>So that’s more or less the story. But there are a few loose ends; such as why Lexi and I are seeing different benchmarking results. I realize this doesn’t actually matter, and I agree with her that Polysemy <em>is in fact slow.</em> That being said, I feel like enough of my reputation is on the line that I’d like to put towards some more evidence that I didn’t fabricate the whole thing. Also, the investigation will unearth some more systematic problems.</p>
+<p>First and foremost, the last time I looked at the source of Lexi’s benchmarks, I noted that they don’t use <code>polysemy-plugin</code>, which <a href="https://github.com/polysemy-research/polysemy#stellar-engineering---aligning-the-stars-to-optimize-polysemy-away">the documentation states is necessary for the good performance</a>. I don’t remember where these benchmarks actually are, but it doesn’t matter, because even if she had enabled the plugin, Polysemy <em>would still not optimize away.</em></p>
+<p>Why not? Polysemy’s performance was extremely reliant on unfolding of its recursive bind operation. As <a href="https://reasonablypolymorphic.com/blog/writing-custom-optimizations/#inlining-recursive-calls">described here</a>, you could trick GHC into unfolding a recursive call once by explicitly giving a loop-breaker. In essence, it required transforming the following recursive call:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="ot">{-# INLINE factorial #-}</span></span></code></pre></div>
+<p>Into this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial&#39; (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="ot">{-# INLINE factorial #-}</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="ot">factorial&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>factorial&#39; <span class="ot">=</span> factorial</span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="ot">{-# NOINLINE factorial&#39; #-}</span></span></code></pre></div>
+<p>For whatever reason, this trick exposes enough of Polysemy’s bind so that the simplifier could inline away the expensive bits. But this was tedious! Every recursive call needed an explicit loop-breaker, and missing one would silently jeopardize your performance! Doing this by hand seemed antithetical to Polysemy’s other goal of no-boilerplate, and so at some point we factored out this logic into a GHC plugin, and then <a href="https://github.com/polysemy-research/polysemy/commit/8bbd9dc7d6ff1d55c9f8ea5f7f160ecf337d0e6e#diff-a6a5069006aaf9c213df8bfcf538bda8">removed our hand-written loop-breakers.</a>. The initial implementation of that plugin is described <a href="https://reasonablypolymorphic.com/blog/writing-custom-optimizations/">in this blog post</a>.</p>
+<p>In retrospect, this explicit breaking-of-loops doesn’t seem to be required in the benchmark — only in Polysemy — but that escaped my attention at the time and believing that user-code required this optimization was the main motivation in turning it into a GHC plugin. Anyway…</p>
+<p>As it turns out, this plugin <em>didn’t actually work!</em> It was successfully rewriting the core into the explicitly loop-broken version, but for whatever reason, <a href="https://github.com/polysemy-research/polysemy/pull/90#issuecomment-500090395">the simplifier wasn’t picking up where we left off.</a> To this day I don’t know why it doesn’t work, but it doesn’t. Instead we proposed to implement this plugin as a renamer pass, but that presents serious implementation problems. Since there was no way in hell Polysemy could possibly be fast before GHC 8.10 (to be released roughly a year in the future) motivation to find a solution to this problem was understandably low, and it fell by the wayside. It has never been fixed, and remains disabled and half-worked around in Polysemy to this day.</p>
+<p>Hopefully this is the only reason why Polysemy doesn’t show the excellent (though, admittedly unrepresentative) countdown benchmark results I claimed it did. I’m not invested enough to check for myself, but if you’re interested, I suspect you’ll see excellent core produced by <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2883144">my single-file repro</a> if you compile it on GHC 8.10 under <code>-O2</code> with the <code>polysemy-plugin</code> and the above flags enabled. If so, I suspect rolling back <a href="https://github.com/polysemy-research/polysemy/commit/8bbd9dc7d6ff1d55c9f8ea5f7f160ecf337d0e6e">#8bbd9dc</a> would get the real Polysemy library also doing well on the benchmark. But again, <em>the benchmark performance is meaningless!</em></p>
+<hr />
+<p>Enough history for today. Before ending this post, I’d like to do a tiny <a href="https://www.hillelwayne.com/post/stamping-on-eventstream/">STAMP</a> on what went wrong, in the hope that we can all learn something. The goal here is not to pass the buck, but to get a sense of just how much went wrong, how, and why.</p>
+<p>By my analysis, the following issues all contributed to Polysemy’s colossal failure:</p>
+<ul>
+<li>Haskell’s performance is not well understood
+<ul>
+<li>The effect system benchmarks were meaningless, and if anyone knew that, it was not common knowledge.</li>
+<li>MTL is widely believed to be more performant than it is.</li>
+<li>Existing effect systems’ performance is tied largely to GHC’s optimizer firing.</li>
+<li>Because of lack of understanding, I was tackling bad-performance symptoms rather than causes.</li>
+</ul></li>
+<li>Polysemy’s performance was unreliable
+<ul>
+<li>Required several interlocking pieces to work: a patched compiler, a core plugin, explicit loop-breakers, obscure GHC options.</li>
+<li>Because the performance was hard to test, we didn’t notice when these pieces didn’t work.
+<ul>
+<li>Upon noticing the loop-breaking plugin didn’t work, it was unclear how to fix it.
+<ul>
+<li>Because of requiring a patched GHC, it was not a priority to fix.
+<ul>
+<li>Not being a priority meant it wasn’t motivating, and so it didn’t get done.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Debugging the simplifier is hard work. I was looking at thousands of lines of generated core by eye. <a href="https://github.com/yav/dump-core">Tooling exists</a>, but it is more helpful for navigating core than diffing it.</li>
+</ul></li>
+<li>Polysemy’s performance was too hard to test.
+<ul>
+<li>I missed the GHC deadline
+<ul>
+<li>My patch lingered for weeks in a finished state
+<ul>
+<li>Only reviewable by one person, who was on vacation.</li>
+<li>Stuck doing drive-by improvements that were only suggestions, and not blockers to being merged. This was not made clear to me.</li>
+<li>The simplifier is really hairy. It’s under-documented, and the function I was touching was over 150 lines of code.</li>
+</ul></li>
+</ul></li>
+<li>I use Stack for my development, Stack doesn’t easily support custom-built GHCs. Therefore I couldn’t use my usual tools to test.</li>
+<li>I don’t know how to use cabal
+<ul>
+<li>The documentation is notoriously lacking. As best I can tell, there are no “quick start” tutorials, and the relevant parts of the user manual are mentioned only under a heading that mentions “Nix”.</li>
+</ul></li>
+<li>Because of the above two points, I only tested on the single module, and never on the library itself.</li>
+</ul></li>
+<li>I had too much ego in the project.
+<ul>
+<li>I wanted to believe I had accomplished something “impossible.”</li>
+<li>I had invested several engineering-months of my time working on this problem.</li>
+<li>I had invested a large chunk of my reputation into free monads.</li>
+</ul></li>
+</ul>
+<p>This post is long enough without diving into those points in more detail, but I’m happy to expand on individual points. Let me know in the comments if you’re interested.</p>
+<p>All in all, this is has been the embarrassing affair. But then again, <em>if you haven’t failed in recent memory, you’re not trying hard enough.</em> I’ll strive to do better in the future.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>A Working Linux DAW</title>
       <id>blog/linux-daw/index.html</id>
@@ -1040,204 +1134,6 @@ Ok, one module loaded.</code></pre>
 <li id="fn2" role="doc-endnote"><p>For further discussion of <code>Coyoneda</code> and how it can help performance, perhaps you might be interested in <a href="https://thinkingwithtypes.com/">my book</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Faking Fundeps with Typechecker Plugins</title>
-      <id>blog/faking-fundeps/index.html</id>
-      <link href='blog/faking-fundeps/index.html'/>
-      <published>2019-05-25T02:17:00Z</published>
-      <updated>2019-05-25T02:17:00Z</updated>
-
-      <content type="html">
-        <![CDATA[
-        <blockquote>
-<p>The approach here, and my original implementation are both lifted almost entirely from <a href="https://github.com/LukaHorvat">Luka Horvat</a>’s <a href="https://gitlab.com/LukaHorvat/simple-effects/commit/966ce80b8b5777a4bd8f87ffd443f5fa80cc8845#f51c1641c95dfaa4827f641013f8017e8cd02aab">plugin for <code>simple-effects</code></a>. All praise should be directed to him.</p>
-</blockquote>
-<hr />
-<p><a href="/blog/writing-custom-optimizations/">Last time</a> we chatted about using a GHC plugin to run custom Core-to-Core transformations on the programs that GHC is compiling. Doing so allows us to add custom optimization passes, and even other, more <em>exotic</em> things like <a href="https://github.com/conal/concat">rewriting lambda expression as categorical operations</a>.</p>
-<p>Today I want to talk about another sort of GHC plugin: <em>type-checker plugins!</em> TC plugins let you hook into GHC’s constraint machinery and help it solve domain-specific problems that it wouldn’t be able to otherwise. One of the more interesting examples of a TC plugin is <a href="https://www.joachim-breitner.de/blog">nomeata’s</a> <a href="http://hackage.haskell.org/package/ghc-justdoit">ghc-justdoit</a> — which will automatically generate a value of the correct type, essentially letting you leave implementations as “exercises for the compiler.”</p>
-<p><a href="https://github.com/isovector/polysemy/">Polysemy</a> uses a TC plugin in order to improve type-inference. The result is that it can provide type-inference that is as good as <code>mtl</code>’s, without succumbing to the pitfalls that accompany <code>mtl</code>’s approach.</p>
-<h2 id="the-problem">The Problem</h2>
-<p>Consider the following program:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">foo ::</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">=&gt;</span> m ()</span>
-<span id="cb1-2"><a href="#cb1-2"></a>foo <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
-<p>Such a thing compiles and runs no problem. There are no surprises here for any Haskell programmers who have ever run into <code>mtl</code>. But the reason it works is actually quite subtle. If we look at the type of <code>modify</code> we see:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">modify ::</span> <span class="dt">MonadState</span> s m <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> s) <span class="ot">-&gt;</span> m ()</span></code></pre></div>
-<p>which suggests that the <code>s -&gt; s</code> function we pass to it should determine the <code>s</code> parameter. But our function <code>(+ 1)</code> has type <code>Num a =&gt; a -&gt; a</code>, therefore the type of <code>modify (+1)</code> should be this:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>modify (<span class="op">+</span> <span class="dv">1</span>)<span class="ot"> ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">Num</span> s) <span class="ot">=&gt;</span> m ()</span></code></pre></div>
-<p>So the question is, why the heck is GHC willing to use a <code>MonadState Int m</code> constraint to solve the wanted <code>(MonadState s m, Num s)</code> constraint arising from a use of <code>modify (+1)</code>? The problem feels analogous to this one, which <em>doesn’t work:</em></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">bar ::</span> <span class="dt">Show</span> <span class="dt">Bool</span> <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">String</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>bar b <span class="ot">=</span> <span class="fu">show</span> b  <span class="co">-- doesn&#39;t work</span></span></code></pre></div>
-<p>Just because we have a <code>Show Bool</code> constraint in scope <em>doesn’t mean that <code>a</code> is a <code>Bool</code>!</em> So how come we’re allowed to use our <code>MonadState Int m</code> constraint, to solve a <code>(MonadState s m, Num s)</code>? Completely analogously, <em>we don’t know that <code>s</code> is an <code>Int</code>!</em></p>
-<p>The solution to this puzzler is in the definition of <code>MondState</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadState</span> s (<span class="ot">m ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="op">|</span> m <span class="ot">-&gt;</span> s <span class="kw">where</span></span></code></pre></div>
-<p>Notice this <code>| m -&gt; s</code> bit, which is known as a <em>functional dependency</em> or a <em>fundep</em> for short. The fundep says “if you know <code>m</code>, you also know <code>s</code>,” or equivalently, “<code>s</code> is completely determined by <code>m</code>.” And so, when typechecking <code>foo</code>, GHC is asked to solve both <code>MonadState Int m</code> and <code>(Num s, MonadState s m)</code>. But since there can only be a <em>single instance</em> of <code>MonadState</code> for m, this means that <code>MonadState Int m</code> and <code>MonadState s m</code> <em>must be the same</em>. Therefore <code>s ~ Int</code>.</p>
-<p>This is an elegant solution, but it comes at a cost — namely that we’re only allowed to use a single <code>MonadState</code> at a time! If you’re a longtime Haskell programmer, this probably doesn’t feel like a limitation to you; just stick all the pieces of state you want into a single type, and then use some classy fields to access them, right? <a href="https://www.parsonsmatt.org/">Matt Parsons</a> has <a href="https://www.parsonsmatt.org/2018/11/03/trouble_with_typed_errors.html">a blog post</a> on the pain points, and some bandages, for doing this with typed errors. At the end of the day, the real problem is that we’re only allowed a single <code>MonadError</code> constraint.</p>
-<p>Polysemy “fixes the glitch” by just not using fundeps. This means you’re completely free to use as many state, error, and whatever effects you want all at the same time. The downside? Type-inference sucks again. Indeed, the equivalent program to <code>foo</code> in <code>polysemy</code> doesn’t compile by default:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="ot">foo&#39; ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">Int</span>) r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
-<span id="cb6-2"><a href="#cb6-2"></a>foo&#39; <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
-<pre><code>• Ambiguous use of effect &#39;State&#39;
-  Possible fix:
-    add (Member (State s0) r) to the context of
-      the type signature
-  If you already have the constraint you want, instead
-    add a type application to specify
-      &#39;s0&#39; directly, or activate polysemy-plugin which
-        can usually infer the type correctly.
-• In the expression: modify (+ 1)
-  In an equation for ‘foo&#39;’: foo&#39; = modify (+ 1)</code></pre>
-<p>This situation blows chunks. It’s obvious what this program should do, so let’s just fix it.</p>
-<h2 id="the-solution">The Solution</h2>
-<p>Let’s forget about the compiler for a second and ask ourselves how the Human Brain Typechecker(TM) would type-check this problem. Given the program:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">foo&#39; ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">Int</span>) r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
-<span id="cb8-2"><a href="#cb8-2"></a>foo&#39; <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
-<p>A human would look at the <code>modify</code> here, and probably run an algorithm similar to this:</p>
-<ul>
-<li>Okay, what <code>State</code> is <code>modify</code> running over here?</li>
-<li>Well, it’s some sort of <code>Num</code>.</li>
-<li>Oh, look, there’s a <code>Member (State Int) r</code> constraint in scope.</li>
-<li>That thing wouldn’t be there if it wasn’t necessary.</li>
-<li>I guess <code>modify</code> is running over <code>State Int</code>.</li>
-</ul>
-<p>Pretty great algorithm! Instead, here’s what GHC does:</p>
-<ul>
-<li>Okay, what <code>State</code> is <code>modify</code> running over here?</li>
-<li>Well, it’s some sort of <code>Num</code>.</li>
-<li>But that thing is polymorphic.</li>
-<li>Guess I’ll emit a <code>(Num n, Member (State n) r)</code> constraint.</li>
-<li>Why did the stupid human put an unnecessary <code>Member (State Int) r</code> constraint here?</li>
-<li>What an idiot!</li>
-</ul>
-<p>And then worse, it won’t compile because the generated <code>n</code> type is now ambiguous and not mentioned anywhere in the type signature!</p>
-<p>Instead, let’s use a TC plugin to make GHC reason more like a human when it comes to <code>Member</code> constraints. In particular, we’re going to mock the fundep lookup algorithm:</p>
-<ul>
-<li>Whenever GHC is trying to solve a <code>Member (effect a) r</code> constraint</li>
-<li>And there is <em>exactly one</em> constraint in scope of the form <code>Member (effect b) r</code></li>
-<li>Then emit a <code>a ~ b</code> constraint, allowing GHC to use the given <code>Member (effect b) r</code> constraint to solve the wanted <code>Member (effect a) r</code></li>
-</ul>
-<h2 id="tc-plugins">TC Plugins</h2>
-<p>At its heart, a TC plugin is a value of type <code>TcPlugin</code>, a record of three methods:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">data</span> <span class="dt">TcPlugin</span> <span class="ot">=</span> <span class="kw">forall</span> s<span class="op">.</span> <span class="dt">TcPlugin</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>  {<span class="ot"> tcPluginInit  ::</span> <span class="dt">TcPluginM</span> s</span>
-<span id="cb9-3"><a href="#cb9-3"></a>  ,<span class="ot"> tcPluginSolve ::</span> s <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> <span class="dt">TcPluginResult</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a>  ,<span class="ot"> tcPluginStop  ::</span> s <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> ()</span>
-<span id="cb9-5"><a href="#cb9-5"></a>  }</span></code></pre></div>
-<p>The <code>tcPluginInit</code> field can be used to allocate a piece of state that is passed to the other two records, and <code>tcPluginStop</code> finalizes that state. Most plugins I’ve seen use the <code>s</code> parameter to lookup the GHC representation of classes that they want to help solve. However, the most interesting bit is the <code>tcPluginSolve</code> function.</p>
-<p><code>tcPluginSolve</code> takes three lists of <code>Ct</code>s, which are different varieties of constraints relevant to the problem.</p>
-<ol type="1">
-<li>The first list is the <em>given</em> constraints — the ones a user has explicitly written out in a type signature.</li>
-<li>The second list is the <em>derived</em> constraints — things GHC has inferred from context.</li>
-<li>The third list is the <em>wanted</em> constraints — the ones that GHC can’t solve on its own.</li>
-</ol>
-<p>From these three lists, we are expected to provide a <code>TcPluginResult</code>, which for our purposes is a pair of new <code>Ct</code>s we’d like GHC to solve; and a list of the <code>Ct</code>s we solved, along with the corresponding dictionaries. Returning two empty lists here signals to GHC “I can’t do any more work!”</p>
-<p>So let’s get to work. The first thing we need to do is get our hands on the <code>Member</code> class we want to solve. In <code>polysemy</code>, <code>Member</code> is actually just a type synonym for a few other typeclasses; so the real typeclass we’d like to solve for is called <code>Find</code>.</p>
-<p>As a brief aside on the <code>Find</code> class, its definition is this:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">class</span> <span class="dt">Find</span> (<span class="ot">r ::</span> [k]) (<span class="ot">t ::</span> k) <span class="kw">where</span></span></code></pre></div>
-<p>and it means “lookup the index of <code>t</code> inside <code>r</code>”. In Polysemy, <code>r</code> is usually left polymorphic, for the same reasons that we leave the <code>m</code> polymorphic in <code>MonadState s m</code>.</p>
-<p>Anyway, we want to find the <code>Find</code> class. We can do this by writing a function for our <code>tcPluginInit</code> function:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="ot">findFindClass ::</span> <span class="dt">TcPlugin</span> <span class="dt">Class</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a>findFindClass <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a>  md <span class="ot">&lt;-</span> lookupModule</span>
-<span id="cb11-4"><a href="#cb11-4"></a>          (mkModuleName <span class="st">&quot;Polysemy.Internal.Union&quot;</span>)</span>
-<span id="cb11-5"><a href="#cb11-5"></a>          (fsLit <span class="st">&quot;polysemy&quot;</span>)</span>
-<span id="cb11-6"><a href="#cb11-6"></a>  find_tc <span class="ot">&lt;-</span> lookupName md <span class="op">$</span> mkTcOcc <span class="st">&quot;Find&quot;</span></span>
-<span id="cb11-7"><a href="#cb11-7"></a>  tcLookupClass find_tc</span></code></pre></div>
-<p>We first lookup the defining module, here <code>Polysemy.Internal.Union</code> in package <code>polysemy</code>. We then lookup the <code>Find</code> name in that module, and then lookup the class with that name. By setting <code>findFindClass</code> as our <code>tcPluginInit</code>, our <code>tcPluginSolve</code> function will receive the <code>Find</code> class as a parameter.</p>
-<p>Before diving into <code>tcPluginSolve</code>, we’re going to need some helper functions.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="ot">allFindCts ::</span> <span class="dt">Class</span> <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [(<span class="dt">CtLoc</span>, (<span class="dt">Type</span>, <span class="dt">Type</span>, <span class="dt">Type</span>))]</span>
-<span id="cb12-2"><a href="#cb12-2"></a>allFindCts cls cts <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>  ct <span class="ot">&lt;-</span> cts</span>
-<span id="cb12-4"><a href="#cb12-4"></a>  <span class="dt">CDictCan</span> { cc_tyargs <span class="ot">=</span> [ _, r, eff ] } <span class="ot">&lt;-</span> <span class="fu">pure</span> ct</span>
-<span id="cb12-5"><a href="#cb12-5"></a>  guard <span class="op">$</span> cls <span class="op">==</span> cc_class cd</span>
-<span id="cb12-6"><a href="#cb12-6"></a>  <span class="kw">let</span> eff_name <span class="ot">=</span> getEffName eff</span>
-<span id="cb12-7"><a href="#cb12-7"></a>  <span class="fu">pure</span> (ctLoc ct, (eff_name, eff, r))</span>
-<span id="cb12-8"><a href="#cb12-8"></a></span>
-<span id="cb12-9"><a href="#cb12-9"></a><span class="ot">getEffName ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
-<span id="cb12-10"><a href="#cb12-10"></a>getEffName t <span class="ot">=</span> <span class="fu">fst</span> <span class="op">$</span> splitAppTys t</span></code></pre></div>
-<p>The <code>allFindCts</code> function searches through the <code>Ct</code>s for <code>Find</code> constraints, and unpacks the pieces we’re going to need. We first pattern match on whether the <code>Ct</code> is a <code>CDictCan</code>, which corresponds to everyday typeclass-y constraints. We ensure it has exactly three type args (<code>Find</code> takes a kind, and then the two parameters we care about), and ensure that this class is the <code>cls</code> we’re looking for.</p>
-<p>We return four things for each matching <code>Ct</code>:</p>
-<ol type="1">
-<li>We need to keep track of its <code>CtLoc</code> — corresponding to where the constraint came from. This is necessary to keep around so GHC can give good error messages if things go wrong.</li>
-<li>The effect “name”. This is just the head of the effect, in our ongoing example, it’s <code>State</code>.</li>
-<li>The actual effect we’re looking for. This corresponds to the <code>t</code> parameter in a <code>Find</code> constraint. In the ongoing example, <code>State s</code>.</li>
-<li>The effect stack we’re searching in (<code>r</code> in the <code>Find</code> constraint).</li>
-</ol>
-<p>So remember, our idea is “see if there is exactly one matching given <code>Find</code> constraint for any wanted <code>Find</code> constraint — and if so, unify the two.”</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a>findMatchingEffect</span>
-<span id="cb13-2"><a href="#cb13-2"></a><span class="ot">    ::</span> (<span class="dt">Type</span>, <span class="dt">Type</span>, <span class="dt">Type</span>)</span>
-<span id="cb13-3"><a href="#cb13-3"></a>    <span class="ot">-&gt;</span> [(<span class="dt">Type</span>, <span class="dt">Type</span>, <span class="dt">Type</span>)]</span>
-<span id="cb13-4"><a href="#cb13-4"></a>    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Type</span></span>
-<span id="cb13-5"><a href="#cb13-5"></a>findMatchingEffect (eff_name, _, r) ts <span class="ot">=</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a>  singleListToJust <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb13-7"><a href="#cb13-7"></a>    (eff_name&#39;, eff&#39;, r&#39;) <span class="ot">&lt;-</span> ts</span>
-<span id="cb13-8"><a href="#cb13-8"></a>    guard <span class="op">$</span> eqType eff_name eff_name&#39;</span>
-<span id="cb13-9"><a href="#cb13-9"></a>    guard <span class="op">$</span> eqType r r&#39;</span>
-<span id="cb13-10"><a href="#cb13-10"></a>    <span class="fu">pure</span> eff</span>
-<span id="cb13-11"><a href="#cb13-11"></a></span>
-<span id="cb13-12"><a href="#cb13-12"></a><span class="ot">singleListToJust ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
-<span id="cb13-13"><a href="#cb13-13"></a>singleListToJust [a] <span class="ot">=</span> <span class="dt">Just</span> a</span>
-<span id="cb13-14"><a href="#cb13-14"></a>singleListToJust _ <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
-<p><code>findMatchingEffect</code> takes the output of <code>allFindCts</code> for a <em>single wanted constraint</em>, and <em>all of the given</em> constraints, and sees if there’s a single match between the two. If so, it returns the matching effect.</p>
-<p>We need one last helper before we’re ready to put everything together. We wanted to be able to generate new wanted constraints of the form <code>a ~ b</code>. Emitting such a thing as a new wanted constraint will cause GHC to unify <code>a</code> and <code>b</code>; which is exactly what we’d like in order to convince it to use one given constraint in place of another.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="ot">mkWanted ::</span> <span class="dt">CtLoc</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> (<span class="dt">Maybe</span> <span class="dt">Ct</span>)</span>
-<span id="cb14-2"><a href="#cb14-2"></a>mkWanted loc eff eff&#39; <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>  <span class="kw">if</span> eqType (getEffName eff) (getEffName eff&#39;)</span>
-<span id="cb14-4"><a href="#cb14-4"></a>     <span class="kw">then</span> <span class="kw">do</span></span>
-<span id="cb14-5"><a href="#cb14-5"></a>       (ev, _) <span class="ot">&lt;-</span> unsafeTcPluginTcM</span>
-<span id="cb14-6"><a href="#cb14-6"></a>                <span class="op">.</span> runTcSDeriveds</span>
-<span id="cb14-7"><a href="#cb14-7"></a>                <span class="op">$</span> newWantedEq loc <span class="dt">Nominal</span> eff eff&#39;</span>
-<span id="cb14-8"><a href="#cb14-8"></a>       <span class="fu">pure</span> <span class="op">.</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">CNonCanonical</span> ev</span>
-<span id="cb14-9"><a href="#cb14-9"></a>     <span class="kw">else</span></span>
-<span id="cb14-10"><a href="#cb14-10"></a>       <span class="fu">pure</span> <span class="dt">Nothing</span></span></code></pre></div>
-<p>What’s going on here? Well we check if the two effects we want to unify have the same effect name. Then if so, we use the wanted’s <code>CtLoc</code> to generate a new, derived wanted constraint of the form <code>eff ~ eff'</code>. In essence, we’re promising the compiler that it can solve the wanted if it can solve <code>eff ~ eff'</code>.</p>
-<p>And finally we’re ready to roll.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="ot">solveFundep ::</span> <span class="dt">Class</span> <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> <span class="dt">TcPluginResult</span></span>
-<span id="cb15-2"><a href="#cb15-2"></a>solveFundep find_cls giv _ want <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb15-3"><a href="#cb15-3"></a>    <span class="kw">let</span> wanted_effs <span class="ot">=</span> allFindCts find_cls want</span>
-<span id="cb15-4"><a href="#cb15-4"></a>        given_effs  <span class="ot">=</span> <span class="fu">fmap</span> <span class="fu">snd</span> <span class="op">$</span> allFindCts find_cls giv</span>
-<span id="cb15-5"><a href="#cb15-5"></a></span>
-<span id="cb15-6"><a href="#cb15-6"></a>    eqs <span class="ot">&lt;-</span> forM wanted_effs <span class="op">$</span> \(loc, e<span class="op">@</span>(_, eff, r)) <span class="ot">-&gt;</span></span>
-<span id="cb15-7"><a href="#cb15-7"></a>      <span class="kw">case</span> findMatchingEffect e given_effs <span class="kw">of</span></span>
-<span id="cb15-8"><a href="#cb15-8"></a>        <span class="dt">Just</span> eff&#39; <span class="ot">-&gt;</span> mkWanted loc eff eff&#39;</span>
-<span id="cb15-9"><a href="#cb15-9"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb15-10"><a href="#cb15-10"></a>          <span class="kw">case</span> splitAppTys r <span class="kw">of</span></span>
-<span id="cb15-11"><a href="#cb15-11"></a>            (_, [_, eff&#39;, _]) <span class="ot">-&gt;</span> mkWanted loc eff eff&#39;</span>
-<span id="cb15-12"><a href="#cb15-12"></a>            _                 <span class="ot">-&gt;</span> <span class="fu">pure</span> <span class="dt">Nothing</span></span>
-<span id="cb15-13"><a href="#cb15-13"></a></span>
-<span id="cb15-14"><a href="#cb15-14"></a>    <span class="fu">pure</span> <span class="op">.</span> <span class="dt">TcPluginOk</span> [] <span class="op">$</span> catMaybes eqs</span></code></pre></div>
-<p>We get all of the <code>Find</code> constraints in the givens and the wanteds. Then, for each wanted, we see if there is a singularly matching given, and if so, generate a wanted constraint unifying the two.</p>
-<p>However, if we <em>don’t</em> find a singularly matching effect, we’re not necessarily in hot water. We attempt to decompose <code>r</code> into a type constructor and its arguments. Since <code>r</code> has kind <code>[k]</code>, there are three possibilities here:</p>
-<ol type="1">
-<li><code>r</code> is a polymorphic type variable, in which case we can do nothing.</li>
-<li><code>r</code> is <code>'[]</code>, so we have no effects to possibly unify, and so we can do nothing.</li>
-<li><code>r</code> has form <code>e ': es</code>, in which case we attempt to unify <code>e</code> with the wanted.</li>
-</ol>
-<p>What’s going on with this? Why is this bit necessary? Well, consider the case where we want to <em>run</em> our effect stack. Let’s say we have this program:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a><span class="ot">foo&#39; ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">Int</span>) r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
-<span id="cb16-2"><a href="#cb16-2"></a>foo&#39; <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span>
-<span id="cb16-3"><a href="#cb16-3"></a></span>
-<span id="cb16-4"><a href="#cb16-4"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb16-5"><a href="#cb16-5"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb16-6"><a href="#cb16-6"></a>  result <span class="ot">&lt;-</span> runM <span class="op">.</span> runState <span class="dv">5</span> <span class="op">$</span> foo&#39;</span>
-<span id="cb16-7"><a href="#cb16-7"></a>  <span class="fu">print</span> result</span></code></pre></div>
-<p>The type of <code>runM . runState 5</code> is <code>Num a =&gt; Sem '[State a, Lift IO] x -&gt; IO x</code>. But <code>foo'</code> still wants a <code>State Int</code> constraint, however, <code>main</code> <em>doesn’t have any givens!</em> Instead, the wanted we see is of the form <code>Find '[State a, Lift IO] (State Int)</code>, and so we’re justified in our logic above to unify <code>State Int</code> with the head of the list.</p>
-<p>Finally we can bundle everything up:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="ot">plugin ::</span> <span class="dt">Plugin</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a>plugin <span class="ot">=</span> defaultPlugin</span>
-<span id="cb17-3"><a href="#cb17-3"></a>    { tcPlugin <span class="ot">=</span> <span class="fu">const</span> <span class="op">$</span> <span class="dt">Just</span> fundepPlugin</span>
-<span id="cb17-4"><a href="#cb17-4"></a>    }</span>
-<span id="cb17-5"><a href="#cb17-5"></a></span>
-<span id="cb17-6"><a href="#cb17-6"></a><span class="ot">fundepPlugin ::</span> <span class="dt">TcPlugin</span></span>
-<span id="cb17-7"><a href="#cb17-7"></a>fundepPlugin <span class="ot">=</span> <span class="dt">TcPlugin</span></span>
-<span id="cb17-8"><a href="#cb17-8"></a>    { tcPluginInit <span class="ot">=</span> findFindClass</span>
-<span id="cb17-9"><a href="#cb17-9"></a>    , tcPluginSolve <span class="ot">=</span> solveFundep</span>
-<span id="cb17-10"><a href="#cb17-10"></a>    , tcPluginStop <span class="ot">=</span> <span class="fu">const</span> <span class="op">$</span> <span class="fu">pure</span> ()</span>
-<span id="cb17-11"><a href="#cb17-11"></a>    }</span></code></pre></div>
-<p>and voila, upon loading our module via the <code>-fplugin</code> flag, GHC will automatically start solving <code>Member</code> constraints as though they were fundeps!</p>
-<p>This isn’t the whole story; there are still a few kinks in the implementation for when your given is more polymorphic than your wanted (in which case they shouldn’t unify), but this is enough to get a feeling for the idea. As always, the <a href="https://github.com/isovector/polysemy/blob/master/polysemy-plugin/src/Polysemy/Plugin/Fundep.hs">full source code is on Github</a>.</p>
-<p>As we’ve seen, TC plugins are extraordinarily powerful for helping GHC solve domain-specific problems, and simultaneously quite easy to write. They’re not often the right solution, but they’re a great thing to keep in your tool belt!</p>
         ]]>
       </content>
     </entry>
