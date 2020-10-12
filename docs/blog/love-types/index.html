@@ -61,20 +61,20 @@
 <p>“C++. Why? Because when I get something working, I feel like a god. It just puts so much power at my fingertips.”</p>
 </blockquote>
 <p>How’s that for being overly controlling? I actually <em>enjoyed</em> the tedium of writing copy constructors, keeping track of the ownership of my pointers, and <em>especially</em> in writing fancy templated data structures. If you haven’t had the pleasure of writing a fancy templated data structure, they often look something like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> TItem&gt;</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">class</span> ScopedPool {</span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">public</span>:</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span>... TCtorArgs&gt;</span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">class</span> Object {</span>
-<span id="cb1-6"><a href="#cb1-6"></a>  <span class="kw">public</span>:</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="kw">explicit</span> Object(</span>
-<span id="cb1-8"><a href="#cb1-8"></a>      ScopedPool&lt;TItem&gt; &amp;pool,</span>
-<span id="cb1-9"><a href="#cb1-9"></a>      TCtorArgs&amp;&amp;... ctorArgs)</span>
-<span id="cb1-10"><a href="#cb1-10"></a>    {</span>
-<span id="cb1-11"><a href="#cb1-11"></a>      <span class="va">ptr_</span> =</span>
-<span id="cb1-12"><a href="#cb1-12"></a>        objs.empty()</span>
-<span id="cb1-13"><a href="#cb1-13"></a>        ? <span class="bu">std::</span>make_unique&lt;TItem&gt;(<span class="bu">std::</span>forward&lt;TCtorArgs&gt;(ctorArgs)...)</span>
-<span id="cb1-14"><a href="#cb1-14"></a>        : <span class="bu">std::</span>move(objs.top());</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">template</span>&lt;<span class="kw">class</span> TItem&gt;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">class</span> ScopedPool {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">public</span>:</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span>... TCtorArgs&gt;</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="kw">class</span> Object {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  <span class="kw">public</span>:</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    <span class="kw">explicit</span> Object(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>      ScopedPool&lt;TItem&gt; &amp;pool,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>      TCtorArgs&amp;&amp;... ctorArgs)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>      <span class="va">ptr_</span> =</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>        objs.empty()</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>        ? <span class="bu">std::</span>make_unique&lt;TItem&gt;(<span class="bu">std::</span>forward&lt;TCtorArgs&gt;(ctorArgs)...)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>        : <span class="bu">std::</span>move(objs.top());</span></code></pre></div>
 <p>Yes, once upon a time, I actually <em>wrote</em> that unholy thing, and perhaps more surprisingly, I even knew what it did. I’ve been programming for about a decade, and things like this were the only challenges I’d face when working on projects; gnarly pieces of software that <em>really made me think</em>.</p>
 <p>Then, about a year ago, I discovered Haskell and dove in. It felt like power-lifting for my brain, and all of a sudden, programming was fun again. Even the most trivial programs gave me a hard time in Haskell. I’m not here to discuss Haskell in general today; it just happens to be why I’ve been thinking about type systems so much lately.</p>
 <p>For me, the most interesting feature of Haskell is that if your program type-checks, there’s a good chance it will do what you want. There are no segfaults, no race conditions, and no memory stomps to worry about. Also, the type-checker is really, really picky, which probably helps. In my opinion, this kind of really picky type-checking is exactly what modern programming needs.</p>
@@ -107,31 +107,31 @@ p\cdot b\cdot n \mathbin{/} c = 30 \text{Є / post}
 <p>Before we dive too deeply into Haskell’s type system, we need to first take a moment to discuss Haskell’s type notation. Concrete types, like in Java, always begin with a capital letter (eg. <code>Int</code> is the type of the integers).</p>
 <p>Functions of one argument are typed as <code>a -&gt; b</code> (in this case, taking a <code>a</code> and returning a <code>b</code>). So far, so good, but functions of higher <a href="https://en.wikipedia.org/wiki/Arity">arity</a> might take a little while to get used to:</p>
 <p>A function taking two <code>a</code>s and returning a <code>b</code> is typed as <code>a -&gt; a -&gt; b</code>, <strong>not</strong> <code>(a, a) -&gt; b</code>, as you might expect. Turns out, there is a really good reason for this weird syntax, which bears diving into. Take for example, the Haskell function which performs addition:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">add ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>add x y <span class="ot">=</span> x <span class="op">+</span> y</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">add ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>add x y <span class="ot">=</span> x <span class="op">+</span> y</span></code></pre></div>
 <p>You might be tempted to write this in C++11 as:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="dt">int</span> add(<span class="dt">int</span> x, <span class="dt">int</span> y) {</span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="cf">return</span> x + y;</span>
-<span id="cb3-3"><a href="#cb3-3"></a>}</span>
-<span id="cb3-4"><a href="#cb3-4"></a></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="co">// usage: add(3, 4) == 7</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="dt">int</span> add(<span class="dt">int</span> x, <span class="dt">int</span> y) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    <span class="cf">return</span> x + y;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a><span class="co">// usage: add(3, 4) == 7</span></span></code></pre></div>
 <p>but you’d be wrong. In fact it is closer to:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="bu">std::</span>function&lt;<span class="dt">int</span>(<span class="dt">int</span>)&gt; add(<span class="dt">int</span> x) {</span>
-<span id="cb4-2"><a href="#cb4-2"></a>    <span class="co">// return an anonymous function of type `int(int)`</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>    <span class="cf">return</span> [x](<span class="dt">int</span> y) { <span class="cf">return</span> x + y; };</span>
-<span id="cb4-4"><a href="#cb4-4"></a>}</span>
-<span id="cb4-5"><a href="#cb4-5"></a></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="co">// usage: add(3)(4) == 7</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="bu">std::</span>function&lt;<span class="dt">int</span>(<span class="dt">int</span>)&gt; add(<span class="dt">int</span> x) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    <span class="co">// return an anonymous function of type `int(int)`</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    <span class="cf">return</span> [x](<span class="dt">int</span> y) { <span class="cf">return</span> x + y; };</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>}</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a><span class="co">// usage: add(3)(4) == 7</span></span></code></pre></div>
 <p>Which is to say, <code>add</code> is a function which takes an integer, and returns a function which takes the other integer. This becomes more evident when we add braces to our original type signature: <code>Int -&gt; (Int -&gt; Int)</code>. Our function, <code>add</code>, is a function which takes an <code>Int</code> and returns another function of type <code>Int -&gt; Int</code>.</p>
 <p>There are two implications to this: we can partially apply functions (this is known as <a href="https://en.wikipedia.org/wiki/Currying">currying</a> in the literature), and functions are first-class values in Haskell.</p>
 <p>Now, that is not to say that all types must be definite. Take for example, the polymorphic function <code>head</code>, which returns the first element of a list, and is typed as <code>[a] -&gt; a</code>. Here, <code>a</code> is a type-variable, which can refer to any other type it please. The equivalent C++ of course, is something like:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> T&gt;</span>
-<span id="cb5-2"><a href="#cb5-2"></a>T head(<span class="at">const</span> <span class="bu">std::</span>list&lt;T&gt;&amp; list) {</span>
-<span id="cb5-3"><a href="#cb5-3"></a>    <span class="cf">return</span> list.front();</span>
-<span id="cb5-4"><a href="#cb5-4"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">template</span>&lt;<span class="kw">class</span> T&gt;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>T head(<span class="at">const</span> <span class="bu">std::</span>list&lt;T&gt;&amp; list) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    <span class="cf">return</span> list.front();</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>}</span></code></pre></div>
 <p>So far, nothing special, type-variables seem to correspond directly to template parameters, but this is not in fact the case. You may have noticed that our earlier <code>add</code> function was too specific; addition is defined over all numeric types (not just <code>Int</code>), so instead let’s rewrite it as:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb6-2"><a href="#cb6-2"></a>add x y <span class="ot">=</span> x <span class="op">+</span> y</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>add x y <span class="ot">=</span> x <span class="op">+</span> y</span></code></pre></div>
 <p>Here, <code>(Num a)</code> acts as a <em>constraint</em> over <code>a</code>, informing you and the compiler (but mostly you – the compiler is really good at type inference), that this function is defined over any <em>numeric</em> <code>a</code> types. You can do something similar in C++ with <a href="https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error">SFINAE</a> or maybe with traits, but it’s not nearly as elegant.</p>
 <p>In effect, what we are doing here with Haskell’s constraints is informing the type system of the <em>semantics</em> of <code>add</code>, while a SFINAE solution is dependent on <em>syntax</em>: it will work for any case in which <code>operator+</code> is in scope, regardless of whether this is actually meaningful.</p>
 <h2 id="iv">IV</h2>
@@ -140,22 +140,22 @@ p\cdot b\cdot n \mathbin{/} c = 30 \text{Є / post}
 <p>Instead, if we change the type of our hypothetical function to <code>[a] -&gt; Int</code> (from a homogeneous list of <em>any</em> type to an <code>Int</code>), there becomes only one non-trivial implementation: the <code>length</code> function. It <em>has</em> to be, since there’s no way to get an <code>Int</code> out of the list any other way.</p>
 <p>Let’s consider another hypothetical function, one of type <code>(a -&gt; Bool) -&gt; [a] -&gt; [a]</code> (a function which takes a predicate on the type variable <code>a</code>, a list of <code>a</code>s, and returns a list of <code>a</code>s). The only reasonable interpretation of this function is that the predicate is being used to determine whether or not to keep each element in the list. There are a few possible implementations, but you will already have a good idea of what would be necessary: iterating through the list and applying the predicate as you go.</p>
 <p>To really drive this point home, let’s look at the function of type <code>a -&gt; a</code>. I say “the function” because there is exactly one possible implementation of this function. Why? Well, what do we know about the parameters to this function? Absolutely nothing. While in C++ we could assume that <code>a</code> has a default value, or equality, or something, we can make no such assumptions here. In fact, <code>a</code> could have zero possible values (ie. be isomorphic to type <code>Void</code>), and thus be non-instantiable. Since we have no means of <em>creating</em> an <code>a</code> value, the <em>only possible implementation</em> of this function is to return our parameter as-is:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="fu">id</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="fu">id</span> x <span class="ot">=</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="fu">id</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="fu">id</span> x <span class="ot">=</span> x</span></code></pre></div>
 <p>So what does this tell us? Lots of times, if you know the type of a function, you get the implementation for free; just like with dimensional analysis, we can get answers through a purely mechanical means of combining the types we have until we get the type we need. Cool!</p>
 <h2 id="v">V</h2>
 <p>“But wait,” says the skeptic! “The <code>&lt;algorithm&gt;</code> header already gives us a lot of these reusable, abstract functions. Don’t all your arguments apply to C++ as well?”</p>
 <p>Of course, this is not to say that C++ doesn’t have similar things. The <code>&lt;algorithm&gt;</code> header is indeed pretty comparable for most of the use-cases we’ve looked at so far. However, this does not hold in general, as C++ is much less specific about its types.</p>
 <p>Let’s take <code>transform</code> from <code>&lt;algorithm&gt;</code> for example, which comes with the ultra crusty type signature:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">template</span>&lt;</span>
-<span id="cb8-2"><a href="#cb8-2"></a>    <span class="kw">class</span> InputIterator,</span>
-<span id="cb8-3"><a href="#cb8-3"></a>    <span class="kw">class</span> OutputIterator,</span>
-<span id="cb8-4"><a href="#cb8-4"></a>    <span class="kw">class</span> UnaryOperation&gt;</span>
-<span id="cb8-5"><a href="#cb8-5"></a>OutputIterator transform (</span>
-<span id="cb8-6"><a href="#cb8-6"></a>    InputIterator,</span>
-<span id="cb8-7"><a href="#cb8-7"></a>    InputIterator,</span>
-<span id="cb8-8"><a href="#cb8-8"></a>    OutputIterator,</span>
-<span id="cb8-9"><a href="#cb8-9"></a>    UnaryOperation);</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">template</span>&lt;</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>    <span class="kw">class</span> InputIterator,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="kw">class</span> OutputIterator,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>    <span class="kw">class</span> UnaryOperation&gt;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>OutputIterator transform (</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>    InputIterator,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>    InputIterator,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>    OutputIterator,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>    UnaryOperation);</span></code></pre></div>
 <p>There are a few issues with this function, but the most egregious is that its type doesn’t convey any information (in Haskell it would be <code>a -&gt; a -&gt; b -&gt; c -&gt; b</code>, with some implicit constraints based on what template expansion allows).</p>
 <p>Compare the equivalent function in Haskell: <code>(a -&gt; b) -&gt; [a] -&gt; [b]</code> (a function for turning <code>a</code>s into <code>b</code>s, and a list of <code>a</code>s). Much more concise, and significantly more informative.</p>
 <p>It’s easy to see that just because you can get the C++ version to compile, you have no guarantees it is going to actually <em>work</em>. As a matter of fact, the documentation explicitly mentions this:</p>

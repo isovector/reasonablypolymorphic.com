@@ -59,23 +59,23 @@
 <h2 id="overview-of-ecstasys-internals">Overview of ecstasy’s internals</h2>
 <p>Before diving into what I’ve been changing recently, it’s probably a good idea to quickly talk inside baseball about how ecstasy works. The basic idea is this, you define a “world” <a href="/blog/higher-kinded-data/">higher-kinded data</a> (HKD) corresponding to the components you care about. The library instantiates your HKD world in different ways to form a <a href="https://en.wikipedia.org/wiki/AOS_and_SOA"><em>structure-of-arrays</em></a> corresponding to the high-efficiency storage of the ECS, and to form <em>just a structure</em> corresponding to an actual entity.</p>
 <p>This machinery is built via the <code>Component</code> type family:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">Component</span> (<span class="ot">s ::</span> <span class="dt">StorageType</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a>                      (<span class="ot">c ::</span> <span class="dt">ComponentType</span>)</span>
-<span id="cb1-3"><a href="#cb1-3"></a>                      (<span class="ot">a ::</span> <span class="op">*</span>)<span class="ot"> ::</span> <span class="op">*</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">Component</span> (<span class="ot">s ::</span> <span class="dt">StorageType</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>                      (<span class="ot">c ::</span> <span class="dt">ComponentType</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>                      (<span class="ot">a ::</span> <span class="op">*</span>)<span class="ot"> ::</span> <span class="op">*</span></span></code></pre></div>
 <p>Using <a href="https://downloads.haskell.org/~ghc/7.8.4/docs/html/users_guide/promotion.html"><code>DataKinds</code></a>, <code>Component</code> is parameterized by three types. <code>s :: StorageType</code> describes how the library wants to use this component – possibly in the “structure-of-arrays” format consumed by the library, or as an entity structure, to be used by the application programmer. <code>s</code> is left polymorphic when defining the HKD.</p>
 <p>The <code>c :: ComponentType</code> parameter is used to indicate the <em>semantics</em> of the field; some options include “each entity may or may not have this field” or “at most one entity may have this field.” The former might be used for something like <code>position</code>, while the latter could be <code>focusedOnByTheCamera</code>.</p>
 <p>Finally, <code>a :: *</code> is the actual type you want the field to have.</p>
 <p>Having data is a great first step, but it’s currently just an opaque blob to the library. This is where <a href="https://www.stackage.org/haddock/lts-11.0/base-4.10.1.0/GHC-Generics.html">GHC.Generics</a> comes in – given an (auto-derivable) <code>Generic</code> instance for our world, we can use use <code>GHC.Generics</code> to automatically further derive more specialized machinery for ourselves.</p>
 <p>As an example, assume our world looked like this (absent the <code>Component</code> trickery):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">data</span> <span class="dt">World</span> f <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>  {<span class="ot"> position ::</span> f (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
-<span id="cb2-3"><a href="#cb2-3"></a>  ,<span class="ot"> graphics ::</span> f <span class="dt">Graphics</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">World</span> f <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  {<span class="ot"> position ::</span> f (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  ,<span class="ot"> graphics ::</span> f <span class="dt">Graphics</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  }</span></code></pre></div>
 <p>we can use <code>GHC.Generics</code> to automatically generate the equivalent to a function:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">getEntity ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">World</span> <span class="dt">Data.IntMap.IntMap</span> <span class="ot">-&gt;</span> <span class="dt">World</span> <span class="dt">Maybe</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>getEntity ent storage <span class="ot">=</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>  <span class="dt">World</span> (Data.IntMap.lookup ent <span class="op">$</span> position storage)</span>
-<span id="cb3-4"><a href="#cb3-4"></a>        (Data.IntMap.lookup ent <span class="op">$</span> graphics storage)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">getEntity ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">World</span> <span class="dt">Data.IntMap.IntMap</span> <span class="ot">-&gt;</span> <span class="dt">World</span> <span class="dt">Maybe</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>getEntity ent storage <span class="ot">=</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">World</span> (Data.IntMap.lookup ent <span class="op">$</span> position storage)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>        (Data.IntMap.lookup ent <span class="op">$</span> graphics storage)</span></code></pre></div>
 <p>which converts from a structure-of-arrays representation to a structure-of-maybes. The actual technique behind implementing these generic functions is out of scope for today’s topic, but I’ve <a href="/blog/free-lenses/">written on it previously</a>.</p>
 <p>For its part, <code>ecstasy</code> exposes the <code>SystemT</code> monad, which at its heart is just a glorified <code>Control.Monad.Trans.State.StateT (Int, World 'Storage)</code>. The <code>Int</code> keeps track of the next ID to give out for a newly created entity.</p>
 <p>To a rough approximation, this is all of the interesting stuff inside of <code>ecstasy</code>. So armed with this knowledge, we’re ready to tackle some of the problems that have been unearthed recently.</p>
@@ -89,41 +89,41 @@
 <p>Unfortunately, all was not well. I added some monadic getters and setters to help shuffle the position information around, but oh god this became a garbage fire. Things that were before atomic updates now had extra calls to get and set the bastard, and everything was miserable.</p>
 <p>I realized what I really wanted was the capability for <code>ecstasy</code> to be <em>aware</em> of components without necessarily being the <em>owner</em> of them. Which is to say, components whose reads and writes invisibly dispatched out to some other monadic system.</p>
 <p>OK, great, I knew what I wanted. Unfortunately, the implementation was not so straightforward. The problem was the functions I wanted:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">vget ::</span> <span class="dt">Ent</span> <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> a)</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="ot">vset ::</span> <span class="dt">Ent</span> <span class="ot">-&gt;</span> <span class="dt">Update</span> a <span class="ot">-&gt;</span> m ()</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">vget ::</span> <span class="dt">Ent</span> <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> a)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="ot">vset ::</span> <span class="dt">Ent</span> <span class="ot">-&gt;</span> <span class="dt">Update</span> a <span class="ot">-&gt;</span> m ()</span></code></pre></div>
 <p>had this troublesome <code>m</code> parameter, and there was no clear place to put it. The monad to dispatch virtual calls to is a property of the interpretation of the data (actually running the sucker), not the data itself.</p>
 <p>As a result, it wasn’t clear where to actually keep the <code>m</code> type parameter. For example, assuming we want <code>position</code> to be virtual in our world:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">data</span> <span class="dt">World</span> s <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> s <span class="dt">&#39;Virtual</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">World</span> s <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> s <span class="dt">&#39;Virtual</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  }</span></code></pre></div>
 <p>Somehow, after unifying <code>s ~ 'Storage</code>, we want this to come out as:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">data</span> <span class="dt">World</span> <span class="dt">&#39;Storage</span> <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>  {<span class="ot"> position ::</span> ( <span class="dt">Ent</span> <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (<span class="dt">V2</span> <span class="dt">Double</span>)        <span class="co">-- vget</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>                , <span class="dt">Ent</span> <span class="ot">-&gt;</span> <span class="dt">Update</span> (<span class="dt">V2</span> <span class="dt">Double</span>) <span class="ot">-&gt;</span> m ()  <span class="co">-- vset</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>                )</span>
-<span id="cb6-5"><a href="#cb6-5"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">World</span> <span class="dt">&#39;Storage</span> <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  {<span class="ot"> position ::</span> ( <span class="dt">Ent</span> <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (<span class="dt">V2</span> <span class="dt">Double</span>)        <span class="co">-- vget</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>                , <span class="dt">Ent</span> <span class="ot">-&gt;</span> <span class="dt">Update</span> (<span class="dt">V2</span> <span class="dt">Double</span>) <span class="ot">-&gt;</span> m ()  <span class="co">-- vset</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>                )</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>  }</span></code></pre></div>
 <p>But where do we get the <code>m</code> from? There’s no obvious place.</p>
 <p>We could add it as a mandatory parameter on <code>World</code>, but that forces an implementation detail on people who don’t need any virtual fields.</p>
 <p>We <em>could</em> existentialize it, and then <code>unsafeCoerce</code> it back, but… well, I stopped following that line of thought pretty quickly.</p>
 <p>My first solution to this problem was to add a <code>Symbol</code> to the <code>Virtual</code> component-type token, indicating the “name” of this component, and then using a typeclass instance to actually connect the two:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">data</span> <span class="dt">World</span> s <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> s (<span class="dt">&#39;Virtual</span> <span class="st">&quot;position&quot;</span>) (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
-<span id="cb7-3"><a href="#cb7-3"></a>  }</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a><span class="co">-- we put the monad here: `m`</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="kw">instance</span> <span class="dt">VirtualAccess</span> <span class="st">&quot;position&quot;</span> m (<span class="dt">V2</span> <span class="dt">Double</span>) <span class="kw">where</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>  vget <span class="ot">=</span> <span class="op">...</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>  vset <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">World</span> s <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> s (<span class="dt">&#39;Virtual</span> <span class="st">&quot;position&quot;</span>) (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>  }</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="co">-- we put the monad here: `m`</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">VirtualAccess</span> <span class="st">&quot;position&quot;</span> m (<span class="dt">V2</span> <span class="dt">Double</span>) <span class="kw">where</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>  vget <span class="ot">=</span> <span class="op">...</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>  vset <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
 <p>While it <em>worked</em>, this was obviously a hack and my <a href="/blog/follow-the-denotation/">inner muse of library design</a> was so offended that I spent another few days looking for a better solution. Thankfully, I came up with one.</p>
 <p>The solution is one I had already skirted around, but failed to notice. This monad is a property only of the interpretation of the data, which is to say it really only matters when we’re building the world <em>storage</em>. Which means we can do some janky dependency-injection stuff and hide it inside of the storage-type token.</p>
 <p>Which is to say, that given a world of the form:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">data</span> <span class="dt">World</span> s <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> s <span class="dt">&#39;Virtual</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
-<span id="cb8-3"><a href="#cb8-3"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">World</span> s <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> s <span class="dt">&#39;Virtual</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  }</span></code></pre></div>
 <p>we could just pass in the appropriate monad when instantiating the world for its storage. Pseudocode:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">data</span> <span class="dt">World</span> (<span class="dt">Storage</span> m) <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> (<span class="dt">Storage</span> m) <span class="dt">&#39;Virtual</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
-<span id="cb9-3"><a href="#cb9-3"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">World</span> (<span class="dt">Storage</span> m) <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>  {<span class="ot"> position ::</span> <span class="dt">Component</span> (<span class="dt">Storage</span> m) <span class="dt">&#39;Virtual</span> (<span class="dt">V2</span> <span class="dt">Double</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>  }</span></code></pre></div>
 <p>All of a sudden, the <code>Component</code> type family now has access to <code>m</code>, and so it can expand into the <code>vget</code>/<code>vset</code> pair in a type-safe way. And the best part is that this is completely invisible to the user who never needs to care about our clever implementation details.</p>
 <p>Spectacular! I updated all of the code generated via <code>GHC.Generics</code> to run in <code>m</code> so it could take advantage of this virtual dispatch, and shipped a new version of <code>ecstasy</code>.</p>
 <h2 id="polymorphic-performance-woes">Polymorphic performance woes</h2>
