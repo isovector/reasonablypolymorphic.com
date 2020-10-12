@@ -7,4 +7,4 @@ extra-deps:
 - sitepipe-0.4.0.1
 - strptime-1.0.10
 
-resolver: lts-14.0
+resolver: lts-16.0
