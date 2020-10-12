@@ -7,7 +7,7 @@
   <link rel='self' href='atom.xml'/>
 
     <entry>
-      <title>Tactic Metaprogramming in Haskell</title>
+      <title>Towards Tactic Metaprogramming in Haskell</title>
       <id>blog/tactics/index.html</id>
       <link href='blog/tactics/index.html'/>
       <published>2020-10-12T00:40:00Z</published>
