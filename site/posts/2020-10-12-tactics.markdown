@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tactic Metaprogramming in Haskell"
+title: "Towards Tactic Metaprogramming in Haskell"
 date: 2020-10-12 00:40
 comments: true
 tags: haskell, hls, tactics
