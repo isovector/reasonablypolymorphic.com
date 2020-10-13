@@ -113,136 +113,6 @@
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a></span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true"></a></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
-<p>Choosing the “best” implementation of these possibilities is largely a matter of heuristics, which I plan to describe in a later post. For now, let’s just assume our tactics engine is smart enough to come up with the one you had in mind.</p>
-<p>Of course, the real issue here is that nothing forces our <code>destruct</code> and <code>split</code> tactics to use the same data constructor. We can eliminate this ambiguity by noticing that in <code>fmap</code>, we’re not actually trying to destruct and then split, but instead we’re trying to implement a homomorphism (a structure-preserving function.) In order to preserve structure, we’d better map a data constructor to itself. So instead, let’s use the <code>homo</code> tactic instead of <code>destruct</code> and <code>split</code>. Our new tactics metaprogram for writing functor instances is thus:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>intros</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>homo ida</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>apply fab</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>assumption</span></code></pre></div>
-<p>This new version now can no longer generate any of the pathological <code>fmap</code> implementations for <code>Maybe</code>, as they are not structure preserving. We’re left only with the good implementation. Let’s do one more derivation, this time for <code>Either c a</code>. After <code>intros</code> and <code>homo eca</code>, we’re left with:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> _</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> _</span></code></pre></div>
-<p>For the first time, we’re now left with <em>two</em> holes. The default behavior is for a tactic to apply to all holes (although there are combinators for “zipping” holes), meaning that the <code>apply fab</code> tactic will be run on both holes. For the <code>Left</code> case, our hole has type <code>c</code>, but <code>fab _</code> has type <code>b</code>, so this tactic <em>fails to apply here.</em> Tactic failure is per-hole, so we can still apply it to the other hole, resulting in:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> _</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> (fab _)</span></code></pre></div>
-<p>And finally, <code>assumption</code> fills the hole with whatever would typecheck. In the first hole that’s <code>c</code>, and in the second it’s <code>a</code> as before.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> c</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> (fab a)</span></code></pre></div>
-<p>Amazing! Three different functor implementations, with different numbers of data constructors, type variables, and cardinalities. By programming at the level of tactics rather than bytes, we can ignore the superficial differences between these implementations, focusing instead on the fact that they’re all derived the same way.</p>
-<p>Hopefully this post has given you some insight into what tactics are and why they’re valuable. In the next post we’ll look at how this stuff is implemented behind the scenes, and the difficulties we’ve had integrating it into the language server. Stay tuned!</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Towards Tactic Metaprogramming in Haskell</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/tactics/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/tactics/index.html</guid>
-      <pubDate>2020-10-12T00:40:00Z</pubDate>
-      <content:encoded><![CDATA[
-        <center>
-<img src="/images/fmaptree.gif">
-</center>
-<p>Isn’t it weird that we treat source code as text? That is, we have this extremely well-structured and strongly-typed object — the abstract syntax tree — that exists conceptually in our minds, and in actuality inside of our compiler, but for some reason we pretend it’s just a pile of bytes and edit it byte-by-byte rather than semantically?</p>
-<p>When you stop and think about it, that’s like the stupidest idea ever. We as the authors don’t think of our code as bytes, nor does our interpreter or compiler. But instead we take the semantic understanding inside of our heads, serialize it into bytes, and then get the compiler to parse and rediscover the ideas inside our head. What a waste of effort.</p>
-<p>Instead, you can use the incredible <a href="https://totbwf.github.io/">TOTBWF</a> and my new Tactics Plugin for the <a href="https://github.com/haskell/haskell-language-server">Haskell Language Server</a>, which will automatically and intelligently fill holes in your Haskell programs.</p>
-<p>This blog post describes what a tactics engine is and why you want one, and is a good introduction to how in the hell we can automatically write your code for you.</p>
-<h2 id="tactics">Tactics</h2>
-<p>Imagine you’re pair programming with a junior engineer. In the navigator seat, you’ll be guiding your partner through the implementation, guiding them through the high-level strokes and letting them actually do the coding part. In order to implement <code>foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b</code>, for example, the guidance you give your partner might be:</p>
-<ol type="1">
-<li>Bind the function arguments</li>
-<li>Case split on the <code>[a]</code> parameter</li>
-<li>If it’s <code>[]</code>, do the obvious thing</li>
-<li>Otherwise call your function and recurse.</li>
-</ol>
-<p>These instructions aren’t a real program by any means, but you might call them a “program sketch.” The hard part of programming (thinking about what to do) is captured here, but <em>actually doing it</em> is left as an exercise to the reader.</p>
-<p>A tactics engine transforms a program sketch like the above into an actual program. Tactics free us from the tyranny of text editing and pedantic details, allowing us to work at a higher semantic level of programming.</p>
-<p>Tactics correspond to semantic operations over our program. Much like how the primitive commands in text editors (delete to end of line, insert parentheses, etc) can be composed to refine the textual representation of one program into the textual representation of another, we can compose small tactics in order to build larger ideas.</p>
-<p>As an example, consider how we can fill in the following hole:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Id</span> a <span class="ot">=</span> <span class="dt">Id</span> a</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Id</span> <span class="kw">where</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">  fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="fu">fmap</span> <span class="ot">=</span> _</span></code></pre></div>
-<p>Rather than writing this function all at once, we can instead build it, one idea at a time. The first step is obviously to bind function arguments (the <code>intros</code> tactic), which results in the refined expression:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> _</span></code></pre></div>
-<p>We’re left with a new hole, but this one is “smaller” than the old one; we’ve refined the previous hole, filling in some of its structure. As a result, the type of our new hole is <code>Id b</code>, and we now have both <code>fab :: a -&gt; b</code> and <code>ida :: Id a</code> in scope. We can simplify the hole further by now pattern matching on <code>ida</code> (the <code>destruct ida</code> tactic):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> _</span></code></pre></div>
-<p>The resulting hole still has type <code>Id b</code>, but we’ve now introduced <code>a :: a</code> in scope. Our next step is to build an <code>Id</code> value, which we can do by producing its data constructor (the <code>split</code> tactic):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> _</span></code></pre></div>
-<p>Again we’ve shrunk the problem — now our hole has type <code>b</code>. At this point we can call the <code>fab</code> function to produce a <code>b</code> (via the <code>apply fab</code> tactic):</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> (fab _)</span></code></pre></div>
-<p>All that’s left is a hole with type <code>a</code>. Fortunately, we have <code>a :: a</code> in scope, so we can just plop that in to the hole via the <code>assumption</code> tactic:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> (fab a)</span></code></pre></div>
-<p>And just like that, we’ve produced an implementation of our desired function! By thinking in terms of the semantic operations we’d like to perform at each hole (instead of how to manipulate the bytes of text), we’ve changed the level of abstraction at which we think about editing. The implications of this might not be immediately obvious, so let’s explore them together.</p>
-<p>Let’s list the tactic steps we took to derive <code>fmap</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>intros</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>destruct ida</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>split</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>apply fab</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>assumption</span></code></pre></div>
-<p>Up to alpha renaming, this composition of tactics is sufficient to derive <code>fmap</code> for any sum or product type that doesn’t do anything “exciting” with its type variable. By running the same steps, we can implement <code>fmap</code> for any of the following types:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>(a, b)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="dt">Either</span> a b</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="dt">Maybe</span> a</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="dt">Const</span> a b</span></code></pre></div>
-<p>Let’s convince ourselves of this by quickly running through the derivation for <code>Maybe a</code>. We start again with <code>fmap</code> and its type:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> _</span></code></pre></div>
-<p>After running <code>intros</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> _</span></code></pre></div>
-<p>and then <code>destruct ma</code></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> _</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> _</span></code></pre></div>
-<p>Applying <code>split</code> here is a little tricky; technically it will force us to try both <code>Nothing</code> and <code>Just _</code> at each hole in a weird sort of quantum superposition. Let’s ignore this detail for right now, and come back to it immediately after finishing the derivation. Assuming we pick the right data cons, after <code>split</code> our program looks like this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span></code></pre></div>
-<p>Now we run <code>apply fab</code>. Because <code>Nothing</code> doesn’t take any arguments, it didn’t produce any holes, so we need look only at the <code>Just</code> case:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab _)</span></code></pre></div>
-<p>and finally we run <code>assumption</code> to fill in the hole:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
-<p>Look at that! Even though it would require significantly different editing commands to write the syntax of these two functor instances, they are both descried by the same composition of tactics. This is what I mean by “semantic editing,” we’re moving the algorithm for producing functor instances out of our heads and reifying it into something the computer understands. In essence, by writing <code>fmap</code> once, we can teach the computer how to write it for us in the future.</p>
-<p>I mentioned earlier that <code>split</code> gives us some issues here. Reading closely, you’ll notice that there is nothing in our tactics that say we need to <code>split</code> the same data constructor that we just <code>destruct</code>ed. In actuality there are four different, valid programs that can be produced by the above set of tactics:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true"></a></span>
@@ -698,6 +568,184 @@
 <hr />
 <p>The GHC steering committee is a thankless job. I’d like to take a moment to explicitly call out every member of the committee, past and present, for their selfless commitments to the community. These are people who are taking time out of their own research and projects in order to make our fantastic language much more transparent than it would be otherwise. Really and truly, these people are heroes, even if we don’t always agree with their decisions. <em>Thank you,</em> from the very bottom of my heart.</p>
 <p>Finally, <strong>I intend to live up to everyone’s expectations.</strong> Thanks for your time.</p>
+      ]]></content:encoded>
+  </item>
+  <item>
+      <title>Polysemy Internals: The Effect-Interpreter Effect</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/tactics/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/tactics/index.html</guid>
+      <pubDate>2019-06-26T17:26:00Z</pubDate>
+      <content:encoded><![CDATA[
+        <blockquote>
+<p>aka “what the hell is that <code>Tactics</code> stuff?”</p>
+</blockquote>
+<p>This is the second post in a series of implementation details in <a href="https://github.com/polysemy-research/polysemy">polysemy</a> — a fast, powerful and low-boilerplate effect-system library.</p>
+<hr />
+<p>In the <a href="/blog/freer-higher-order-effects/">last post</a> we discussed the <code>Yo</code> type, which accumulates weaving functions of the form <code>Functor f =&gt; f () -&gt; (∀ x. f (m x) -&gt; n (f x)) -&gt; e m a -&gt; e n (f a)</code>. As a quick reminder, the <code>f</code> functor corresponds to some piece of (possibly trivial) state, and the <code>∀ x. f (m x) -&gt; n (f x)</code> is a distribution function, roughly analogous to a function like <code>runStateT</code>.</p>
+<p>Where our story left off, we had accumulated all of our desired <code>weave</code>s into <code>Yo</code>, but hadn’t yet used them for anything. The developer experience around <code>Yo</code> is fraught with peril, and even as the guy who implemented it, I’m often stymied about how to get all the types to line up. Such a detail is not the sort of thing you can expose in a library that you expect people to actually use.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Yo</span> e m a <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dt">Yo</span><span class="ot"> ::</span> <span class="dt">Functor</span> f</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>     <span class="ot">=&gt;</span> e m a</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>     <span class="ot">-&gt;</span> f ()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>     <span class="ot">-&gt;</span> (<span class="ot">∀</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>     <span class="ot">-&gt;</span> (f a <span class="ot">-&gt;</span> b)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>     <span class="ot">-&gt;</span> <span class="dt">Yo</span> e n b</span></code></pre></div>
+<p>At the types <code>Yo</code> usually gets instantiated, it looks something like <code>Yo (State s) (Sem r) Int</code>. Which looks easy enough, until you realize that packed inside of this thing is an existential <code>m</code> (which was originally a <code>Sem r0</code> for some unknown effect row <code>r0</code>), and an existential functor <code>f</code> which is all of the initial state we’re carrying around from other effects who have already run.</p>
+<p><code>Yo</code> is the free <code>Effect</code>, which means that like all free structures, it provides dependency injection so you can later decide what that <code>Effect</code> means. It’s not a magic bullet — you still need to actually write code somewhere. <em>Somebody</em> needs to actually use that <code>f ()</code> and <code>∀ x. f (m x) -&gt; n (f x)</code> to actually do something!</p>
+<p>As a first attempt, let’s see what happens if we just expose them in the interpretation API. We’ll write a quick <code>interpret</code> function which can handle an effect <code>e m x</code> by producing a <code>Sem r (f x)</code>. The implementation is given below. Don’t worry too much about its body; but pay attention to just how gruesome the type is.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>interpret</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ot">    ::</span> (<span class="ot">∀</span> x m f</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>           <span class="op">.</span> <span class="dt">Functor</span> f</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>          <span class="ot">=&gt;</span> f ()                                  <span class="co">-- initial state</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>          <span class="ot">-&gt;</span> (<span class="ot">∀</span> y<span class="op">.</span> f (m y) <span class="ot">-&gt;</span> <span class="dt">Sem</span> (e &#39;<span class="op">:</span> r) (f y))  <span class="co">-- distrib function</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>          <span class="ot">-&gt;</span> e m x                                 <span class="co">-- effect constructor</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>          <span class="ot">-&gt;</span> <span class="dt">Sem</span> r (f x)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>       )</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (e &#39;<span class="op">:</span> r) a</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>interpret f (<span class="dt">Sem</span> m) <span class="ot">=</span> m <span class="op">$</span> \u <span class="ot">-&gt;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>  <span class="kw">case</span> decomp u <span class="kw">of</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> eff state distrib y) <span class="ot">-&gt;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>      <span class="fu">fmap</span> y <span class="op">$</span> f state distrib eff</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>    <span class="dt">Left</span>  another_effect <span class="ot">-&gt;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>      liftSem <span class="op">$</span> hoist (interpret f) another_effect</span></code></pre></div>
+<p>For example, we can use it to implement an interpretation of the <code>Reader</code> effect:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Reader</span> i m a <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="dt">Ask</span><span class="ot"> ::</span> <span class="dt">Reader</span> i m i</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">Local</span><span class="ot"> ::</span> (i <span class="ot">-&gt;</span> i) <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> <span class="dt">Reader</span> i m a</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="ot">runReader ::</span> i <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Reader</span> i &#39;<span class="op">:</span> r) a <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>runReader i <span class="ot">=</span> interpret <span class="op">$</span> \state distrib <span class="ot">-&gt;</span> \<span class="kw">case</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>  <span class="dt">Ask</span>        <span class="ot">-&gt;</span> <span class="fu">pure</span> <span class="op">$</span> i <span class="op">&lt;$</span> state</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>  <span class="dt">Local</span> f ma <span class="ot">-&gt;</span> runReader (f i) <span class="op">$</span> distrib <span class="op">$</span> ma <span class="op">&lt;$</span> state</span></code></pre></div>
+<p>Because <code>Ask</code> doesn’t have any embedded computations, it doesn’t need to do anything fancy. It can just ice-cream cone to put <code>i</code> inside of the state it was given, and return that. But <code>Local</code> is a more complicated beast! It must ice-cream cone its <code>ma</code> computation into the state, and then <code>distrib</code> that thing into a <code>Sem (Reader i '; r)</code>, and then run the <code>Reader</code> effect off of that!</p>
+<p>It’s not the end of the world, but it’s a nontrivial amount of boilerplate <em>that needs to be duplicated for every interpreter.</em> Combined with the terrifying types, this feels like a no-go.</p>
+<p>Let’s look at an interpretation for the <code>Resource</code> effect (which gives <code>bracket</code> semantics.) <code>Resource</code> is more complicated than <code>Reader</code>, and this complexity serves to illustrate some common patterns that come up and up again when writing interpreters.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Resource</span> m a <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  <span class="dt">Bracket</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="ot">      ::</span> m a         <span class="co">-- allocate</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>      <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b)  <span class="co">-- finalize</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>      <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m c)  <span class="co">-- use</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>      <span class="ot">-&gt;</span> <span class="dt">Resource</span> m c</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>runResource</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a><span class="ot">    ::</span> <span class="ot">∀</span> r a</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>     <span class="op">.</span> <span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="ot">∀</span> x<span class="op">.</span> <span class="dt">Sem</span> r x <span class="ot">-&gt;</span> <span class="dt">IO</span> x)  <span class="co">-- irrelevant to the discussion</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Resource</span> &#39;<span class="op">:</span> r) a</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>runResource lower <span class="ot">=</span> interpret <span class="op">$</span> \state distrib <span class="ot">-&gt;</span> \<span class="kw">case</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>  <span class="dt">Bracket</span> alloc finalize use <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>    <span class="kw">let</span><span class="ot"> toIO ::</span> <span class="dt">Sem</span> (<span class="dt">Resource</span> &#39;<span class="op">:</span> r) x <span class="ot">-&gt;</span> <span class="dt">IO</span> x</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a>        toIO <span class="ot">=</span> lower <span class="op">.</span> runResource lower</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true"></a>    sendM <span class="op">$</span> X.bracket</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true"></a>      (toIO <span class="op">$</span> distrib <span class="op">$</span> alloc <span class="op">&lt;$</span> state)         <span class="co">-- 1</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true"></a>      (\a <span class="ot">-&gt;</span> toIO <span class="op">$</span> distrib <span class="op">$</span> <span class="fu">fmap</span> finalize a)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true"></a>      (\a <span class="ot">-&gt;</span> toIO <span class="op">$</span> distrib <span class="op">$</span> <span class="fu">fmap</span> use a)</span></code></pre></div>
+<p>The <code>bracket</code> function allocates some resource of type <code>a</code>, provides it to the <code>use</code> block for some computation, and ensures that it will be cleaned up via <code>finalize</code> — even if the <code>use</code> block crashed.</p>
+<p>There are a few subtleties in the type instantiation here. In the comment marked <code>-- 1</code>, we run <code>distrib</code> on our <code>m a</code> parameter, which transforms it into an <code>Sem (Resource ': r) (f a)</code>. Note that we’ve introduced an <code>f</code> here! This in turn unifies our <code>finalize</code> and <code>use</code> types as <code>f a -&gt; m b</code> and <code>f a -&gt; m c</code>, respectively. Because we later need to distribute to turn those <code>m</code>s into <code>Sem (Resource ': r)</code>s, we also introduce <code>f</code>s into <code>b</code> and <code>c</code>.</p>
+<p>In essence, we end up with functions <code>alloc :: Sem (Resource ': r) (f a)</code>, <code>finalize :: f a -&gt; Sem (Resource ': r) (f b)</code> and <code>use :: f a -&gt; Sem (Resource ': r) (f c)</code>. This threading of <code>f</code> evident in the types corresponds directly to the fact that we need to keep track of other people’s state. As we’ll see in a future post, is indicative of a huge problem with the naive semantics we’ve given to <code>Resource</code> here.</p>
+<p>Anyway, looking at <code>runReader</code> and <code>runResource</code>, we see two particular patterns emerge in our interpreters:</p>
+<ol type="1">
+<li><code>distrib $ ma &lt;$ state</code> for the case of an <code>m a</code> argument</li>
+<li><code>\fa -&gt; distrib $ fmap mb fa</code> for the case of an <code>a -&gt; m b</code> argument</li>
+</ol>
+<p>The insight here is that maybe we can just make these combinators a part of the <code>interpret</code> interface directly, rather than have people write them by hand for each interpreter. It doesn’t help the horrifying types:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>interpret</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="ot">    ::</span> (<span class="ot">∀</span> x m f</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>           <span class="op">.</span> <span class="dt">Functor</span> f</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>          <span class="ot">=&gt;</span> (<span class="ot">∀</span> y<span class="op">.</span> m y <span class="ot">-&gt;</span> <span class="dt">Sem</span> (e &#39;<span class="op">:</span> r) (f y))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>          <span class="ot">-&gt;</span> (<span class="ot">∀</span> y z<span class="op">.</span> (y <span class="ot">-&gt;</span> m z) <span class="ot">-&gt;</span> f y <span class="ot">-&gt;</span> <span class="dt">Sem</span> (e &#39;<span class="op">:</span> r) (f z))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>          <span class="ot">-&gt;</span> e m x</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>          <span class="ot">-&gt;</span> <span class="dt">Sem</span> r (f x)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>       )</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (e &#39;<span class="op">:</span> r) a</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>interpret f (<span class="dt">Sem</span> m) <span class="ot">=</span> m <span class="op">$</span> \u <span class="ot">-&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>  <span class="kw">case</span> decomp u <span class="kw">of</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> eff state distrib y) <span class="ot">-&gt;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a>      <span class="fu">fmap</span> y <span class="op">$</span> f (distrib <span class="op">.</span> (<span class="op">&lt;$</span> state))</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a>                 (\mf <span class="ot">-&gt;</span> distrib <span class="op">.</span> <span class="fu">fmap</span> mf)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a>                 eff</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a>    <span class="dt">Left</span>  another_effect <span class="ot">-&gt;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a>      liftSem <span class="op">$</span> hoist (interpret f) another_effect</span></code></pre></div>
+<p>But it sure as heck improves the ergonomics:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>runResource</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="ot">∀</span> r a</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>     <span class="op">.</span> <span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="ot">∀</span> x<span class="op">.</span> <span class="dt">Sem</span> r x <span class="ot">-&gt;</span> <span class="dt">IO</span> x)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Resource</span> &#39;<span class="op">:</span> r) a</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>runResource lower <span class="ot">=</span> interpret <span class="op">$</span> \start continue <span class="ot">-&gt;</span> \<span class="kw">case</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>  <span class="dt">Bracket</span> alloc finalize use <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>    <span class="kw">let</span><span class="ot"> toIO ::</span> <span class="dt">Sem</span> (<span class="dt">Resource</span> &#39;<span class="op">:</span> r) x <span class="ot">-&gt;</span> <span class="dt">IO</span> x</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>        toIO <span class="ot">=</span> lower <span class="op">.</span> runResource lower</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>    sendM <span class="op">$</span> X.bracket</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>      (toIO <span class="op">$</span> start alloc)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>      (toIO <span class="op">.</span> continue finalize)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>      (toIO <span class="op">.</span> continue use)</span></code></pre></div>
+<p>Much nicer! If only we could do something about those gnarly types, we’d be in business!</p>
+<p>The last conceptual step here is to realize that the <code>start :: ∀ y. m y -&gt; Sem (e ': r) (f y)</code> and <code>continue :: ∀ y z. (y -&gt; m z) -&gt; f y -&gt; Sem (e ': r) (f z)</code> parameters are static. That means we could stick them into a reader monad — or perhaps more mind-crushingly, an <em>effect.</em></p>
+<p>And so, we can provide the two following primitive actions in our <code>Tactics</code> effect, and then derive <code>start</code> and <code>continue</code> from them:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Tactics</span> f n r m a <span class="kw">where</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  <span class="dt">GetInitialState</span><span class="ot">     ::</span> <span class="dt">Tactics</span> f n r m (f ())</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>  <span class="dt">HoistInterpretation</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> n b) <span class="ot">-&gt;</span> <span class="dt">Tactics</span> f n r m (f a <span class="ot">-&gt;</span> <span class="dt">Sem</span> r (f b))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">WithTactics</span> e f m r <span class="ot">=</span> <span class="dt">Tactics</span> f m (e &#39;<span class="op">:</span> r) &#39;<span class="op">:</span> r</span></code></pre></div>
+<p>This thing is a mess of type parameters, but <code>f</code> is exactly what you’d expect. The <code>n</code> corresponds to what <code>m</code> used to be (it’s standard operating procedure in polysemy to use <code>m</code> as the name of the second-last type argument.) And we introduce <code>r</code> which corresponds to the effect row that we’re trying to interpret.</p>
+<p>Interpreters for effect actions <code>e m</code> end up running with the <code>∀ f. Functor f =&gt; WithTactics e f m r</code> effect row. This thing gives us access to a <code>Tactics</code> capable of producing <code>Sem (e ': r)</code>s, but doesn’t <em>itself</em> have access to <code>e</code> effects.</p>
+<p>Finally, we use a type synonym to hide most of the nasty details.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Tactical</span> e m r x <span class="ot">=</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  <span class="ot">∀</span> f<span class="op">.</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Sem</span> (<span class="dt">WithTactics</span> e f m r) (f x)</span></code></pre></div>
+<p>Given an appropriate <code>runTactics</code> interpreter:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>runTactics</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="ot">   ::</span> <span class="dt">Functor</span> f</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>   <span class="ot">=&gt;</span> f ()</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>   <span class="ot">-&gt;</span> (<span class="ot">∀</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> <span class="dt">Sem</span> r2 (f x))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>   <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Tactics</span> f m r2 &#39;<span class="op">:</span> r) a</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>   <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>runTactics state distrib (<span class="dt">Sem</span> m) <span class="ot">=</span> m <span class="op">$</span> \u <span class="ot">-&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>  <span class="kw">case</span> decomp u <span class="kw">of</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>    <span class="dt">Left</span> x <span class="ot">-&gt;</span> liftSem <span class="op">$</span> hoist (runTactics state distrib) x</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> <span class="dt">GetInitialState</span> state&#39; _ y _) <span class="ot">-&gt;</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>      <span class="fu">pure</span> <span class="op">$</span> y <span class="op">$</span> state <span class="op">&lt;$</span> state&#39;</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> (<span class="dt">HoistInterpretation</span> na) state&#39; _ y _) <span class="ot">-&gt;</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a>      <span class="fu">pure</span> <span class="op">$</span> y <span class="op">$</span> (distrib <span class="op">.</span> <span class="fu">fmap</span> na) <span class="op">&lt;$</span> state&#39;</span></code></pre></div>
+<p>We can finally implement <code>interpret</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>interpret</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="ot">    ::</span> (<span class="ot">∀</span> x m <span class="op">.</span> e m x <span class="ot">-&gt;</span> <span class="dt">Tactical</span> e m r x)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (e &#39;<span class="op">:</span> r) a</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>interpret f (<span class="dt">Sem</span> m) <span class="ot">=</span> m <span class="op">$</span> \u <span class="ot">-&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>  <span class="kw">case</span> decomp u <span class="kw">of</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>    <span class="dt">Left</span>  x <span class="ot">-&gt;</span> liftSem <span class="op">$</span> hoist (interpret f) x</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>    <span class="dt">Right</span> (<span class="dt">Yo</span> eff state distrib y) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true"></a>      a <span class="ot">&lt;-</span> runTactics state distrib <span class="op">$</span> f eff</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true"></a>      <span class="fu">pure</span> <span class="op">$</span> y a</span></code></pre></div>
+<p>We’ve hid all of the nasty type inside of that <code>Tactical</code> synonym (which admittedly is still gross, but at least it’s not rank 3.) And we’ve create an effect interpreter effect in which we can put any combinators people will need for writing interpreters.</p>
+<p>After renaming <code>start</code> to <code>runT</code> and <code>continue</code> to <code>bindT</code> for branding purposes, <code>runResource</code> ends up in its final form:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>runResource</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="ot">∀</span> r a</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>     <span class="op">.</span> <span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="ot">∀</span> x<span class="op">.</span> <span class="dt">Sem</span> r x <span class="ot">-&gt;</span> <span class="dt">IO</span> x)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Resource</span> &#39;<span class="op">:</span> r) a</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a>runResource lower <span class="ot">=</span> interpret <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a>  <span class="dt">Bracket</span> alloc dealloc use <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a>    <span class="kw">let</span><span class="ot"> toIO ::</span> <span class="dt">Sem</span> (<span class="dt">Resource</span> &#39;<span class="op">:</span> r) x <span class="ot">-&gt;</span> <span class="dt">IO</span> x</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true"></a>        toIO <span class="ot">=</span> lower <span class="op">.</span> runResource lower</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true"></a>    a <span class="ot">&lt;-</span> runT  alloc</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true"></a>    d <span class="ot">&lt;-</span> bindT dealloc</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true"></a>    u <span class="ot">&lt;-</span> bindT use</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true"></a>    sendM <span class="op">$</span> X.bracket (toIO a) (toIO <span class="op">.</span> d) (toIO <span class="op">.</span> u)</span></code></pre></div>
+<p>I’m unable to properly express the amount of joy I get in using a library to implement core features in itself. The result is one of the most mind-crushingly meta things I’ve ever written, but it elegantly solves a real problem — so why not?</p>
+<p>In the next post in this series, we’ll discuss the semantics behind the order in which you interpret effects, and how this can get you into trouble with things like <code>runResource</code>. Stay tuned.</p>
       ]]></content:encoded>
   </item>
 </channel>
