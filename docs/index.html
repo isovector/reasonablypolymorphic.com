@@ -43,7 +43,7 @@
 </header>
 <p class="meta">
     <span class="prev">
-        <a href="/blog/tactics">&larr;</a>
+        <a href="/blog/algebra-driven-design">&larr;</a>
     </span>
     <time>October 12, 2020</time>
 
@@ -144,11 +144,11 @@
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a></span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true"></a></span>
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
 <p>Choosing the “best” implementation of these possibilities is largely a matter of heuristics, which I plan to describe in a later post. For now, let’s just assume our tactics engine is smart enough to come up with the one you had in mind.</p>
 <p>Of course, the real issue here is that nothing forces our <code>destruct</code> and <code>split</code> tactics to use the same data constructor. We can eliminate this ambiguity by noticing that in <code>fmap</code>, we’re not actually trying to destruct and then split, but instead we’re trying to implement a homomorphism (a structure-preserving function.) In order to preserve structure, we’d better map a data constructor to itself. So instead, let’s use the <code>homo</code> tactic instead of <code>destruct</code> and <code>split</code>. Our new tactics metaprogram for writing functor instances is thus:</p>
@@ -176,7 +176,7 @@
 
 <p class="meta">
     <span class="prev">
-        <a href="/blog/tactics">&larr;</a>
+        <a href="/blog/algebra-driven-design">&larr;</a>
     </span>
 </p>
 
