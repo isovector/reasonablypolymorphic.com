@@ -223,11 +223,11 @@ fmap = \fab ma -> case ma of
   Just a  -> Just (fab a)
 
 fmap = \fab ma -> case ma of
-  Nothing -> Just (fab a)
+  Nothing -> Just _
   Just a  -> Nothing
 
 fmap = \fab ma -> case ma of
-  Nothing -> Just (fab a)
+  Nothing -> Just _
   Just a  -> Just (fab a)
 ```
 
