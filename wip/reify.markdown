@@ -193,6 +193,7 @@ encapsulated into a function call, rather than be scattered about at call sites.
 The `disallowUsageOf` function is particularly interesting.
 
 > TODO(sandy): this is the gist of the post
+
 Besides the importance of normalization, this change taught me one other thing:
 the necessity of reifying your reasoning. Ollie Charles presents an excellent
 example of this in [Who Authorized These Ghosts][ghosts], but I'd never fully
