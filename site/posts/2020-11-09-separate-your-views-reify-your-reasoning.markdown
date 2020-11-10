@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Separate your Views; Reify Your Reasoning"
+title: "Separate Your Views; Reify Your Reasoning"
 date: 2020-11-09 21:45
 comments: true
 tags: haskell, tactics
