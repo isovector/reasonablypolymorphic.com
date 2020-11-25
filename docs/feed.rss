@@ -7,13 +7,66 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2020-11-09T21:45:00Z</pubDate>
+  <pubDate>2020-11-25T14:00:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Haskell in the Real World</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/3d-printing/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/3d-printing/index.html</guid>
+      <pubDate>2020-11-25T14:00:00Z</pubDate>
+      <content:encoded><![CDATA[
+        <p>I had a delightful experience this morning, where I fixed a real world problem in my life with Haskell. It’s rare that I actually get to <em>use</em> this stuff I spend so much time thinking about, so thought it would make a nice and quick blog post.</p>
+<h2 id="the-problem">The Problem</h2>
+<p>My apartment used to have some crappy roll-down blinds, which did absolutely nothing for blocking out early morning light. As the master of my domain, I took them down and installed more traditional curtains in their place, held up by a tension rod. My tension rod is tensioned between the mounting plates for the old blinds, which are metal. Unfortunately, the rubber pads of the tension rod don’t get much of a purchase on the metal, and so my curtains fall down once a week or so.</p>
+<p>They fell down yesterday, and I resolved that would be the last time.</p>
+<h2 id="the-solution">The Solution</h2>
+<p>I’ve recently bought a 3D printer, and like most new technology, it has taken some time to acclimatize to. Having a mini-factory in your house is probably pretty powerful, but so far I’ve just been looking for excuses to use it. There are lots of weird projects on <a href="https://www.thingiverse.com/">Thingiverse</a> that I keep trying to convince myself I need in my apartment.</p>
+<p>But today was a turning point. The slippery mounting plate has some holes in it — so I realized I could manufacture a bracket that would sit in the mounting plate and prevent my tension rod from falling again.</p>
+<figure>
+<img src="/images/mounting-bracket.jpg" alt="" /><figcaption>The mounting plate</figcaption>
+</figure>
+<p>Armed with my <a href="https://www.amazon.ca/Digital-Measuring-Calipers-Conversions-Diameter/dp/B088R4XFBN">digital calipers</a>, I took some measurements of the plate, and quickly whipped up a CAD model using the <a href="https://github.com/colah/ImplicitCAD"><code>implicit</code> library</a> — a library for doing CAD modeling in Haskell:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Graphics.Implicit</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>main <span class="ot">=</span> writeSTL <span class="fl">0.25</span> <span class="st">&quot;/tmp/mount.stl&quot;</span> <span class="op">$</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="kw">let</span> base <span class="ot">=</span> center3 <span class="op">$</span> union</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        [ slamBack <span class="op">$</span> slamTop <span class="op">$</span> centeredBox <span class="dv">40</span> <span class="dv">40</span> <span class="dv">6</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>        , slamBack <span class="op">$</span> slamBottom <span class="op">$</span> centeredBox <span class="dv">9</span> <span class="fl">3.7</span> <span class="dv">6</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>        ]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>   <span class="kw">in</span> difference</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>        [ slamFront <span class="op">$</span> difference</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>          [ slamBottom <span class="op">$</span> union</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>            [ mirror (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>) base</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>            , mirror (<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>) base</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>            , base</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>            ]</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>          , translate (mk3 <span class="dv">0</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">6</span>))</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>              <span class="op">$</span> slamBottom</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>              <span class="op">$</span> cylinder (<span class="dv">33</span> <span class="op">/</span> <span class="dv">2</span>) <span class="dv">10</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>          , translate (mk3 <span class="dv">0</span> (<span class="op">-</span><span class="dv">3</span>) (<span class="op">-</span><span class="dv">6</span>))</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>              <span class="op">$</span> slamBottom</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>              <span class="op">$</span> cylinder (<span class="dv">33</span> <span class="op">/</span> <span class="dv">2</span>) <span class="dv">10</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>          ]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>        , slamFront <span class="op">$</span> slamBottom <span class="op">$</span> centeredBox <span class="dv">40</span> <span class="fl">14.5</span> <span class="dv">6</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>        ]</span></code></pre></div>
+<p>This program isn’t going to win any awards and the magic numbers are petrifying. But it’s OK, because it saves to <code>/tmp</code> anyway. The result is a little bracket that sits inside of the holes of the mounting plate and prevents the tension bar from moving.</p>
+<p>The tension of the rod pushes the pins into the holes, which prevent the bracket from falling, which in turn holds up the tension rod. Amazing, really.</p>
+<figure>
+<img src="/images/bracket-top.jpg" alt="" /><figcaption>Tension rod slot</figcaption>
+</figure>
+<figure>
+<img src="/images/bracket-bottom.jpg" alt="" /><figcaption>Mounting pins</figcaption>
+</figure>
+<p>An hour of printing later, and my new brackets were done. They fit into the holes just fine, and I can rest soundly knowing that the darkness of my room is forever safeguarded.</p>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Separate Your Views; Reify Your Reasoning</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -617,38 +670,6 @@
 <img src="/images/nimic.png" alt="" /><figcaption>The Glorious Nimic Stepper</figcaption>
 </figure>
 <p>Not bad for a weekend of work. I can barely contain my excitement for what other cool projects are on the horizon.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>How I Intend to Help Steer GHC</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/steering/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/steering/index.html</guid>
-      <pubDate>2019-07-11T17:40:00Z</pubDate>
-      <content:encoded><![CDATA[
-        <p>Yesterday I was (somewhat surprisingly) brought on as a new member of the GHC steering committee. I believe transparency is very important in situations like these, and so I’d like to outline my intentions for my tenure in the committee.</p>
-<p>I nominated myself because of problems I perceived in the status-quo. Lately, there have been a few notable cases of dissatisfaction in the community with the proposal process. I have certainly had my qualms with it in the past, but I decided that rather than complain about it, I should just get involved and try my best to help.</p>
-<p>Which takes us to today.</p>
-<p>I’m extremely humbled to be included with such a group of incredible individuals as my co-committee members are. I don’t claim to know everything about writing industrial-grade compilers, nor about the intricacies of cutting-edge type system research. Most of the time I’m only barely smart enough to keep up with the conversation, let alone have a strongly informed opinion on the topic. WIth that in mind…</p>
-<hr />
-<p><strong>I don’t intend to be a gatekeeper.</strong> Instead, I intend to be a facilitator; someone whose job it is is to know the right people to bring into the discussion. Nobody in this community is an expert at everything, but everyone has a niche in which they are an expert. I want to make sure that those people are involved in the process in which their expertise can be used.</p>
-<p>That’s not to say I’m not going to do everything in my power to understand each and every proposal under my stewardship. Just that I’ll be the first to admit that I don’t know everything, and I don’t want <em>my</em> understanding to get in the way of good ideas!</p>
-<hr />
-<p><strong>I intend to inspire the committee to <em>move faster.</em></strong> I think any process which can take upwards of two years is too slow — it’s a waste of everyone’s time, energy and attention. My preference is fast responses to proposals, whether it be yea or nay. I don’t want to railroad any decisions, but I also don’t want to sit on the fence out of fear of making the wrong move.</p>
-<p>Along those lines, I intend to enthusiastically support any quality-of-life improvements to the language that are small in scope, compose well, and don’t get in the way of <em>active</em>, longer-term goals. Delaying a decision on the basis of “there’s probably a more general solution here that nobody has time to think about, nor do they plan to actually propose” seems like a bad strategy for me. I don’t want to let perfect be the enemy of the <em>much better.</em></p>
-<hr />
-<p><strong>I intend to preemptively shut down discussions around bikeshedding.</strong> Too often bikeshedding completely derails the conversation. It’s an enormous waste of time. Feelings get hurt, and everyone just talks past one another anyway. I intend to give the proposal author and the Simons the only say on bikeshedding matters. They can canvas for opinions if they’d like, but in my opinion, should do so outside the official proposal channels.</p>
-<p>To be clear, I am <em>not</em> saying you shouldn’t offer suggestions if they improve a proposals’ composability, type-safety, elegance or parsimony. But let’s agree as a community that opinions of style are just opinions, and are never going to convince anyone anyway.</p>
-<hr />
-<p><strong>I intend to remove as many barriers to entry as humanly possible.</strong> The Haskell community is by far the smartest, kindest, most incredible group of people I’ve ever had the good fortune to be a part of. I firmly believe that each and every one of us has great things to contribute to this community, and I suspect the world would be a better place if more of us felt like we had some ownership over the language.</p>
-<p>Please take a moment to remember that Haskell is only as great as we make it. There is no “community,” nor is there a “GHCHQ.” There are just people who step up to solve the problems that they see. I encourage you to be one of those people. You don’t need permission. You just need to be kind, genuine and hard-working. Remember that nobody involved in our community is stupid, and if they “just don’t get it,” maybe your argument wasn’t as persuasive as you thought.</p>
-<p>All of this goes beyond making proposals to the compiler. Be the community you want to see. Don’t assume somebody else is going to do it for you.</p>
-<hr />
-<p>Last but not least, <strong>I intend to be a good addition to this committee.</strong> <a href="https://whatiswrongwith.me/isovector">I solicit anonymous feedback</a>, so please don’t hesitate to call me out if you’re ever unhappy with my behavior. I promise to not be offended by any constructive feedback you send my way.</p>
-<p>I will do my best to stay honest to these intentions, but help keep me in tow when I slip up.</p>
-<hr />
-<p>The GHC steering committee is a thankless job. I’d like to take a moment to explicitly call out every member of the committee, past and present, for their selfless commitments to the community. These are people who are taking time out of their own research and projects in order to make our fantastic language much more transparent than it would be otherwise. Really and truly, these people are heroes, even if we don’t always agree with their decisions. <em>Thank you,</em> from the very bottom of my heart.</p>
-<p>Finally, <strong>I intend to live up to everyone’s expectations.</strong> Thanks for your time.</p>
       ]]></content:encoded>
   </item>
 </channel>
