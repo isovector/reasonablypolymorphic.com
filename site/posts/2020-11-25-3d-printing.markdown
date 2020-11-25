@@ -80,9 +80,9 @@ from moving.
 The tension of the rod pushes the pins into the holes, which prevent the bracket
 from falling, which in turn holds up the tension rod. Amazing, really.
 
-![Tension rod slot](/images/bracket-top.jpg)
+![Tension rod slot](/images/bracket-top.png)
 
-![Mounting pins](/images/bracket-bottom.jpg)
+![Mounting pins](/images/bracket-bottom.png)
 
 An hour of printing later, and my new brackets were done. They fit into the
 holes just fine, and I can rest soundly knowing that the darkness of my room is
