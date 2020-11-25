@@ -1,0 +1,90 @@
+---
+layout: post
+title: "Haskell in the Real World"
+date: 2020-11-25 14:00
+comments: true
+tags: haskell, 3d printing
+---
+
+I had a delightful experience this morning, where I fixed a real world problem
+in my life with Haskell. It's rare that I actually get to *use* this stuff I
+spend so much time thinking about, so thought it would make a nice and quick
+blog post.
+
+
+## The Problem
+
+My apartment used to have some crappy roll-down blinds, which did absolutely
+nothing for blocking out early morning light. As the master of my domain, I took
+them down and installed more traditional curtains in their place, held up by a
+tension rod. My tension rod is tensioned between the mounting plates for the old
+blinds, which are metal. Unfortunately, the rubber pads of the tension rod don't
+get much of a purchase on the metal, and so my curtains fall down once a week or
+so.
+
+They fell down yesterday, and I resolved that would be the last time.
+
+
+## The Solution
+
+I've recently bought a 3D printer, and like most new technology, it has taken
+some time to acclimatize to. Having a mini-factory in your house is probably
+pretty powerful, but so far I've just been looking for excuses to use it. There
+are lots of weird projects on [Thingiverse](https://www.thingiverse.com/) that I
+keep trying to convince myself I need in my apartment.
+
+But today was a turning point. The slippery mounting plate has some holes in it
+--- so I realized I could manufacture a bracket that would sit in the mounting
+plate and prevent my tension rod from falling again.
+
+![The mounting plate](/images/mounting-bracket.jpg)
+
+Armed with my [digital
+calipers](https://www.amazon.ca/Digital-Measuring-Calipers-Conversions-Diameter/dp/B088R4XFBN),
+I took some measurements of the plate, and quickly whipped up a CAD model using
+the [`implicit` library](https://github.com/colah/ImplicitCAD) --- a library for
+doing CAD modeling in Haskell:
+
+```haskell
+import Graphics.Implicit
+
+main :: IO ()
+main = writeSTL 0.25 "/tmp/mount.stl" $
+  let base = center3 $ union
+        [ slamBack $ slamTop $ centeredBox 40 40 6
+        , slamBack $ slamBottom $ centeredBox 9 3.7 6
+        ]
+   in difference
+        [ slamFront $ difference
+          [ slamBottom $ union
+            [ mirror (1, 1, 0) base
+            , mirror (-1, 1, 0) base
+            , base
+            ]
+          , translate (mk3 0 0 (-6))
+              $ slamBottom
+              $ cylinder (33 / 2) 10
+          , translate (mk3 0 (-3) (-6))
+              $ slamBottom
+              $ cylinder (33 / 2) 10
+          ]
+        , slamFront $ slamBottom $ centeredBox 40 14.5 6
+        ]
+```
+
+This program isn't going to win any awards and the magic numbers are petrifying.
+But it's OK, because it saves to `/tmp` anyway. The result is a little bracket
+that sits inside of the holes of the mounting plate and prevents the tension bar
+from moving.
+
+The tension of the rod pushes the pins into the holes, which prevent the bracket
+from falling, which in turn holds up the tension rod. Amazing, really.
+
+![Tension rod slot](/images/bracket-top.jpg)
+
+![Mounting pins](/images/bracket-bottom.jpg)
+
+An hour of printing later, and my new brackets were done. They fit into the
+holes just fine, and I can rest soundly knowing that the darkness of my room is
+forever safeguarded.
+
