@@ -1,0 +1,158 @@
+<script type="module" src="https://unpkg.com/img-comparison-slider@3/dist/component/component.esm.js"></script>
+<script nomodule="" src="https://unpkg.com/img-comparison-slider@3/dist/component/component.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/img-comparison-slider@3/dist/collection/styles/initial.css">
+
+<script>
+class ColorLegend extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({mode: 'open'});
+  }
+
+  connectedCallback() {
+    const color = this.getAttribute('color');
+    const side = this.hasAttribute('side') ? this.getAttribute('side') : "left";
+    const style = document.createElement('style');
+
+    if (side == "left") {
+      style.innerText = `
+      .wrapper::before {
+        content: '';
+        display: inline-block;
+        width: 1.2ex;
+        height: 1.2ex;
+        background-color: ${color};
+        margin-right: 0.5em;
+        border: 1px solid black;
+      }
+      .wrapper {
+        display: block;
+        line-height: 1rem;
+        height: 1rem;
+      }`;
+    } else {
+      style.innerText = `
+      .wrapper::after {
+        content: '';
+        display: inline-block;
+        width: 1.2ex;
+        height: 1.2ex;
+        background-color: ${color};
+        margin-left: 0.5em;
+        border: 1px solid black;
+      }
+      .wrapper {
+        display: block;
+        line-height: 1rem;
+        text-align: right;
+        height: 1rem;
+      }`;
+    }
+
+    const wrapper = document.createElement('span');
+    wrapper.setAttribute('class','wrapper');
+    wrapper.innerText = this.textContent;
+    this.shadowRoot.append(style, wrapper);
+  }
+}
+
+customElements.define('color-legend', ColorLegend)
+</script>
+
+
+<style>
+body {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+.three-col {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.three-col .legend {
+  margin-left: 1em;
+  margin-right: 1em;
+  flex-shrink: 1;
+}
+
+.three-col .graph {
+  flex: 1;
+}
+
+.left h3 {
+  width: 100%;
+  text-align: right;
+}
+
+.right h3 {
+  width: 100%;
+  text-align: left;
+}
+</style>
+
+
+<h1>HTML Ipsum Presents</h1>
+
+<p><strong>Pellentesque habitant morbi tristique</strong> senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. <em>Aenean ultricies mi vitae est.</em> Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, <code>commodo vitae</code>, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. <a href="#">Donec non enim</a> in turpis pulvinar facilisis. Ut felis.</p>
+
+<h2>Header Level 2</h2>
+
+<ol>
+   <li>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</li>
+   <li>Aliquam tincidunt mauris eu risus.</li>
+</ol>
+
+<blockquote><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus magna. Cras in mi at felis aliquet congue. Ut a est eget ligula molestie gravida. Curabitur massa. Donec eleifend, libero at sagittis mollis, tellus est malesuada tellus, at luctus turpis elit sit amet quam. Vivamus pretium ornare est.</p></blockquote>
+
+<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
+
+<div class="three-col">
+<div class="left legend">
+  <h3>Area</h3>
+  <color-legend color="#ffcfd6" side="right">Constitutional</color-legend>
+  <color-legend color="#59ffff" side="right">Criminal</color-legend>
+  <color-legend color="#32beb3" side="right">Privy Council</color-legend>
+  <color-legend color="#e6fd5c" side="right">Administrative</color-legend>
+  <color-legend color="#dac7e5" side="right">Unk 1</color-legend>
+  <color-legend color="#a9fd7f" side="right">Immigration</color-legend>
+  <color-legend color="#f09095" side="right">Unk 2</color-legend>
+  <color-legend color="#6bb2e5" side="right">Tech</color-legend>
+  <color-legend color="#c3ffcf" side="right">Unk 3</color-legend>
+</div>
+<div class="graph">
+  <img-comparison-slider>
+    <img slot="before" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-year.png" width="100%">
+    <img slot="after" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-module.png" width="100%">
+  </img-comparison-slider>
+</div>
+<div class="right legend">
+  <h3>Year</h3>
+  <color-legend color="#db352f">1900</color-legend>
+  <color-legend color="#dae7bd">1985</color-legend>
+  <color-legend color="#8cb7ba">2021</color-legend>
+</div>
+</div>
+
+<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
+
+<h3>Header Level 3</h3>
+
+<ul>
+   <li>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</li>
+   <li>Aliquam tincidunt mauris eu risus.</li>
+</ul>
+
+<pre><code>
+#header h1 a {
+  display: block;
+  width: 300px;
+  height: 80px;
+}
+</code></pre>
+
+<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
+
+<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
