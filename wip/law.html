@@ -1,5 +1,7 @@
 <script type="module" src="https://unpkg.com/img-comparison-slider@3/dist/component/component.esm.js"></script>
 <script nomodule="" src="https://unpkg.com/img-comparison-slider@3/dist/component/component.js"></script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="/home/sandy/prj/reasonablypolymorphic.com/site/js/charts.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/img-comparison-slider@3/dist/collection/styles/initial.css">
 
 <script>
@@ -14,38 +16,40 @@ class ColorLegend extends HTMLElement {
     const side = this.hasAttribute('side') ? this.getAttribute('side') : "left";
     const style = document.createElement('style');
 
-    if (side == "left") {
-      style.innerText = `
-      .wrapper::before {
+
+    const psuedo_css = `
         content: '';
         display: inline-block;
         width: 1.2ex;
         height: 1.2ex;
         background-color: ${color};
-        margin-right: 0.5em;
         border: 1px solid black;
-      }
-      .wrapper {
+        `;
+
+    const wrapper_css = `
         display: block;
         line-height: 1rem;
+        text-align: ${side};
         height: 1rem;
+        `;
+
+    if (side == "left") {
+      style.innerText = `
+      .wrapper::before {
+        ${psuedo_css}
+        margin-right: 0.5em;
+      }
+      .wrapper {
+        ${wrapper_css}
       }`;
     } else {
       style.innerText = `
       .wrapper::after {
-        content: '';
-        display: inline-block;
-        width: 1.2ex;
-        height: 1.2ex;
-        background-color: ${color};
+        ${psuedo_css}
         margin-left: 0.5em;
-        border: 1px solid black;
       }
       .wrapper {
-        display: block;
-        line-height: 1rem;
-        text-align: right;
-        height: 1rem;
+        ${wrapper_css}
       }`;
     }
 
@@ -70,6 +74,8 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
+  margin-top: 5em;
+  margin-bottom: 5em;
 }
 
 .three-col .legend {
@@ -91,10 +97,72 @@ body {
   width: 100%;
   text-align: left;
 }
+
+.chart {
+  margin-top: 5em;
+  margin-bottom: 5em;
+}
+
+body > p {
+  text-indent: 2em;
+}
 </style>
 
 
 <h1>HTML Ipsum Presents</h1>
+
+
+<ol>
+<li><a href="https://en.wikipedia.org/wiki/Hunter_v_Southam_Inc">Hunter et al. v. Southam Inc.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Big_M_Drug_Mart_Ltd">R. v. Big M Drug Mart Ltd.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Oakes">R. v. Oakes</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Reference_Re_BC_Motor_Vehicle_Act">Re B.C. Motor Vehicle Act</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Edwards_Books_and_Art_Ltd">R. v. Edwards Books and Art Ltd.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Therens">R. v. Therens</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Collins_(1987)">R. v. Collins</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Law_Society_of_Upper_Canada_v_Skapinker">Law society of Upper Canada v. Skapinker</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Singh_v_Canada">Singh v. Minister of Employment and Immigration</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Irwin_Toy_Ltd_v_Quebec_(AG)">Irwin Toy Ltd. v. Quebec (Attorney General)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Andrews_v_Law_Society_of_British_Columbia">Andrews v. Law Society of British Columbia</a></li>
+<li>R. v. Lyons (MISSING)</li>
+<li><a href="https://en.wikipedia.org/wiki/Slaight_Communications_Inc_v_Davidson">Slaight Communications Inc. v. Davidson</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Retail,_Wholesale_and_Department_Store_Union,_Local_580_v_Dolphin_Delivery_Ltd">RWDSU v. Dolphin Delivery Ltd.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Citizens_Insurance_Co_of_Canada_v_Parsons">Citizens' and The Queen Insurance Cos. v. Parsons</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Morgentaler">R. v. Morgentaler</a></li>
+<li>Curr v. The Queen (MISSING)</li>
+<li><a href="https://en.wikipedia.org/wiki/Reference_Re_Alberta_Statutes">Reference Re Alberta Statutes - The Bank Taxation Act; The Credit of Alberta Regulation Act; and the Accurate News and Information Act</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Keegstra">R. v. Keegstra</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Mills_v_R">Mills v. The Queen</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Reference_Re_Public_Service_Employee_Relations_Act_(Alta)">Reference Re Public Service Employee Relations Act (Alta.)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Thomson_Newspapers_Co_Ltd_v_Canada_(AG)">Thomson Newspapers Ltd. v. Canada (Director of Investigation and Research, Restrictive Trade Practices Commission)</a></li>
+<li>Attorney-General (Ont.) v. Hamilton Street Railway (MISSING)</li>
+<li>R. v. Beare; R. v. Higgins (MISSING)</li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Seaboyer">R. v. Seaboyer;  R. v. Gayme</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Proprietary_Articles_Trade_Association_v_Canada_(AG)">Proprietary Articles Trade Association v. Canada (Attorney General)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Canadian_Union_of_Public_Employees,_Local_963_v_New_Brunswick_Liquor_Corp">C.U.P.E. v. N.B. Liquor Corporation</a></li>
+<li>John Deere Plow Co. Ltd. v. Wharton (MISSING)</li>
+<li>Rothman v. The Queen (MISSING)</li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Jones">R. v. Jones</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Prostitution_Reference">Reference re ss. 193 and 195.1(1)(C) of the criminal code (Man.)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Saumur_v_Quebec_(City_of)">Saumur v. City of Quebec</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Edmonton_Journal_v_Alberta_(AG)">Edmonton Journal v. Alberta (Attorney General)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Wray">The Queen v. Wray</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Edwards_v_Canada_(AG)">Edwards v. Canada (Attorney General)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Sault_Ste-Marie_(City_of)">R. v. Sault Ste. Marie</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Schachter_v_Canada">Schachter v. Canada</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Margarine_Reference">Reference re Validity of Section 5 (a) Dairy Industry Act</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Reference_Re_Anti-Inflation_Act">Re: Anti-Inflation Act</a></li>
+</ol>
+
+<div id="chart1" class="chart">
+select jurisdiction, count(*) as count from decisions group by jurisdiction having count > 10000;
+<script>
+pieChart("#chart1", "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612246436.csv", "jurisdiction", "count")
+</script>
+</div>
+
+
+
 
 <p><strong>Pellentesque habitant morbi tristique</strong> senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. <em>Aenean ultricies mi vitae est.</em> Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, <code>commodo vitae</code>, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. <a href="#">Donec non enim</a> in turpis pulvinar facilisis. Ut felis.</p>
 
@@ -133,6 +201,156 @@ body {
   <color-legend color="#db352f">1900</color-legend>
   <color-legend color="#dae7bd">1985</color-legend>
   <color-legend color="#8cb7ba">2021</color-legend>
+</div>
+</div>
+
+<p>or by jurisdiction:</p>
+
+<div class="three-col">
+<div class="left legend">
+  <h3>Area</h3>
+  <color-legend color="#ffcfd6" side="right">Constitutional</color-legend>
+  <color-legend color="#59ffff" side="right">Criminal</color-legend>
+  <color-legend color="#32beb3" side="right">Privy Council</color-legend>
+  <color-legend color="#e6fd5c" side="right">Administrative</color-legend>
+  <color-legend color="#dac7e5" side="right">Unk 1</color-legend>
+  <color-legend color="#a9fd7f" side="right">Immigration</color-legend>
+  <color-legend color="#f09095" side="right">Unk 2</color-legend>
+  <color-legend color="#6bb2e5" side="right">Tech</color-legend>
+  <color-legend color="#c3ffcf" side="right">Unk 3</color-legend>
+</div>
+<div class="graph">
+  <img-comparison-slider>
+    <img slot="after" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-module.png" width="100%">
+    <img slot="before" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-jurisdiction.png" width="100%">
+  </img-comparison-slider>
+</div>
+<div class="right legend">
+  <h3>Jurisdiction</h3>
+  <color-legend color="#dddddd" side="right">Federal</color-legend>
+  <color-legend color="#0000dd" side="right">Ontario</color-legend>
+  <color-legend color="#dd0000" side="right">Quebec</color-legend>
+  <color-legend color="#00dd00" side="right">BC</color-legend>
+</div>
+</div>
+
+<p>What happens if we filter out the federal cases here?</p>
+
+<div class="three-col">
+<div class="left legend">
+  <h3>Area</h3>
+  <color-legend color="#ffcfd6" side="right">Constitutional</color-legend>
+  <color-legend color="#59ffff" side="right">Criminal</color-legend>
+  <color-legend color="#32beb3" side="right">Privy Council</color-legend>
+  <color-legend color="#e6fd5c" side="right">Administrative</color-legend>
+  <color-legend color="#dac7e5" side="right">Unk 1</color-legend>
+  <color-legend color="#a9fd7f" side="right">Immigration</color-legend>
+  <color-legend color="#f09095" side="right">Unk 2</color-legend>
+  <color-legend color="#6bb2e5" side="right">Tech</color-legend>
+  <color-legend color="#c3ffcf" side="right">Unk 3</color-legend>
+</div>
+<div class="graph">
+  <img-comparison-slider>
+    <img slot="after" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-module-no-ca.png" width="100%">
+    <img slot="before" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-jurisdiction-no-ca.png" width="100%">
+  </img-comparison-slider>
+</div>
+<div class="right legend">
+  <h3>Jurisdiction</h3>
+  <color-legend color="#dddddd" side="right">Federal</color-legend>
+  <color-legend color="#0000dd" side="right">Ontario</color-legend>
+  <color-legend color="#dd0000" side="right">Quebec</color-legend>
+  <color-legend color="#00dd00" side="right">BC</color-legend>
+</div>
+</div>
+
+<p>We can gain some clarity by filtering out everything except the non-federal cases cited by the SCC. Comparing jurisdiction against module:</p>
+
+<div class="three-col">
+<div class="left legend">
+  <h3>Area</h3>
+  <color-legend color="#ffcfd6" side="right">Constitutional</color-legend>
+  <color-legend color="#59ffff" side="right">Criminal</color-legend>
+  <color-legend color="#32beb3" side="right">Privy Council</color-legend>
+  <color-legend color="#e6fd5c" side="right">Administrative</color-legend>
+  <color-legend color="#dac7e5" side="right">Unk 1</color-legend>
+  <color-legend color="#a9fd7f" side="right">Immigration</color-legend>
+  <color-legend color="#f09095" side="right">Unk 2</color-legend>
+  <color-legend color="#6bb2e5" side="right">Tech</color-legend>
+  <color-legend color="#c3ffcf" side="right">Unk 3</color-legend>
+</div>
+<div class="graph">
+  <img-comparison-slider>
+    <img slot="after" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/scc-cites-jurisdiction.png" width="100%">
+    <img slot="before" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/scc-cites-module.png" width="100%">
+  </img-comparison-slider>
+</div>
+<div class="right legend">
+  <h3>Jurisdiction</h3>
+  <color-legend color="#dddddd" side="right">Federal</color-legend>
+  <color-legend color="#0000dd" side="right">Ontario</color-legend>
+  <color-legend color="#dd0000" side="right">Quebec</color-legend>
+  <color-legend color="#00dd00" side="right">BC</color-legend>
+</div>
+</div>
+
+
+
+<p>And jurisdiction against year:</p>
+
+<div class="three-col">
+<div class="left legend">
+  <h3>Area</h3>
+  <color-legend color="#ffcfd6" side="right">Constitutional</color-legend>
+  <color-legend color="#59ffff" side="right">Criminal</color-legend>
+  <color-legend color="#32beb3" side="right">Privy Council</color-legend>
+  <color-legend color="#e6fd5c" side="right">Administrative</color-legend>
+  <color-legend color="#dac7e5" side="right">Unk 1</color-legend>
+  <color-legend color="#a9fd7f" side="right">Immigration</color-legend>
+  <color-legend color="#f09095" side="right">Unk 2</color-legend>
+  <color-legend color="#6bb2e5" side="right">Tech</color-legend>
+  <color-legend color="#c3ffcf" side="right">Unk 3</color-legend>
+</div>
+<div class="graph">
+  <img-comparison-slider>
+    <img slot="after" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/scc-cites-jurisdiction.png" width="100%">
+    <img slot="before" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/scc-cites-year.png" width="100%">
+  </img-comparison-slider>
+</div>
+<div class="right legend">
+  <h3>Jurisdiction</h3>
+  <color-legend color="#dddddd" side="right">Federal</color-legend>
+  <color-legend color="#0000dd" side="right">Ontario</color-legend>
+  <color-legend color="#dd0000" side="right">Quebec</color-legend>
+  <color-legend color="#00dd00" side="right">BC</color-legend>
+</div>
+</div>
+
+<div class="three-col">
+<div class="left legend">
+  <h3>Area</h3>
+  <color-legend color="#ffcfd6" side="right">Constitutional</color-legend>
+  <color-legend color="#59ffff" side="right">Criminal</color-legend>
+  <color-legend color="#32beb3" side="right">Privy Council</color-legend>
+  <color-legend color="#e6fd5c" side="right">Administrative</color-legend>
+  <color-legend color="#dac7e5" side="right">Unk 1</color-legend>
+  <color-legend color="#a9fd7f" side="right">Immigration</color-legend>
+  <color-legend color="#f09095" side="right">Unk 2</color-legend>
+  <color-legend color="#6bb2e5" side="right">Tech</color-legend>
+  <color-legend color="#c3ffcf" side="right">Unk 3</color-legend>
+</div>
+<div class="graph">
+  <img-comparison-slider>
+    <img slot="after" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-module-on.png" width="100%">
+    <img slot="before" src="file:///home/sandy/prj/reasonablypolymorphic.com/site/images/law/by-module-bc.png" width="100%">
+  </img-comparison-slider>
+</div>
+<div class="right legend">
+  <h3>Jurisdiction</h3>
+  <color-legend color="#dddddd" side="right">Federal</color-legend>
+  <color-legend color="#0000dd" side="right">Ontario</color-legend>
+  <color-legend color="#dd0000" side="right">Quebec</color-legend>
+  <color-legend color="#00dd00" side="right">BC</color-legend>
 </div>
 </div>
 
