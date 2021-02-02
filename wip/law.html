@@ -155,10 +155,41 @@ body > p {
 </ol>
 
 <div id="chart1" class="chart">
-select jurisdiction, count(*) as count from decisions group by jurisdiction having count > 10000;
-<script>
-pieChart("#chart1", "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612246436.csv", "jurisdiction", "count")
-</script>
+  select jurisdiction, count(*) as count from decisions group by jurisdiction having count > 10000;
+  <script>
+    pieChart(
+      "#chart1",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612246436.csv",
+      "jurisdiction",
+      "count")
+  </script>
+  number of decisions in the dataset by jurisdiction
+</div>
+
+<div id="chart2" class="chart">
+  select src_year, avg(count) as count from (select src_year, count(*) as count from expanded_citations where src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
+  <script>
+    lineChart(
+      "#chart2",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612295413.csv",
+      "src_year",
+      "count")
+  </script>
+  average number of citations from scc decisions by year
+</div>
+
+<div id="chart3" class="chart">
+  select src_year, avg(diff) as diff from (select src_year, src_year - dst_year as diff from expanded_citations where src_year >= dst_year and src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
+
+  <script>
+    lineChart(
+      "#chart3",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612294018.csv",
+      "src_year",
+      "diff")
+  </script>
+
+  average age of scc citation by year
 </div>
 
 
