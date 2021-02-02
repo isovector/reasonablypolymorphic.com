@@ -70,6 +70,20 @@ body {
   margin: 0 auto;
 }
 
+figure {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5em;
+  margin-bottom: 5em;
+}
+
+figcaption {
+  margin-top: 2em;
+}
+
 .three-col {
   width: 100%;
   display: flex;
@@ -96,11 +110,6 @@ body {
 .right h3 {
   width: 100%;
   text-align: left;
-}
-
-.chart {
-  margin-top: 5em;
-  margin-bottom: 5em;
 }
 
 body > p {
@@ -154,43 +163,52 @@ body > p {
 <li><a href="https://en.wikipedia.org/wiki/Reference_Re_Anti-Inflation_Act">Re: Anti-Inflation Act</a></li>
 </ol>
 
-<div id="chart1" class="chart">
+<figure>
+<div id="chart1">
   select jurisdiction, count(*) as count from decisions group by jurisdiction having count > 10000;
-  <script>
+  <script defer>
     pieChart(
       "#chart1",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612246436.csv",
-      "jurisdiction",
-      "count")
+      d => d.jurisdiction,
+      d => d.count)
   </script>
-  number of decisions in the dataset by jurisdiction
 </div>
+<figcaption>number of decisions in the dataset by jurisdiction</figcaption>
+</figure>
 
-<div id="chart2" class="chart">
+<figure>
+<div id="chart2">
   select src_year, avg(count) as count from (select src_year, count(*) as count from expanded_citations where src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
-  <script>
+  <script defer>
     lineChart(
       "#chart2",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612295413.csv",
-      "src_year",
-      "count")
+      "Year",
+      d => +parseInt(d.src_year),
+      "Avg Number of Citations",
+      d => +parseFloat(d.count).toFixed(2))
   </script>
-  average number of citations from scc decisions by year
 </div>
+<figcaption>average number of citations from scc decisions by year</figcaption>
+</figure>
 
-<div id="chart3" class="chart">
+<figure>
+<div id="chart3">
   select src_year, avg(diff) as diff from (select src_year, src_year - dst_year as diff from expanded_citations where src_year >= dst_year and src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
 
-  <script>
+  <script defer>
     lineChart(
       "#chart3",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612294018.csv",
-      "src_year",
-      "diff")
+      "Year",
+      d => +parseInt(d.src_year),
+      "Avg Age of Citation",
+      d => +parseFloat(d.diff).toFixed(2))
   </script>
-
-  average age of scc citation by year
 </div>
+<figcaption>average age of scc citation by year</figcaption>
+</figure>
 
 
 
