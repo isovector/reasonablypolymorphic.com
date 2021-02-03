@@ -92,6 +92,63 @@ Bottom list: NONE
 Middle list: NONE
 
 
+dimportance:
+
+<ol>
+<li><a href="https://en.wikipedia.org/wiki/Citizens_Insurance_Co_of_Canada_v_Parsons">Citizens' and The Queen Insurance Cos. v. Parsons</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Board_of_Commerce_case">John Deere Plow Co. Ltd. v. Wharton</a></li>
+<li>Canada (Attorney General) v. Alberta (Attorney General) (1921)</li>
+<li>Canada (Attorney-General) v. Alberta (Attorney-General) (1916)</li>
+<li>City of Montreal v. Montreal Street Railway Company</li>
+<li>Attorney-General (Ont.) v. Hamilton Street Railway</li>
+<li>Allen v. The King</li>
+<li>R. v. Great West Saddlery Company</li>
+<li>Valin v. Langlois</li>
+<li>R. v. Craigon</li>
+<li>R. v. Nat Bell Liquors Limited</li>
+<li>In re Trepanier</li>
+<li>Attorneys-General For the Provinces of Ontario, Quebec, Nova Scotia, New Brunswick, Manitoba, Prince Edward Island, and Alberta, v. Attorney-General For the Dominion of Canada and the Attorney-General For the Province of British Columbia</li>
+<li><a href="https://en.wikipedia.org/wiki/Fort_Frances_Pulp_and_Paper_v_Manitoba_Free_Press">Fort Frances Pulp and Paper Co. v. Manitoba Free Press Co.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Proprietary_Articles_Trade_Association_v_Canada_(AG)">Proprietary Articles Trade Association v. Canada (Attorney General)</a></li>
+<li>Insurance Companies (Re)</li>
+<li><a href="https://en.wikipedia.org/wiki/Toronto_Electric_Commissioners_v_Snider">Toronto Electric Commissioners v. Snider</a></li>
+<li>R. v. Carter</li>
+<li>In re McNutt</li>
+<li><a href="https://en.wikipedia.org/wiki/Board_of_Commerce_case">The Board of Commerce Act (Re)</a></li>
+<li>Prosko v. The King</li>
+<li>Rex v. Reinhardt Salvador Brewing Co. Ltd.; Rex v. McFarline</li>
+<li>Rex v. Emery</li>
+<li>Severn v. The Queen</li>
+<li>Rex v. Pudwell</li>
+<li>Rex v. Covert</li>
+<li><a href="https://en.wikipedia.org/wiki/Hodge_v_R">R. v. Hodge</a></li>
+<li>Canada (Attorney General) v. British Columbia (Attorney General)</li>
+<li>Gouin v. The King</li>
+<li>The Bonanza Creek Gold Mining Co. v. The King</li>
+<li>The King v. Cotton. (Consolidated Appeals.)</li>
+<li>Lawson v. Interior Tree Fruit and Vegetable Committee of Direction</li>
+<li>Reg. v. Grannis; Reg. v. Nevins; Reg. v. Lyons; Reg. v. Ferguson; Reg. v. Adams & Jackson</li>
+<li>Sankey v. The King</li>
+<li>The Queen v. Woods</li>
+<li>The Queen v. Davidson</li>
+<li><a href="https://en.wikipedia.org/wiki/Browne_v_Dunn">Browne v. Dunn</a></li>
+<li>Weidman v. Shragge</li>
+<li>Union Colliery Co. v. The Queen</li>
+<li>Brooks v. The King</li>
+<li>Reference re legislative jurisdiction of Parliament of Canada to enact the Natural Products Marketing Act, 1934, and The Natural Products Marketing Act Amendment Act, 1935</li>
+<li>The Initiative (Re)</li>
+<li><a href="https://en.wikipedia.org/wiki/Labour_Conventions_Reference">Canada (Attorney-General) v. Ontario (Attorney-General)</a></li>
+<li>The King v. Elliott</li>
+<li>Harmer v. The A. Macdonald Co., Ltd.</li>
+<li>Davidson v. Great West Saddlery Co., Ltd.</li>
+<li>Mercer v. Attorney General for Ontario</li>
+<li>Ouimet (Plaintiff, Appellant) v. Bazin et al. (Defendants, Respondents)</li>
+<li>Currie v. Harris Lithographing Co.</li>
+<li>Mitchell v. Tracey and Fielding</li>
+</ol>
+
+
+
 <h3>Communities</h3>
 top 5 decisions from top 5 communities:
 
@@ -200,6 +257,23 @@ R. v. Shropshire|1995
   </script>
 </div>
 <figcaption>overview of the data for courts with &gt; 1000 entries</figcaption>
+</figure>
+
+<figure>
+<div id="chart5">
+  select src_year, dst_jurisdiction, count(*) as count from expanded_citations where src_court = 'scc' and dst_jurisdiction != 'ca' and src_year >= 1980 group by src_year, dst_jurisdiction;
+
+
+  <script defer>
+    stackedArea(
+      "#chart5",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612368531.csv",
+      d => +d.src_year,
+      d => d.dst_jurisdiction,
+      d => +d.count)
+  </script>
+</div>
+<figcaption>scc jurisdiction citation by year</figcaption>
 </figure>
 
 
