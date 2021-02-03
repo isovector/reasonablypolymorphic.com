@@ -92,6 +92,53 @@ Bottom list: NONE
 Middle list: NONE
 
 
+<h3>Communities</h3>
+top 5 decisions from top 5 communities:
+
+<h4>administrative</h4>
+sqlite> select name, year, url from decisions where community == 1144 order by importance desc limit 5;
+Dunsmuir v. New Brunswick|2008|/en/ca/scc/doc/2008/2008scc9/2008scc9.html
+Housen v. Nikolaisen|2002|/en/ca/scc/doc/2002/2002scc33/2002scc33.html
+Baker v. Canada (Minister of Citizenship and Immigration)|1999|/en/ca/scc/doc/1999/1999canlii699/1999canlii699.html
+Canada (Citizenship and Immigration) v. Khosa|2009|/en/ca/scc/doc/2009/2009scc12/2009scc12.html
+Rizzo & Rizzo Shoes Ltd. (Re)|1998|/en/ca/scc/doc/1998/1998canlii837/1998canlii837.html
+
+
+<h4>charter</h4>
+sqlite> select name, year, url from decisions where community == 638 order by importance desc limit 5;
+Hunter et al. v. Southam Inc.|1984
+R. v. Collins|1987
+R. v. Grant|2009
+R. v. Stillman|1997
+R. v. Therens|1985
+
+<h4>also charter?</h4>
+sqlite> select name, year, url from decisions where community == 226 order by importance desc limit 5;
+R. v. Oakes|1986
+R. v. Big M Drug Mart Ltd.|1985
+Re B.C. Motor Vehicle Act|1985
+Irwin Toy Ltd. v. Quebec (Attorney General)|1989
+Andrews v. Law Society of British Columbia|1989
+
+<h4>criminal/constitutional</h4>
+sqlite> select name, year, url from decisions where community == 816 order by importance desc limit 5;
+R. v. O'Connor|1995
+R. v. Mills|1999
+Mills v. The Queen|1986
+R. v. Stinchcombe|1991
+R. v. Regan|2002
+
+<h4>criminal/constitutional</h4>
+sqlite> select name, year, url from decisions where community == 666 order by importance desc limit 5;
+R. v. M. (C.A.)|1996
+R. v. Lyons|1987
+R. v. Smith (Edward Dewey)|1987
+R. v. Proulx|2000
+R. v. Shropshire|1995
+
+
+
+
 
 
 
@@ -140,6 +187,19 @@ Middle list: NONE
   </script>
 </div>
 <figcaption>average age of scc citation by year</figcaption>
+</figure>
+
+<figure>
+<div id="chart4">
+  select substr(url, 2, 2) as language, jurisdiction, court, count(*) as count from decisions where url not like '/fr/ca/%' group by language, jurisdiction, court having count > 1000;
+
+  <script defer>
+    sankey(
+      "#chart4",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612331151.csv")
+  </script>
+</div>
+<figcaption>overview of the data for courts with &gt; 1000 entries</figcaption>
 </figure>
 
 
