@@ -285,3 +285,94 @@ function sankey(sel, csv) {
   })
 }
 
+function stackedArea(sel, csv, get_time, get_key, get_count) {
+  document.querySelector(sel).textContent = ""
+  d3.csv(csv).then(predata => {
+    var cols_set = {}
+    for (var i = 0; i < predata.length; i++) {
+      const row = predata[i]
+      const key = get_key(row)
+      cols_set[key] = key
+    }
+
+    const cols = Object.keys(cols_set)
+
+    var rows = {}
+    for (var i = 0; i < predata.length; i++) {
+      const row = predata[i]
+      const time = get_time(row)
+      if (rows[time] == undefined) {
+        rows[time] = {time: time}
+        for (var j = 0; j < cols.length; j++) {
+          rows[time][cols[j]] = 0
+        }
+      }
+      rows[get_time(row)][get_key(row)] = get_count(row)
+    }
+
+    var data = []
+    const keys = Object.keys(rows).map(d => +d).sort()
+    for (var i = 0; i < keys.length; i++) {
+      data.push(rows[keys[i]])
+    }
+
+    const margin = ({top: 20, right: 30, bottom: 30, left: 40})
+    const height = 300
+    const width = 500
+
+    const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.select(".tick:last-of-type text").clone()
+          .attr("x", 3)
+          .attr("text-anchor", "start")
+          .attr("font-weight", "bold")
+          .text(data.y))
+
+    const xAxis = g => g
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 40).tickFormat(y => `${+y}`).tickSizeOuter(0))
+
+    const time_col = "time"
+
+    const color = d3.scaleOrdinal()
+      .domain(cols)
+      .range(d3.schemeCategory10)
+
+    const series = d3.stack().keys(cols)(data)
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(series, d => d3.max(d, d => d[1]))]).nice()
+      .range([height - margin.bottom, margin.top])
+
+    const x = d3.scaleUtc()
+      .domain(d3.extent(data, d => +d[time_col]))
+      .range([margin.left, width - margin.right])
+
+    const area = d3.area()
+      .x(d => x(+d.data[time_col]))
+      .y0(d => y(d[0]))
+      .y1(d => y(d[1]))
+
+    const svg = d3.select(sel).append("svg")
+      .attr("viewBox", [0, 0, width, height]);
+
+    svg.append("g")
+      .selectAll("path")
+      .data(series)
+      .join("path")
+        .attr("fill", ({key}) => color(key))
+        .attr("d", area)
+      .append("title")
+        .text(({key}) => key);
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+  })
+}
+
