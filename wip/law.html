@@ -1,35 +1,181 @@
 <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script src="/home/sandy/prj/reasonablypolymorphic.com/site/js/charts.js"></script>
+<link rel="stylesheet" href="/home/sandy/prj/reasonablypolymorphic.com/site/css/law.css">
 
 
-<style>
-body {
-  max-width: 1024px;
-  margin: 0 auto;
-}
+# Canadian Case Law: Visualized
 
-figure {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin-top: 5em;
-  margin-bottom: 5em;
-}
+## Overview
 
-figcaption {
-  margin-top: 2em;
-}
+## Methodology
 
-body > p {
-  text-indent: 2em;
-}
-</style>
+My assumption is that the citation graph of Canadian case law is sufficient to
+find interesting data in the law. Unfortunately, this data doesn't seem to exist
+in any convenient format. [CanLII](TODO) makes the data available on the web,
+but doesn't provide any sort of downloadable database. So I needed to make my
+own.
+
+I wired up a small web-scraper that would connect to CanLII and crawl through
+the hundreds of thousands of cases available there. My program would randomly
+pick a case that had been mentioned in the citations another decision, but which
+it hadn't yet explored. It would then go to that page, record all the cases it
+cited, and then randomly pick a new page.
+
+TODO: graph discovery gif
+
+At first I prioritized the Supreme Court decisions --- assuming these were the
+most important cases --- and then loaded the cases from each province's Court of
+Appeal. After a few days, I'd discovered 323,596 cases from 217 different
+courts, and explored 240,964 of them. In total, there were 1,332,193 citations
+in the dataset. Frighteningly, this is nowhere near all of the case law (I'd
+estimate it's maybe one tenth of the publicly-available cases), but if I waited
+to collect all of it I'd never get any work done.
+
+Despite the large number of cases, it's important to discuss just how little
+data I've got *per* case. The totality of my data about cases is of this form:
+
+<figure>
+  <table>
+    <TR><TH>name</TH>
+    <TH>year</TH>
+    <TH>lang</TH>
+    <TH>jurisdiction</TH>
+    <TH>court</TH>
+    <TH>fetched</TH>
+    </TR>
+    <TR><TD>Bamba c. R.</TD>
+    <TD>2019</TD>
+    <TD>fr</TD>
+    <TD>qc</TD>
+    <TD>qcca</TD>
+    <TD>1</TD>
+    </TR>
+    <TR><TD>R. v. Leach</TD>
+    <TD>2019</TD>
+    <TD>en</TD>
+    <TD>bc</TD>
+    <TD>bcca</TD>
+    <TD>1</TD>
+    </TR>
+    <TR><TD>R. v. Pruski</TD>
+    <TD>2006</TD>
+    <TD>en</TD>
+    <TD>on</TD>
+    <TD>oncj</TD>
+    <TD>0</TD>
+    </TR>
+    <TR><TD>Regina v. Imperial Optical Co. Ltd.</TD>
+    <TD>1972</TD>
+    <TD>en</TD>
+    <TD>on</TD>
+    <TD>oncj</TD>
+    <TD>1</TD>
+    </TR>
+    <TR><TD>Windheim c. Windheim</TD>
+    <TD>2012</TD>
+    <TD>en</TD>
+    <TD>qc</TD>
+    <TD>qcca</TD>
+    <TD>1</TD>
+    </TR>
+  </table>
+  <figcaption>decision data</figcaption>
+</figure>
+
+While all I know about citations is who cited whom:
+
+<figure>
+  <table>
+    <TR><TH>citing_case</TH>
+    <TH>citing_year</TH>
+    <TH>cited_case</TH>
+    <TH>cited_year</TH>
+    </TR>
+    <TR><TD>The King v. Clark</TD>
+    <TD>1901</TD>
+    <TD>Automobile and Supply Co. v. Hands, Ltd.</TD>
+    <TD>1913</TD>
+    </TR>
+    <TR><TD>The King v. Clark</TD>
+    <TD>1901</TD>
+    <TD>The Queen v. Hammond</TD>
+    <TD>1898</TD>
+    </TR>
+    <TR><TD>The King v. Clark</TD>
+    <TD>1901</TD>
+    <TD>The Queen v. Harris</TD>
+    <TD>1898</TD>
+    </TR>
+    <TR><TD>Gallagher v. Hogg</TD>
+    <TD>1993</TD>
+    <TD>Katz v. Katz</TD>
+    <TD>1990</TD>
+    </TR>
+    <TR><TD>Gallagher v. Hogg</TD>
+    <TD>1993</TD>
+    <TD>Lagimodiere v. Lagimodiere</TD>
+    <TD>1991</TD>
+    </TR>
+  </table>
+  <figcaption>citation data</figcaption>
+</figure>
+
+You'll notice there's really nothing here. Just some case names, what year they
+happened, what court they appeared in, and the cases they cite. That's it.
+There's no court transcripts, list of presiding judges, content keywords, or
+even information about who won. In principle I could have extracted the involved
+parties by trying to tear apart the name, but it didn't seem like it would buy
+me much.
+
+To reiterate, there's nothing at all that we can use to learn what any
+particular case was *about.* In this database, the vast majority of the
+information available to us is which cases cite whom.
 
 
-<h1>HTML Ipsum Presents</h1>
+### Possible Issues
+
+The Canadian legal system has existed much longer than the idea that information
+should be freely available. While CanLII is an excellent source of data, it
+explicitly states how complete its records are from each court. For example,
+while CanLII has the entire corpus of Supreme Court decisions, it's only
+maintained continuous coverage of the BC Court of Appeal (BCCA) since 1990. Other
+courts have different starting dates for their continuous coverage.
+
+This presents a systematic bias in our data, namely that more recent cases are
+more readily available. To illustrate, the database contains 6,212 cases from the
+BCCA before 1990, but 19,366 cases since. While we might be interested in
+whether the volume of law is increasing over time, we must be careful to
+restrict ourselves to the range of continuous coverage.
+
+In case you're wondering --- no, it looks like the volume of law in BCCA has
+been slowly decreasing since 1990:
+
+<figure>
+<div id="bcca-volume">
+  select year, count(*) as count from decisions where court = 'bcca' and year >= 1990 and 2021 > year group by year;
+
+  <script>
+    lineChart(
+      "#bcca-volume",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612394754.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>number of cases in bcca since 1990</figcaption>
+</figure>
+
+Looking only at citation data introduces another systematic bias in the dataset:
+older cases have had a longer time to accumulate citations. Because we mainly
+keep track of relationships between cases, it's possible for recent cases to
+contradict previous decisions. Such a case is clearly very important to the law,
+but will fly under our radar until it becomes commonly cited.
+
+
+
 
 Top list:
 
@@ -202,7 +348,7 @@ R. v. Shropshire|1995
 <figure>
 <div id="chart1">
   select jurisdiction, count(*) as count from decisions group by jurisdiction having count > 10000;
-  <script defer>
+  <script>
     pieChart(
       "#chart1",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612246436.csv",
@@ -216,7 +362,7 @@ R. v. Shropshire|1995
 <figure>
 <div id="chart2">
   select src_year, avg(count) as count from (select src_year, count(*) as count from expanded_citations where src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
-  <script defer>
+  <script>
     lineChart(
       "#chart2",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612295413.csv",
@@ -232,8 +378,7 @@ R. v. Shropshire|1995
 <figure>
 <div id="chart3">
   select src_year, avg(diff) as diff from (select src_year, src_year - dst_year as diff from expanded_citations where src_year >= dst_year and src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
-
-  <script defer>
+  <script>
     lineChart(
       "#chart3",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612294018.csv",
@@ -250,7 +395,7 @@ R. v. Shropshire|1995
 <div id="chart4">
   select substr(url, 2, 2) as language, jurisdiction, court, count(*) as count from decisions where url not like '/fr/ca/%' group by language, jurisdiction, court having count > 1000;
 
-  <script defer>
+  <script>
     sankey(
       "#chart4",
       "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612331151.csv")
@@ -260,14 +405,30 @@ R. v. Shropshire|1995
 </figure>
 
 <figure>
+<div id="chart6">
+  select year, count(*) as count from decisions where court == 'scc' group by year;
+
+  <script>
+    lineChart(
+      "#chart6",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612369480.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of cases decided",
+      d => +parseFloat(d.count).toFixed(2))
+  </script>
+</div>
+<figcaption>number of scc decisions</figcaption>
+</figure>
+
+<figure>
 <div id="chart5">
-  select src_year, dst_jurisdiction, count(*) as count from expanded_citations where src_court = 'scc' and dst_jurisdiction != 'ca' and src_year >= 1980 group by src_year, dst_jurisdiction;
+  select src_year, dst_jurisdiction, count(*) as count from expanded_citations where src_court = 'scc' group by src_year, dst_jurisdiction;
 
-
-  <script defer>
+  <script>
     stackedArea(
       "#chart5",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612368531.csv",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612369600.csv",
       d => +d.src_year,
       d => d.dst_jurisdiction,
       d => +d.count)
