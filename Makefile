@@ -1,13 +1,10 @@
 poly:
-	stack install
-	poly clean
-	poly watch
+	stack run
 
 test:
-	stack install
 	rm -r _live/reasonably-polymorphic || return 0
-	poly clean
-	poly build
+	stack exec clean
+	stack exec build
 	mv _site _live/reasonably-polymorphic
 
 deploy:
