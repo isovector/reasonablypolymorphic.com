@@ -1,7 +1,11 @@
+<head>
+
 <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script src="/home/sandy/prj/reasonablypolymorphic.com/site/js/charts.js"></script>
 <link rel="stylesheet" href="/home/sandy/prj/reasonablypolymorphic.com/site/css/law.css">
+
+</head>
 
 
 # Canadian Case Law: Visualized
@@ -438,6 +442,61 @@ R. v. Shropshire|1995
 </figure>
 
 
+<figure>
+<div id="chart-importance">
+  select name, year, importance, community from decisions order by importance desc limit 100;
+
+  <script>
+    dotChart(
+      "#chart-importance",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612462218.csv",
+      d => +d.year,
+      d => +d.community,
+      d => parseFloat(d.importance).toFixed(4),
+      d => +d.community,
+      d => truncateString(d.name, 50))
+  </script>
+</div>
+<figcaption>scc jurisdiction citation by year</figcaption>
+</figure>
+
+<figure>
+<div id="importance-over-time">
+  select year, sum(importance) as count from decisions where court == 'scc' group by year;
+
+  <script>
+    lineChart(
+      "#importance-over-time",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612474615.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of cases decided",
+      d => +parseFloat(d.count).toFixed(2))
+  </script>
+</div>
+<figcaption>total importance score of scc decisions per year</figcaption>
+</figure>
+
+Uh oh. Maybe this is our recency bias at work??
+
+<figure>
+<div id="volume">
+  select court, year, count(*) as count from decisions d where court in (select court from court_importance limit 1) and year >= (select year from coverage c where d.court = c.court) group by court, year;
+
+
+  <script>
+    multiLineChart(
+      "#volume",
+      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612507631.csv",
+      d => d.court,
+      d => +parseInt(d.year),
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>total importance score of scc decisions per year</figcaption>
+</figure>
+
+
 
 
 <p><strong>Pellentesque habitant morbi tristique</strong> senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. <em>Aenean ultricies mi vitae est.</em> Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, <code>commodo vitae</code>, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. <a href="#">Donec non enim</a> in turpis pulvinar facilisis. Ut felis.</p>
@@ -473,3 +532,18 @@ R. v. Shropshire|1995
 <p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
 
 <p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
+
+
+QUESTIONS TO ANSWER:
+
+* is law getting more complicated?
+  * more cases per year?
+  * is the average age of citation going up?
+  * average number of citations?
+* what are the most important cases?
+* can we discover what the communities mean?
+  * do we see trends in these communities? wrt time, jurisdiction, language
+* how often do cases cite cases in other languages?
+* which courts hold the most power?
+* did i accidentally completey misrepresent the french stuff? (NO)
+

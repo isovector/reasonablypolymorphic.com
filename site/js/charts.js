@@ -285,7 +285,7 @@ function sankey(sel, csv) {
   })
 }
 
-function stackedArea(sel, csv, get_time, get_key, get_count) {
+function stackedArea(sel, csv, get_time, get_key, get_count, get_name) {
   document.querySelector(sel).textContent = ""
   d3.csv(csv).then(predata => {
     var cols_set = {}
@@ -332,7 +332,11 @@ function stackedArea(sel, csv, get_time, get_key, get_count) {
 
     const xAxis = g => g
       .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x).ticks(width / 40).tickFormat(y => `${+y}`).tickSizeOuter(0))
+      .call(
+        d3.axisBottom(x)
+          .ticks(width / 40)
+          .tickFormat(y => `${+y}`)
+         .tickSizeOuter(0))
 
     const time_col = "time"
 
@@ -375,4 +379,271 @@ function stackedArea(sel, csv, get_time, get_key, get_count) {
 
   })
 }
+
+function dotChart(sel, csv, get_x, get_y, get_size, get_color, get_name) {
+  document.querySelector(sel).textContent = ""
+  d3.csv(csv).then(data => {
+
+    const margin = ({top: 20, right: 30, bottom: 30, left: 40})
+
+    const width = 600
+    const height = 300
+
+    const num_values = [...new Set(data.map(get_y))].length
+
+    data = d3.map(data, d => {
+      d.xrand = (Math.random() - 0.5) * 5
+      d.yrand = -Math.random() * (height - margin.top - margin.bottom) / (num_values + 1)
+      return d
+    })
+
+    const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).ticks(null, "+"))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll(".tick line")
+        .filter(d => d === 0)
+        .clone()
+          .attr("x2", width - margin.right - margin.left)
+          .attr("stroke", "#ccc"))
+      .call(g => g.append("text")
+          .attr("fill", "#000")
+          .attr("x", 5)
+          .attr("y", margin.top)
+          .attr("dy", "0.32em")
+          .attr("text-anchor", "start")
+          .attr("font-weight", "bold"))
+          // .text("Anomaly (°C)"))
+
+    const xAxis = g => g
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 80).tickFormat(y => `${+y}`)
+                            .tickSizeOuter(0))
+      // .call(g => g.select(".domain").remove())
+
+    const max = d3.max(data, d => Math.abs(get_color(d)));
+    const color = d3.scaleOrdinal(d3.schemeCategory10).domain([max, -max]);
+
+    const y = d3.scalePoint()
+      .domain(d3.map(data, get_y)) // .nice()
+      .range([height - margin.bottom, margin.top])
+
+    const xpos = d => x(get_x(d)) + d.xrand
+    const ypos = d => y(get_y(d)) + d.yrand
+
+    const x = d3.scaleUtc()
+      .domain(d3.extent(data, get_x))
+      .range([margin.left, width - margin.right])
+
+    const sz = d3.scaleLinear()
+      .domain(d3.extent(data, get_size)).nice()
+      .range([2, 10]);
+
+    const callout = (g, value) => {
+      if (!value) return g.style("display", "none");
+
+      g
+          .style("display", null)
+          .style("pointer-events", "none")
+          .style("font", "10px sans-serif");
+
+      const path = g.selectAll("path")
+        .data([null])
+        .join("path")
+          .attr("fill", "white")
+          .attr("stroke", "black");
+
+      const text = g.selectAll("text")
+        .data([null])
+        .join("text")
+        .call(text => text
+          .selectAll("tspan")
+          .data((value + "").split(/\n/))
+          .join("tspan")
+            .attr("x", 0)
+            .attr("y", (d, i) => `${i * 1.1}em`)
+            .style("font-weight", (_, i) => i ? null : "bold")
+            .text(d => d));
+
+      const {x, y, width: w, height: h} = text.node().getBBox();
+
+      text.attr("transform", `translate(${-w / 2},${15 - y})`);
+      path.attr("d", `M${-w / 2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`);
+    }
+
+    const svg = d3.select(sel).append("svg")
+      .attr("viewBox", [0, 0, width, height])
+      .style("overflow", "visible");
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+    svg.append("g")
+        .attr("stroke", "#000")
+        .attr("stroke-opacity", 0.2)
+      .selectAll("circle")
+      .data(data)
+      .join("circle")
+        .attr("cx", d => xpos(d))
+        .attr("cy", d => ypos(d))
+        .attr("fill", d => color(get_color(d)))
+        .attr("r", d => sz(get_size(d)))
+      .on("touchend mouseleave", (event, d) => {
+        tooltip
+          .call(callout, null);
+      })
+      .on("touchstart mouseenter", (event, d) => {
+        tooltip
+          .attr("transform", `translate(${xpos(d)},${ypos(d)})`)
+          .call(callout, `${get_name(d)}
+X: ${get_x(d)}
+Y: ${get_y(d)}
+Size: ${get_size(d)}
+Color: ${get_color(d)}
+`);
+      })
+      .append("title")
+        .text(get_name);
+
+    const tooltip = svg.append("g");
+
+  })
+}
+
+function truncateString(str, num) {
+  if (str.length > num) {
+    return str.slice(0, num) + "...";
+  } else {
+    return str;
+  }
+}
+
+function multiLineChart(sel, csv, get_key, get_x, get_y) {
+  document.querySelector(sel).textContent = ""
+  d3.csv(csv).then(data => {
+    const width = 500
+    const height = 200
+    const margin = {top: 20, right: 30, bottom: 30, left: 40}
+
+    const keys = [...new Set(data.map(get_key))]
+    const x_vals = [...new Set(data.map(get_x))]
+
+    const x = d3.scaleLinear()
+      .domain(d3.extent(x_vals))
+      .range([margin.left, width - margin.right])
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, get_y)]).nice()
+      .range([height - margin.bottom, margin.top])
+
+    const color = d3.scaleOrdinal()
+      .domain(keys)
+      .range(d3.schemeCategory10)
+
+    const xAxis = g => g
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 80).tickFormat(y => `${+y}`).tickSizeOuter(0))
+
+    const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.select(".tick:last-of-type text").clone()
+          .attr("x", 3)
+          .attr("text-anchor", "start")
+          .attr("font-weight", "bold")
+          .text(data.y))
+
+    const line = d3.line()
+      // .defined(d => !isNaN(d))
+      .x((d, i) => x(get_x(d)))
+      .y(d => y(get_y(d)))
+
+    const svg = d3.select(sel).append("svg")
+      .attr("viewBox", [0, 0, width, height])
+      .style("overflow", "visible");
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+    const path = svg.append("g")
+        .attr("fill", "none")
+        .attr("stroke-width", 1.5)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+      .selectAll("path")
+      .data(keys)
+      .join("path")
+        .attr("stroke", color)
+        .style("mix-blend-mode", "multiply")
+        .attr("d", key => line(data.filter(d => get_key(d) == key)));
+
+    const by_key = key => data.filter(d => get_key(d) == key)
+
+    function hover(svg, path) {
+      if ("ontouchstart" in document) svg
+          .style("-webkit-tap-highlight-color", "transparent")
+          .on("touchmove", moved)
+          .on("touchstart", entered)
+          .on("touchend", left)
+      else svg
+          .on("mousemove", moved)
+          .on("mouseenter", entered)
+          .on("mouseleave", left);
+
+      const dot = svg.append("g")
+          .attr("display", "none");
+
+      dot.append("circle")
+          .attr("r", 2.5);
+
+      dot.append("text")
+          .attr("font-family", "sans-serif")
+          .attr("font-size", 10)
+          .attr("text-anchor", "middle")
+          .attr("y", -8);
+
+      function moved(event) {
+        event.preventDefault();
+        const pointer = d3.pointer(event, this);
+        const xm = Math.round(x.invert(pointer[0]));
+        const ym = y.invert(pointer[1]);
+        const s = d3.least(keys, key => {
+          const y_of = by_key(key).filter(d => get_x(d) == xm).map(get_y)
+          if (y_of.length === 0) {
+            return 9999999999999999;
+          }
+          return Math.abs(y_of[0] - ym)
+          }
+        );
+        const d_of = by_key(s).filter(d => get_x(d) == xm)
+        path.attr("stroke", d => d === s ? color(d) : "#ddd").filter(d => d === s).raise();
+        if (d_of.length > 0) {
+          const d = d_of[0]
+          dot.attr("transform", `translate(${x(get_x(d))},${y(get_y(d))})`);
+        }
+        dot.select("text").text(s.name);
+      }
+
+      function entered() {
+        path.style("mix-blend-mode", null).attr("stroke", "#ddd");
+        dot.attr("display", null);
+      }
+
+      function left() {
+        path.style("mix-blend-mode", "multiply").attr("stroke", color);
+        dot.attr("display", "none");
+      }
+    }
+
+    svg.call(hover, path);
+  })
+}
+
 
