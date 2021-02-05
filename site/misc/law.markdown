@@ -1,14 +1,16 @@
-<head>
+---
+layout: post
+title: "Canadian Case Law: Visualized"
+date: 2021-02-08 09:00
+comments: true
+tags:
+---
 
 <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <script src="https://d3js.org/d3.v6.min.js"></script>
-<script src="/home/sandy/prj/reasonablypolymorphic.com/site/js/charts.js"></script>
-<link rel="stylesheet" href="/home/sandy/prj/reasonablypolymorphic.com/site/css/law.css">
+<script src="/js/charts.js"></script>
+<link rel="stylesheet" href="/css/law.css">
 
-</head>
-
-
-# Canadian Case Law: Visualized
 
 ## Overview
 
@@ -40,89 +42,89 @@ Despite the large number of cases, it's important to discuss just how little
 data I've got *per* case. The totality of my data about cases is of this form:
 
 <figure>
-  <table>
-    <TR><TH>name</TH>
-    <TH>year</TH>
-    <TH>lang</TH>
-    <TH>jurisdiction</TH>
-    <TH>court</TH>
-    <TH>fetched</TH>
-    </TR>
-    <TR><TD>Bamba c. R.</TD>
-    <TD>2019</TD>
-    <TD>fr</TD>
-    <TD>qc</TD>
-    <TD>qcca</TD>
-    <TD>1</TD>
-    </TR>
-    <TR><TD>R. v. Leach</TD>
-    <TD>2019</TD>
-    <TD>en</TD>
-    <TD>bc</TD>
-    <TD>bcca</TD>
-    <TD>1</TD>
-    </TR>
-    <TR><TD>R. v. Pruski</TD>
-    <TD>2006</TD>
-    <TD>en</TD>
-    <TD>on</TD>
-    <TD>oncj</TD>
-    <TD>0</TD>
-    </TR>
-    <TR><TD>Regina v. Imperial Optical Co. Ltd.</TD>
-    <TD>1972</TD>
-    <TD>en</TD>
-    <TD>on</TD>
-    <TD>oncj</TD>
-    <TD>1</TD>
-    </TR>
-    <TR><TD>Windheim c. Windheim</TD>
-    <TD>2012</TD>
-    <TD>en</TD>
-    <TD>qc</TD>
-    <TD>qcca</TD>
-    <TD>1</TD>
-    </TR>
-  </table>
-  <figcaption>decision data</figcaption>
+<table>
+<TR><TH>name</TH>
+<TH>year</TH>
+<TH>lang</TH>
+<TH>jurisdiction</TH>
+<TH>court</TH>
+<TH>fetched</TH>
+</TR>
+<TR><TD>Bamba c. R.</TD>
+<TD>2019</TD>
+<TD>fr</TD>
+<TD>qc</TD>
+<TD>qcca</TD>
+<TD>1</TD>
+</TR>
+<TR><TD>R. v. Leach</TD>
+<TD>2019</TD>
+<TD>en</TD>
+<TD>bc</TD>
+<TD>bcca</TD>
+<TD>1</TD>
+</TR>
+<TR><TD>R. v. Pruski</TD>
+<TD>2006</TD>
+<TD>en</TD>
+<TD>on</TD>
+<TD>oncj</TD>
+<TD>0</TD>
+</TR>
+<TR><TD>Regina v. Imperial Optical Co. Ltd.</TD>
+<TD>1972</TD>
+<TD>en</TD>
+<TD>on</TD>
+<TD>oncj</TD>
+<TD>1</TD>
+</TR>
+<TR><TD>Windheim c. Windheim</TD>
+<TD>2012</TD>
+<TD>en</TD>
+<TD>qc</TD>
+<TD>qcca</TD>
+<TD>1</TD>
+</TR>
+</table>
+<figcaption>decision data</figcaption>
 </figure>
 
 While all I know about citations is who cited whom:
 
 <figure>
-  <table>
-    <TR><TH>citing_case</TH>
-    <TH>citing_year</TH>
-    <TH>cited_case</TH>
-    <TH>cited_year</TH>
-    </TR>
-    <TR><TD>The King v. Clark</TD>
-    <TD>1901</TD>
-    <TD>Automobile and Supply Co. v. Hands, Ltd.</TD>
-    <TD>1913</TD>
-    </TR>
-    <TR><TD>The King v. Clark</TD>
-    <TD>1901</TD>
-    <TD>The Queen v. Hammond</TD>
-    <TD>1898</TD>
-    </TR>
-    <TR><TD>The King v. Clark</TD>
-    <TD>1901</TD>
-    <TD>The Queen v. Harris</TD>
-    <TD>1898</TD>
-    </TR>
-    <TR><TD>Gallagher v. Hogg</TD>
-    <TD>1993</TD>
-    <TD>Katz v. Katz</TD>
-    <TD>1990</TD>
-    </TR>
-    <TR><TD>Gallagher v. Hogg</TD>
-    <TD>1993</TD>
-    <TD>Lagimodiere v. Lagimodiere</TD>
-    <TD>1991</TD>
-    </TR>
-  </table>
-  <figcaption>citation data</figcaption>
+<table>
+<TR><TH>citing_case</TH>
+<TH>citing_year</TH>
+<TH>cited_case</TH>
+<TH>cited_year</TH>
+</TR>
+<TR><TD>The King v. Clark</TD>
+<TD>1901</TD>
+<TD>Automobile and Supply Co. v. Hands, Ltd.</TD>
+<TD>1913</TD>
+</TR>
+<TR><TD>The King v. Clark</TD>
+<TD>1901</TD>
+<TD>The Queen v. Hammond</TD>
+<TD>1898</TD>
+</TR>
+<TR><TD>The King v. Clark</TD>
+<TD>1901</TD>
+<TD>The Queen v. Harris</TD>
+<TD>1898</TD>
+</TR>
+<TR><TD>Gallagher v. Hogg</TD>
+<TD>1993</TD>
+<TD>Katz v. Katz</TD>
+<TD>1990</TD>
+</TR>
+<TR><TD>Gallagher v. Hogg</TD>
+<TD>1993</TD>
+<TD>Lagimodiere v. Lagimodiere</TD>
+<TD>1991</TD>
+</TR>
+</table>
+<figcaption>citation data</figcaption>
 </figure>
 
 You'll notice there's really nothing here. Just some case names, what year they
@@ -162,7 +164,7 @@ been slowly decreasing since 1990:
   <script>
     lineChart(
       "#bcca-volume",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612394754.csv",
+      "/data/1612394754.csv",
       "Year",
       d => +parseInt(d.year),
       "Number of Cases",
@@ -179,9 +181,70 @@ contradict previous decisions. Such a case is clearly very important to the law,
 but will fly under our radar until it becomes commonly cited.
 
 
+## Determining Important Cases
+
+The sheer size of the case law corpus is staggering. My dataset contains roughly
+350,000 decisions --- a small fraction of the *actual law.* And this is a few
+orders of magnitude larger than any human could possibly remember.
+
+Thankfully, most of this data is noise. Most cases taken to court are decided
+uninterestingly: the presiding judge simply defers to precedent and everyone
+goes on their way. It's safe to say that decisions of this sort are unimportant.
+In my opinion, the desired end-state of the law is for all cases to be decided
+like this --- at that point, we've got a stable, entirely-predictable system.
+
+But that is not (yet!) the world we live in. Some cases *are* interesting ---
+for example, the ones which *set* precedent, and the ones which *contradict*
+precedent. How can we find these cases?
+
+> TODO: Can't do it like lawyers do
+
+Rather than trying to compute importance directly, let's instead try to
+approximate it. Intuitively, cases which are important will be cited more often
+than cases which are not important. Thus, citation count is --- to a first
+approximation --- a good model for importance. Indeed, this seems to be how most
+[law software](https://www.lexisnexis.com/ln-media/totg/p/lotg.aspx?mediaid=121105)
+computes importance.
+
+To improve our model, let's take an intellectual detour and think about the
+importance of websites. Imagine the website for Reputable News Network (RNN). By
+virtue of being a reputable news site, it will naturally be linked to quite
+often. Like in the case law example, this should improve our estimate of RNN
+being an important site.
+
+But now consider *the sites that RNN links to.* Maybe RNN is running a story on
+bloggers, and links to Paul Podunk's Personal Page (PPPP). PPPP is news-worthy by
+definition due to being on RNN, and surely news-worthy things are more
+important than non-influential things. Thus, PPPP should be considered more
+important, sheerly by virtue of having been linked-to by an important thing.
+
+Of course, this new influence that PPPP has acquired from RNN should also be
+accounted for --- sites that PPPP links to become more important due to their
+relevance to PPPP. And so on, and so forth. But critically, these sites are
+considered *less* important than they would be if RNN linked to them directly,
+since RNN is significantly more influential than PPPP.
+
+The key assumption of this model is that important things run in the same
+circles as other important things. This jives with my intuition. It's clearly
+true in the news cycle. It's why people name drop in order to raise their social
+standing --- if they know important people, they must too be important. Of
+course, this is not a perfect model for importance, but it gets the broad
+strokes.
+
+And, if you have any remaining doubts, this exact algorithm is what powers
+Google search. Clearly, Google (an important entity) wouldn't be using this
+technique if it didn't work. Therefore it probably does work. See? This
+technique works *everywhere.*
+
+Returning to law, let's replace "websites" with "decisions," and "links" with
+"citations." We can compute the importance of cases by seeing which important
+cases they're connected to.
 
 
-Top list:
+### Verifying Important Cases
+
+After crunching the numbers for a few hours, I came up with the following list
+of cases --- where the first decision is the most important:
 
 <ol>
 <li><a href="https://en.wikipedia.org/wiki/Dunsmuir_v_New_Brunswick">Dunsmuir v. New Brunswick</a></li>
@@ -235,6 +298,17 @@ Top list:
 <li>Toronto (City) v. C.U.P.E., Local 79</li>
 <li><a href="https://en.wikipedia.org/wiki/Vriend_v_Alberta">Vriend v. Alberta</a></li>
 </ol>
+
+
+
+
+
+
+
+
+
+
+Top list:
 
 31 "leading" or "landmark"; 1 important
 
@@ -355,7 +429,7 @@ R. v. Shropshire|1995
   <script>
     pieChart(
       "#chart1",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612246436.csv",
+      "/data/1612246436.csv",
       d => d.jurisdiction,
       d => d.count)
   </script>
@@ -369,7 +443,7 @@ R. v. Shropshire|1995
   <script>
     lineChart(
       "#chart2",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612295413.csv",
+      "/data/1612295413.csv",
       "Year",
       d => +parseInt(d.src_year),
       "Avg Number of Citations",
@@ -385,7 +459,7 @@ R. v. Shropshire|1995
   <script>
     lineChart(
       "#chart3",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612294018.csv",
+      "/data/1612294018.csv",
       "Year",
       d => +parseInt(d.src_year),
       "Avg Age of Citation",
@@ -402,7 +476,7 @@ R. v. Shropshire|1995
   <script>
     sankey(
       "#chart4",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612331151.csv")
+      "/data/1612331151.csv")
   </script>
 </div>
 <figcaption>overview of the data for courts with &gt; 1000 entries</figcaption>
@@ -415,7 +489,7 @@ R. v. Shropshire|1995
   <script>
     lineChart(
       "#chart6",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612369480.csv",
+      "/data/1612369480.csv",
       "Year",
       d => +parseInt(d.year),
       "Number of cases decided",
@@ -432,7 +506,7 @@ R. v. Shropshire|1995
   <script>
     stackedArea(
       "#chart5",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612369600.csv",
+      "/data/1612369600.csv",
       d => +d.src_year,
       d => d.dst_jurisdiction,
       d => +d.count)
@@ -449,7 +523,7 @@ R. v. Shropshire|1995
   <script>
     dotChart(
       "#chart-importance",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612462218.csv",
+      "/data/1612462218.csv",
       d => +d.year,
       d => +d.community,
       d => parseFloat(d.importance).toFixed(4),
@@ -457,7 +531,7 @@ R. v. Shropshire|1995
       d => truncateString(d.name, 50))
   </script>
 </div>
-<figcaption>scc jurisdiction citation by year</figcaption>
+<figcaption>important cases by community</figcaption>
 </figure>
 
 <figure>
@@ -467,7 +541,7 @@ R. v. Shropshire|1995
   <script>
     lineChart(
       "#importance-over-time",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612474615.csv",
+      "/data/1612474615.csv",
       "Year",
       d => +parseInt(d.year),
       "Number of cases decided",
@@ -481,21 +555,73 @@ Uh oh. Maybe this is our recency bias at work??
 
 <figure>
 <div id="volume">
-  select court, year, count(*) as count from decisions d where court in (select court from court_importance limit 1) and year >= (select year from coverage c where d.court = c.court) group by court, year;
-
+  select court, year, count(*) as count from decisions d where court in (select court from court_importance limit 10) and year >= (select year from coverage c where d.court = c.court) group by court, year;
 
   <script>
     multiLineChart(
       "#volume",
-      "/home/sandy/prj/reasonablypolymorphic.com/site/data/1612507631.csv",
+      "/data/1612507631.csv",
       d => d.court,
       d => +parseInt(d.year),
       d => +parseInt(d.count))
   </script>
 </div>
-<figcaption>total importance score of scc decisions per year</figcaption>
+<figcaption>volume of decisions by top courts, starting after date of continuing coverage</figcaption>
 </figure>
 
+
+<figure>
+<div id="importance-by-court">
+  select court, year, sum(importance) as sum from decisions d where court in (select court from court_importance order by sum desc limit 10) and year >= (select year from coverage c where d.court = c.court) and year >= 1970 and importance is not null group by court, year;
+
+
+
+
+  <script>
+    multiLineChart(
+      "#importance-by-court",
+      "/data/1612544918.csv",
+      d => d.court,
+      d => +parseInt(d.year),
+      d => +parseFloat(d.sum).toFixed(4))
+  </script>
+</div>
+<figcaption>volume of decisions by top courts, starting after date of continuing coverage</figcaption>
+</figure>
+
+<figure>
+<div id="compare-important-communities">
+  select year, sum(importance) as sum, community from decisions where community in (select community from decisions group by community order by sum(importance) desc limit 6) and year >= 1970 group by community, year;
+
+
+  <script>
+    multiLineChart(
+      "#compare-important-communities",
+      "/data/1612546082.csv",
+      d => +d.community,
+      d => +d.year,
+      d => +parseFloat(d.sum).toFixed(4))
+  </script>
+</div>
+<figcaption>important cases by community</figcaption>
+</figure>
+
+<figure>
+<div id="compare-important-communities2">
+  select year, avg(importance) as sum, community from decisions where community in (select community from decisions group by community order by sum(importance) desc limit 6) and year >= 1970 group by community, year;
+
+
+  <script>
+    multiLineChart(
+      "#compare-important-communities2",
+      "/data/1612546089.csv",
+      d => +d.community,
+      d => +d.year,
+      d => +parseFloat(d.sum).toFixed(4))
+  </script>
+</div>
+<figcaption>important cases by community</figcaption>
+</figure>
 
 
 
@@ -542,8 +668,13 @@ QUESTIONS TO ANSWER:
   * average number of citations?
 * what are the most important cases?
 * can we discover what the communities mean?
-  * do we see trends in these communities? wrt time, jurisdiction, language
+  * do we see trends in these communities? wrt time, jurisdiction, language, importance
 * how often do cases cite cases in other languages?
+* are there "friendship clusters" in what courts cite? by jurisdiction?
 * which courts hold the most power?
 * did i accidentally completey misrepresent the french stuff? (NO)
+* do num citations correlate with importance
+  * importance with time?
+* what percentage of cases are boring vs interesting?
+
 

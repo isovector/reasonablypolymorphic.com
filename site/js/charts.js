@@ -628,7 +628,7 @@ function multiLineChart(sel, csv, get_key, get_x, get_y) {
           const d = d_of[0]
           dot.attr("transform", `translate(${x(get_x(d))},${y(get_y(d))})`);
         }
-        dot.select("text").text(s.name);
+        dot.select("text").text(s);
       }
 
       function entered() {
