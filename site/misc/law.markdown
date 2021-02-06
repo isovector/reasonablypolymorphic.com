@@ -362,6 +362,177 @@ AND THEN ADD OTHER 1000 -
 <figcaption>Courts of the top 1000 important cases</figcaption>
 </figure>
 
+This seems plausible; the Supreme Court takes most of the cake, but the superior
+courts and courts of appeal from powerful provinces make an appearance. Of
+notable omission, however, is Quebec from this data. Is it hiding in the "other"
+category? Let's zoom in on that:
+
+<figure>
+<div id="court-of-other-cases">
+select court, count(*) as count from (select court from decisions order by importance desc limit 1000) x group by court having count <= 20 and count > 5;
+ADD other,15
+
+  <script>
+    pieChart(
+      "#court-of-other-cases",
+      "/data/1612641925.csv",
+      d => d.court,
+      d => d.count)
+  </script>
+</div>
+<figcaption>Drilling down on the "other" category</figcaption>
+</figure>
+
+Bad sign; Manitoba, Saskatchewan and Nova Scotia each have more representation
+than Quebec. But Quebec has roughly two and a half times more population than
+those three provinces combined. This reeks of systematic bias --- but is it in
+reality or just my dataset?
+
+One possible confounder is that I was explicitly avoiding downloading French
+cases for the first half of my data scraping (out of fear that I'd get
+duplicates for the French versions of the Supreme Court decisions.) When I
+realized I could eliminate that problem more directly, I tried to prioritize
+downloading French decisions, but might not have compensated enough.
+
+By comparing the ratio of cases discovered (mentioned in a citation) to cases
+explored (downloaded and looked at the citations of), we can check that:
+
+<figure>
+<div id="discovered-explored">
+select jurisdiction, cast(sum(fetched)*100.0 / count(*) as int) as perc from decisions group by jurisdiction
+
+  <script>
+    pieChart(
+      "#discovered-explored",
+      "/data/1612642878.csv",
+      d => d.jurisdiction,
+      d => d.perc)
+  </script>
+</div>
+<figcaption>Percentage of decisions explored to discovered</figcaption>
+</figure>
+
+Oops, that appears to be the problem. While every other province sits around
+80%, Quebec is only at 43%. My bad.
+
+The other big question I have is to what degree this importance factor is biased
+by the courts' continuous coverage. That is to say, of the most important cases
+identified, how many of them are from before CanLII started continuous coverage?
+
+<!--
+select count(*) as count, c.year from decisions d inner join coverage c on d.court = c.court where d.hash in (select hash from decisions where court != 'scc' order by importance desc limit 1000) and d.year < c.year;
+-->
+
+Only 85 of the top 1000 (8.5%) cases are from before the year of continuous
+coverage. This doesn't jive with my intuition --- presumably the cases which are
+on CanLII before the date of continuous coverage *are the most important ones.*
+They're the cases that someone went in and added manually, before the system was
+set up to track this stuff automatically.
+
+OK, so the importance metric is clearly biased against French and old cases. But
+is it also biased against *new* cases? Let's look at the number of top important
+cases by year:
+
+<figure>
+<div id="new-bias">
+select year, count(*) as count from decisions where hash in (select hash from decisions order by importance desc limit 1000) group by year;
+
+  <script>
+    lineChart(
+      "#new-bias",
+      "/data/1612644438.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of Important Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Number of top 1000 important cases, by year</figcaption>
+</figure>
+
+Rather surprisingly, it doesn't seem to be. I'd expect newer cases to not have
+had time to accumulate citations, and to thus be biased-against in the
+importance metric. So what's going on here? It's that I slightly lied to you
+earlier; that our importance metric doesn't take into account the direction of
+the citation. In essence, it means that you get the same amount of influence for
+citing important cases as you would for important cases citing you. This is
+often a better approach than the directed version for datasets in which there
+are no loops. In the absence of loops (where X cites Y which cites Z which cites
+X again,) all of the influence gets pooled at the very oldest cases, and in
+effect tracks progeny.
+
+Switching to this directed importance metric will likely show the bias against
+recency that we'd expect to see. So let's look at that same chart as before,
+except using the directed importance metric instead:
+
+<figure>
+<div id="dimportance">
+select year, count(*) as count from decisions where hash in (select hash from decisions order by dimportance desc limit 1000) group by year;
+
+  <script>
+    lineChart(
+      "#dimportance",
+      "/data/1612645002.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of Important Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Number of top 1000 important cases with the directed importance
+metric, by year</figcaption>
+</figure>
+
+> TODO(sandy): add support for missing data to lineChart
+
+This metric nicely prioritizes old cases, like our previous metric emphasized
+newer cases. It's unclear to me how to combine the two together; we probably
+can't meaningfully add eigenvalues, but let's try it anyway.
+
+<figure>
+<div id="both-importance">
+select year, count(*) as count from decisions where hash in (select hash from decisions order by importance + dimportance desc limit 1000) group by year;
+
+  <script>
+    lineChart(
+      "#both-importance",
+      "/data/1612645081.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of Important Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Number of top 1000 important cases with the sum importance metric,
+by year</figcaption>
+</figure>
+
+I don't know if this is meaningful. It seems unlikely that there was a period of
+40 years from 1940 to 1980 in which no important decisions were made --- but
+then I realized this corresponds pretty closely when with Canada became a
+Commonwealth nation (1931) and when it became sovereign (1982). To quote the
+[first link on Google I found][history]:
+
+[history]: https://www.history.com/news/canada-independence-from-britain-france-war-of-1812
+
+> In 1931, England put Canada on equal footing with other Commonwealth countries
+> through the Statute of Westminster, which essentially gave its dominions full
+> legal freedom and equal standing with England and one another. However,
+> Britain still had the ability to amend the Canadian constitution, and **Canada
+> took time to cut its legal ties to England**. Meanwhile, it adopted its own
+> national symbols, like the Canadian flag, featuring the maple leaf, which
+> debuted in 1965.
+>
+> It took five decades after the Statute of Westminster for Canada to make its
+> final step toward full sovereignty. In 1982, it adopted its own constitution
+> and became a completely independent country.
+
+Emphasis mine. Maybe this "taking its time" stuff was just Canada coasting?
+Hopefully the law and/or history people can get in touch and let me know if this
+graph of mine is at all meaningful. This is flaw in the data-driven approach ---
+your analysis can only be as good as your data is. We're always going to need
+subject matter experts.
+
 
 
 <h3>Communities</h3>
