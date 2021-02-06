@@ -243,8 +243,23 @@ cases they're connected to.
 
 ### Verifying Important Cases
 
-After crunching the numbers for a few hours, I came up with the following list
-of cases --- where the first decision is the most important:
+After crunching the numbers for a few hours, I came up with an *importance
+score* for each case. It's hard to get a real intuition for [what these scores
+*are*][evc], but a safe interpretation is that a higher importance score
+corresponds to a more-important case.
+
+[evc]: https://en.wikipedia.org/wiki/Eigenvector_centrality
+
+To verify that these importance scores actually correspond with reality, I took
+the names and years of the top 50 cases, and searched for a Wikipedia page on
+the topic. My theory is that *really* important cases will be important enough
+to have Wikipedia commentary about them for laypeople like me.
+
+At time of writing, of the top 50 cases, 42 have Wikipedia articles. And among
+those, 31 are described in the first sentence as either a "landmark" or a
+"leading" case. That's a pretty good sign.
+
+Without further ado, here are the 50 most important cases by my analysis:
 
 <ol>
 <li><a href="https://en.wikipedia.org/wiki/Dunsmuir_v_New_Brunswick">Dunsmuir v. New Brunswick</a></li>
@@ -253,7 +268,7 @@ of cases --- where the first decision is the most important:
 <li>Housen v. Nikolaisen</li>
 <li><a href="https://en.wikipedia.org/wiki/R_v_Collins_(1987)">R. v. Collins</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Baker_v_Canada_(Minister_of_Citizenship_and_Immigration)">Baker v. Canada (Minister of Citizenship and Immigration)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Big_M_Drug_Mart_Ltd">R. v. Big M Drug Mart Ltd.</a></li>
+<li><a href="https://.en.wikipedia.org/wiki/R_v_Big_M_Drug_Mart_Ltd">R. v. Big M Drug Mart Ltd.</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Canada_(Minister_of_Citizenship_and_Immigration)_v_Khosa">Canada (Citizenship and Immigration) v. Khosa</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Reference_Re_BC_Motor_Vehicle_Act">Re B.C. Motor Vehicle Act</a></li>
 <li><a href="https://en.wikipedia.org/wiki/R_v_Grant">R. v. Grant</a></li>
@@ -299,77 +314,53 @@ of cases --- where the first decision is the most important:
 <li><a href="https://en.wikipedia.org/wiki/Vriend_v_Alberta">Vriend v. Alberta</a></li>
 </ol>
 
+If you're a law professional, you might disagree with this list. Maybe the
+ordering is wrong. Maybe there are some glaring omissions, or some strange
+choices. Glaring omissions are probably caused by recency bias --- new important
+decisions simply haven't had time to accumulate citations (and thus importance.)
+The wrong ordering? That's just like, your opinion, man.
+
+Of particular interest to me are the cases on this list that *aren't on
+Wikipedia.* Assuming Wikipedia is a reasonable proxy for what lawyers think are
+important cases, the missing articles here have previously-unacknowledged
+importance.
+
+Anyway. It seems like my calculated importance score correlates with real-world
+importance. But let's try to falsify that hypothesis, and see if the
+bottom-ranked cases have Wikipedia articles.
+
+I checked. They don't. Not a single hit in the 50 I tried[^try-more]. I also
+checked for Wikipedia articles on a randomly-selected set of 50 cases, in an
+attempt to find the base-rate we should expect to see. Again, there wasn't a
+single hit.
+
+[^try-more]: I'd like to have checked a few thousand, but this is a very manual
+  process.
+
+These negative results add strong evidence that my importance score is
+*measuring something real.*
 
 
+### Statistical Biases
 
+So we've successfully found important cases. You might be wondering "what courts
+do all these important cases come from?" Good question:
 
+<figure>
+<div id="court-of-important-cases">
+select court, count(*) as count from (select court from decisions order by importance desc limit 1000) x group by court having count > 20;
+AND THEN ADD OTHER 1000 -
 
-
-
-
-
-Top list:
-
-31 "leading" or "landmark"; 1 important
-
-Bottom list: NONE
-Middle list: NONE
-
-
-dimportance:
-
-<ol>
-<li><a href="https://en.wikipedia.org/wiki/Citizens_Insurance_Co_of_Canada_v_Parsons">Citizens' and The Queen Insurance Cos. v. Parsons</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Board_of_Commerce_case">John Deere Plow Co. Ltd. v. Wharton</a></li>
-<li>Canada (Attorney General) v. Alberta (Attorney General) (1921)</li>
-<li>Canada (Attorney-General) v. Alberta (Attorney-General) (1916)</li>
-<li>City of Montreal v. Montreal Street Railway Company</li>
-<li>Attorney-General (Ont.) v. Hamilton Street Railway</li>
-<li>Allen v. The King</li>
-<li>R. v. Great West Saddlery Company</li>
-<li>Valin v. Langlois</li>
-<li>R. v. Craigon</li>
-<li>R. v. Nat Bell Liquors Limited</li>
-<li>In re Trepanier</li>
-<li>Attorneys-General For the Provinces of Ontario, Quebec, Nova Scotia, New Brunswick, Manitoba, Prince Edward Island, and Alberta, v. Attorney-General For the Dominion of Canada and the Attorney-General For the Province of British Columbia</li>
-<li><a href="https://en.wikipedia.org/wiki/Fort_Frances_Pulp_and_Paper_v_Manitoba_Free_Press">Fort Frances Pulp and Paper Co. v. Manitoba Free Press Co.</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Proprietary_Articles_Trade_Association_v_Canada_(AG)">Proprietary Articles Trade Association v. Canada (Attorney General)</a></li>
-<li>Insurance Companies (Re)</li>
-<li><a href="https://en.wikipedia.org/wiki/Toronto_Electric_Commissioners_v_Snider">Toronto Electric Commissioners v. Snider</a></li>
-<li>R. v. Carter</li>
-<li>In re McNutt</li>
-<li><a href="https://en.wikipedia.org/wiki/Board_of_Commerce_case">The Board of Commerce Act (Re)</a></li>
-<li>Prosko v. The King</li>
-<li>Rex v. Reinhardt Salvador Brewing Co. Ltd.; Rex v. McFarline</li>
-<li>Rex v. Emery</li>
-<li>Severn v. The Queen</li>
-<li>Rex v. Pudwell</li>
-<li>Rex v. Covert</li>
-<li><a href="https://en.wikipedia.org/wiki/Hodge_v_R">R. v. Hodge</a></li>
-<li>Canada (Attorney General) v. British Columbia (Attorney General)</li>
-<li>Gouin v. The King</li>
-<li>The Bonanza Creek Gold Mining Co. v. The King</li>
-<li>The King v. Cotton. (Consolidated Appeals.)</li>
-<li>Lawson v. Interior Tree Fruit and Vegetable Committee of Direction</li>
-<li>Reg. v. Grannis; Reg. v. Nevins; Reg. v. Lyons; Reg. v. Ferguson; Reg. v. Adams & Jackson</li>
-<li>Sankey v. The King</li>
-<li>The Queen v. Woods</li>
-<li>The Queen v. Davidson</li>
-<li><a href="https://en.wikipedia.org/wiki/Browne_v_Dunn">Browne v. Dunn</a></li>
-<li>Weidman v. Shragge</li>
-<li>Union Colliery Co. v. The Queen</li>
-<li>Brooks v. The King</li>
-<li>Reference re legislative jurisdiction of Parliament of Canada to enact the Natural Products Marketing Act, 1934, and The Natural Products Marketing Act Amendment Act, 1935</li>
-<li>The Initiative (Re)</li>
-<li><a href="https://en.wikipedia.org/wiki/Labour_Conventions_Reference">Canada (Attorney-General) v. Ontario (Attorney-General)</a></li>
-<li>The King v. Elliott</li>
-<li>Harmer v. The A. Macdonald Co., Ltd.</li>
-<li>Davidson v. Great West Saddlery Co., Ltd.</li>
-<li>Mercer v. Attorney General for Ontario</li>
-<li>Ouimet (Plaintiff, Appellant) v. Bazin et al. (Defendants, Respondents)</li>
-<li>Currie v. Harris Lithographing Co.</li>
-<li>Mitchell v. Tracey and Fielding</li>
-</ol>
+  <script>
+    pieChart(
+      "#court-of-important-cases",
+      "/data/1612574997.csv",
+      d => d.court,
+      d => d.count)
+  </script>
+</div>
+<figcaption>Courts of the top 1000 important cases</figcaption>
+</figure>
 
 
 
