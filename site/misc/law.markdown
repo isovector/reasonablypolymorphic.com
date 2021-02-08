@@ -18,25 +18,25 @@ tags:
 
 My assumption is that the citation graph of Canadian case law is sufficient to
 find interesting data in the law. Unfortunately, this data doesn't seem to exist
-in any convenient format. [CanLII](TODO) makes the data available on the web,
+in any convenient format. [CanLII][canlii] makes the data available on the web,
 but doesn't provide any sort of downloadable database. So I needed to make my
 own.
 
+[canlii]: https://canlii.org
+
 I wired up a small web-scraper that would connect to CanLII and crawl through
-the hundreds of thousands of cases available there. My program would randomly
-pick a case that had been mentioned in the citations another decision, but which
-it hadn't yet explored. It would then go to that page, record all the cases it
-cited, and then randomly pick a new page.
+the millions of cases available there. My program loaded all the cases from the
+Supreme Court and provincial courts of appeal, then followed every cited case.
+And every case cited by every one of *those.* And so on and so forth, until
+there were no more cited cases I hadn't yet downloaded.
 
-TODO: graph discovery gif
-
-At first I prioritized the Supreme Court decisions --- assuming these were the
-most important cases --- and then loaded the cases from each province's Court of
-Appeal. After a few days, I'd discovered 323,596 cases from 217 different
-courts, and explored 240,964 of them. In total, there were 1,332,193 citations
-in the dataset. Frighteningly, this is nowhere near all of the case law (I'd
-estimate it's maybe one tenth of the publicly-available cases), but if I waited
-to collect all of it I'd never get any work done.
+After a few weeks of downloading, I was finished. In total, I downloaded 378,732
+decisions from 269 different courts. Between these cases, there are 1,998,118
+citations. Frighteningly, this is nowhere near the extent of Canadian case law;
+it's maybe one tenth of the full corpus. But I feel comfortable in saying that
+*this subset is the law as it exists today.* If a case doesn't lie anywhere in
+the transitive dependencies of the Supreme Court or a court of appeals, it's not
+contentious for anyone to care about.
 
 Despite the large number of cases, it's important to discuss just how little
 data I've got *per* case. The totality of my data about cases is of this form:
@@ -45,51 +45,53 @@ data I've got *per* case. The totality of my data about cases is of this form:
 <table>
 <TR><TH>name</TH>
 <TH>year</TH>
-<TH>lang</TH>
+<TH>language</TH>
 <TH>jurisdiction</TH>
 <TH>court</TH>
-<TH>fetched</TH>
 </TR>
 <TR><TD>Bamba c. R.</TD>
 <TD>2019</TD>
 <TD>fr</TD>
 <TD>qc</TD>
 <TD>qcca</TD>
-<TD>1</TD>
 </TR>
 <TR><TD>R. v. Leach</TD>
 <TD>2019</TD>
 <TD>en</TD>
 <TD>bc</TD>
 <TD>bcca</TD>
-<TD>1</TD>
 </TR>
 <TR><TD>R. v. Pruski</TD>
 <TD>2006</TD>
 <TD>en</TD>
 <TD>on</TD>
 <TD>oncj</TD>
-<TD>0</TD>
 </TR>
 <TR><TD>Regina v. Imperial Optical Co. Ltd.</TD>
 <TD>1972</TD>
 <TD>en</TD>
 <TD>on</TD>
 <TD>oncj</TD>
-<TD>1</TD>
 </TR>
 <TR><TD>Windheim c. Windheim</TD>
 <TD>2012</TD>
 <TD>en</TD>
 <TD>qc</TD>
 <TD>qcca</TD>
-<TD>1</TD>
 </TR>
 </table>
 <figcaption>decision data</figcaption>
 </figure>
 
-While all I know about citations is who cited whom:
+Notice that there is no information about the *contents* of these cases. I don't
+know which judge was presiding, what was said, what the case was about,
+keywords, or even who won.
+
+In principle I could have extracted the involved parties by trying to tear apart
+the name, but it seemed challenging to do well, and I don't think it would buy
+me much information without knowing who won.
+
+On the citation front, all I know is this:
 
 <figure>
 <table>
@@ -127,16 +129,12 @@ While all I know about citations is who cited whom:
 <figcaption>citation data</figcaption>
 </figure>
 
-You'll notice there's really nothing here. Just some case names, what year they
-happened, what court they appeared in, and the cases they cite. That's it.
-There's no court transcripts, list of presiding judges, content keywords, or
-even information about who won. In principle I could have extracted the involved
-parties by trying to tear apart the name, but it didn't seem like it would buy
-me much.
+Again, no *actual* information here.
 
 To reiterate, there's nothing at all that we can use to learn what any
-particular case was *about.* In this database, the vast majority of the
-information available to us is which cases cite whom.
+particular case was *about.* In this database, the vanishing majority of the
+information available to us is which cases cite whom. Anything we want to figure
+out needs to be inferred from that.
 
 
 ### Possible Issues
@@ -150,29 +148,9 @@ courts have different starting dates for their continuous coverage.
 
 This presents a systematic bias in our data, namely that more recent cases are
 more readily available. To illustrate, the database contains 6,212 cases from the
-BCCA before 1990, but 19,366 cases since. While we might be interested in
+BCCA before 1990, but 19,368 cases since. While we might be interested in
 whether the volume of law is increasing over time, we must be careful to
 restrict ourselves to the range of continuous coverage.
-
-In case you're wondering --- no, it looks like the volume of law in BCCA has
-been slowly decreasing since 1990:
-
-<figure>
-<div id="bcca-volume">
-  select year, count(*) as count from decisions where court = 'bcca' and year >= 1990 and 2021 > year group by year;
-
-  <script>
-    lineChart(
-      "#bcca-volume",
-      "/data/1612394754.csv",
-      "Year",
-      d => +parseInt(d.year),
-      "Number of Cases",
-      d => +parseInt(d.count))
-  </script>
-</div>
-<figcaption>number of cases in bcca since 1990</figcaption>
-</figure>
 
 Looking only at citation data introduces another systematic bias in the dataset:
 older cases have had a longer time to accumulate citations. Because we mainly
@@ -181,10 +159,311 @@ contradict previous decisions. Such a case is clearly very important to the law,
 but will fly under our radar until it becomes commonly cited.
 
 
+## Verifying the Dataset
+
+Before getting started, let's make sure our data is sane. For example, since
+case law is immutable, it's impossible for a case to cite a decision in the
+future. Therefore we should never see any time-traveling citations in our
+dataset.
+
+But in fact, there are 1197 cases on CanLII which cite decisions in the future!
+For example, [Molson v. Molson,
+1998](https://www.canlii.org/en/ab/abqb/doc/1998/1998abqb476/1998abqb476.html)
+cites [C.T.G. v R.R.G.,
+2016](https://www.canlii.org/en/sk/skqb/doc/2016/2016skqb387/2016skqb387.html).
+Clicking through the first link here shows that what is labeled as "Molson v.
+Molson, 1998" is *actually* "Richardson v. Richardson, 2019."
+
+A few other oddities show up, some of which are trial level courts citing their
+appeal. These seem more reasonable, and I read this as *whoever was doing data
+entry was typing in the wrong field.*
+
+This erroneous data makes up only 0.31% of our dataset, so it doesn't seem like
+fixing it is worth the effort.
+
+
+## Average Age of Citation
+
+How long do decisions stay relevant for? By looking at the average age at which
+a decision is cited, we can get a feel.
+
+<figure>
+<div id="avg-duration">
+select avg_age, count(*) from (select cast (avg(src_year - dst_year) as int) as avg_age from expanded_citations where src_year >= dst_year group by dst_hash) group by avg_age;
+
+  <script>
+    lineChart(
+      "#avg-duration",
+      "/data/1612727565.csv",
+      "Avg Age of Decision when Cited",
+      d => +parseInt(d.avg_age),
+      "Decisions",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Number of cases, by average age at time of citation</figcaption>
+</figure>
+
+It looks like cases stay relevant for about 11 years, at which point the
+inflection point of this graph switches, and we see the long tail. This is for
+the law in aggregate, but what about if we look at the average age when cited,
+broken down by court?
+
+<figure>
+<div id="avg-duration-by-court">
+select dst_court, cast (avg(src_year - dst_year) as int) as avg_age from expanded_citations where src_year >= dst_year and dst_court in (select court from important_courts order by max desc limit 15) group by dst_court;
+
+  <script>
+    barChart(
+      "#avg-duration-by-court",
+      "/data/1612746186.csv",
+      d => d.dst_court,
+      d => +parseInt(d.avg_age))
+  </script>
+</div>
+<figcaption>Average age at time of citation, by court</figcaption>
+</figure>
+
+This chart shows the top 15 most important courts. Among them, the *really big,
+important courts* hold sway longer than the smaller courts. But is the story
+different for the smallest courts?
+
+<figure>
+<div id="avg-duration-by-smallest-court">
+select dst_court, cast (avg(src_year - dst_year) as int) as avg_age from expanded_citations where src_year >= dst_year and dst_court in (select court from important_courts order by max asc limit 10) group by dst_court;
+
+  <script>
+    barChart(
+      "#avg-duration-by-smallest-court",
+      "/data/1612746614.csv",
+      d => d.dst_court,
+      d => +parseInt(d.avg_age))
+  </script>
+</div>
+<figcaption>Average age at time of citation, by small court</figcaption>
+</figure>
+
+Definitely a different story here. These smaller courts' decisions fall off in
+relevance significantly faster than their larger counterparts.
+
+A corollary to this question of law relevance is to look *not at the citee, but
+the citing case.* What is the average age of a case's citations?
+
+<figure>
+<div id="avg-age">
+select avg_age, count(*) from (select cast (avg(src_year - dst_year) as int) as avg_age from expanded_citations where src_year >= dst_year group by src_hash) group by avg_age;
+
+  <script>
+    lineChart(
+      "#avg-age",
+      "/data/1612727606.csv",
+      "Avg Age of Cited Decisions",
+      d => +parseInt(d.avg_age),
+      "Decisions",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Number of cases, by average age of citation</figcaption>
+</figure>
+
+The fall-off here is closer to 20 years --- compared to the ten year average
+lifespan of a decision. The discrepancy between these numbers suggests that
+cases are likely to a few old cases and numerous newer ones. Maybe cases will
+cite an original precedent, and then many other cases that have followed the
+precedent?
+
+When looking at average age of citation, we can look for trends over time. How
+has the average age of citation changed over the years?
+
+<figure>
+<div id="avg-age-by-year">
+select src_year, avg(avg_age) as avg_age from (select src_year, avg(src_year - dst_year) as avg_age from expanded_citations where src_year >= dst_year group by src_hash) group by src_year;
+
+  <script>
+    lineChart(
+      "#avg-age-by-year",
+      "/data/1612747472.csv",
+      "Year",
+      d => +parseInt(d.src_year),
+      "Avg (Avg Age) of Cited Decisions",
+      d => +parseFloat(d.avg_age).toFixed(2))
+  </script>
+</div>
+<figcaption>Average average age of citation, by year</figcaption>
+</figure>
+
+And again, let's compare these average ages by big courts:
+
+<figure>
+<div id="avg-age-by-court">
+select src_court, cast (avg(src_year - dst_year) as int) as avg_age from expanded_citations where src_year >= dst_year and src_court in (select court from important_courts order by max desc limit 15) group by src_court;
+
+  <script>
+    barChart(
+      "#avg-age-by-court",
+      "/data/1612747795.csv",
+      d => d.src_court,
+      d => +parseInt(d.avg_age))
+  </script>
+</div>
+<figcaption>Average age of citation, by court</figcaption>
+</figure>
+
+Wow! Look at the big courts. There is almost no variance in the average age of
+citations --- they're all clustered right around 13. Seeing as these are all of
+the appeal-level courts, it strongly suggests that **this is the speed of our
+legal system.** It takes thirteen years on average to make it through the entire
+appeal process. Disgustingly slow.
+
+There's nothing interesting in the small courts graph --- they show the same
+variances as in the duration of case relevance.
+
+
+## Complexity of the Law
+
+Although there are nearly 400,000 cases in our dataset, I don't think most of
+those can possibly be interesting. My understanding of case law is that usually
+a precedent has already been set, and the judge almost always defers to that
+precedent. To find cases like these, we can look at the number of decisions cited by
+a case. If a case cites only a few decisions (let's say three or fewer,) it's
+probably just agreeing with precedent.
+
+<figure>
+<div id="complexity">
+select c, count(*) as count from (select count(*) as c from expanded_citations where src_year >= (select year from coverage where court = src_court) group by src_hash) group by c;
+BUCKETED BY HAND
+
+  <script>
+    pieChart(
+      "#complexity",
+      "/data/1612748474.csv",
+      // "Citation Count",
+      d => d.c,
+      // "Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Cases by number of decisions cited</figcaption>
+</figure>
+
+The number of cases cited falls off exponentially as we'd expect, so I bucketed
+the higher number of citations in this chart. But take a look: roughly one third
+of all cases cite three or fewer decisions, and nearly a sixth cite *only one!*
+
+If our hypothesis is true, it means that one sixth of all cases are glaringly
+obvious wastes of time, and a third are trivially decided. But does this hold
+true across all courts? Let's look at the breakdown for a few of the highest
+importance courts:
+
+<figure>
+<div id="complexity-scc">
+select c, count(*) as count from (select count(*) as c from expanded_citations where src_year >= (select year from coverage where court = src_court) and src_year >= 1950 and src_court = 'scc' group by src_hash) group by c;
+
+  <script>
+    pieChart(
+      "#complexity-scc",
+      "/data/1612750035.csv",
+      // "Citation Count",
+      d => d.c,
+      // "Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Cases by number of decisions cited (SCC, 1950+)</figcaption>
+</figure>
+
+I filtered the SCC decisions to only look at cases after 1950 --- earlier ones
+were too likely to not have their citations available on CanLII, and would thus
+throw off our analysis. But amazingly, even of cases that make it to the Supreme
+Court, still more than a third of them cite only three or fewer decisions.
+
+That sounds a little crazy to me, so I went on CanLII and randomly clicked on a
+few supreme court cases. And sure enough, many of them *do* only cite one case!
+Inspecting them visually, these cases come with extraordinarily short documents
+--- many are under 1000 words.
+
+Let's see if this holds for the AB, BC, ON and QC courts of appeal as well:
+
+<figure>
+<div id="complexity-abca">
+select c, count(*) as count from (select count(*) as c from expanded_citations where src_year >= (select year from coverage where court = src_court) and src_court = 'abca' group by src_hash) group by c;
+
+  <script>
+    pieChart(
+      "#complexity-abca",
+      "/data/1612750541.csv",
+      // "Citation Count",
+      d => d.c,
+      // "Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Cases by number of decisions cited (ABCA)</figcaption>
+</figure>
+
+<figure>
+<div id="complexity-bcca">
+select c, count(*) as count from (select count(*) as c from expanded_citations where src_year >= (select year from coverage where court = src_court) and src_court = 'bcca' group by src_hash) group by c;
+
+  <script>
+    pieChart(
+      "#complexity-bcca",
+      "/data/1612750650.csv",
+      // "Citation Count",
+      d => d.c,
+      // "Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Cases by number of decisions cited (BCCA)</figcaption>
+</figure>
+
+<figure>
+<div id="complexity-onca">
+select c, count(*) as count from (select count(*) as c from expanded_citations where src_year >= (select year from coverage where court = src_court) and src_court = 'onca' group by src_hash) group by c;
+
+  <script>
+    pieChart(
+      "#complexity-onca",
+      "/data/1612750834.csv",
+      // "Citation Count",
+      d => d.c,
+      // "Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Cases by number of decisions cited (ONCA)</figcaption>
+</figure>
+
+<figure>
+<div id="complexity-qcca">
+select c, count(*) as count from (select count(*) as c from expanded_citations where src_year >= (select year from coverage where court = src_court) and src_court = 'qcca' group by src_hash) group by c;
+
+  <script>
+    pieChart(
+      "#complexity-qcca",
+      "/data/1612750959.csv",
+      // "Citation Count",
+      d => d.c,
+      // "Cases",
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Cases by number of decisions cited (QCCA)</figcaption>
+</figure>
+
+Pretty close to *half* of the cases that come through these appeal-level courts
+are trivial. If we could automate decisions of this sort, we should be able to
+make the appeal system roughly 70% faster --- reducing the average time per case
+from 13 years to 7.5. I can't find any numbers on how expensive the court system
+is to run, but this would reduce its cost by 70% as well, which is almost
+certainly something worth investigating.
+
+
 ## Determining Important Cases
 
 The sheer size of the case law corpus is staggering. My dataset contains roughly
-350,000 decisions --- a small fraction of the *actual law.* And this is a few
+400,000 decisions --- a small fraction of the *actual law.* And this is a few
 orders of magnitude larger than any human could possibly remember.
 
 Thankfully, most of this data is noise. Most cases taken to court are decided
@@ -255,63 +534,70 @@ the names and years of the top 50 cases, and searched for a Wikipedia page on
 the topic. My theory is that *really* important cases will be important enough
 to have Wikipedia commentary about them for laypeople like me.
 
-At time of writing, of the top 50 cases, 42 have Wikipedia articles. And among
-those, 31 are described in the first sentence as either a "landmark" or a
-"leading" case. That's a pretty good sign.
+At time of writing, of the top 50 cases, 34 have Wikipedia articles. And among
+those, 22 are described in the first sentence as either a "landmark" or a
+"leading" case.[^previous] That's a pretty good sign.
+
+[^previous]: In a pre-print of this essay that contained only half of the
+  dataset, 42 of the top 50 had Wikipedia articles. Of these cases, 31 were
+  "leading" or "landmark." It's not clear to me why this metric degraded when
+  adding more data, except possibly that the inclusion of more cases has brought
+  out connections that are harder for humans to keep track of. I'm very
+  confident in the math here.
 
 Without further ado, here are the 50 most important cases by my analysis:
 
 <ol>
 <li><a href="https://en.wikipedia.org/wiki/Dunsmuir_v_New_Brunswick">Dunsmuir v. New Brunswick</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Hunter_v_Southam_Inc">Hunter et al. v. Southam Inc.</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Oakes">R. v. Oakes</a></li>
-<li>Housen v. Nikolaisen</li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Collins_(1987)">R. v. Collins</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Baker_v_Canada_(Minister_of_Citizenship_and_Immigration)">Baker v. Canada (Minister of Citizenship and Immigration)</a></li>
-<li><a href="https://.en.wikipedia.org/wiki/R_v_Big_M_Drug_Mart_Ltd">R. v. Big M Drug Mart Ltd.</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Canada_(Minister_of_Citizenship_and_Immigration)_v_Khosa">Canada (Citizenship and Immigration) v. Khosa</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Reference_Re_BC_Motor_Vehicle_Act">Re B.C. Motor Vehicle Act</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Grant">R. v. Grant</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Re_Rizzo_%26_Rizzo_Shoes_Ltd">Rizzo &amp; Rizzo Shoes Ltd. (Re)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Irwin_Toy_Ltd_v_Quebec_(AG)">Irwin Toy Ltd. v. Quebec (Attorney General)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Andrews_v_Law_Society_of_British_Columbia">Andrews v. Law Society of British Columbia</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Edwards_Books_and_Art_Ltd">R. v. Edwards Books and Art Ltd.</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Stillman">R. v. Stillman</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Dr_Q_v_College_of_Physicians_and_Surgeons_of_British_Columbia">Dr. Q. v. College of Physicians and Surgeons of British Columbia</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_O%27Connor">R. v. O'Connor</a></li>
-<li>R. v. M. (C.A.)</li>
-<li><a href="https://en.wikipedia.org/wiki/RJR-MacDonald_Inc_v_Canada_(AG)">RJR-MacDonald Inc. v. Canada (Attorney General)</a></li>
-<li>R. v. Lyons</li>
+<li><a href="https://en.wikipedia.org/wiki/Baker_v_Canada_(Minister_of_Citizenship_and_Immigration)">Baker v. Canada (Minister of Citizenship and Immigration)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Dunsmuir_v_New_Brunswick">Newfoundland and Labrador Nurses' Union v. Newfoundland and Labrador (Treasury Board)</a></li>
+<li>Housen v. Nikolaisen, 2002</li>
+<li><a href="https://en.wikipedia.org/wiki/Hunter_v_Southam_Inc">Hunter et al. v. Southam Inc.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Collins_(1987)">R. v. Collins</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Oakes">R. v. Oakes</a></li>
+<li>Alberta (Information and Privacy Commissioner) v. Alberta Teachers' Association, 2011</li>
 <li><a href="https://en.wikipedia.org/wiki/Pushpanathan_v_Canada_(Minister_of_Citizenship_and_Immigration)">Pushpanathan v. Canada (Minister of Citizenship and Immigration)</a></li>
-<li>Newfoundland and Labrador Nurses' Union v. Newfoundland and Labrador (Treasury Board)</li>
-<li>Alberta (Information and Privacy Commissioner) v. Alberta Teachers' Association</li>
+<li><a href="https://en.wikipedia.org/wiki/Re_Rizzo_%26_Rizzo_Shoes_Ltd">Rizzo & Rizzo Shoes Ltd. (Re)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Dr_Q_v_College_of_Physicians_and_Surgeons_of_British_Columbia">Dr. Q. v. College of Physicians and Surgeons of British Columbia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Canada_(Director_of_Investigation_and_Research)_v_Southam_Inc">Canada (Director of Investigation and Research) v. Southam Inc.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Law_Society_of_New_Brunswick_v_Ryan">Law Society of New Brunswick v. Ryan</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Big_M_Drug_Mart_Ltd">R. v. Big M Drug Mart Ltd.</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Grant">R. v. Grant</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Reference_Re_BC_Motor_Vehicle_Act">Re B.C. Motor Vehicle Act</a></li>
+<li>Agraira v. Canada (Public Safety and Emergency Preparedness), 2013</li>
+<li><a href="https://en.wikipedia.org/wiki/Canadian_Union_of_Public_Employees_v_Ontario_(Minister_of_Labour)">C.U.P.E. v. Ontario (Minister of Labour)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Suresh_v_Canada_(Minister_of_Citizenship_and_Immigration)">Suresh v. Canada (Minister of Citizenship and Immigration)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Stillman">R. v. Stillman</a></li>
+<li>R. v. M. (C.A.), 1996</li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_O%27Connor">R. v. O'Connor</a></li>
+<li>Toronto (City) v. C.U.P.E., Local 79, 2003</li>
+<li><a href="https://en.wikipedia.org/wiki/Andrews_v_Law_Society_of_British_Columbia">Andrews v. Law Society of British Columbia</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Irwin_Toy_Ltd_v_Quebec_(AG)">Irwin Toy Ltd. v. Quebec (Attorney General)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Canada_(AG)_v_Mossop">Canada (Attorney General) v. Mossop</a></li>
+<li>Bell ExpressVu Limited Partnership v. Rex, 2002</li>
+<li><a href="https://en.wikipedia.org/wiki/Canada_(Minister_of_Citizenship_and_Immigration)_v_Vavilov">Canada (Minister of Citizenship and Immigration) v. Vavilov</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Canadian_Union_of_Public_Employees,_Local_963_v_New_Brunswick_Liquor_Corp">C.U.P.E. v. N.B. Liquor Corporation</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Edwards_Books_and_Art_Ltd">R. v. Edwards Books and Art Ltd.</a></li>
+<li>R. v. Lyons, 1987</li>
+<li>McLean v. British Columbia (Securities Commission), 2013</li>
+<li><a href="https://en.wikipedia.org/wiki/Union_des_Employes_de_Service,_Local_298_v_Bibeault">U.E.S., Local 298 v. Bibeault</a></li>
+<li>Canada (Canadian Human Rights Commission) v. Canada (Attorney General), 2011</li>
+<li>R. v. Garofoli, 1990</li>
+<li><a href="https://en.wikipedia.org/wiki/Blencoe_v_British_Columbia_(Human_Rights_Commission)">Blencoe v. British Columbia (Human Rights Commission)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Therens">R. v. Therens</a></li>
+<li>Smith v. Alliance Pipeline Ltd., 2011</li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_W_(D)">R. v. W.(D.)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/RJR-MacDonald_Inc_v_Canada_(AG)">RJR-MacDonald Inc. v. Canada (Attorney General)</a></li>
+<li>Sketchley v. Canada (Attorney General), 2005</li>
+<li><a href="https://en.wikipedia.org/wiki/R_v_Mann">R. v. Mann</a></li>
+<li>Cepeda-Gutierrez v. Canada (Minister of Citizenship and Immigration), 1998</li>
+<li><a href="https://en.wikipedia.org/wiki/Slaight_Communications_Inc_v_Davidson">Slaight Communications Inc. v. Davidson</a></li>
+<li>Committee for Justice and Liberty et al. v. National Energy Board et al., 1976</li>
+<li>R. v. Debot, 1989</li>
+<li>Mission Institution v. Khela, 2014</li>
 <li><a href="https://en.wikipedia.org/wiki/R_v_Morgentaler">R. v. Morgentaler</a></li>
 <li><a href="https://en.wikipedia.org/wiki/R_v_Sharpe">R. v. Sharpe</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Canada_(Director_of_Investigation_and_Research)_v_Southam_Inc">Canada (Director of Investigation and Research) v. Southam Inc.</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Rodriguez_v_British_Columbia_(AG)">Rodriguez v. British Columbia (Attorney General)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Blencoe_v_British_Columbia_(Human_Rights_Commission)">Blencoe v. British Columbia (Human Rights Commission)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Keegstra">R. v. Keegstra</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Therens">R. v. Therens</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Thomson_Newspapers_Co_Ltd_v_Canada_(AG)">Thomson Newspapers Ltd. v. Canada (Director of Investigation and Research, Restrictive Trade Practices Commission)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Law_Society_of_New_Brunswick_v_Ryan">Law Society of New Brunswick v. Ryan</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Schachter_v_Canada">Schachter v. Canada</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Law_v_Canada_(Minister_of_Employment_and_Immigration)">Law v. Canada (Minister of Employment and Immigration)</a></li>
-<li>R. v. Garofoli</li>
-<li>Bell ExpressVu Limited Partnership v. Rex</li>
-<li><a href="https://en.wikipedia.org/wiki/Dagenais_v_Canadian_Broadcasting_Corp">Dagenais v. Canadian Broadcasting Corp.</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Eldridge_v_British_Columbia_(AG)">Eldridge v. British Columbia (Attorney General)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Slaight_Communications_Inc_v_Davidson">Slaight Communications Inc. v. Davidson</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Prostitution_Reference">Reference re ss. 193 and 195.1(1)(C) of the criminal code (Man.)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Seaboyer">R. v. Seaboyer;  R. v. Gayme</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Mills">R. v. Mills</a></li>
-<li><a href="https://en.wikipedia.org/wiki/Suresh_v_Canada_(Minister_of_Citizenship_and_Immigration)">Suresh v. Canada (Minister of Citizenship and Immigration)</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Malmo-Levine;_R_v_Caine">R. v. Malmo-Levine; R. v. Caine</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Mann">R. v. Mann</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Buhay">R. v. Buhay</a></li>
-<li><a href="https://en.wikipedia.org/wiki/R_v_Swain">R. v. Swain</a></li>
-<li><a href="https://en.wikipedia.org/wiki/McKinney_v_University_of_Guelph">Mckinney v. University of Guelph</a></li>
-<li>Toronto (City) v. C.U.P.E., Local 79</li>
-<li><a href="https://en.wikipedia.org/wiki/Vriend_v_Alberta">Vriend v. Alberta</a></li>
 </ol>
 
 If you're a law professional, you might disagree with this list. Maybe the
@@ -320,13 +606,13 @@ choices. Glaring omissions are probably caused by recency bias --- new important
 decisions simply haven't had time to accumulate citations (and thus importance.)
 The wrong ordering? That's just like, your opinion, man.
 
-Of particular interest to me are the cases on this list that *aren't on
+But of particular interest to me are the cases on this list that *aren't on
 Wikipedia.* Assuming Wikipedia is a reasonable proxy for what lawyers think are
 important cases, the missing articles here have previously-unacknowledged
 importance.
 
-Anyway. It seems like my calculated importance score correlates with real-world
-importance. But let's try to falsify that hypothesis, and see if the
+Anyway, it seems like my calculated importance score correlates pretty well with
+real-world importance. But let's try to falsify that hypothesis, and see if the
 bottom-ranked cases have Wikipedia articles.
 
 I checked. They don't. Not a single hit in the 50 I tried[^try-more]. I also
@@ -338,7 +624,10 @@ single hit.
   process.
 
 These negative results add strong evidence that my importance score is
-*measuring something real.*
+*measuring something real.* Remember, there is absolutely no human judgment
+going into this analysis; *my program is simply crunching the numbers based on
+who cites whom.* The fact that it can identify *any* important cases whatsoever is
+jaw-dropping.
 
 
 ### Statistical Biases
@@ -349,12 +638,12 @@ do all these important cases come from?" Good question:
 <figure>
 <div id="court-of-important-cases">
 select court, count(*) as count from (select court from decisions order by importance desc limit 1000) x group by court having count > 20;
-AND THEN ADD OTHER 1000 -
+THEN OTHER = 1000 -
 
   <script>
     pieChart(
       "#court-of-important-cases",
-      "/data/1612574997.csv",
+      "/data/1612753367.csv",
       d => d.court,
       d => d.count)
   </script>
@@ -362,20 +651,17 @@ AND THEN ADD OTHER 1000 -
 <figcaption>Courts of the top 1000 important cases</figcaption>
 </figure>
 
-This seems plausible; the Supreme Court takes most of the cake, but the superior
-courts and courts of appeal from powerful provinces make an appearance. Of
-notable omission, however, is Quebec from this data. Is it hiding in the "other"
-category? Let's zoom in on that:
+Interesting. The Supreme Court takes most of the cake, but Ontario and Quebec
+are crowded out by BC and Alberta. Drilling down into the "other" category from the chart above:
 
 <figure>
 <div id="court-of-other-cases">
 select court, count(*) as count from (select court from decisions order by importance desc limit 1000) x group by court having count <= 20 and count > 5;
-ADD other,15
 
   <script>
     pieChart(
       "#court-of-other-cases",
-      "/data/1612641925.csv",
+      "/data/1612753494.csv",
       d => d.court,
       d => d.count)
   </script>
@@ -383,37 +669,9 @@ ADD other,15
 <figcaption>Drilling down on the "other" category</figcaption>
 </figure>
 
-Bad sign; Manitoba, Saskatchewan and Nova Scotia each have more representation
-than Quebec. But Quebec has roughly two and a half times more population than
-those three provinces combined. This reeks of systematic bias --- but is it in
-reality or just my dataset?
-
-One possible confounder is that I was explicitly avoiding downloading French
-cases for the first half of my data scraping (out of fear that I'd get
-duplicates for the French versions of the Supreme Court decisions.) When I
-realized I could eliminate that problem more directly, I tried to prioritize
-downloading French decisions, but might not have compensated enough.
-
-By comparing the ratio of cases discovered (mentioned in a citation) to cases
-explored (downloaded and looked at the citations of), we can check that:
-
-<figure>
-<div id="discovered-explored">
-select jurisdiction, cast(sum(fetched)*100.0 / count(*) as int) as perc from decisions group by jurisdiction
-
-  <script>
-    pieChart(
-      "#discovered-explored",
-      "/data/1612642878.csv",
-      d => d.jurisdiction,
-      d => d.perc)
-  </script>
-</div>
-<figcaption>Percentage of decisions explored to discovered</figcaption>
-</figure>
-
-Oops, that appears to be the problem. While every other province sits around
-80%, Quebec is only at 43%. My bad.
+It surprising to me that Ontario and Quebec are so underrepresented in their
+number of important cases, compared to their populations and age. I don't know
+what's going on here --- please let me know if you do, gentle reader.
 
 The other big question I have is to what degree this importance factor is biased
 by the courts' continuous coverage. That is to say, of the most important cases
@@ -423,15 +681,15 @@ identified, how many of them are from before CanLII started continuous coverage?
 select count(*) as count, c.year from decisions d inner join coverage c on d.court = c.court where d.hash in (select hash from decisions where court != 'scc' order by importance desc limit 1000) and d.year < c.year;
 -->
 
-Only 85 of the top 1000 (8.5%) cases are from before the year of continuous
+Only 13 of the top 1000 (1.3%) cases are from before the year of continuous
 coverage. This doesn't jive with my intuition --- presumably the cases which are
 on CanLII before the date of continuous coverage *are the most important ones.*
 They're the cases that someone went in and added manually, before the system was
 set up to track this stuff automatically.
 
-OK, so the importance metric is clearly biased against French and old cases. But
-is it also biased against *new* cases? Let's look at the number of top important
-cases by year:
+OK, so the importance metric is clearly biased against old cases. But is it also
+biased against *new* cases? Let's look at the number of top important cases by
+year:
 
 <figure>
 <div id="new-bias">
@@ -440,7 +698,7 @@ select year, count(*) as count from decisions where hash in (select hash from de
   <script>
     lineChart(
       "#new-bias",
-      "/data/1612644438.csv",
+      "/data/1612754087.csv",
       "Year",
       d => +parseInt(d.year),
       "Number of Important Cases",
@@ -472,7 +730,7 @@ select year, count(*) as count from decisions where hash in (select hash from de
   <script>
     lineChart(
       "#dimportance",
-      "/data/1612645002.csv",
+      "/data/1612754125.csv",
       "Year",
       d => +parseInt(d.year),
       "Number of Important Cases",
@@ -486,8 +744,13 @@ metric, by year</figcaption>
 > TODO(sandy): add support for missing data to lineChart
 
 This metric nicely prioritizes old cases, like our previous metric emphasized
-newer cases. It's unclear to me how to combine the two together; we probably
-can't meaningfully add eigenvalues, but let's try it anyway.
+newer cases. In fact, the directed importance score puts 865 of the its top 1000
+(86.5%) cases before the date of continuous coverage.
+
+We'd be very happy if we could somehow mix the two metrics together to get an
+importance score that has no time-bias. Unfortunately, it's unclear to me how to
+combine the two together; we probably can't meaningfully add eigenvalues --- but
+let's try it anyway.
 
 <figure>
 <div id="both-importance">
@@ -496,7 +759,7 @@ select year, count(*) as count from decisions where hash in (select hash from de
   <script>
     lineChart(
       "#both-importance",
-      "/data/1612645081.csv",
+      "/data/1612754230.csv",
       "Year",
       d => +parseInt(d.year),
       "Number of Important Cases",
@@ -534,50 +797,153 @@ your analysis can only be as good as your data is. We're always going to need
 subject matter experts.
 
 
+## Discovering Neighborhoods
 
-<h3>Communities</h3>
-top 5 decisions from top 5 communities:
+Imagine I give you a map of the world's road network, with all of the
+topological features like water and altitude removed, as well as all landmarks
+and zoning information. For example:
 
-<h4>administrative</h4>
-sqlite> select name, year, url from decisions where community == 1144 order by importance desc limit 5;
-Dunsmuir v. New Brunswick|2008|/en/ca/scc/doc/2008/2008scc9/2008scc9.html
-Housen v. Nikolaisen|2002|/en/ca/scc/doc/2002/2002scc33/2002scc33.html
-Baker v. Canada (Minister of Citizenship and Immigration)|1999|/en/ca/scc/doc/1999/1999canlii699/1999canlii699.html
-Canada (Citizenship and Immigration) v. Khosa|2009|/en/ca/scc/doc/2009/2009scc12/2009scc12.html
-Rizzo & Rizzo Shoes Ltd. (Re)|1998|/en/ca/scc/doc/1998/1998canlii837/1998canlii837.html
+<img src="/images/law/city.png" style="width: 100%">
+
+There are two cities on this map. It's not very hard to spot them, is it? The
+cities are exceptionally dense networks of roads, compared to the relatively
+spare highways that connect them.
+
+Interestingly, this same phenomenon occurs within cities:
+
+<img src="/images/law/neighborhood.png" style="width: 100%">
+
+It's easy to find downtown on this map, and if you pay attention to what are
+obviously bridges, you can find the smaller cities that make up the big
+metropolitan area. Again, the trick is to identify areas that have tightly woven
+intra-road networks, but relatively sparse interconnections.
+
+We can use this same trick to identify "neighborhoods" of law --- that is,
+clusters of cases that commonly cite one another, but which rarely cite other
+neighborhoods. [Our algorithm][louvain] starts by putting every case in its own (very
+lonely) community, and then merging communities which are more interconnected
+than should be expected by random.
+
+[louvain]: https://en.wikipedia.org/wiki/Louvain_method
+
+After crunching the numbers, the five most important decisions in each of our
+three most important, highly-populated communities are:
+
+### Community 249
+<ul>
+<li><a href="https://canlii.org/en/ca/scc/doc/2008/2008scc9/2008scc9.html">Dunsmuir v. New Brunswick</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/2009/2009scc12/2009scc12.html">Canada (Citizenship and Immigration) v. Khosa</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1999/1999canlii699/1999canlii699.html">Baker v. Canada (Minister of Citizenship and Immigration)</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/2011/2011scc62/2011scc62.html">Newfoundland and Labrador Nurses' Union v. Newfoundland and Labrador (Treasury Board)</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/2011/2011scc61/2011scc61.html">Alberta (Information and Privacy Commissioner) v. Alberta Teachers'Association</a></li>
+</ul>
+
+In order to try and figure out what community this is (249 isn't a *great*
+name[^naming-things]), I clicked on each CanLII link and read (with my *eyes,*
+like a *peasant*) the tags that whoever filed these cases wrote down. They are:
+
+[^naming-things]: "There are only two hard things in Computer Science: cache invalidation and naming things." --Phil Karlton
+
+* Administrative law -- Procedural fairness
+* Administrative law -- Review of discretion -- Approach to review of discretionary decision making.
+* Administrative law -- Judicial review -- Implied decision
+* Administrative law -- Judicial review -- Standard of review
+* Administrative law -- Natural justice -- Procedural fairness
+* Administrative law -- Role and adequacy of reasons -- Procedural fairness
+* Administrative law -- Standard of review
+* Courts -- Appellate review
+
+Looks like community 249 is really some sort of administrative review of law.
+
+Remember, I only looked at these tags in order to try to give a
+human-appropriate name to community 249. The computer didn't have access to
+these tags when it was discovering it; it was merely looking at where the roads
+are dense.
 
 
-<h4>charter</h4>
-sqlite> select name, year, url from decisions where community == 638 order by importance desc limit 5;
-Hunter et al. v. Southam Inc.|1984
-R. v. Collins|1987
-R. v. Grant|2009
-R. v. Stillman|1997
-R. v. Therens|1985
+### Community 527
+<ul>
+<li><a href="https://canlii.org/en/ca/scc/doc/1986/1986canlii46/1986canlii46.html">R. v. Oakes</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1985/1985canlii69/1985canlii69.html">R. v. Big M Drug Mart Ltd.</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1985/1985canlii81/1985canlii81.html">Re B.C. Motor Vehicle Act</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1989/1989canlii2/1989canlii2.html">Andrews v. Law Society of British Columbia</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1989/1989canlii87/1989canlii87.html">Irwin Toy Ltd. v. Quebec (Attorney General)</a></li>
+</ul>
 
-<h4>also charter?</h4>
-sqlite> select name, year, url from decisions where community == 226 order by importance desc limit 5;
-R. v. Oakes|1986
-R. v. Big M Drug Mart Ltd.|1985
-Re B.C. Motor Vehicle Act|1985
-Irwin Toy Ltd. v. Quebec (Attorney General)|1989
-Andrews v. Law Society of British Columbia|1989
+The tags here are:
 
-<h4>criminal/constitutional</h4>
-sqlite> select name, year, url from decisions where community == 816 order by importance desc limit 5;
-R. v. O'Connor|1995
-R. v. Mills|1999
-Mills v. The Queen|1986
-R. v. Stinchcombe|1991
-R. v. Regan|2002
+* Constitutional law -- Canadian Charter of Rights and Freedoms
+* Constitutional law -- Charter of Rights -- Application
+* Constitutional law -- Charter of Rights -- Freedom of expression
+* Constitutional law -- Charter of Rights -- Fundamental justice
+* Constitutional law -- Charter of Rights -- Presumption of innocence
+* Constitutional law -- Charter of Rights -- Reasonable limits
 
-<h4>criminal/constitutional</h4>
-sqlite> select name, year, url from decisions where community == 666 order by importance desc limit 5;
-R. v. M. (C.A.)|1996
-R. v. Lyons|1987
-R. v. Smith (Edward Dewey)|1987
-R. v. Proulx|2000
-R. v. Shropshire|1995
+Seems pretty cut and dried. "Charter of Rights."
+
+### Community 192
+<ul>
+<li><a href="https://canlii.org/en/ca/scc/doc/1984/1984canlii33/1984canlii33.html">Hunter et al. v. Southam Inc.</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1987/1987canlii84/1987canlii84.html">R. v. Collins</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/2009/2009scc32/2009scc32.html">R. v. Grant</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1997/1997canlii384/1997canlii384.html">R. v. Stillman</a></li>
+<li><a href="https://canlii.org/en/ca/scc/doc/1990/1990canlii52/1990canlii52.html">R. v. Garofoli</a></li>
+</ul>
+
+With tags:
+
+* Constitutional law -- Canadian Charter of Rights and Freedoms -- Unreasonable search and seizure
+* Constitutional law -- Charter of Rights -- Admissibility of evidence
+* Constitutional law -- Charter of Rights -- Arbitrary detention
+* Constitutional law -- Charter of Rights -- Enforcement — Exclusion of evidence
+* Constitutional law -- Charter of Rights -- Search and seizure
+* Constitutional law -- Charter of Rights -- Security of person
+* Constitutional law -- Charter of Rights -- Unreasonable search and seizure
+* Criminal law -- Interception of private communications -- Access to sealed packet -- Validity of wiretap authorizations
+* Criminal law -- Interception of private communications -- Admissibility of evidence
+* Criminal law -- Power of search incidental to arrest
+
+This one is very clearly on the police being naughty and doing things they
+shouldn't.
+
+I've said it before but I'm going to say it again. There is *very clearly* a
+theme in these cases, and *we found it using only math, with absolutely no
+knowledge of the law.*
+
+
+### Continuing Analysis of Communities
+
+Just for fun, let's chart decisions by year and community for the six most
+populated communities.
+
+<figure>
+<div id="chart-importance">
+  select name, year, importance, community from decisions where community in (19, 192, 225, 249, 527, 635) order by importance desc limit 500;
+
+  <script>
+    dotChart(
+      "#chart-importance",
+      "/data/1612756205.csv",
+      d => +d.year,
+      d => +d.community,
+      d => parseFloat(d.importance).toFixed(4),
+      d => +d.community,
+      d => truncateString(d.name, 80))
+  </script>
+</div>
+<figcaption>Important cases by year and community. Larger dots are more
+important. Community is on the Y axis.</figcaption>
+</figure>
+
+This gives us a sense of what sorts of things the law is focused on over time.
+For example, since 2010 there's been a huge flurry of activity in community 249
+(review of law.) Why? I don't know, but clearly something is going on. The
+activity seems to be precipitated by *Dunsmuir v. New Brunswick,* so what we're
+seeing is all the fallout from that case.
+
+And we can see that community 192 (police being naughty) was very active from
+1985 to 1995, but quieted down until a spike in 2009, and has been quiet since
+2014. Maybe the police have been on good behavior since then?
 
 
 

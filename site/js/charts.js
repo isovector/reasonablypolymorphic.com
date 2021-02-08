@@ -144,7 +144,7 @@ function lineChart(sel, csv, x_label, get_key, y_label, get_val) {
 
   svg.append("text")
       .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left / 10)
+      .attr("y", 0 - margin.left / 2)
       .attr("x",0 - (height / 2))
       .attr("dy", "1em")
       .style("text-anchor", "middle")
@@ -646,4 +646,59 @@ function multiLineChart(sel, csv, get_key, get_x, get_y) {
   })
 }
 
+function barChart(sel, csv, get_x, get_y) {
+  document.querySelector(sel).textContent = ""
+  d3.csv(csv).then(data => {
+    const margin = ({top: 30, right: 0, bottom: 30, left: 40})
+    const width = 500
+    const height = 200
+    const color = "steelblue"
+
+    const xAxis = g => g
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).tickFormat(i => get_x(data[i])).tickSizeOuter(0))
+
+    const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).ticks(null, data.format))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.append("text")
+          .attr("x", -margin.left)
+          .attr("y", 10)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "start")
+          .text(data.y))
+
+    const x = d3.scaleBand()
+      .domain(d3.range(data.length))
+      .range([margin.left, width - margin.right])
+      .padding(0.1)
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, get_y)]).nice()
+      .range([height - margin.bottom, margin.top])
+
+
+    const svg = d3.select(sel).append("svg")
+      .attr("viewBox", [0, 0, width, height]);
+
+    svg.append("g")
+        .attr("fill", color)
+      .selectAll("rect")
+      .data(data)
+      .join("rect")
+        .attr("x", (d, i) => x(i))
+        .attr("y", d => y(get_y(d)))
+        .attr("height", d => y(0) - y(get_y(d)))
+        .attr("width", x.bandwidth())
+      .append("title")
+        .text(d => `${get_x(d)}: ${get_y(d)}`);
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+  })
+}
 
