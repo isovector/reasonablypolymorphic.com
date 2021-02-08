@@ -1217,3 +1217,10 @@ Some intriguing takeaways, with no relevance to anything:
     world of law?
 * This math stuff is actually useful for real-life things.
 
+If you're interested in running your own analysis on this data without needing
+to scrape CanLII for a few weeks, [it's available as a sqlite3
+database.](https://mega.nz/file/YBomET6L#M2oBRiIRQTN_YJ4eiFiDjlkdNrEf8jbQG2a0wLkahNs)
+Hidden in the HTML of this page are all of the queries I ran to produce the
+graphs. Feel free to get in touch if you find anything interesting, I'd be happy
+to update this page with, or linking to, your discoveries.
+
