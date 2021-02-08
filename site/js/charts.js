@@ -142,14 +142,37 @@ function lineChart(sel, csv, x_label, get_key, y_label, get_val) {
     svg.append("g")
         .call(yAxis);
 
-  svg.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left / 2)
-      .attr("x",0 - (height / 2))
-      .attr("dy", "1em")
-      .style("text-anchor", "middle")
-      .attr("font-size", "8pt")
-      .text(y_label);
+    const grid = g => g
+      .attr("stroke", "currentColor")
+      .attr("stroke-opacity", 0.1)
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(x.ticks())
+        .join("line")
+          .attr("x1", d => 0.5 + x(d))
+          .attr("x2", d => 0.5 + x(d))
+          .attr("y1", margin.top)
+          .attr("y2", height - margin.bottom))
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(y.ticks())
+        .join("line")
+          .attr("y1", d => 0.5 + y(d))
+          .attr("y2", d => 0.5 + y(d))
+          .attr("x1", margin.left)
+          .attr("x2", width - margin.right));
+
+    svg.append("g")
+        .call(grid);
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left / 2)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .attr("font-size", "8pt")
+        .text(y_label);
 
 
     svg.append("path")
@@ -389,11 +412,14 @@ function dotChart(sel, csv, get_x, get_y, get_size, get_color, get_name) {
     const width = 600
     const height = 300
 
-    const num_values = [...new Set(data.map(get_y))].length
+    const values = [...new Set(data.map(get_y))]
+    const num_values = values.length
+
+    const row_height = (height - margin.top - margin.bottom) / (num_values)
 
     data = d3.map(data, d => {
       d.xrand = (Math.random() - 0.5) * 5
-      d.yrand = -Math.random() * (height - margin.top - margin.bottom) / (num_values + 1)
+      d.yrand = -Math.random() * row_height
       return d
     })
 
@@ -480,6 +506,31 @@ function dotChart(sel, csv, get_x, get_y, get_size, get_color, get_name) {
 
     svg.append("g")
         .call(yAxis);
+
+    const grid = g => g
+      .attr("stroke", "currentColor")
+      .attr("stroke-opacity", 0.1)
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(x.ticks())
+        .join("line")
+          .attr("x1", d => 0.5 + x(d))
+          .attr("x2", d => 0.5 + x(d))
+          .attr("y1", margin.top)
+          .attr("y2", height - margin.bottom))
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(values)
+        .join("rect")
+          .attr("y", d => 0.5 + y(d) - row_height)
+          .attr("height", d => row_height)
+          .attr("x", margin.left)
+          .attr("width", width - margin.right - margin.left)
+          .attr("fill-opacity", 0.2)
+          .attr("fill", d => color(d)));
+
+    svg.append("g")
+        .call(grid);
 
     svg.append("g")
         .attr("stroke", "#000")
@@ -571,6 +622,29 @@ function multiLineChart(sel, csv, get_key, get_x, get_y) {
 
     svg.append("g")
         .call(yAxis);
+
+    const grid = g => g
+      .attr("stroke", "currentColor")
+      .attr("stroke-opacity", 0.1)
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(x.ticks())
+        .join("line")
+          .attr("x1", d => 0.5 + x(d))
+          .attr("x2", d => 0.5 + x(d))
+          .attr("y1", margin.top)
+          .attr("y2", height - margin.bottom))
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(y.ticks())
+        .join("line")
+          .attr("y1", d => 0.5 + y(d))
+          .attr("y2", d => 0.5 + y(d))
+          .attr("x1", margin.left)
+          .attr("x2", width - margin.right));
+
+    svg.append("g")
+        .call(grid);
 
     const path = svg.append("g")
         .attr("fill", "none")
@@ -699,6 +773,116 @@ function barChart(sel, csv, get_x, get_y) {
 
     svg.append("g")
         .call(yAxis);
+
+    const grid = g => g
+      .attr("stroke", "currentColor")
+      .attr("stroke-opacity", 0.1)
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(y.ticks())
+        .join("line")
+          .attr("y1", d => 0.5 + y(d))
+          .attr("y2", d => 0.5 + y(d))
+          .attr("x1", margin.left)
+          .attr("x2", width - margin.right));
+
+    svg.append("g")
+        .call(grid);
+
+  })
+}
+
+function scatter(sel, csv, x_name, get_x, y_name, get_y) {
+  document.querySelector(sel).textContent = ""
+  d3.csv(csv).then(data => {
+    const width = 600
+    const height = 200
+    const margin = ({top: 25, right: 20, bottom: 35, left: 40})
+
+    const xAxis = g => g
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 80))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.append("text")
+          .attr("x", width)
+          .attr("y", margin.bottom - 4)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "end")
+          .text(x_name))
+
+    const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.append("text")
+          .attr("x", -margin.left)
+          .attr("y", 10)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "start")
+          .text(y_name))
+
+    const x = d3.scaleLinear()
+      .domain(d3.extent(data, get_x)).nice()
+      .range([margin.left, width - margin.right])
+
+    const y = d3.scaleLinear()
+      .domain(d3.extent(data, get_y)).nice()
+      .range([height - margin.bottom, margin.top])
+
+    const grid = g => g
+      .attr("stroke", "currentColor")
+      .attr("stroke-opacity", 0.1)
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(x.ticks())
+        .join("line")
+          .attr("x1", d => 0.5 + x(d))
+          .attr("x2", d => 0.5 + x(d))
+          .attr("y1", margin.top)
+          .attr("y2", height - margin.bottom))
+      .call(g => g.append("g")
+        .selectAll("line")
+        .data(y.ticks())
+        .join("line")
+          .attr("y1", d => 0.5 + y(d))
+          .attr("y2", d => 0.5 + y(d))
+          .attr("x1", margin.left)
+          .attr("x2", width - margin.right));
+
+    const svg = d3.select(sel).append("svg")
+      .attr("viewBox", [0, 0, width, height]);
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+    svg.append("g")
+        .call(grid);
+
+    svg.append("g")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("fill", "none")
+      .selectAll("circle")
+      .data(data)
+      .join("circle")
+        .attr("cx", d => x(get_x(d)))
+        .attr("cy", d => y(get_y(d)))
+        .attr("r", 1);
+
+//     svg.append("g")
+//         .attr("font-family", "sans-serif")
+//         .attr("font-size", 10)
+//       .selectAll("text")
+//       .data(data)
+//       .join("text")
+//         .attr("dy", "0.35em")
+//         .attr("x", d => x(d.x) + 7)
+//         .attr("y", d => y(d.y))
+//         .text(d => d.name);
+
   })
 }
 
