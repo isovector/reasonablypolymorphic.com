@@ -886,3 +886,75 @@ function scatter(sel, csv, x_name, get_x, y_name, get_y) {
   })
 }
 
+
+function heatTable(sel, csv, get_xkey, get_ykey, get_value) {
+  document.querySelector(sel).textContent = ""
+  d3.csv(csv).then(data => {
+    const margin = ({top: 20, right: 1, bottom: 40, left: 40})
+    const width = 600
+    const height = 16
+
+    const xset = [...new Set(data.map(get_xkey))].sort()
+    const yset = [...new Set(data.map(get_ykey))].sort()
+
+    const innerHeight = height * yset.length
+
+    const xAxis = g => g
+      .call(g => g.append("g")
+        .attr("transform", `translate(0,${margin.top})`)
+        .call(d3.axisTop(x).ticks(null, "d"))
+        .call(g => g.select(".domain").remove()))
+      // .call(g => g.append("g")
+      //   .attr("transform", `translate(0,${innerHeight + margin.top + 4})`)
+      //   .call(d3.axisBottom(x)
+      //       .tickValues(['hello' /* data.year */ ])
+      //       .tickFormat(x => x)
+      //       .tickSize(-innerHeight - 10))
+      //   // .call(g => g.select(".tick text")
+      //   //     .clone()
+      //   //     .attr("dy", "2em")
+      //   //     .style("font-weight", "bold")
+      //       // .text("Measles vaccine introduced"))
+      //   .call(g => g.select(".domain").remove()));
+
+    const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).tickSize(0))
+      .call(g => g.select(".domain").remove())
+
+    const color = d3.scaleSequentialSqrt([0, d3.max(data, get_value)], d3.interpolatePlasma)
+
+    const x = d3.scaleBand()
+      .domain(xset)
+      .rangeRound([margin.left, width - margin.right])
+
+    const y = d3.scaleBand()
+      .domain(yset)
+      .rangeRound([margin.top, margin.top + innerHeight])
+
+    const svg = d3.select(sel).append("svg")
+      .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10);
+
+    svg.append("g")
+        .call(xAxis);
+
+    svg.append("g")
+        .call(yAxis);
+
+    svg.append("g")
+      .selectAll("g")
+      .data(data)
+      .join("rect")
+        .attr("x", d => x(get_xkey(d)) + 1)
+        .attr("y", d => y(get_ykey(d)) + 1)
+        .attr("width", x.bandwidth() - 1)
+        .attr("height", y.bandwidth() - 1)
+        .attr("fill", d => color(get_value(d)))
+      .append("title")
+        .text((d, i) => `${get_ykey(d)} → ${get_xkey(d)} \n${get_value(d)}%`);
+  })
+}
+
+
