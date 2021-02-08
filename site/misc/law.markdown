@@ -14,6 +14,45 @@ tags:
 
 ## Overview
 
+In early 2021, spurred on by many discussions with my incredible, law-student
+(among many other fantastic characteristics) girlfriend, I decided to try my
+hand at analyzing Canada's legal system. Absolutely everything I know about the
+law I've learned from TV shows and a year's worth of hanging out with law
+students --- which is to say, I don't know anything.
+
+Oh yeah, and also I don't know anything about data science or visualization. I'm
+a computer scientist by trade, and can navigate my way around complicated
+mathematics better than your average Joe. This projected seemed like a good
+opportunity to teach myself some of the more obscure bits of graph theory,
+interactive web design (most of the charts on this page are interactive,) data
+scraping and subsequent mining.
+
+Often, outsiders can bring new ideas and techniques to otherwise insular
+communities. Despite knowing nothing, I managed to:
+
+* determine the speed at which our court of appeal system works
+* find that somewhere between 33% and 50% of all cases are completely trivial
+  and could be easily automated away
+* reliably find decisions that are important enough to have Wikipedia articles
+* find the asymptotics of the growth rate of Canadian case law
+* determine that BC and Alberta are by far the most powerful provinces with
+    respect to the influence of their decisions, and,
+* separate decisions automatically into 860 different "areas of law"
+
+These are not half-bad results, if I do say so myself. And if one guy who doesn't
+really know how to use this technology can do this well, imagine how much damage
+someone with high-quality data, a budget, and knowledge could do. If you are in
+the legal field and aren't yet positioning yourself for the upcoming automation
+wave, maybe this essay will help convince you that the system isn't nearly as
+robust to automation as you might think. I did all of this in two weeks, as an
+outsider, with no domain knowledge. That should scare you.
+
+Overall, I needed to collect and analyze all of the data myself. I spent maybe
+fifteen hours programming things, and roughly 336 hours collecting data. I fought
+with analytics tools for another ten hours, and this write-up took about the
+same. It was a fun project, but I'm happy to be done with it.
+
+
 ## Methodology
 
 My assumption is that the citation graph of Canadian case law is sufficient to
@@ -552,7 +591,14 @@ But that is not (yet!) the world we live in. Some cases *are* interesting ---
 for example, the ones which *set* precedent, and the ones which *contradict*
 precedent. How can we find these cases?
 
-> TODO: Can't do it like lawyers do
+Humans would probably look at the cases, and think about first principles, and
+talk to other people they think are smart, and think really hard, and maybe go
+consult some textbooks, in an attempt to determine which cases are important.
+The computer is too dumb to do any of that. It's only good at moving numbers
+around ridiculous fast, and I'm very good at turning problems that don't sound
+like they involve numbers into ones that do.
+
+So how can we introduce numbers into this problem?
 
 Rather than trying to compute importance directly, let's instead try to
 approximate it. Intuitively, cases which are important will be cited more often
