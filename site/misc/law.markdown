@@ -460,6 +460,82 @@ is to run, but this would reduce its cost by 70% as well, which is almost
 certainly something worth investigating.
 
 
+## Volume of Law
+
+What's the rate of law being accumulated? Is it accelerating? We can look at the
+number of cases per year per court over the last 30 years[^not-all-time] to get a sense of the
+acceleration of accumulation:
+
+[^not-all-time]: Due to the differing dates of continuing coverage, we
+  unfortunately can't look at this metric over the history of Canadian law.
+
+<figure>
+<div id="volume">
+  select court, year, count(*) as count from decisions d where court in (select court from important_courts order by max desc limit 10) and year >= 1990 and year >= (select year from coverage c where d.court = c.court) and 2021 > year group by court, year;
+
+  <script>
+    multiLineChart(
+      "#volume",
+      "/data/1612761383.csv",
+      d => d.court,
+      d => +parseInt(d.year),
+      d => +parseInt(d.count))
+  </script>
+</div>
+<figcaption>Volume of decisions by top courts, starting after dates of continuing coverage</figcaption>
+</figure>
+
+Those lines all look pretty constant to me, which makes sense if you assume the
+courts are limited by time and that they have no gains in efficiency (lol.) So
+no, the volume at which law is accumulating in Canada is not accelerating. But
+remember that this graph is the velocity of change, which means the volume of
+law is growing linearly with respect to time.
+
+<figure>
+<div id="total-volume">
+select y.year, count(*) as volume from (select distinct year from decisions order by year) y inner join decisions d on y.year >= d.year where 2021 > y.year group by y.year;
+
+  <script>
+    lineChart(
+      "#total-volume",
+      "/data/1612762714.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Volume of Law",
+      d => +parseInt(d.volume))
+  </script>
+</div>
+<figcaption>Number of cases in existence, by year</figcaption>
+</figure>
+
+No, wait, that *does* look exponential. I forgot. While the volume *per court*
+is staying constant, the number *of courts* grows with year:
+
+<figure>
+<div id="total-volume-courts">
+select y.year, count(*) as volume from (select distinct year from decisions order by year) y inner join (select min(year) as year from decisions group by court) c on y.year >= c.year where 2021 > y.year group by y.year;
+
+  <script>
+    lineChart(
+      "#total-volume-courts",
+      "/data/1612762752.csv",
+      "Year",
+      d => +parseInt(d.year),
+      "Number of Courts",
+      d => +parseInt(d.volume))
+  </script>
+</div>
+<figcaption>Number of courts in existence, by year</figcaption>
+</figure>
+
+This graph estimates the number of courts in existence by the first decision we
+have from that court being the year it was created --- which seems like a
+satisfactory proxy. The curve appears to have leveled off, but I think this is
+due to 2020 being a GLOBAL PANDEMIC. If I had to guess, I'd say the inflection
+point around 1997 is an artifact of the digitization of law, and that this curve
+will continue linearly.
+
+
 ## Determining Important Cases
 
 The sheer size of the case law corpus is staggering. My dataset contains roughly
@@ -632,8 +708,36 @@ jaw-dropping.
 
 ### Statistical Biases
 
-So we've successfully found important cases. You might be wondering "what courts
-do all these important cases come from?" Good question:
+So we've successfully found important cases. My first question is, how necessary
+was all of this fancy math? Could I just have ignored it and gone straight to
+number of citations? How correlated is the importance metric with the raw number
+of citations? Let's see:
+
+<figure>
+<div id="correlation">
+select dst_importance, count(*) as count from expanded_citations group by dst_hash order by dst_importance desc limit 1000 offset 1;
+
+  <script>
+    scatter(
+      "#correlation",
+      "/data/1612759421.csv",
+      "Importance",
+      d => parseFloat(d.dst_importance).toFixed(5),
+      "Citation Count",
+      d => +d.count)
+  </script>
+</div>
+<figcaption>Correlation between the importance metric and the number of times
+cited.</figcaption>
+</figure>
+
+If the two metrics were strongly correlated, we should see a nice sharp diagonal
+line going up and to the right. We don't. Instead we see, well, I'll leave the
+Rorschach test up to you. There's clearly some correlation, but it's not
+particularly strong. So no --- we can't just use the citation count!
+
+Another thing you might be wondering is, "what courts do all these important
+cases come from?" Good question:
 
 <figure>
 <div id="court-of-important-cases">
@@ -672,6 +776,7 @@ select court, count(*) as count from (select court from decisions order by impor
 It surprising to me that Ontario and Quebec are so underrepresented in their
 number of important cases, compared to their populations and age. I don't know
 what's going on here --- please let me know if you do, gentle reader.
+
 
 The other big question I have is to what degree this importance factor is biased
 by the courts' continuous coverage. That is to say, of the most important cases
@@ -741,7 +846,7 @@ select year, count(*) as count from decisions where hash in (select hash from de
 metric, by year</figcaption>
 </figure>
 
-> TODO(sandy): add support for missing data to lineChart
+<!-- TODO(sandy): add support for missing data to lineChart -->
 
 This metric nicely prioritizes old cases, like our previous metric emphasized
 newer cases. In fact, the directed importance score puts 865 of the its top 1000
@@ -945,87 +1050,10 @@ And we can see that community 192 (police being naughty) was very active from
 1985 to 1995, but quieted down until a spike in 2009, and has been quiet since
 2014. Maybe the police have been on good behavior since then?
 
+<!--
 
 
 
-
-
-
-<figure>
-<div id="chart1">
-  select jurisdiction, count(*) as count from decisions group by jurisdiction having count > 10000;
-  <script>
-    pieChart(
-      "#chart1",
-      "/data/1612246436.csv",
-      d => d.jurisdiction,
-      d => d.count)
-  </script>
-</div>
-<figcaption>number of decisions in the dataset by jurisdiction</figcaption>
-</figure>
-
-<figure>
-<div id="chart2">
-  select src_year, avg(count) as count from (select src_year, count(*) as count from expanded_citations where src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
-  <script>
-    lineChart(
-      "#chart2",
-      "/data/1612295413.csv",
-      "Year",
-      d => +parseInt(d.src_year),
-      "Avg Number of Citations",
-      d => +parseFloat(d.count).toFixed(2))
-  </script>
-</div>
-<figcaption>average number of citations from scc decisions by year</figcaption>
-</figure>
-
-<figure>
-<div id="chart3">
-  select src_year, avg(diff) as diff from (select src_year, src_year - dst_year as diff from expanded_citations where src_year >= dst_year and src_court = 'scc' group by src_hash) group by src_year order by src_year asc;
-  <script>
-    lineChart(
-      "#chart3",
-      "/data/1612294018.csv",
-      "Year",
-      d => +parseInt(d.src_year),
-      "Avg Age of Citation",
-      d => +parseFloat(d.diff).toFixed(2))
-  </script>
-</div>
-<figcaption>average age of scc citation by year</figcaption>
-</figure>
-
-<figure>
-<div id="chart4">
-  select substr(url, 2, 2) as language, jurisdiction, court, count(*) as count from decisions where url not like '/fr/ca/%' group by language, jurisdiction, court having count > 1000;
-
-  <script>
-    sankey(
-      "#chart4",
-      "/data/1612331151.csv")
-  </script>
-</div>
-<figcaption>overview of the data for courts with &gt; 1000 entries</figcaption>
-</figure>
-
-<figure>
-<div id="chart6">
-  select year, count(*) as count from decisions where court == 'scc' group by year;
-
-  <script>
-    lineChart(
-      "#chart6",
-      "/data/1612369480.csv",
-      "Year",
-      d => +parseInt(d.year),
-      "Number of cases decided",
-      d => +parseFloat(d.count).toFixed(2))
-  </script>
-</div>
-<figcaption>number of scc decisions</figcaption>
-</figure>
 
 <figure>
 <div id="chart5">
@@ -1043,59 +1071,6 @@ And we can see that community 192 (police being naughty) was very active from
 <figcaption>scc jurisdiction citation by year</figcaption>
 </figure>
 
-
-<figure>
-<div id="chart-importance">
-  select name, year, importance, community from decisions order by importance desc limit 100;
-
-  <script>
-    dotChart(
-      "#chart-importance",
-      "/data/1612462218.csv",
-      d => +d.year,
-      d => +d.community,
-      d => parseFloat(d.importance).toFixed(4),
-      d => +d.community,
-      d => truncateString(d.name, 50))
-  </script>
-</div>
-<figcaption>important cases by community</figcaption>
-</figure>
-
-<figure>
-<div id="importance-over-time">
-  select year, sum(importance) as count from decisions where court == 'scc' group by year;
-
-  <script>
-    lineChart(
-      "#importance-over-time",
-      "/data/1612474615.csv",
-      "Year",
-      d => +parseInt(d.year),
-      "Number of cases decided",
-      d => +parseFloat(d.count).toFixed(2))
-  </script>
-</div>
-<figcaption>total importance score of scc decisions per year</figcaption>
-</figure>
-
-Uh oh. Maybe this is our recency bias at work??
-
-<figure>
-<div id="volume">
-  select court, year, count(*) as count from decisions d where court in (select court from court_importance limit 10) and year >= (select year from coverage c where d.court = c.court) group by court, year;
-
-  <script>
-    multiLineChart(
-      "#volume",
-      "/data/1612507631.csv",
-      d => d.court,
-      d => +parseInt(d.year),
-      d => +parseInt(d.count))
-  </script>
-</div>
-<figcaption>volume of decisions by top courts, starting after date of continuing coverage</figcaption>
-</figure>
 
 
 <figure>
@@ -1138,7 +1113,6 @@ Uh oh. Maybe this is our recency bias at work??
 <div id="compare-important-communities2">
   select year, avg(importance) as sum, community from decisions where community in (select community from decisions group by community order by sum(importance) desc limit 6) and year >= 1970 group by community, year;
 
-
   <script>
     multiLineChart(
       "#compare-important-communities2",
@@ -1152,57 +1126,15 @@ Uh oh. Maybe this is our recency bias at work??
 </figure>
 
 
-
-<p><strong>Pellentesque habitant morbi tristique</strong> senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. <em>Aenean ultricies mi vitae est.</em> Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, <code>commodo vitae</code>, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. <a href="#">Donec non enim</a> in turpis pulvinar facilisis. Ut felis.</p>
-
-<h2>Header Level 2</h2>
-
-<ol>
-   <li>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</li>
-   <li>Aliquam tincidunt mauris eu risus.</li>
-</ol>
-
-<blockquote><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus magna. Cras in mi at felis aliquet congue. Ut a est eget ligula molestie gravida. Curabitur massa. Donec eleifend, libero at sagittis mollis, tellus est malesuada tellus, at luctus turpis elit sit amet quam. Vivamus pretium ornare est.</p></blockquote>
-
-<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
-
-<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
-
-<h3>Header Level 3</h3>
-
-<ul>
-   <li>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</li>
-   <li>Aliquam tincidunt mauris eu risus.</li>
-</ul>
-
-<pre><code>
-#header h1 a {
-  display: block;
-  width: 300px;
-  height: 80px;
-}
-</code></pre>
-
-<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
-
-<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus</p>
-
-
 QUESTIONS TO ANSWER:
 
-* is law getting more complicated?
-  * more cases per year?
-  * is the average age of citation going up?
-  * average number of citations?
-* what are the most important cases?
-* can we discover what the communities mean?
+* ~~can we discover what the communities mean?~~
   * do we see trends in these communities? wrt time, jurisdiction, language, importance
 * how often do cases cite cases in other languages?
 * are there "friendship clusters" in what courts cite? by jurisdiction?
-* which courts hold the most power?
-* did i accidentally completey misrepresent the french stuff? (NO)
 * do num citations correlate with importance
   * importance with time?
 * what percentage of cases are boring vs interesting?
 
+-->
 
