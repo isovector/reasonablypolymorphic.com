@@ -48,9 +48,9 @@ robust to automation as you might think. I did all of this in two weeks, as an
 outsider, with no domain knowledge. That should scare you.
 
 Overall, I needed to collect and analyze all of the data myself. I spent maybe
-fifteen hours programming things, and roughly 336 hours collecting data. I fought
-with analytics tools for another ten hours, and this write-up took about the
-same. It was a fun project, but I'm happy to be done with it.
+fifteen hours programming things, and roughly 336 hours collecting data. I
+fought with analytics tools for another ten hours, and this write-up took maybe
+twenty hours. It was a fun project, but I'm happy to be done with it.
 
 
 ## Methodology
@@ -575,6 +575,83 @@ point around 1997 is an artifact of the digitization of law, and that this curve
 will continue linearly.
 
 
+## Who Cites Whom?
+
+Are certain provinces "friends?" Which provinces influence which others? Let's
+look at the percentage by which one provinces' courts cite another provinces:
+
+<figure>
+<div id="juris-cite-juris">
+with data as (select src_jurisdiction, dst_jurisdiction, count(*) as count from expanded_citations where src_jurisdiction != dst_jurisdiction group by src_jurisdiction, dst_jurisdiction), totals as (select src_jurisdiction, sum(count) as total from data group by src_jurisdiction) select d.src_jurisdiction, d.dst_jurisdiction, d.count * 100.0 / t.total as count from data d inner join totals t on d.src_jurisdiction = t.src_jurisdiction;
+
+  <script>
+    heatTable(
+      "#juris-cite-juris",
+      "/data/1612768242.csv",
+      d => d.dst_jurisdiction,
+      d => d.src_jurisdiction,
+      d => +parseFloat(d.count).toFixed(2))
+  </script>
+</div>
+<figcaption>Citing jurisdiction (left) by cited jurisdiction (top), in percent.
+Blue is less often.</figcaption>
+</figure>
+
+Yow! The fed is understandably white hot, and dominates this chart. Let's remove
+it to look more closely at the provinces:
+
+<figure>
+<div id="juris-cite-juris-no-ca">
+with data as (select src_jurisdiction, dst_jurisdiction, count(*) as count from expanded_citations where src_jurisdiction != dst_jurisdiction and src_jurisdiction != 'ca' and dst_jurisdiction != 'ca' group by src_jurisdiction, dst_jurisdiction), totals as (select src_jurisdiction, sum(count) as total from data group by src_jurisdiction) select d.src_jurisdiction, d.dst_jurisdiction, d.count * 100.0 / t.total as count from data d inner join totals t on d.src_jurisdiction = t.src_jurisdiction;
+
+  <script>
+    heatTable(
+      "#juris-cite-juris-no-ca",
+      "/data/1612769065.csv",
+      d => d.dst_jurisdiction,
+      d => d.src_jurisdiction,
+      d => +parseFloat(d.count).toFixed(2))
+  </script>
+</div>
+<figcaption>Citing jurisdiction (left) by cited jurisdiction (top), in percent.
+Blue is less often.</figcaption>
+</figure>
+
+Now Ontario dominates, followed closely by BC and Alberta. Nobody cites the
+territories --- but also, nobody cites Quebec. No wonder they feel discriminated
+against.
+
+Let's look at the same chart, but this time split by big courts rather than
+provinces.
+
+<figure>
+<div id="court-cite-court">
+with courts as (select court from important_courts order by max desc limit 13), data as (select src_court, dst_court, count(*) as count from expanded_citations where src_court != dst_court and src_court in courts and dst_court in courts group by src_court, dst_court), totals as (select src_court, sum(count) as total from data group by src_court) select d.src_court, d.dst_court, d.count * 100.0 / t.total as count from data d inner join totals t on d.src_court = t.src_court;
+
+  <script>
+    heatTable(
+      "#court-cite-court",
+      "/data/1612769747.csv",
+      d => d.dst_court,
+      d => d.src_court,
+      d => +parseFloat(d.count).toFixed(2))
+  </script>
+</div>
+<figcaption>Citing court (left) by cited court (top), in percent.
+Blue is less often.</figcaption>
+</figure>
+
+There's an interesting feature of this graph, namely the "friendship pairs" that
+lie along the diagonal. For example, `bcsc` cites `bcca` much more than it cites
+anything but the `scc` --- and vice versa! Thinking about it, I guess this makes
+sense, and is mainly showing us the hierarchical nature of such courts. Of
+course `bcsc` cites `bcca` more than chance, since it must defer. And vice versa
+also makes sense, because a case must go through `bcsc` in order to get to
+`bcca`.
+
+Well, not every stream you pan will have gold.
+
+
 ## Determining Important Cases
 
 The sheer size of the case law corpus is staggering. My dataset contains roughly
@@ -1096,91 +1173,47 @@ And we can see that community 192 (police being naughty) was very active from
 1985 to 1995, but quieted down until a spike in 2009, and has been quiet since
 2014. Maybe the police have been on good behavior since then?
 
-<!--
 
+## Conclusion
 
+I've now been writing for eight hours straight, and I can no longer reliably
+spell "jurisdiction." So it's time to finish this up and then go directly to
+bed.
 
+Personally, I find it fascinating just how much information can be gleamed from
+nothing but citation data and some clever choices of visualizations. The biggest
+takeaways in terms of policy from this project in my opinion are:
 
-<figure>
-<div id="chart5">
-  select src_year, dst_jurisdiction, count(*) as count from expanded_citations where src_court = 'scc' group by src_year, dst_jurisdiction;
+* The amount of case law is growing super-linearly --- and, horrifyingly, the
+  curve appears to be exponential. Despite every court generating law at a
+  constant rate, the growth rate of courts themselves is increasing. *This is
+  clearly an untenable system.*
+* Most decisions become irrelevant after only one year; the vast majority of hem
+    are forgotten after ten.
+* Somewhere between 33% and 50% of all decisions just follow precedent. That's a
+    waste of everyone's time and the countries resources. There are huge
+    efficiencies to be gained here if we can find a way of automating that
+    stuff.
 
-  <script>
-    stackedArea(
-      "#chart5",
-      "/data/1612369600.csv",
-      d => +d.src_year,
-      d => d.dst_jurisdiction,
-      d => +d.count)
-  </script>
-</div>
-<figcaption>scc jurisdiction citation by year</figcaption>
-</figure>
+In aggregate, this means our legal system is doing a huge amount of work
+churning out an ever growing number of decisions which get added to the annals
+of time --- a good chunk of which are completely trivial, and almost all of
+which are forgotten soon after. This is extremely good evidence that the court
+system structuring itself as an [append-only
+datastructure](https://en.wikipedia.org/wiki/Append-only) is a bad design.
+There's no reason to continuously write down the answer you already know, and
+never check it again; automate that stuff, don't add it to the corpus of law,
+and save the courts for more important matters.
 
+While we're talking about automating things, someone could *definitely* use the
+community-finding algorithm to put the poor bastard responsible for adding
+keywords to case summaries out of his misery.
 
+Some intriguing takeaways, with no relevance to anything:
 
-<figure>
-<div id="importance-by-court">
-  select court, year, sum(importance) as sum from decisions d where court in (select court from court_importance order by sum desc limit 10) and year >= (select year from coverage c where d.court = c.court) and year >= 1970 and importance is not null group by court, year;
-
-
-
-
-  <script>
-    multiLineChart(
-      "#importance-by-court",
-      "/data/1612544918.csv",
-      d => d.court,
-      d => +parseInt(d.year),
-      d => +parseFloat(d.sum).toFixed(4))
-  </script>
-</div>
-<figcaption>volume of decisions by top courts, starting after date of continuing coverage</figcaption>
-</figure>
-
-<figure>
-<div id="compare-important-communities">
-  select year, sum(importance) as sum, community from decisions where community in (select community from decisions group by community order by sum(importance) desc limit 6) and year >= 1970 group by community, year;
-
-
-  <script>
-    multiLineChart(
-      "#compare-important-communities",
-      "/data/1612546082.csv",
-      d => +d.community,
-      d => +d.year,
-      d => +parseFloat(d.sum).toFixed(4))
-  </script>
-</div>
-<figcaption>important cases by community</figcaption>
-</figure>
-
-<figure>
-<div id="compare-important-communities2">
-  select year, avg(importance) as sum, community from decisions where community in (select community from decisions group by community order by sum(importance) desc limit 6) and year >= 1970 group by community, year;
-
-  <script>
-    multiLineChart(
-      "#compare-important-communities2",
-      "/data/1612546089.csv",
-      d => +d.community,
-      d => +d.year,
-      d => +parseFloat(d.sum).toFixed(4))
-  </script>
-</div>
-<figcaption>important cases by community</figcaption>
-</figure>
-
-
-QUESTIONS TO ANSWER:
-
-* ~~can we discover what the communities mean?~~
-  * do we see trends in these communities? wrt time, jurisdiction, language, importance
-* how often do cases cite cases in other languages?
-* are there "friendship clusters" in what courts cite? by jurisdiction?
-* do num citations correlate with importance
-  * importance with time?
-* what percentage of cases are boring vs interesting?
-
--->
+* There appear to be many extremely important decisions (in terms of influence)
+    that are not well-enough recognized to be on Wikipedia. Is this a flaw in
+    Wikipedia's coverage, or is the importance of these cases unknown to the
+    world of law?
+* This math stuff is actually useful for real-life things.
 
