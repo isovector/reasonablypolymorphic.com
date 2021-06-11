@@ -126,7 +126,9 @@ function lineChart(sel, csv, x_label, get_key, y_label, get_val) {
     const svg = d3.select(sel).append("svg")
         .attr("viewBox", [0, 0, width, height])
         .style("-webkit-tap-highlight-color", "transparent")
-        .style("overflow", "visible");
+        .style("overflow", "visible")
+        .attr("width", width)
+        .attr("height", height);
 
     svg.append("g")
         .call(xAxis);
@@ -260,6 +262,8 @@ function sankey(sel, csv) {
       .extent([[0, 5], [width, height - 5]])
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, height]);
 
     const {nodes, links} = sankey({
@@ -383,6 +387,8 @@ function stackedArea(sel, csv, get_time, get_key, get_count, get_name) {
       .y1(d => y(d[1]))
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, height]);
 
     svg.append("g")
@@ -498,6 +504,8 @@ function dotChart(sel, csv, get_x, get_y, get_size, get_color, get_name) {
     }
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, height])
       .style("overflow", "visible");
 
@@ -614,6 +622,8 @@ function multiLineChart(sel, csv, get_key, get_x, get_y) {
       .y(d => y(get_y(d)))
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, height])
       .style("overflow", "visible");
 
@@ -754,6 +764,8 @@ function barChart(sel, csv, get_x, get_y) {
 
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, height]);
 
     svg.append("g")
@@ -850,6 +862,8 @@ function scatter(sel, csv, x_name, get_x, y_name, get_y) {
           .attr("x2", width - margin.right));
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, height]);
 
     svg.append("g")
@@ -933,6 +947,8 @@ function heatTable(sel, csv, get_xkey, get_ykey, get_value) {
       .rangeRound([margin.top, margin.top + innerHeight])
 
     const svg = d3.select(sel).append("svg")
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", [0, 0, width, innerHeight + margin.top + margin.bottom])
       .attr("font-family", "sans-serif")
       .attr("font-size", 10);
