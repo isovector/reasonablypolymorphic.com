@@ -17,3 +17,5 @@ Sometimes I give talks. You can find them here.
 * Interview with Sessions by SE - [Audio](https://www.listennotes.com/podcasts/sessions-by-se/from-silicon-valley-to-js_OlKGApLP/)
 * Interview with Haskell Weekly - [Audio](https://haskellweekly.news/episode/39.html)
 
+* A New Kind of Programming - [Video](https://www.youtube.com/watch?v=S0HvfXq3454)
+
