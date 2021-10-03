@@ -1,11 +1,133 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2021-02-08T00:14:00Z</updated>
+  <updated>2021-10-02T22:46:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='atom.xml'/>
 
+    <entry>
+      <title>Porting to Polysemy</title>
+      <id>blog/porting-to-polysemy/index.html</id>
+      <link href='blog/porting-to-polysemy/index.html'/>
+      <published>2021-10-02T22:46:00Z</published>
+      <updated>2021-10-02T22:46:00Z</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p>Many years ago, when I first started using free monads in anger, I was tasked with porting our giant codebase to something that used an effect system. While it was a noble goal, my efforts slowly imploded upon their own weight. I didn’t know how to go about doing such a dramatic refactoring on a live codebase, and unwisely tried to do the whole thing in a single PR. A month later, as you might expect, it became overwhelming obvious that we were never going to merge the thing, and it died there.</p>
+<p>Several years older (and wiser), I’ve recently been contracted to port another codebase to Polysemy. Today we hit our first big milestone, and the experience has gone swimmingly. I wanted to spend some time today discussing how to actually go about Polysemizing a codebase. It’s not too onerous if you proceed cautiously. The trick is to do several passes over the codebase, each time introducing a few more effects, but at no point ever actually changing any code paths.</p>
+<h2 id="getting-your-foot-in-the-door">Getting Your Foot in the Door</h2>
+<p>The first step is to introduce Polysemy into your codebase. Your program is almost certainly structured around a main application monad, and that’s the right place to start. As a first step, we will swap out <code>IO</code> for <code>Sem</code>. For example, if your main monad were:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">App</span> a <span class="ot">=</span> <span class="dt">App</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  {<span class="ot"> unApp ::</span> <span class="dt">ReaderT</span> <span class="dt">Env</span> (<span class="dt">ExceptT</span> <span class="dt">AppError</span> <span class="dt">IO</span>) a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>we will change it to:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">App</span> r a <span class="ot">=</span> <span class="dt">App</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  {<span class="ot"> unApp ::</span> <span class="dt">Member</span> (<span class="dt">Final</span> <span class="dt">IO</span>) r <span class="ot">=&gt;</span> <span class="dt">ReaderT</span> <span class="dt">Env</span> (<span class="dt">ExceptT</span> <span class="dt">AppError</span> (<span class="dt">Sem</span> r)) a</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>This change exposes the effect row (the <code>r</code> type variable,) and asserts that we always have a <code>Final IO</code> member in that row. Exposing <code>r</code> means we can gradually introduce <code>Member</code> constraints in application code as we begin teasing apart effects, and <code>Final IO</code> gives us a way to implement <code>MonadIO</code> for <code>App</code>. Let’s start with that:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">MonadIO</span> (<span class="dt">App</span> r) <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  liftIO a <span class="ot">=</span> <span class="dt">App</span> <span class="op">$</span> lift <span class="op">$</span> lift <span class="op">$</span> embedFinal a</span></code></pre></div>
+<p>Due to some quirks of how Haskell deals with impredicativity, this function can’t be written point-free.</p>
+<p>This change of <code>App</code> to <code>App r</code> isn’t the end-goal; it’s <em>just</em> enough that we can get Polysemy into the project without it being a huge change. In the medium term, our goal is to eliminate the <code>App</code> newtype altogether, leaving a bare <code>Sem</code> in its place. But one step at a time.</p>
+<p>You’ll need to rewrite any instances on <code>App</code> that you were previously newtype deriving. This sucks, but the answer is always just to <code>lift</code>. You might find that some instances used to be derived via <code>IO</code>, and thus now cannot be implemented via <code>lift</code>. In these cases, don’t be afraid to give an orphan instance for <code>Sem r</code>; orphans are bad, but we’ll be cleaning this all up very soon.</p>
+<p>Take some time to get everything compiling. It’s a lot of drudgery, but all you need to do is to add the <code>r</code> type variable to every type signature in your codebase that mentions <code>App</code>.</p>
+<p>You will also need an introduction function, to lift Polysemy actions into <code>App</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">liftSem ::</span> <span class="dt">Sem</span> r a <span class="ot">-&gt;</span> <span class="dt">App</span> r a</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>liftSem a <span class="ot">=</span> <span class="dt">App</span> <span class="op">$</span> lift <span class="op">$</span> lift a</span></code></pre></div>
+<p>as well as an elimination function which will evolve as you add effects. At some point in your (existing) program, you will need to actually run <code>App</code> down to <code>IO</code>. It probably looks something like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">runApp ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">App</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">AppError</span> a)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>runApp env <span class="ot">=</span> runExceptT <span class="op">.</span> <span class="fu">flip</span> runReaderT env <span class="op">.</span> unApp</span></code></pre></div>
+<p>instead we are going to create the <em>canonical</em> interpretation down to <code>IO</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">CanonicalEffects</span> <span class="ot">=</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  &#39;[ <span class="dt">Final</span> <span class="dt">IO</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>   ]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="ot">canonicalAppToIO ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">App</span> <span class="dt">CanonicalEffects</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">AppError</span> a)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>canonicalAppToIO env</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>  <span class="ot">=</span> runFinal</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>  <span class="op">.</span> runExceptT</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>  <span class="op">.</span> <span class="fu">flip</span> runReaderT env</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>  <span class="op">.</span> unApp</span></code></pre></div>
+<p>As we pull effects out of the program, we will add them to <code>CanonicalEffects</code>, and their interpreters to <code>canonicalAppToIO</code>. But for now, this function is very boring.</p>
+<p>Once everything is up and compiling, all of the old tests should still pass. We haven’t changed anything, just installed some new machinery. But importantly, all of code paths are still exactly the same. Remember, this is a refactoring task! The goal is to do lots of little refactors, each one pulling out some effect machinery, but not changing any code paths. The entire porting project should be a series of no-op PRs that slowly carve your codebase into one with explicitly described effects.</p>
+<h2 id="first-effects">First Effects</h2>
+<p>Your medium term goal is to eliminate the <code>Final IO</code> constraint inside of <code>App</code>, which exists only to provide a <code>MonadIO</code> instance. So, our <em>real</em> goal is to systematically eliminate raw <code>IO</code> from <code>App</code>.</p>
+<p>The usual culprits here are database access, HTTP requests, and logging. If your team has been disciplined, database access and HTTP requests should already be relatively isolated from the rest of the codebase. Isolated here means “database calls are in their own functions,” rather than being inlined directly in the application code whenever it wants to talk to the database. If your database accesses are not isolated, take some time to uninline them before continuing.</p>
+<p>Our next step is to identify CRUD groups on the database. We generously interpret the “read” in CRUD to be any queries that exist against the logical datastructure that you’re serializing in the database. These CRUD groups might be organized by table, but they don’t necessarily need to be; by table is good enough for now if it corresponds to how the queries exist today.</p>
+<p>For each CRUD group, we want to make a new Polysemy effect, and thread it through the application, replacing each direct call to the database with a call to the effect action. Finish working on each effect before starting on the next; each group makes for a good PR.</p>
+<p>For example, maybe we’ve identified the following database accesses for table <code>users</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">insertUser       ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">User</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="ot">lookupUser       ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> <span class="dt">User</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a><span class="ot">getUsersByRegion ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">Region</span> <span class="ot">-&gt;</span> m [<span class="dt">User</span>]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="ot">setUserLapsed    ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="ot">unsetUserLapsed  ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a><span class="ot">purgeUser        ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserNamr</span> <span class="ot">-&gt;</span> m ()</span></code></pre></div>
+<p>This CRUD group corresponds to an effect:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">App.Sem.UserStore</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">UserStore</span> m a <span class="kw">where</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  <span class="dt">Insert</span><span class="ot">      ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">User</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  <span class="dt">Lookup</span><span class="ot">      ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m (<span class="dt">Maybe</span> <span class="dt">User</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>  <span class="dt">GetByRegion</span><span class="ot"> ::</span> <span class="dt">Region</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m [<span class="dt">User</span>]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>  <span class="dt">SetLapsed</span><span class="ot">   ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>  <span class="dt">UnsetLapsed</span><span class="ot"> ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>  <span class="dt">Purge</span><span class="ot">       ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;UserStore</span></span></code></pre></div>
+<p>We can now replace all calls across the codebase to <code>insertUser a b</code> with <code>liftSem $ UserStore.insert a b</code>. Doing so will require you to propagate a <code>Member UserStore r</code> constraint throughout the callstack. I really like this process. It’s a bit annoying to push constraints upwards, but it really gives you a good sense for the hidden complexity in your program. As it turns out, <code>MonadIO</code> is hiding a metric ton of spaghetti code!</p>
+<p>All of this replacing and constraint propagating has given you dependency injection. But remember, at this step we’d like all of our changes to be no-ops, so we still need to inject the old codepath. For this we will make an interpreter of the <code>UserStore</code> effect:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">App.Sem.UserStore.IO</span> <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">TheDatabase</span> <span class="kw">as</span> <span class="dt">DB</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">App.Sem.UserStore</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>userStoreToDB</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> m r a</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>     <span class="op">.</span> (<span class="dt">Member</span> (<span class="dt">Embed</span> m) r, <span class="dt">MonadDB</span> m)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Sem</span> (<span class="dt">UserStore</span> &#39;<span class="op">:</span> r) a</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>userStoreToDB <span class="ot">=</span> interpret <span class="op">$</span> embed <span class="op">@</span>m <span class="op">.</span> \<span class="kw">case</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>  <span class="dt">Insert</span> un u    <span class="ot">-&gt;</span> DB.insertUser un u</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a>  <span class="dt">Lookup</span> un      <span class="ot">-&gt;</span> DB.lookupUser un</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true"></a>  <span class="dt">GetByRegion</span> r  <span class="ot">-&gt;</span> DB.getUsersByRegion r</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true"></a>  <span class="dt">SetLapsed</span> un   <span class="ot">-&gt;</span> DB.setUserLapsed un</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true"></a>  <span class="dt">UnsetLapsed</span> un <span class="ot">-&gt;</span> DB.unsetUserLapsed un</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true"></a>  <span class="dt">Purge</span> un       <span class="ot">-&gt;</span> DB.purgeUser un</span></code></pre></div>
+<p>Make sure to add <code>UserStore</code> (and its dependency, <code>Embed DB</code>) to the head of <code>CanonicalEffects</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">CanonicalEffects</span> <span class="ot">=</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>  &#39;[ <span class="dt">UserStore</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>   , <span class="dt">Embed</span> <span class="dt">DB</span>  <span class="co">-- dependency of UserStore</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>   , <span class="dt">Embed</span> <span class="dt">IO</span>  <span class="co">-- dependency of Embed DB</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>   , <span class="dt">Final</span> <span class="dt">IO</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>   ]</span></code></pre></div>
+<p>and then we can update the canonical interpreter:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">canonicalAppToIO ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">App</span> <span class="dt">CanonicalEffects</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">AppError</span> a)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>canonicalAppToIO env</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>  <span class="ot">=</span> runFinal</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>  <span class="op">.</span> embedToFinal</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>  <span class="op">.</span> runEmbedded <span class="op">@</span><span class="dt">DB</span> <span class="op">@</span><span class="dt">IO</span> (however you run the <span class="dt">DB</span> <span class="kw">in</span> <span class="dt">IO</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>  <span class="op">.</span> userStoreToDB <span class="op">@</span><span class="dt">DB</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a>  <span class="op">.</span> runExceptT</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a>  <span class="op">.</span> <span class="fu">flip</span> runReaderT env</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a>  <span class="op">.</span> unApp</span></code></pre></div>
+<p>The general principle here is that you add the new effect somewhere near the top of the <code>CanonicalEffects</code> stack, making sure to add any effects that your intended interpreter requires lower in the stack. Then, add the new interpreter to <code>canonicalAppToIO</code>, in the same order (but perhaps presented “backwards”, since function application is right to left.) Make sure to add interpreters for the depended-upon effects too!</p>
+<p>As you pull more and more effects out, you’ll find that often you’ll already have the depended-upon effects in <code>CanonicalEffects</code>. This is a good thing — we will probably have several effects that can all be interpreted via <code>Embed DB</code>.</p>
+<p>The benefit here is that we have now separated our <em>application code</em> from the particular choice of database implementation. While we want to use <code>userStoreToDB</code> in production, it might make less sense to use in local testing environments, where we don’t want to spin up a database. Instead, we could just write a little interpreter that emulates the <code>UserStore</code> interface purely in memory! Once you’ve fully exorcised <code>IO</code> from your codebase, this approach gets extremely powerful.</p>
+<h2 id="choosing-effects">Choosing Effects</h2>
+<p>Carving out your effects is probably the hardest thing to do here. What’s difficult is that you need to forget your instincts! Things that would make a good MTL-style typeclass are often <em>terrible</em> choices for effects.</p>
+<p>Why’s that? There’s this extremely common pattern in the Haskell ecosystem for libraries that want to expose themselves to arbitrary applications’ monad stacks. To continue with the <code>MonadDB</code> example, it’s likely something like:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">class</span> (<span class="dt">MonadIO</span> m, <span class="dt">MonadThrow</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadDB</span> m <span class="kw">where</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="ot">  liftDB ::</span> <span class="dt">DB</span> a <span class="ot">-&gt;</span> m a</span></code></pre></div>
+<p>While this works fine for a single underlying implementation, it’s an awful effect for the same reason: there’s only one interpretation! Any meaningful interpreter for <code>MonadDB</code> is equivalent to writing your own implementation of the database! It’s the same reason we don’t like <code>IO</code> — <code>IO</code> is so big that every possible interpretation of it would necessarily need to be able to talk to the file system, to the network, to threads, and <em>everything else</em> that we can do in <code>IO</code>.</p>
+<p>Instead, when you’re looking for effects to pull out, you need to <em>forget entirely about the implementation,</em> and just look at the abstract interface. Don’t use an HTTP effect to talk to a REST API — it’s too big, and would require you to implement an entire HTTP protocol. Instead, just define an effect that talks to exactly the pieces of the API that you need to talk to. Forget that it’s REST entirely! That’s an implementation detail, and implementation details are the domain of the interpreter, not the effect.</p>
+<p>Furthermore, if you’re just using the standard <code>Polysemy</code> effects, pick the smallest effect that you can get away with. You’ll probably reach for <code>Reader</code> more often than you should. You don’t need to use <code>Reader</code> unless you need <code>local</code> — otherwise, prefer <code>Input</code>.</p>
+<h2 id="summing-up">Summing Up</h2>
+<p>That’s all I have for today, but I have a few more posts in mind for this series. One on how to actually go about testing all of this stuff, and another on how to follow up the refactoring of your new Polysemy codebase now that all of the <code>IO</code> has been removed.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Exploring Case Law</title>
       <id>blog/exploring-case-law/index.html</id>
@@ -1600,34 +1722,6 @@ Important cases by year and community. Larger dots are more important. Community
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>latexPreProcess <span class="ot">=</span> everywhere (mkT renderDeathNoteForLatex)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  <span class="co">-- we can potentially run other transformations here at the same time</span></span></code></pre></div>
 <p>And just like that, we’ve added a custom annotation to markdown, and separately given a presentation strategy for it. We can use <a href="http://hackage.haskell.org/package/pandoc-types-1.20/docs/Text-Pandoc-JSON.html#v:toJSONFilter"><code>toJSONFilter</code></a> to connect our little <code>latePreProcess</code> transformation to <code>pandoc</code>, and no one is any the wiser.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Haskell2020 Is Dead, but All Hope Is Not Lost</title>
-      <id>blog/haskell202x/index.html</id>
-      <link href='blog/haskell202x/index.html'/>
-      <published>2019-11-01T10:39:00Z</published>
-      <updated>2019-11-01T10:39:00Z</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p>Haskell2020 is the long-awaited sequel to Haskell2010 — a formal, prescriptive standard of the Haskell language, that all implementations should adhere to. Today we have two previous standards, Haskell2010 and Haskell98, but neither is particularly in-line with the language as it’s written in this day and age. The aim of Haskell2020 is to bring these older standards in line with the way the language is actually practiced.</p>
-<p>Today, there is only one real implementation of Haskell: the Glasgow Haskell Compiler (GHC). GHC is a Haskell2010-compliant compiler, but extends Haskell via <em>language extensions</em> — explicitly opt-in features that deviate from the standard. In GHC 8.6.5, there are 125 different language extensions, and <a href="https://gist.github.com/atondwal/ee869b951b5cf9b6653f7deda0b7dbd8">an analysis</a> shows that 10% of Haskell files in the wild enable 10 or more extensions.</p>
-<p>All of this is to say that a good chunk of the Haskell being written in the real world <em>is not Haskell2010 compatible.</em> And the situation is only going to get worse.</p>
-<p>It might not be immediately evident to you why this is a bad thing. As excellent a piece of software as GHC is, tying our language to a single implementation is unwise and shortsighted. As long as Haskell is defined implicitly by its implementation in GHC, no other implementation has a chance — they will always be forever playing catch-up.</p>
-<p>C++ was in a similar situation in the early naughties; the de facto C++ compiler GCC was the only heavy-hitter in town. While it got the job done, it had some pretty terrible ergonomics — so bad that it spun up a cottage industry of attempting to <a href="https://codegolf.stackexchange.com/questions/1956/generate-the-longest-error-message-in-c">generate the worst error messages</a>. In 2007, Clang — an alternative industrial-strength compiler — was released, which strove to be compatible with GCC, but also to dramatically improve the ergonomics. This friendly competition has spurred both projects to become significantly better.</p>
-<p>And we have seen similar beneficial competition (albeit certainly less friendly) in the Haskell world. Five years ago, Cabal sort-of got the job done for building Haskell projects, but there was this thing called “Cabal Hell” that bit <em>everyone.</em> It got the job done if you knew how it worked, which all the developers did, but the pain was felt by everyone else. Then Stack was released, which elegantly solved Cabal Hell, and <em>just worked.</em> It wasn’t perfect, but my god was it an improvement on the state of the world. In recent memory, Cabal has seen unparalleled improvements in its usability, after languishing for <em>years</em> with respect to usability complaints.</p>
-<p>My point? Competition is a good thing, not just for users, but for the health of the ecosystem at large. And by extension, we should look at the status quo of today’s Haskell world with suspicion. And getting a good, prescriptive specification of what Haskell <em>is</em> would go a long way towards alleviating this issue.</p>
-<p>So why do I bring all of this up? It’s my impression that the current Haskell2020 efforts are dead in all but name. The <a href="https://mail.haskell.org/pipermail/haskell-prime/">official mailing list</a> didn’t see any activity for 12 of the last 24 months. Of the months that did see activity, several of their volumes are measured in <em>bytes.</em> At time of writing, the official Haskell2020 website’s certificates are expired, and have been for two weeks.</p>
-<p>None of this is meant to demonize the standards committee. But for whatever reason, it’s pretty clear that Haskell2020 is not going to happen in its current incarnation. After all, 2020 is coming up pretty dang soon!</p>
-<p>Forgive the melodrama, but I truly believe that this situation is an existential risk for our beloved language and community. There are already well-founded <a href="https://www.reddit.com/r/haskell/comments/dpr276/what_is_the_status_of_ghc_linear_types/f5yjg67/">murmurings of dissatisfaction</a>, and <em>lots</em> of complaints about the lack of good tooling (though regrettably I can’t find any links right now.)</p>
-<p>So what’s the real problem here? As a complete outsider — reading between the lines of discussions I’ve had with a few of the Haskell2020 committee members — my guess is this: <strong>a lack of leadership.</strong> It’s not that the committee members don’t care, it’s that nobody cares <em>sufficiently</em> to overcome the momentum and push the thing through to completion. Furthermore, these people are busy with their own cool projects, and committee work is always a thankless job.</p>
-<p>The good news: a lack of leadership is a <em>very easy problem to solve.</em> If you care about this problem, <strong>just take the reigns.</strong> That’s all there is to it. <em>Anyone can do it.</em> Yes, even you, gentle reader! Nobody needs to elevate you to a position of power. There’s no admissions process. You don’t need to be given any <em>authority</em> in order to take the lead here. This is a thing that everybody wants, but there’s a coordination problem, and the only reason it hasn’t been done yet is that nobody has done it.</p>
-<p>If you want more assurance about that: as a member of the GHC Steering Committee, <strong>I will personally ratify any reasonable draft standard of Haskell 202x</strong> and vote in favor that GHC adheres to that standard. I have confirmation from at least two other members of the committee that they will also do so.</p>
-<p>As a rough estimate, the effort involved in Haskel202x is about half a person-year. Most of that will be spent doing unsexy, administrative things like setting deadlines, cajoling the right people for opinions, and writing a big, boring document. Not a lot of fun, to be sure, but <em>very doable.</em> The only challenge here is to not lose motivation for six months.</p>
-<p>Should you still have doubts, I’d like to give another example: the GHC Steering Committee. Despite some (fair) criticisms, all things considered, the Steering Committee is a pretty successful organization. But <em>literally the only reason</em> for that success is Joachim’s unyielding desire for it to succeed. Without his monthly emails reminding everyone of the work to be done, and who is responsible for what, the Committee would collapse in three months. Nobody gave Joachim this responsibility, he just took it and owned it. In my opinion, the entire Haskell community is deeply indebted to Joachim on this front.</p>
-<p>If all of this sounds inspiring to you, I urge you to take up the mantle and <em>make this thing happen.</em> It’s the first step towards a much better Haskell world, and it’s an amazingly actionable one. You can help change the world for the better, and we will all be indebted to you when you pull it off.</p>
         ]]>
       </content>
     </entry>
