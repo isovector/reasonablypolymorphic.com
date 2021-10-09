@@ -160,9 +160,9 @@ law_pushPop
        , effs ~ '[Stack s]
 
          -- Misc constraints you don't need to care about
-       , Arbitrary res
-       , Eq res
-       , Show res
+       , Arbitrary s
+       , Eq s
+       , Show s
        , ArbitraryEff effs r
        , Members effs r
        , (forall z. Eq z => Eq (f z))
