@@ -93,9 +93,9 @@
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>       , effs <span class="op">~</span> &#39;[<span class="dt">Stack</span> s]</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>         <span class="co">-- Misc constraints you don&#39;t need to care about</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>       , <span class="dt">Arbitrary</span> res</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>       , <span class="dt">Eq</span> res</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>       , <span class="dt">Show</span> res</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>       , <span class="dt">Arbitrary</span> s</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>       , <span class="dt">Eq</span> s</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>       , <span class="dt">Show</span> s</span>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>       , <span class="dt">ArbitraryEff</span> effs r</span>
 <span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a>       , <span class="dt">Members</span> effs r</span>
 <span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Eq</span> z <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f z))</span>
