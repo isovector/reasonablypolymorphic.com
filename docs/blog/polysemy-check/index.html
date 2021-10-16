@@ -45,6 +45,9 @@
     <span class="prev">
         <a href="/blog/porting-to-polysemy">&larr;</a>
     </span>
+    <span class="next">
+        <a href="/blog/proving-equivalence">&rarr;</a>
+    </span>
     <time>October  9, 2021</time>
 
     <span class="tags">
@@ -95,7 +98,7 @@
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stack</span> s m a <span class="kw">where</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="dt">Push</span><span class="ot"> ::</span> s <span class="ot">-&gt;</span> <span class="dt">Stack</span> s m ()</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">Pop</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m (<span class="dt">Maybe</span> s)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  <span class="dt">RemoveAll</span><span class="ot"> ::</span> <span class="dt">Stac</span> s m ()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  <span class="dt">RemoveAll</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m ()</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  <span class="dt">Size</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m <span class="dt">Int</span></span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
@@ -155,6 +158,9 @@
 <p class="meta">
     <span class="prev">
         <a href="/blog/porting-to-polysemy">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proving-equivalence">&rarr;</a>
     </span>
 </p>
 
