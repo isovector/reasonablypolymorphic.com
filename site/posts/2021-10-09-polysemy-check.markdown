@@ -98,7 +98,7 @@ your system-under-test. Let's assume we have a stack effect:
 data Stack s m a where
   Push :: s -> Stack s m ()
   Pop :: Stack s m (Maybe s)
-  RemoveAll :: Stac s m ()
+  RemoveAll :: Stack s m ()
   Size :: Stack s m Int
 
 makeSem ''Stack

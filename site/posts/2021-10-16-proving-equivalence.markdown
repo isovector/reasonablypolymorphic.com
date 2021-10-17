@@ -114,7 +114,7 @@ think. The first ten lines here are just constraints. There are only two
 arguments to `prepropEquivalent`, and they are the two interpreters you'd like
 to test.
 
-This type is crazy, and it will be beneficial to understand it. There four five
+This type is crazy, and it will be beneficial to understand it. There are four
 type variables, three of which are effect rows. We can distinguish between them:
 
 - `effs`: The effect(s) you're interested in testing. In our case, our
