@@ -115,7 +115,7 @@
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r2 a <span class="ot">-&gt;</span> <span class="dt">IO</span> (f a))</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span></code></pre></div>
 <p>All of the functions in <code>polysemy-check</code> have fun type signatures like this one. But despite the preponderance of <code>forall</code>s, it’s not as terrible as you might think. The first ten lines here are just constraints. There are only two arguments to <code>prepropEquivalent</code>, and they are the two interpreters you’d like to test.</p>
-<p>This type is crazy, and it will be beneficial to understand it. There four five type variables, three of which are effect rows. We can distinguish between them:</p>
+<p>This type is crazy, and it will be beneficial to understand it. There are four type variables, three of which are effect rows. We can distinguish between them:</p>
 <ul>
 <li><code>effs</code>: The effect(s) you’re interested in testing. In our case, our interpreter handles <code>Stack s</code>, so we let <code>effs ~ Stack s</code>.</li>
 <li><code>r1</code>: The effects handled by interpreter 1. Imagine we had an interpreter for <code>Stack s</code> that ran it via <code>IO</code> instead. In that case, <code>r1 ~ '[State s, Embed   IO]</code>.</li>
