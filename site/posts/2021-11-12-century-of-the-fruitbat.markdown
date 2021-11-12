@@ -10,7 +10,7 @@ Yesterday, the new Haskell CLC
 [decided](https://github.com/haskell/core-libraries-committee/issues/3) to
 remove `(/=)` from the `Eq` typeclass.  As expected, the community has
 [embraced](https://twitter.com/Augustsson/status/1458963074556256257) this
-[change](https://twitter.com/snoyberg/status/1459118062674890752) with
+change [with](https://twitter.com/snoyberg/status/1459118062674890752)
 [characteristic](https://twitter.com/haskellhutt/status/1459147447863816200?s=20)
 [grace](https://twitter.com/ChShersh/status/1458935578137931780).  The usual
 state of affairs is that people who like the changes are silent, while people
