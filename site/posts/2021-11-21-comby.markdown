@@ -1,0 +1,173 @@
+---
+layout: post
+title: "Automatically Migrating Eq of No (/=)"
+date: 2021-11-21 13:38
+comments: true
+tags: foo, bar
+---
+
+We've all spent more time [talking][fruitbat] about [`Eq` of no `(/=)`][neq]
+than it deserves. Today Bodigrim published [Migration guide for Eq of no
+`(/=)`][migration] which describes all the steps you'll need to take in order to
+update your codebase for the century of the fruitbat.
+
+[fruitbat]: /blog/century-of-the-fruitbat/
+[neq]: https://github.com/haskell/core-libraries-committee/issues/3
+[migration]: https://github.com/haskell/core-libraries-committee/blob/main/guides/no-noneq-in-eq.md
+
+But that made me think --- why do humans need to do this by hand? Computers are
+  good at this sort of thing. So I wrote a tiny little [comby][comby] config
+  that does the replacements we want. The config is at the end of this post.
+
+[comby]: https://comby.dev/
+
+Here's a problematic module that will be very broken by `Eq` of no `(/=)`:
+
+```haskell
+module Neq where
+
+import Prelude (Eq (..), Bool(..), (||))
+import Data.Eq (Eq (..))
+
+data A = A Bool Bool
+
+instance Eq A where
+  A x1 x2 /= A y1 y2 = x1 /= y1 || x2 /= x2
+
+
+data B = B Bool
+
+instance Eq B where
+  B x == B y = x == y
+  B x /= B y = x /= y
+
+data C a = C a
+
+instance
+  Eq a => Eq (C a)
+  where
+  C x == C y = x == y
+  C x /= C y = x /= y
+
+
+data D = D Bool
+
+instance Eq D where
+  D x /= D y =
+    x /= y
+  D x == D y =
+    x == y
+
+
+data E = E Bool
+
+instance Eq E where
+  E x /= E y =
+    let foo = x /= y in foo
+```
+
+After running `comby`, we get te following diff:
+
+```diff
+ module Neq where
+
+-import Prelude (Eq (..), Bool)
+-import Data.Eq (Eq (..))
+-
+-data A = A Bool
++import Prelude (Eq, (==), (/=), Bool(..), (||))
++import Data.Eq (Eq, (==), (/=))
++data A = A Bool Bool
+
+ instance Eq A where
+-  A x1 x2 /= A y1 y2 = x1 /= y1 || x2 /= x2
+-
++  A x1 x2 == A y1 y2 = not $ x1 /= y1 || x2 /= x2
+
+ data B = B Bool
+
+ instance Eq B where
+   B x == B y = x == y
+-  B x /= B y = x /= y
+
+ data C a = C a
+
+ instance Eq a => Eq (C a) where
+   C x == C y = x == y
+-  C x /= C y = x /= y
+-
+
+ data D = D Bool
+
+ instance Eq D where
+-  D x /= D y = x /= y
+   D x == D y = x == y
+
++data E = E Bool
++
++instance Eq E where
++  E x == E y = not $ let foo = x /= y in foo
++
+```
+
+Is it perfect? No, but it's pretty good for the 10 minutes it took me to write.
+  A little effort here goes a *long* way.
+
+---
+
+Comby config:
+
+```toml
+[only-neq]
+match='''
+instance :[ctx]Eq :[name] where
+  :[x] /= :[y] = :[z\n]
+'''
+rewrite='''
+instance :[ctx]Eq :[name] where
+  :[x] == :[y] = not $ :[z]
+'''
+
+
+[both-eq-and-neq]
+match='''
+instance :[ctx]Eq :[name] where
+  :[x1] == :[y1] = :[z1\n]
+  :[x2] /= :[y2] = :[z2\n]
+'''
+rewrite='''
+instance :[ctx]Eq :[name] where
+  :[x1] == :[y1] = :[z1]
+'''
+
+
+[both-neq-and-eq]
+match='''
+instance :[ctx]Eq :[name] where
+  :[x2] /= :[y2] = :[z2\n]
+  :[x1] == :[y1] = :[z1\n]
+'''
+rewrite='''
+instance :[ctx]Eq :[name] where
+  :[x1] == :[y1] = :[z1]
+'''
+
+
+[import-prelude]
+match='''
+import Prelude (:[pre]Eq (..):[post])
+'''
+rewrite='''
+import Prelude (:[pre]Eq, (==), (/=):[post])
+'''
+
+
+[import-data-eq]
+match='''
+import Data.Eq (:[pre]Eq (..):[post])
+'''
+rewrite='''
+import Data.Eq (:[pre]Eq, (==), (/=):[post])
+'''
+```
+
