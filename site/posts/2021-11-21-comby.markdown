@@ -120,7 +120,7 @@ A little effort here goes a *long* way!
 
 ---
 
-Comby config:
+My config file to automatically migrate `Eq` of no `(/=)`:
 
 ```toml
 [only-neq]
@@ -175,4 +175,17 @@ rewrite='''
 import Data.Eq (:[pre]Eq, (==), (/=):[post])
 '''
 ```
+
+Save this file as `eq.toml`, and run `comby` in your project root via:
+
+```bash
+$ comby -config eq.toml -matcher .hs -i -f .hs
+```
+
+Comby will find and make all the changes you need, in place. Check the diff, and
+make whatever changes you might need. In particular, it might bork some of your
+whitespace --- there's an issue to get comby to play more nicely with
+layout-aware languages. A more specialized tool that had better awareness of
+Haskell's idiosyncrasies would help here, if you have some spare engineering
+cycles. But when all's said and done, comby does a damn fine job.
 
