@@ -16,7 +16,7 @@
       <content type="html">
         <![CDATA[
         <p>We’ve all spent more time <a href="/blog/century-of-the-fruitbat/">talking</a> about <a href="https://github.com/haskell/core-libraries-committee/issues/3"><code>Eq</code> of no <code>(/=)</code></a> than it deserves. Today Bodigrim published <a href="https://github.com/haskell/core-libraries-committee/blob/main/guides/no-noneq-in-eq.md">Migration guide for Eq of no <code>(/=)</code></a> which describes all the steps you’ll need to take in order to update your codebase for the century of the fruitbat.</p>
-<p>But that made me think — why do humans need to do this by hand? Computers are good at this sort of thing. So I wrote a tiny little <a href="https://comby.dev/">comby</a> config that does the replacements we want. The config is at the end of this post.</p>
+<p>But that made me think — why do humans need to do this by hand? Computers are good at this sort of thing. So I wrote a tiny little <a href="https://comby.dev/">comby</a> config that does the replacements we want. Comby is a fantastic “parser parser combinator” — which is to say, a little DSL for writing program transformations. You just write the pattern you want to match, and comby lifts it to work over whitespace, and ensures that your greedy matches are parenthesis-aware, and that sort of thing. It’s quite lovely. The config I wrote is listed at the end of this post.</p>
 <p>Here’s a problematic module that will be very broken by <code>Eq</code> of no <code>(/=)</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Neq</span> <span class="kw">where</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
@@ -58,7 +58,7 @@
 <span id="cb1-38"><a href="#cb1-38" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Eq</span> <span class="dt">E</span> <span class="kw">where</span></span>
 <span id="cb1-39"><a href="#cb1-39" aria-hidden="true"></a>  <span class="dt">E</span> x <span class="op">/=</span> <span class="dt">E</span> y <span class="ot">=</span></span>
 <span id="cb1-40"><a href="#cb1-40" aria-hidden="true"></a>    <span class="kw">let</span> foo <span class="ot">=</span> x <span class="op">/=</span> y <span class="kw">in</span> foo</span></code></pre></div>
-<p>After running <code>comby</code>, we get te following diff:</p>
+<p>After running <code>comby</code>, we get the following diff:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a> module Neq where</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="st">-import Prelude (Eq (..), Bool)</span></span>
@@ -93,12 +93,13 @@
 <span id="cb2-32"><a href="#cb2-32" aria-hidden="true"></a><span class="st">-  D x /= D y = x /= y</span></span>
 <span id="cb2-33"><a href="#cb2-33" aria-hidden="true"></a>   D x == D y = x == y</span>
 <span id="cb2-34"><a href="#cb2-34" aria-hidden="true"></a></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true"></a><span class="va">+data E = E Bool</span></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true"></a><span class="va">+</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true"></a><span class="va">+instance Eq E where</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true"></a><span class="va">+  E x == E y = not $ let foo = x /= y in foo</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true"></a><span class="va">+</span></span></code></pre></div>
-<p>Is it perfect? No, but it’s pretty good for the 10 minutes it took me to write. A little effort here goes a <em>long</em> way.</p>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true"></a> data E = E Bool</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true"></a></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true"></a> instance Eq E where</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true"></a><span class="st">-  E x /= E y =</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true"></a><span class="st">-    let foo = x /= y in foo</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true"></a><span class="va">+  E x == E y = not $ let foo = x /= y in foo</span></span></code></pre></div>
+<p>Is it perfect? No, but it’s pretty good for the 10 minutes it took me to write. A little effort here goes a <em>long</em> way!</p>
 <hr />
 <p>Comby config:</p>
 <pre class="toml"><code>[only-neq]
