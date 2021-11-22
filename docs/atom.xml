@@ -101,7 +101,7 @@
 <span id="cb2-40"><a href="#cb2-40" aria-hidden="true"></a><span class="va">+  E x == E y = not $ let foo = x /= y in foo</span></span></code></pre></div>
 <p>Is it perfect? No, but it’s pretty good for the 10 minutes it took me to write. A little effort here goes a <em>long</em> way!</p>
 <hr />
-<p>Comby config:</p>
+<p>My config file to automatically migrate <code>Eq</code> of no <code>(/=)</code>:</p>
 <pre class="toml"><code>[only-neq]
 match=&#39;&#39;&#39;
 instance :[ctx]Eq :[name] where
@@ -153,6 +153,9 @@ import Data.Eq (:[pre]Eq (..):[post])
 rewrite=&#39;&#39;&#39;
 import Data.Eq (:[pre]Eq, (==), (/=):[post])
 &#39;&#39;&#39;</code></pre>
+<p>Save this file as <code>eq.toml</code>, and run <code>comby</code> in your project root via:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>$ <span class="ex">comby</span> -config eq.toml -matcher .hs -i -f .hs</span></code></pre></div>
+<p>Comby will find and make all the changes you need, in place. Check the diff, and make whatever changes you might need. In particular, it might bork some of your whitespace — there’s an issue to get comby to play more nicely with layout-aware languages. A more specialized tool that had better awareness of Haskell’s idiosyncrasies would help here, if you have some spare engineering cycles. But when all’s said and done, comby does a damn fine job.</p>
         ]]>
       </content>
     </entry>
