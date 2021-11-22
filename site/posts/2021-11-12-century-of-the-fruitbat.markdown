@@ -3,7 +3,7 @@ layout: post
 title: Dragging Haskell Kicking and Screaming into the Century of the Fruitbat
 date: 2021-11-12 12:15
 comments: true
-tags: foo, bar
+tags: eq, non-technical, haskell
 ---
 
 Yesterday, the new Haskell CLC
