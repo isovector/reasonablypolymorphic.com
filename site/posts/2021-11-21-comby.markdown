@@ -16,8 +16,12 @@ update your codebase for the century of the fruitbat.
 [migration]: https://github.com/haskell/core-libraries-committee/blob/main/guides/no-noneq-in-eq.md
 
 But that made me think --- why do humans need to do this by hand? Computers are
-  good at this sort of thing. So I wrote a tiny little [comby][comby] config
-  that does the replacements we want. The config is at the end of this post.
+good at this sort of thing. So I wrote a tiny little [comby][comby] config that
+does the replacements we want. Comby is a fantastic "parser parser combinator"
+--- which is to say, a little DSL for writing program transformations. You just
+write the pattern you want to match, and comby lifts it to work over whitespace,
+and ensures that your greedy matches are parenthesis-aware, and that sort of
+thing. It's quite lovely.  The config I wrote is listed at the end of this post.
 
 [comby]: https://comby.dev/
 
@@ -66,7 +70,7 @@ instance Eq E where
     let foo = x /= y in foo
 ```
 
-After running `comby`, we get te following diff:
+After running `comby`, we get the following diff:
 
 ```diff
  module Neq where
@@ -103,15 +107,16 @@ After running `comby`, we get te following diff:
 -  D x /= D y = x /= y
    D x == D y = x == y
 
-+data E = E Bool
-+
-+instance Eq E where
+ data E = E Bool
+
+ instance Eq E where
+-  E x /= E y =
+-    let foo = x /= y in foo
 +  E x == E y = not $ let foo = x /= y in foo
-+
 ```
 
 Is it perfect? No, but it's pretty good for the 10 minutes it took me to write.
-  A little effort here goes a *long* way.
+A little effort here goes a *long* way!
 
 ---
 
