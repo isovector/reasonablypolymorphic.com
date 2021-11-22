@@ -3,7 +3,7 @@ layout: post
 title: "Automatically Migrating Eq of No (/=)"
 date: 2021-11-21 13:38
 comments: true
-tags: foo, bar
+tags: comby, eq, tooling, refactoring, haskell
 ---
 
 We've all spent more time [talking][fruitbat] about [`Eq` of no `(/=)`][neq]
