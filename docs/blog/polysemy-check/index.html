@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Testing Polysemy With polysemy-check :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/polysemy-check">Testing Polysemy With polysemy-check</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/porting-to-polysemy">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proving-equivalence">&rarr;</a>
+    </span>
+    <time>October  9, 2021</time>
+
+    <span class="tags">
+        <a href="/tags/polysemy.html">polysemy</a>, <a href="/tags/testing.html">testing</a>, <a href="/tags/quickcheck.html">quickcheck</a>
+    </span>
+</p>
+<div class="content">
+    <p><a href="/blog/porting-to-polysemy/">Last week</a> we covered how to port an existing codebase to <a href="https://hackage.haskell.org/package/polysemy"><code>polysemy</code></a>. The “why you might want to do this” was left implicit, but to be more explicit about things, it’s because littering your codebase with <code>IO</code> makes things highly-coupled and hard to test. By forcing yourself to think about effects, you are forced to pull concerns apart, and use the type-system to document what’s going on. But more importantly for today, it gives us a layer of indirection inside of which we can insert testing machinery.</p>
+<p>To take an extreme example from the codebase I’m currently working on, compare a function with its original (non-polysemized) type:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">api ::</span> <span class="dt">Opts</span> <span class="ot">-&gt;</span> <span class="dt">ServerT</span> <span class="dt">API</span> <span class="dt">App</span></span></code></pre></div>
+<p>which looks very simple, and gives the false impression that <code>api</code> is fairly uninteresting. However, there is an amazing amount of <code>IO</code> hiding inside of <code>App</code>, which becomes <em>significantly more evident</em> when we give this type explicit dependency constraints:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">api ::</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="dt">Members</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    &#39;[ <span class="dt">AReqIDStore</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>       <span class="dt">AssIDStore</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>       <span class="dt">BindCookieStore</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>       <span class="dt">BrigAccess</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>       <span class="dt">DefaultSsoCode</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>       <span class="dt">Error</span> <span class="dt">SparError</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>       <span class="dt">GalleyAccess</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>       <span class="dt">IdP</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>       <span class="dt">Input</span> <span class="dt">Opts</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>       <span class="dt">Logger</span> (<span class="dt">Msg</span> <span class="ot">-&gt;</span> <span class="dt">Msg</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>       <span class="dt">Logger</span> <span class="dt">String</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>       <span class="dt">Now</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>       <span class="dt">Random</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>       <span class="dt">Reporter</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>       <span class="dt">SAML2</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>       <span class="dt">SAMLUserStore</span>,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>       <span class="dt">SamlProtocolSettings</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>       <span class="dt">ScimExternalIdStore</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>       <span class="dt">ScimTokenStore</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>       <span class="dt">ScimUserTimesStore</span>,</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a>     ]</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a>    r <span class="ot">=&gt;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a>  <span class="dt">Opts</span> <span class="ot">-&gt;</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a>  <span class="dt">ServerT</span> <span class="dt">API</span> (<span class="dt">Sem</span> r)</span></code></pre></div>
+<p>Wow! Not so innocent-looking now, is it? Each <code>Member</code> constraint here is a unit of functionality that was previously smuggled in via <code>IO</code>. Not only have we made them more visible, but we’ve now exposed a big chunk of testable surface-area. You see, each one of these members provides an abstract interface, which we can implement in any way we’d like.</p>
+<p>Because <code>IO</code> is so hard to test, the idea of <code>polysemy</code> is that we can give several interpretaions for our program — one that is pure, lovely, functional, and, importantly, very easy to test. Another interpretation is one that that runs fast in <code>IO</code>. The trick then is to decompose the problem of testing into two steps:</p>
+<ol type="1">
+<li>show that the program is correct under the model interpreter</li>
+<li>show that the model interpreter is equivalent to the real interpreter</li>
+</ol>
+<p>This sounds great in principle, but as far as I know, it’s never been actually done in practice. My suspicion is that people using <code>polysemy</code> in the wild don’t get further than step 1 (which is OK — a good chunk of the value in effect systems is in the decomposition itself.) Doing all of the work to show equivalence of your interpreters is a significant amount of work, and until now, there have been no tools to help.</p>
+<p><strong>Introducing <a href="https://hackage.haskell.org/package/polysemy-check"><code>polysemy-check</code></a>:</strong> a new library for proving all the things you’d want to prove about a <code>polysemy</code> codebase. <code>polysemy-check</code> comes with a few tools for synthesizing <a href="https://hackage.haskell.org/package/QuickCheck"><code>QuickCheck</code></a> properties, plus machinery for getting <code>Arbitrary</code> instances for effects for free.</p>
+<h2 id="using-polysemy-check">Using polysemy-check</h2>
+<p>To get started, you’re going to need to give two instances for every effect in your system-under-test. Let’s assume we have a stack effect:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stack</span> s m a <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="dt">Push</span><span class="ot"> ::</span> s <span class="ot">-&gt;</span> <span class="dt">Stack</span> s m ()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">Pop</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m (<span class="dt">Maybe</span> s)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  <span class="dt">RemoveAll</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m ()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  <span class="dt">Size</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m <span class="dt">Int</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
+<p>The instances we need are given by:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">deriving</span> <span class="kw">instance</span> (<span class="dt">Show</span> s, <span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">Stack</span> s m a)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>deriveGenericK &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
+<p>where <code>deriveGenericK</code> is TemplateHaskell that from <a href="https://hackage.haskell.org/package/kind-generics"><code>kind-generics</code></a> (but is re-exported by <code>polysemy-check</code>.) <code>kind-generics</code> is <code>GHC.Generics</code> on steroids: it’s capable of deriving generic code for GADTs.</p>
+<p>The first thing that probably comes to mind when you consider <code>QuickCheck</code> is “checking for laws.” For example, we should expect that <code>push s</code> followed by <code>pop</code> should be equal to <code>pure (Just s)</code>. Laws of this sort <em>give meaning to effects,</em> and act as <em>sanity checks on their interpreters.</em></p>
+<p>Properties for laws can be created via <code>prepropLaw</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>prepropLaw</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> effs r a f</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>     <span class="op">.</span> ( (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Eq</span> z <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f z))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Show</span> z <span class="ot">=&gt;</span> <span class="dt">Show</span> (f z))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>       )</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    <span class="ot">=&gt;</span> ( <span class="dt">Eq</span> a</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>       , <span class="dt">Show</span> a</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>       , <span class="dt">ArbitraryEff</span> effs r</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>       )</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Gen</span> (<span class="dt">Sem</span> r a, <span class="dt">Sem</span> r a)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Sem</span> r (a, z) <span class="ot">-&gt;</span> <span class="dt">IO</span> (f (a, z)))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span></code></pre></div>
+<p>Sorry for the atrocious type. If you’re looking for Boring Haskell, you’d best look elsewhere.</p>
+<p>The first argument here is a <code>QuickCheck</code> generator which produces two programs that should be equivalent. The second argument is the interpreter for <code>Sem</code> under which the programs must be equivalent, or will fail the resulting <code>Property</code>. Thus, we can write the <code>push/pop</code> law above as:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>law_pushPop</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> s r f effs res</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>     <span class="op">.</span> (</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>         <span class="co">-- The type that our generator returns</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>         res <span class="op">~</span> (<span class="dt">Maybe</span> s)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>         <span class="co">-- The effects we want to be able to synthesize for contextualized</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>         <span class="co">-- testing</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>       , effs <span class="op">~</span> &#39;[<span class="dt">Stack</span> s]</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>         <span class="co">-- Misc constraints you don&#39;t need to care about</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>       , <span class="dt">Arbitrary</span> s</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>       , <span class="dt">Eq</span> s</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>       , <span class="dt">Show</span> s</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>       , <span class="dt">ArbitraryEff</span> effs r</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a>       , <span class="dt">Members</span> effs r</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Eq</span> z <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f z))</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Show</span> z <span class="ot">=&gt;</span> <span class="dt">Show</span> (f z))</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true"></a>       )</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r (res, a) <span class="ot">-&gt;</span> <span class="dt">IO</span> (f (res, a)))</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true"></a>law_pushPop <span class="ot">=</span> prepropLaw <span class="op">@</span>effs <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true"></a>  s <span class="ot">&lt;-</span> arbitrary</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true"></a>  <span class="fu">pure</span> ( push s <span class="op">&gt;&gt;</span> pop</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true"></a>       , <span class="fu">pure</span> (<span class="dt">Just</span> s)</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true"></a>       )</span></code></pre></div>
+<p>Sorry. Writing gnarly constraints is the cost not needing to write gnarly code. If you know how to make this better, please open a PR!</p>
+<p>There’s something worth paying attention to in <code>law_pushPop</code> — namely the type of the interpreter <code>(forall a. Sem r (Maybe s, a) -&gt; IO (f (Maybe s, a)))</code>. What is this <code>forall a</code> thing doing, and where does it come from? As written, our generator would merely checks the equivalence of the exact two given programs, but this is an insufficient test. We’d instead like to prove the equivalence of the <code>push/pop</code> law <em>under all circumstances.</em></p>
+<p>Behind the scenes, <code>prepropLaw</code> is synthesizing a monadic action to run <em>before</em> our given law, as well as some actions to run <em>after</em> it. These actions are randomly pulled from the effects inside the <code>effs ~ '[Stack s]</code> row (and so here, they will only be random <code>Stack</code> actions.) The <code>a</code> here is actually the result of these “contextual” actions. Complicated, but you really only need to get it right once, and can copy-paste it forevermore.</p>
+<p>Now we can specialize <code>law_pushPop</code> (plus any other laws we might have written) for a would-be interpreter of <code>Stack s</code>. Any interpreter that passes all the properties is therefore proven to respect the desired semantics of <code>Stack s</code>.</p>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p><code>polysemy-check</code> can do lots more, but this post is overwhelming already. So next week we’ll discuss how to prove the equivalence of interpreters, and how to ensure your effects are sane with respect to one another.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/porting-to-polysemy">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proving-equivalence">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2020 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

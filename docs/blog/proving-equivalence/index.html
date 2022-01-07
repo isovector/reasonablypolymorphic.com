@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Proving Equivalence of Polysemy Interpreters :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/proving-equivalence">Proving Equivalence of Polysemy Interpreters</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/polysemy-check">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proving-commutativity">&rarr;</a>
+    </span>
+    <time>October 16, 2021</time>
+
+    <span class="tags">
+        <a href="/tags/polysemy.html">polysemy</a>, <a href="/tags/testing.html">testing</a>, <a href="/tags/quickcheck.html">quickcheck</a>
+    </span>
+</p>
+<div class="content">
+    <p>Let’s talk <a href="https://reasonablypolymorphic.com/blog/polysemy-check/">more</a> about <a href="https://github.com/polysemy-research/polysemy-check"><code>polysemy-check</code></a>. Last week we looked at how to do property-testing for a <code>polysemy</code> effects’ laws. Today, we’ll investigate how to show that two interpretations are equivalent.</p>
+<p>To continue with last week’s example, let’s say we have an effect that corresponds to having a <code>Stack</code> that we can push and pop:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stack</span> s m a <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dt">Push</span><span class="ot">      ::</span> s <span class="ot">-&gt;</span> <span class="dt">Stack</span> s m ()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="dt">Pop</span><span class="ot">       ::</span> <span class="dt">Stack</span> s m (<span class="dt">Maybe</span> s)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="dt">RemoveAll</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m ()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="dt">Size</span><span class="ot">      ::</span> <span class="dt">Stack</span> s m <span class="dt">Int</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> s <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">Stack</span> s m a)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>deriveGenericK &#39;<span class="dt">&#39;Stack</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
+<p>Since we’d like to prove the equivalence of two interpretations, we’ll need to first write two interpretations. But, to illustrate, we’re going simulate multiple interpreters via a single interpretation, parameterized by which bugs should be present in it.</p>
+<p>purposes of brevity, we’ll write a single interpretation of <code>Stack s</code> in terms of <code>State [s]</code>, and then interpret <em>that</em> in two different ways. In essence, what we’re really testing here is the equivalence of two <code>State</code> interpretations, but it’s good enough for an example.</p>
+<p>We’ll start with the bugs:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Bug</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="ot">=</span> <span class="dt">PushTwice</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">DontRemove</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  <span class="kw">deriving</span> stock (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Enum</span>, <span class="dt">Bounded</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Bug</span> <span class="kw">where</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  arbitrary <span class="ot">=</span> elements [<span class="fu">minBound</span><span class="op">..</span><span class="fu">maxBound</span>]</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="ot">hasBug ::</span> [<span class="dt">Bug</span>] <span class="ot">-&gt;</span> <span class="dt">Bug</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>hasBug <span class="ot">=</span> <span class="fu">flip</span> <span class="fu">elem</span></span></code></pre></div>
+<p>The <code>PushTwice</code> bug, as you might expect, dispatched a <code>Push</code> command so that it pushes twice onto the stack. The <code>DontRemove</code> bug causes <code>RemoveAll</code> to be a no-op. Armed with our bugs, we can write a little interpreter for <code>Stack</code> that translates <code>Stack s</code> commands into <code>State [s]</code> commands, and then immediately runs the <code>State</code> effect:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>runStack</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="ot">    ::</span> [<span class="dt">Bug</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Stack</span> s &#39;<span class="op">:</span> r) a</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r ([s], a)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>runStack bugs <span class="ot">=</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  (runState [] <span class="op">.</span>) <span class="op">$</span> reinterpret <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>    <span class="dt">Push</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>      modify (s <span class="op">:</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>      when (hasBug bugs <span class="dt">PushTwice</span>) <span class="op">$</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>        modify (s <span class="op">:</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>    <span class="dt">Pop</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>      r <span class="ot">&lt;-</span> gets listToMaybe</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>      modify (<span class="fu">drop</span> <span class="dv">1</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>      <span class="fu">pure</span> r</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>    <span class="dt">RemoveAll</span> <span class="ot">-&gt;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>      unless (hasBug bugs <span class="dt">DontRemove</span>) <span class="op">$</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a>        put []</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a>    <span class="dt">Size</span> <span class="ot">-&gt;</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a>      gets <span class="fu">length</span></span></code></pre></div>
+<p>For our efforts we are rewarded: <code>runState</code> gives rise to four interpreters for the price of one. We can now ask whether or not these interpreters are equivalent. Enter <code>propEquivalent</code>:</p>
+<p>With these interpreters out of the way, it’s time to answer our original question: are <code>pureStack</code> and <code>ioStack</code> equivalent? Which is to say, do they get the same answer for every possible program? Enter <code>propEquivalent</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>prepropEquivalent</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> effs r1 r2 f</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>     <span class="op">.</span> ( <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">Show</span> (f a)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>       , <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f a)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>       )</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    <span class="ot">=&gt;</span> ( <span class="dt">Inject</span> effs r1</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>       , <span class="dt">Inject</span> effs r2</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>       , <span class="dt">Arbitrary</span> (<span class="dt">Sem</span> effs <span class="dt">Int</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>       )</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r1 a <span class="ot">-&gt;</span> <span class="dt">IO</span> (f a))</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r2 a <span class="ot">-&gt;</span> <span class="dt">IO</span> (f a))</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span></code></pre></div>
+<p>All of the functions in <code>polysemy-check</code> have fun type signatures like this one. But despite the preponderance of <code>forall</code>s, it’s not as terrible as you might think. The first ten lines here are just constraints. There are only two arguments to <code>prepropEquivalent</code>, and they are the two interpreters you’d like to test.</p>
+<p>This type is crazy, and it will be beneficial to understand it. There are four type variables, three of which are effect rows. We can distinguish between them:</p>
+<ul>
+<li><code>effs</code>: The effect(s) you’re interested in testing. In our case, our interpreter handles <code>Stack s</code>, so we let <code>effs ~ Stack s</code>.</li>
+<li><code>r1</code>: The effects handled by interpreter 1. Imagine we had an interpreter for <code>Stack s</code> that ran it via <code>IO</code> instead. In that case, <code>r1 ~ '[State s, Embed   IO]</code>.</li>
+<li><code>r2</code> The effects handled by interpreter 2.</li>
+</ul>
+<p>The relationships that must between <code>effs</code>, <code>r1</code> and <code>r2</code> are <span class="math inline">\(effs \subset r1\)</span> and <span class="math inline">\(effs \subset r2\)</span>. When running <code>prepropEquivalent</code>, you <em>must</em> type-apply <code>effs</code>, because Haskell isn’t smart enough to figure it out for itself.</p>
+<p>The other type variable to <code>prepropEquivalent</code> is <code>f</code>, which allows us to capture the “resulting state” of an interpreter. In <code>runStack :: [Bug] -&gt; Sem (Stack s ': r) a -&gt; Sem r ([s], a)</code>, you’ll notice we transform a program returning <code>a</code> into one returning <code>([s], a)</code>, and thus <code>f ~ (,) [s]</code>. If your interpreter doesn’t produce any resulting state, feel free to let <code>f ~ Identity</code>.</p>
+<p>We’re finally ready to test our interpreters! For any equivalence relationship, we should expect something to be equivalent to itself. And this is true regardless of which bugs we enable:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">prop_reflexive ::</span> <span class="dt">Property</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>prop_reflexive <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  bugs <span class="ot">&lt;-</span> arbitrary</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>  <span class="fu">pure</span> <span class="op">$</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    prepropEquivalent <span class="op">@</span>&#39;[<span class="dt">Stack</span> <span class="dt">Int</span>]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack bugs)  <span class="co">-- pure is getting us into IO</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack bugs)</span></code></pre></div>
+<p>So what’s happening here? Internally, <code>prepropEquivalent</code> is generating random programs of type <code>Sem '[Stack Int] Int</code>, and lifting that into <code>Sem r1 Int</code> and <code>Sem r2 Int</code>, and then running both interpreters and ensuring the result is the same for every program. Note that this means any fundamental non-determinism in your interpretation will break the test! Make sure to use appropriate interpreters for things like clocks and random values!</p>
+<p>To strengthen our belief in <code>prepropEquivalent</code>, we can also check that <code>runStack</code> is <em>not</em> equivalent to itself if different bugs are enabled:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="ot">prop_bugsNotEquivalent ::</span> <span class="dt">Property</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>prop_bugsNotEquivalent <span class="ot">=</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  expectFailure <span class="op">$</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    prepropEquivalent <span class="op">@</span>&#39;[<span class="dt">Stack</span> <span class="dt">Int</span>]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack [<span class="dt">PushTwice</span>])</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack [])</span></code></pre></div>
+<p>Running this test will give us output like:</p>
+<pre><code>+++ OK, failed as expected. Falsified (after 3 tests):
+([0,0],1) /= ([0],1)</code></pre>
+<p>The counterexample here isn’t particularly helpful (I haven’t yet figured out how to <code>show</code> the generated program that fails,) but you can get a hint here by noticing that the stack (the <code>[0,0]</code>) is twice as big in the first result as in the second.</p>
+<p>Importantly, by specifying <code>@'[Stack Int]</code> when calling <code>prepropEquivalent</code>, we are guaranteed that the generated program will <em>only</em> use actions from <code>Stack Int</code>, so it’s not too hard to track down. This is another win for <code>polysemy</code> in my book — that we can isolate bugs with this level of granularity, even if we can’t yet perfectly point to them.</p>
+<p>All of today’s code (and more!) is <a href="https://github.com/polysemy-research/polysemy-check/blob/master/test/ExampleSpec.hs">available</a> as a test in <code>polysemy-check</code>, if you’d like to play around with it. But that’s all for now. Next week we’ll investigate how to use <code>polysemy-check</code> to ensure that the composition of your effects <em>themselves</em> is meaningful. Until then!</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/polysemy-check">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proving-commutativity">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2020 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
