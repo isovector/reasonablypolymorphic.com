@@ -1,0 +1,27 @@
+figure {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5em;
+  margin-bottom: 5em;
+}
+
+figcaption {
+  margin-top: 2em;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+th, td {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
