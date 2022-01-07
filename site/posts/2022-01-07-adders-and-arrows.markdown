@@ -1,17 +1,17 @@
 ---
 layout: post
-title: adders-and-arrows
-date: TO_BE_DETERMINED
+title: Review: Adders and Arrows
+date: 2022-01-07 14:27
 comments: true
-tags: foo, bar
+tags: papers, review, elliott, category theory, agda, circuits
 ---
 
 This year my goal is to go through one paper a week, and produce some resulting
 artifact to help hammer in my understanding. Today's paper is [Conal
 Elliott's][conal]'s [Adders and Arrows][paper].
 
-[conal]:
-[paper]:
+[conal]: http://conal.net/
+[paper]: http://conal.net/papers/drafts/adders-and-arrows.pdf
 
 In my opinion, Adders and Arrows is an attempt to answer the questions "where do
 digital circuits come from?" and "how can we be convinced our digital circuits
@@ -714,10 +714,6 @@ Adder=>> (addD -| proof) = comma-hom addD addCarry proof
 ```
 
 
-
-OH NO. I GOT CARRYOUT BACKWARDS.
-TODO(sandy): FIXME. Fixed in the code.
-
 So let's implement a full-adder. This is a "well-known" result, but I didn't
 know it offhand. I'm sure I could have sussed this out on my own, but instead I
 just found it on Wikipedia:
@@ -740,7 +736,7 @@ xor false false = false
 full-add : DIn Bool -> DOut Bool
 full-add (cin , a , b) =
   let o = xor a b
-   in or (and a b) (and o cin) , xor o cin
+   in xor o cin , or (and a b) (and o cin)
 ```
 
 We can construct an `Adder` for `full-add` with observation `bval` by
@@ -781,11 +777,277 @@ Likewise, we have one over the adding functions themselves, pushing the
 carry-out of one into the carry-in of the next:
 
 ```agda
-tensorAdd : {m n : Set} -> (DIn m -> DOut m) -> (DIn n -> DOut n) -> (DIn (m × n) -> DOut (m × n))
+tensorAdd
+    : {m n : Set}
+   -> (DIn m -> DOut m)
+   -> (DIn n -> DOut n)
+   -> (DIn (m × n) -> DOut (m × n))
 tensorAdd addm addn (cin , (ma , na) , (mb , nb)) =
   let (m , cin') = addm $ cin  , ma , mb
       (n , cout) = addn $ cin' , na , nb
    in (m , n) , cout
 ```
 
+Allegedly these form a true adder as witnessed by `Adder (tensorμ μm μn)`, but
+the proof isn't included in the paper, and I had a hard time tracking it down in
+the source code. So rather than taking this by fiat, let's see if we can
+convince ourselves.
+
+As a first attempt of convincing myself, I tried to construct `adder22 : Adder
+(tensorμ bval bval)` which is a tensor of two full-adders. I constructed a
+case bash for the proof, and Agda complained! After some sleuthing, I had missed
+a swap somewhere in the paper, and thus had my carry bit in the wrong place in
+`full-adder`.
+
+After sorting that out, the case bash works on `adder22`. So that's a good
+sanity check that this works as promised. But, why? Presuably I should be able
+to run my commutative diagram all the way to its specification to debug what's
+going on.
+
+A few hours later...
+
+I came up with the following, which can run a commutative diagram:
+
+```agda
+arrowOf : {A B : CommaObj} -> CommaArr A B -> CommaObj × CommaObj
+arrowOf {A} {B} _ = A , B
+
+debug : {A B C D : Set} -> {f : A -> B} -> {g : C -> D} -> f =>> g -> A -> D
+debug arr x =
+  let (_ , comma-obj y) = arrowOf arr
+      (comma-hom f _ _) = arr
+  in y (f x)
+```
+
+Of course, the diagrams we get from `Adder=>>` only get us as far as `addCarry`.
+In order to get all the way to `Nat`s, we need to vertically compose a bunch of
+other diagrams too. In order, they're `puzzle`, `addF=>>` and `addN=>>`. The
+actual diagram I came up with was this attrocious thing:
+
+```agda
+Adder=>>N
+    : Cat2.CommaArr.f
+        (Comma [
+         Comma [ Comma [ transpose (Adder=>> adder22) >> transpose puzzle ]
+         >> transpose addF=>> ]
+         >> transpose addN=>> ]) =>> Cat2.CommaArr.g
+                 (Comma [
+                  Comma [ Comma [ transpose (Adder=>> adder22)
+                               >> transpose puzzle ]
+                  >> transpose addF=>> ]
+                  >> transpose addN=>> ])
+Adder=>>N = transpose $
+  Comma
+    [ Comma
+    [ Comma
+    [ transpose (Adder=>> adder22)
+   >> transpose puzzle ]
+   >> transpose addF=>> ]
+   >> transpose addN=>> ]
+```
+
+and finally, I can evaluate the thing:
+
+```agda
+debug' : Nat
+debug' = debug Adder=>>N (false , (true , false) , (true , false))
+```
+
+Nice. OK, so back to answering the question. Each of the `Bool x Bool` tuples is
+a little-endian vector, which get added together, plus the carry. In the process
+of doing all of this work, I inadvertantly figured out how the tensoring works.
+What's more interesting is tensoring together two different adders. For example,
+the `trivial-add` (section 8.3):
+
+```agda
+data One : Set where
+  one : One
+
+oneval : One -> Fin 1
+oneval one = zero
+
+trivial-add : DIn One -> DOut One
+trivial-add (b , _ , _) = one , b
+```
+
+If we construct `tensorAdder trivial-add BitAdder`, we get an adder whose
+vectors are `One x Bool`. This is an extremely interesting representation, as it
+means our number system doesn't need to have the same base for each digit. In
+fact, that's where the compositionality comes from. We're pretty comfortable
+assigning `2^i` to each digit position, but this representation makes it clear
+that there's nothing stopping us from choosing arbitrary numbers. What's really
+doing the work here is our old friend `comb : {m n : Nat} -> Fin2 (m , n) -> Fin
+(n * m)`. Expanding the type synonym makes it a little clearer `comb : {m n :
+Nat} -> Fin m x Fin n -> Fin (n * m)` --- this thing is literally multiplying
+two finite numbers into one!
+
+Looking at `tensorAdd` under this new lens makes it clearer too. Recall:
+
+```agda
+tensorAdd addm addn (cin , (ma , na) , (mb , nb)) =
+  let (m , cin') = addm $ cin  , ma , mb
+      (n , cout) = addn $ cin' , na , nb
+   in (m , n) , cout
+```
+
+Here we're pointwise adding the digits, where `m` is the least significant of
+the two digits. Our carry-in goes into the `m`, and its carry-out goes into `n`.
+OK, so this thing is just doing adder-chaining.
+
+Section 8.4 talks about extending this to vectors, but the trick is just to fold
+them via `tensorAdd`. The paper uses a right-fold. I'm curious about what
+happens if you do a left fold, but might circle back around to that question
+since I only have a few more hours to get this post out and I want to spend some
+time *in* Mexico while I'm here. Upon deeper thought, I don't think anythig
+would change --- we'd still get a ripple carry adder. Worth playing around with
+though.
+
+
+## Section 9: Speculation
+
+Section 9 is the most exciting part of the paper in my eyes. It defines
+speculation, which Elliott uses to implement a carry-ahead adder. I think the
+paper cheats a bit in this section --- and makes it clear that we might have
+been cheating a bit earlier too. But first some preliminaries. The paper defines
+`speculate`:
+
+```agda
+speculate : {A C : Set} -> (Bool × A -> C) -> (Bool × A -> C)
+speculate f (b , a) = if b then f (true , a) else f (false , a)
+```
+
+This looks like it should be a no-op, and indeed, there's a trivial proof that
+`speculate f =o= f`. The trick then is to lift `speculate` over an adder:
+
+```agda
+spec
+    : {t : Set} {m : Nat} {μ : t -> Fin m}
+   -> Adder μ
+   -> Adder μ
+spec (adder -| proof) = speculate adder -| ?
+```
+
+and the claim is that if we now do the same vector fold over `spec a` instead of
+`a`, we will get a carry-ahead adder! Sorcery! Magic!
+
+But also... wat? Is that actually true?
+
+I think here is where the paper is playing fast and loose. In `SET`, `speculate
+a` is exactly `a`. But the paper shows us a circuit diagram for this speculated
+fold, and it does indeed show the right behavior. So what's going on?
+
+What's going on is that the paper isn't actually working in `SET`. Well, it is.
+Sorta. In fact, I think there's some fancy-pants compiling-to-categories going
+on here. In the same way that `xor` presented above is a `SET`-equivalent
+version of the `xor` operation in the `CIRCUIT` category (but is not actually
+`xor` in `CIRCUIT`), `if_then_else_` is actually the `SET` version of an
+equivalent operation in `CIRCUIT`. In `CIRCUIT`, `if_then_else_` is actually
+implemented as inlining both its true and false branches, and switching
+between them by `and`ing their outputs against the conditional.
+
+So, the carry-ahead adder is not nearly as simple as it's presented in this
+paper. There's a huge amount of work going on behind the scenes:
+
+1. defining the `CIRCUIT` category
+2. implementing `if_then_else_` in `CIRCUIT`
+3. showing that the arrow category lifts `if_then_else_`
+
+Furthermore, I'm not exactly sure how this all *works.* Like, when we define
+`speculate` as `if b then f (true , a) else f (false , a)`, are we literally
+inlining `f` with the conditional fixed, and *simplfying* the resulting circuit?
+I mean, we could just fix `true` by tying it to `HIGH`, but the diagrams
+included in the paper don't appear to do that. If so, who is responsible for
+simplfying? Does it matter? This is a big hole in the paper, and in my opinion,
+greatly diminishes its impact, since it's the claim I was most excited about.
+
+To the paper's credit, the vector fold and speculative fold turn into nice
+combinators, and give us a little language for building adders, which is
+extremely cool.
+
+
+## Section 10: Reusing circuitry over time
+
+Ripple-carry adders are slow but use few gates. Carry-ahead adders are much
+faster, but use asymptotically more gates. Clearly there is a tradeoff here
+between latency and manufacturing cost. Section 10 gives us another point in the
+design space where we just build one full-adder, and loop it into itself. This
+also sounds exciting, but I'm a bit wary after section 9.
+
+And as presented, I don't think I trust the paper to deliver on this front.
+There is some finagling, but at it's core, we are given a looping construct:
+
+```agda
+loop
+    : {A B S : Set}
+   -> {n : Nat}
+   -> (S × A -> B × S)
+   -> S × Vec A n
+   -> Vec B n × S
+loop f (s , nil) = nil , s
+loop f (s , cons a v) =
+  let b , s' = f (s , a)
+   in bimap (cons b) id (loop f (s' , v))
+```
+
+Thinking about what this would mean in `CIRCUIT` makes it unclear how we would
+go about implementing such a thing in real hardware --- especially so if the
+embedding sticks `f` into the hardware and then loops over it over time. You're
+going to need some sort of ring buffer to read off the outputs and stick them in
+the resulting vector. You're going to need timing signals to know when your ring
+buffer is consistent. There's clearly a lot going on in this section that is
+left unsaid, and there aren't even any pretty pictures to help us reverse
+engineer the missing bits.
+
+So I'm going to leave it there.
+
+
+## Conclusion
+
+*Adders and Arrows* was a fun paper to go through. It forced me to up my
+category game, and I got a much better sense of what the arrow category does,
+and how it can be useful. Furthermore, just going through a non-trivial project
+aggressively improved my Agda competencies, and I'm excited to do more along
+these lines.
+
+The paper itself is a bit too terse for my liking. I would have liked a section
+saying "here's what we're going to do, and here's how we're going to go about
+it," rather than just being thrown in and trying to deduce this for myself. In
+particular, it took me an embarassing amount of time to realize how to get
+natural numbers out of my adder arrows, and why the first 6 sections were
+worth having done.
+
+Technically, I found the ergonomics of working with arrow-category arrows very
+challenging. Two of the `SET` morphisms show up in the type, but the other two
+show up as values, and there is no easy way to see which diagrams can be
+vertically composed. My `Adder=>>N` arrow abve shows the pain of trying to give
+a type to such a thing.
+
+I had two major points of complaint about this paper. The first is that the
+source code isn't very accessible. It exists in a repo, but is scattered around
+a bunch of modules and whenever I wanted to find something I resorted to just
+looking at each --- being unable to make rhyme or reason of how things were
+organized. Worse, a huge chunk of the underlying machinery is in a separate
+repo, one which is significantly more advanced in its Agda usage than I am. A
+proliferation of weird unicode symbols that aren't the ones that show up in the
+PDF make this especially challenging to navigate.
+
+My other major complaint is that sections 9 and 10 were extremely underwhelming,
+though. If the paper does what it promises, it doesn't actually show *how.*
+There is a lot going on behind the scenes that aren't even alluded to in the
+paper. Granted, the version I'm reading is a draft, so hopefully this will be
+cleared up.
+
+I don't yet have a major takeaway from this paper, other than that arrow
+categories are cool for specifying problems and proving that your
+implementations adhere to those specifications. But as implemented, for my given
+adeptness at Agda, they are too hard to use. Composition is tricky to wrap ones
+head around given the type signatures used in this paper, but hopefully that's
+an aesthetic problem more than a fundamental issue. In particular, `tranpose`
+needs to have type `CommaArr A B C D -> CommaArr C D A B` --- this would make
+vertical and horizontal composition much easier to think about.
+
+All in all, powering through this paper has given me some new tools for thought,
+and helped me see how category theory might be useful to mere mortals.
+
+[My implementation of this code is available on Github.](https://github.com/isovector/agda-playground/blob/88dabf47b5e251cad55dd4cce3b54df5ab4aff13/AddArrows.agda)
 
