@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Review: Adders and Arrows
+title: "Review: Adders and Arrows"
 date: 2022-01-07 14:27
 comments: true
 tags: papers, review, elliott, category theory, agda, circuits
