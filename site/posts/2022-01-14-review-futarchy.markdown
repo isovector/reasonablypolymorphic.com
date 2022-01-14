@@ -123,39 +123,39 @@ question, the better.
 
 The bank can offer a pair of assets:
 
-1. Pays \$1 if it is raining on Friday at 10am.
-2. Pays \$1 if it is not raining on Friday at 10am.
+1. Pays \\$1 if it is raining on Friday at 10am.
+2. Pays \\$1 if it is not raining on Friday at 10am.
 
-and the bank is happy to sell these assets for \$1, because exactly one of them
+and the bank is happy to sell these assets for \\$1, because exactly one of them
 will actually pay off. In the meantime, the bank can collect interest for free.
 
 Suppose Market-Making Marty buys 10,000 of these pairs from the bank. Marty can
 now sell the assets individually, for example, he might sell some not raining
 assets to Dusty, and some raining assets to Misty. Initially, he might price
-both assets at \$0.60.
+both assets at \\$0.60.
 
-By selling both sides of the pair at \$0.60, Marty safely makes \$2,000 dollars
-off of his \$10,000 investment. It's safe because he no longer holds any assets
+By selling both sides of the pair at \\$0.60, Marty safely makes \\$2,000 dollars
+off of his \\$10,000 investment. It's safe because he no longer holds any assets
 except for cold hard cash.
 
-Dusty figures that it's sunny more than 60% of the time, so paying \$0.60 for an
-asset that pays \$1.00 is a good deal. If he estimates the likelihood of it being
-sunny on Friday at 80%, then he expects an 80% chance of making \$10,000, and a
-20% chance of making \$0. Adding these together, he computes his expected value
-at $0.8 * 10000 + 0.2 * 0 = 8000$, which is \$2,000 more in expectation than the
-cost of buying all the assets at \$6,000.
+Dusty figures that it's sunny more than 60% of the time, so paying \\$0.60 for an
+asset that pays \\$1.00 is a good deal. If he estimates the likelihood of it being
+sunny on Friday at 80%, then he expects an 80% chance of making \\$10,000, and a
+20% chance of making \\$0. Adding these together, he computes his expected value
+at $0.8 * 10000 + 0.2 * 0 = 8000$, which is \\$2,000 more in expectation than the
+cost of buying all the assets at \\$6,000.
 
 Misty does some chain of reasoning that makes her believe that her money is also
 well spent.
 
 Summer has been thinking hard, and is pretty sure the chance of rain on Friday
 is actually closer to 5%. So she approaches Dusty, and offers to buy some of his
-no-rain assets for \$0.90. Dusty thinks this is too confident, so he happily
+no-rain assets for \\$0.90. Dusty thinks this is too confident, so he happily
 unloads his options to Summer, since again he expects to be making money on this
 trade.
 
-When everything settles, no-rain assets are trading at a market price of \$0.83,
-while rain assets are at \$0.17 (in the limit, these must add up to \$1.00, or
+When everything settles, no-rain assets are trading at a market price of \\$0.83,
+while rain assets are at \\$0.17 (in the limit, these must add up to \\$1.00, or
 else you can make money by holding both sides.)
 
 Patty, who was thinking about having a picnic in the park on Friday, looks at
@@ -176,18 +176,18 @@ We can play the same game to extract information about expected values from the
 market. Suppose we want to guess the price of flour next week. The bank can look
 at the historical high of flour price, and sell pairs of assets:
 
-1. Pays \$x, where `x` is the percentage of the cost of flour with respect to
-   its all-time high. For example, if the all-time high was \$40, and the cost
-   of flour next week was \$30, this asset pays \$0.75 ($30/40$).
-2. Pays \$(1 - x).
+1. Pays \\$x, where `x` is the percentage of the cost of flour with respect to
+   its all-time high. For example, if the all-time high was \\$40, and the cost
+   of flour next week was \\$30, this asset pays \\$0.75 ($30/40$).
+2. Pays \\$(1 - x).
 
 Again, the bank is happy to make this trade because they are still only paying
-out \$1, and they still get to make interest on that dollar until the market pays
+out \\$1, and they still get to make interest on that dollar until the market pays
 out.
 
 The trading price of these assets now correspond to the market's opinion of the
-expected value of the price of flour next week. If \$x assets are trading at
-\$0.30, we can read the expected value of flour next week to be $0.3 * 40 = 12$.
+expected value of the price of flour next week. If \\$x assets are trading at
+\\$0.30, we can read the expected value of flour next week to be $0.3 * 40 = 12$.
 
 
 ### Conditional Assets
@@ -196,12 +196,12 @@ There's one last trick we can do. We can make conditional assets, that is,
 assets which only pay out when a certain precondition is met. We can consider
 the case of whether or not a big law firm BLF wins its case, conditional on
 whether or not they put Litigious Larry on as the lead prosecutor. In this case,
-the bank offers quads of assets for \$1:
+the bank offers quads of assets for \\$1:
 
-1. Pays \$1 if BLF wins with Larry
-2. Pays \$1 if BLF wins without Larry
-3. Pays \$1 if BLF loses with Larry
-4. Pays \$1 if BLF loses without Larry
+1. Pays \\$1 if BLF wins with Larry
+2. Pays \\$1 if BLF wins without Larry
+3. Pays \\$1 if BLF loses with Larry
+4. Pays \\$1 if BLF loses without Larry
 
 Again, only one of these four cases will actually pay out (ignoring the
 possibility that it doesn't go to court, but that's a simplification for the
@@ -224,19 +224,19 @@ The people vote on the government based on parties' values. The government puts
 forward its value function. Now, anyone can pay a transaction fee (perhaps quite
 high) to propose a policy intervention. The bank can offer a pair of assets:
 
-1. Pays \$x if the intervention is made
-2. Pays \$(1-x) if the intervention is made
+1. Pays \\$x if the intervention is made
+2. Pays \\$(1-x) if the intervention is made
 
 where x is linear in the observed value function at some point in the future.
 The idea is to tie the payoff of the asset to how well it helps influence our
 value function.
 
 For example, maybe the government decides the value function is GDP. Maybe the
-target GDP in five years is \$30 trillion. Phoebe then proposes building a
+target GDP in five years is \\$30 trillion. Phoebe then proposes building a
 high-speed train between Toronto and Vancouver. The bank can offer assets as
-above, where x is the observed percentage of GDP out of \$30 trillion.
+above, where x is the observed percentage of GDP out of \\$30 trillion.
 
-After some period of trading, the \$x assets are trading well above \$(1-x). This
+After some period of trading, the \\$x assets are trading well above \\$(1-x). This
 is interpreted as the market thinking this train would be good for long term
 GDP. Immediately, the decision to build the train is ensconced in law.
 
