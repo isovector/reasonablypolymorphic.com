@@ -90,34 +90,34 @@
 <p>Imagine a particular question of fact, that can be definitely observed in the future. For example, maybe we want to determine whether or not it will be raining next Friday at 10am in the park beside my house. The more specific the question, the better.</p>
 <p>The bank can offer a pair of assets:</p>
 <ol type="1">
-<li>Pays $1 if it is raining on Friday at 10am.</li>
-<li>Pays $1 if it is not raining on Friday at 10am.</li>
+<li>Pays \$1 if it is raining on Friday at 10am.</li>
+<li>Pays \$1 if it is not raining on Friday at 10am.</li>
 </ol>
-<p>and the bank is happy to sell these assets for $1, because exactly one of them will actually pay off. In the meantime, the bank can collect interest for free.</p>
-<p>Suppose Market-Making Marty buys 10,000 of these pairs from the bank. Marty can now sell the assets individually, for example, he might sell some not raining assets to Dusty, and some raining assets to Misty. Initially, he might price both assets at $0.60.</p>
-<p>By selling both sides of the pair at $0.60, Marty safely makes $2,000 dollars off of his $10,000 investment. It’s safe because he no longer holds any assets except for cold hard cash.</p>
-<p>Dusty figures that it’s sunny more than 60% of the time, so paying $0.60 for an asset that pays $1.00 is a good deal. If he estimates the likelihood of it being sunny on Friday at 80%, then he expects an 80% chance of making $10,000, and a 20% chance of making $0. Adding these together, he computes his expected value at <span class="math inline">\(0.8 * 10000 + 0.2 * 0 = 8000\)</span>, which is $2,000 more in expectation than the cost of buying all the assets at $6,000.</p>
+<p>and the bank is happy to sell these assets for \$1, because exactly one of them will actually pay off. In the meantime, the bank can collect interest for free.</p>
+<p>Suppose Market-Making Marty buys 10,000 of these pairs from the bank. Marty can now sell the assets individually, for example, he might sell some not raining assets to Dusty, and some raining assets to Misty. Initially, he might price both assets at \$0.60.</p>
+<p>By selling both sides of the pair at \$0.60, Marty safely makes \$2,000 dollars off of his \$10,000 investment. It’s safe because he no longer holds any assets except for cold hard cash.</p>
+<p>Dusty figures that it’s sunny more than 60% of the time, so paying \$0.60 for an asset that pays \$1.00 is a good deal. If he estimates the likelihood of it being sunny on Friday at 80%, then he expects an 80% chance of making \$10,000, and a 20% chance of making \$0. Adding these together, he computes his expected value at <span class="math inline">\(0.8 * 10000 + 0.2 * 0 = 8000\)</span>, which is \$2,000 more in expectation than the cost of buying all the assets at \$6,000.</p>
 <p>Misty does some chain of reasoning that makes her believe that her money is also well spent.</p>
-<p>Summer has been thinking hard, and is pretty sure the chance of rain on Friday is actually closer to 5%. So she approaches Dusty, and offers to buy some of his no-rain assets for $0.90. Dusty thinks this is too confident, so he happily unloads his options to Summer, since again he expects to be making money on this trade.</p>
-<p>When everything settles, no-rain assets are trading at a market price of $0.83, while rain assets are at $0.17 (in the limit, these must add up to $1.00, or else you can make money by holding both sides.)</p>
+<p>Summer has been thinking hard, and is pretty sure the chance of rain on Friday is actually closer to 5%. So she approaches Dusty, and offers to buy some of his no-rain assets for \$0.90. Dusty thinks this is too confident, so he happily unloads his options to Summer, since again he expects to be making money on this trade.</p>
+<p>When everything settles, no-rain assets are trading at a market price of \$0.83, while rain assets are at \$0.17 (in the limit, these must add up to \$1.00, or else you can make money by holding both sides.)</p>
 <p>Patty, who was thinking about having a picnic in the park on Friday, looks at the asset prices, and decides it’s not going to rain, since no-rain is trading above rain.</p>
 <p>Thus, Patty has made a decision about the future, based on information aggregated from Dusty, Misty, Summer, and whoever else might have been in on the market.</p>
 <p>Friday comes along, and it doesn’t rain. Patty is happy, as is everyone holding no-rain assets, since they all made money.</p>
 <h3 id="discovering-expected-value">Discovering Expected Value</h3>
 <p>We can play the same game to extract information about expected values from the market. Suppose we want to guess the price of flour next week. The bank can look at the historical high of flour price, and sell pairs of assets:</p>
 <ol type="1">
-<li>Pays $x, where <code>x</code> is the percentage of the cost of flour with respect to its all-time high. For example, if the all-time high was $40, and the cost of flour next week was $30, this asset pays $0.75 (<span class="math inline">\(30/40\)</span>).</li>
-<li>Pays $(1 - x).</li>
+<li>Pays \$x, where <code>x</code> is the percentage of the cost of flour with respect to its all-time high. For example, if the all-time high was \$40, and the cost of flour next week was \$30, this asset pays \$0.75 (<span class="math inline">\(30/40\)</span>).</li>
+<li>Pays \$(1 - x).</li>
 </ol>
-<p>Again, the bank is happy to make this trade because they are still only paying out $1, and they still get to make interest on that dollar until the market pays out.</p>
-<p>The trading price of these assets now correspond to the market’s opinion of the expected value of the price of flour next week. If $x assets are trading at $0.30, we can read the expected value of flour next week to be <span class="math inline">\(0.3 * 40 = 12\)</span>.</p>
+<p>Again, the bank is happy to make this trade because they are still only paying out \$1, and they still get to make interest on that dollar until the market pays out.</p>
+<p>The trading price of these assets now correspond to the market’s opinion of the expected value of the price of flour next week. If \$x assets are trading at \$0.30, we can read the expected value of flour next week to be <span class="math inline">\(0.3 * 40 = 12\)</span>.</p>
 <h3 id="conditional-assets">Conditional Assets</h3>
-<p>There’s one last trick we can do. We can make conditional assets, that is, assets which only pay out when a certain precondition is met. We can consider the case of whether or not a big law firm BLF wins its case, conditional on whether or not they put Litigious Larry on as the lead prosecutor. In this case, the bank offers quads of assets for $1:</p>
+<p>There’s one last trick we can do. We can make conditional assets, that is, assets which only pay out when a certain precondition is met. We can consider the case of whether or not a big law firm BLF wins its case, conditional on whether or not they put Litigious Larry on as the lead prosecutor. In this case, the bank offers quads of assets for \$1:</p>
 <ol type="1">
-<li>Pays $1 if BLF wins with Larry</li>
-<li>Pays $1 if BLF wins without Larry</li>
-<li>Pays $1 if BLF loses with Larry</li>
-<li>Pays $1 if BLF loses without Larry</li>
+<li>Pays \$1 if BLF wins with Larry</li>
+<li>Pays \$1 if BLF wins without Larry</li>
+<li>Pays \$1 if BLF loses with Larry</li>
+<li>Pays \$1 if BLF loses without Larry</li>
 </ol>
 <p>Again, only one of these four cases will actually pay out (ignoring the possibility that it doesn’t go to court, but that’s a simplification for the example, not a limitation of the technique.)</p>
 <p>Like Patty in the park, BLF can make a decision about the future: whether or not they should put Larry on the case based on whether Win|Larry is trading higher than Win|-Larry.</p>
@@ -126,12 +126,12 @@
 <p>With the mechanism design under our belt, we can now think about implementing futarchy.</p>
 <p>The people vote on the government based on parties’ values. The government puts forward its value function. Now, anyone can pay a transaction fee (perhaps quite high) to propose a policy intervention. The bank can offer a pair of assets:</p>
 <ol type="1">
-<li>Pays $x if the intervention is made</li>
-<li>Pays $(1-x) if the intervention is made</li>
+<li>Pays \$x if the intervention is made</li>
+<li>Pays \$(1-x) if the intervention is made</li>
 </ol>
 <p>where x is linear in the observed value function at some point in the future. The idea is to tie the payoff of the asset to how well it helps influence our value function.</p>
-<p>For example, maybe the government decides the value function is GDP. Maybe the target GDP in five years is $30 trillion. Phoebe then proposes building a high-speed train between Toronto and Vancouver. The bank can offer assets as above, where x is the observed percentage of GDP out of $30 trillion.</p>
-<p>After some period of trading, the $x assets are trading well above $(1-x). This is interpreted as the market thinking this train would be good for long term GDP. Immediately, the decision to build the train is ensconced in law.</p>
+<p>For example, maybe the government decides the value function is GDP. Maybe the target GDP in five years is \$30 trillion. Phoebe then proposes building a high-speed train between Toronto and Vancouver. The bank can offer assets as above, where x is the observed percentage of GDP out of \$30 trillion.</p>
+<p>After some period of trading, the \<span class="math inline">\(x assets are trading well above \\\)</span>(1-x). This is interpreted as the market thinking this train would be good for long term GDP. Immediately, the decision to build the train is ensconced in law.</p>
 <p>That doesn’t mean all the details are necessarily worked out. If Phoebe had the whole plan for the train worked out, she could have put those in her proposal. But let’s assume she didn’t. Instead, someone can make a new proposal, that Cost-Cutting Carlos should get put in charge of the project. At the same time, there is a proposal that Safety Susan should be put in charge. Markets pop up for both, and whichever is trading higher gets the bid (unless neither is trading well!)</p>
 <p>We can follow this process ad infinitum, to work out more and more particulars. If, at any time, someone thinks the train is actually a bad idea, they can make a proposal to stop its development. We need not worry about the inefficiency inherent this sort of flip-flopping; the market will necessarily price-in the sunk costs.</p>
 
