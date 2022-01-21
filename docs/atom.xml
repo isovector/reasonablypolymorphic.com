@@ -23,16 +23,26 @@
 <p>The trick to Wordle is to extract as much information from your guesses as possible. But what does it mean to “extract” information? Is information something we can put a number on?</p>
 <p>Rather surprisingly, the answer is yes.</p>
 <p>Let’s illustrate the idea by ignoring Wordle for a moment. Instead, imagine I have a buried treasure, somewhere on this map:</p>
-<p><img src="/images/wordle/map0.png" style="width: 100%"></p>
+<center>
+<img src="/images/wordle/map0.png">
+</center>
 <p>You don’t know where the treasure is, but you can ask me some yes/no questions, and I promise to answer truthfully. In six questions, can you find the treasure?</p>
 <p>The trick here is to be very strategic about how you ask your questions. For example, the first question you ask might be “is the treasure on the left half of the map?”, to which I reply yes. We can now redraw the map, using red to highlight the places the treasure could still be:</p>
-<p><img src="/images/wordle/map1.png" style="width: 100%"></p>
+<center>
+<img src="/images/wordle/map1.png">
+</center>
 <p>Next you can ask “is the treasure on the bottom half <em>of the remaining red region?</em>” I say no. Thus the treasure is on the top half, and our refined map looks like this:</p>
-<p><img src="/images/wordle/map2.png" style="width: 100%"></p>
+<center>
+<img src="/images/wordle/map2.png">
+</center>
 <p>“Is the treasure on the right half?” Yes.</p>
-<p><img src="/images/wordle/map3.png" style="width: 100%"></p>
+<center>
+<img src="/images/wordle/map3.png">
+</center>
 <p>“Top?” No.</p>
-<p><img src="/images/wordle/map4.png" style="width: 100%"></p>
+<center>
+<img src="/images/wordle/map4.png">
+</center>
 <p>You get the idea. By phrasing subsequent questions like this, each time we cut in half the remaining possible hiding spots for the treasure. When we find the treasure, we’re done.</p>
 <p>To quantify the amount of information necessary to find the treasure, we need only count how many questions we asked. If we can go from the full map to finding the treasure in 7 questions, we say we needed <em>7 bits</em> of information to find it.</p>
 <p>In general, the information required to solve a problem is the number of times we need to split the space in half in order to find what we were looking for. Information is measured in “bits.”</p>
