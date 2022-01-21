@@ -37,7 +37,7 @@ Rather surprisingly, the answer is yes.
 Let's illustrate the idea by ignoring Wordle for a moment. Instead, imagine I
 have a buried treasure, somewhere on this map:
 
-<img src="/images/wordle/map0.png" style="width: 100%">
+<center><img src="/images/wordle/map0.png"></center>
 
 You don't know where the treasure is, but you can ask me some yes/no questions,
 and I promise to answer truthfully. In six questions, can you find the treasure?
@@ -47,21 +47,21 @@ example, the first question you ask might be "is the treasure on the left half
 of the map?", to which I reply yes. We can now redraw the map, using red to
 highlight the places the treasure could still be:
 
-<img src="/images/wordle/map1.png" style="width: 100%">
+<center><img src="/images/wordle/map1.png"></center>
 
 Next you can ask "is the treasure on the bottom half *of the remaining red
 region?*" I say no. Thus the treasure is on the top half, and our refined map
 looks like this:
 
-<img src="/images/wordle/map2.png" style="width: 100%">
+<center><img src="/images/wordle/map2.png"></center>
 
 "Is the treasure on the right half?" Yes.
 
-<img src="/images/wordle/map3.png" style="width: 100%">
+<center><img src="/images/wordle/map3.png"></center>
 
 "Top?" No.
 
-<img src="/images/wordle/map4.png" style="width: 100%">
+<center><img src="/images/wordle/map4.png"></center>
 
 You get the idea. By phrasing subsequent questions like this, each time we cut
 in half the remaining possible hiding spots for the treasure. When we find the
