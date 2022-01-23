@@ -227,7 +227,7 @@
 <span id="cb29-7"><a href="#cb29-7" aria-hidden="true"></a>      pump <span class="op">$</span> proceed a dis</span>
 <span id="cb29-8"><a href="#cb29-8" aria-hidden="true"></a>    pump (<span class="dt">Done</span> pa) <span class="ot">=</span> <span class="fu">pure</span> pa</span></code></pre></div>
 <p>It’s not quite <code>Traversable</code>, since it requires a <code>Monad</code> instance instead of merely <code>Applicative</code>. Why’s that? I think it’s because applicatives don’t care about the order in which you sequence them, but this <code>Dissectable</code> is very clearly an explicit ordering on the data dependencies in the container.</p>
-<p>/* TODO(sandy): MM said this */</p>
+<!-- TODO(sandy): MM said this -->
 <p>Finally, we can implement the stack-based, tail-recursive catamorphism that we’ve been promised all along. The idea is simple — we use the <code>Dissected</code> type as our stack, pushing them on as we unfold the functor fixpoint, and resuming them as we finish calls.</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="ot">tcata ::</span> <span class="kw">forall</span> p v<span class="op">.</span> <span class="dt">Dissectable</span> p <span class="ot">=&gt;</span> (p v <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> <span class="dt">Fix</span> p <span class="ot">-&gt;</span> v</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true"></a>tcata f t <span class="ot">=</span> load&#39; t []</span>
@@ -359,7 +359,15 @@ Dissected ExprF&#39; :: * -&gt; * -&gt; *
 <p>They’re not equal, but are they isomorphic? We should hope so! The first one is <code>Sum2 0 x</code>, which is clearly isomorphic to <code>x</code>. The second is harder:</p>
 <p><code>Product (Compose2 (Sum2 (K2 Void) (K2 ())) (Rec1 Pair)) x</code></p>
 <p>If that first argument to <code>Product</code> is 1, then these two types are isomorphic. So let’s see:</p>
-<p>`<code>haskell     Compose2 (Sum2 (K2 Void) (K2 ())) (Rec1 Pair) = symbolic rewriting     Compose2 (0 + 1) (Rec1 Pair) = 0 is an identity for +     Compose2 1 (Rec1 Pair) = definition of Compose2     K2 () (Rec1 Pair c) (Rec1 Pair j) = K2 () is still 1     1</code></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true"></a>    <span class="dt">Compose2</span> (<span class="dt">Sum2</span> (<span class="dt">K2</span> <span class="dt">Void</span>) (<span class="dt">K2</span> ())) (<span class="dt">Rec1</span> <span class="dt">Pair</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true"></a><span class="ot">=</span> symbolic rewriting</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true"></a>    <span class="dt">Compose2</span> (<span class="dv">0</span> <span class="op">+</span> <span class="dv">1</span>) (<span class="dt">Rec1</span> <span class="dt">Pair</span>)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true"></a><span class="ot">=</span> <span class="dv">0</span> is an identity for <span class="op">+</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true"></a>    <span class="dt">Compose2</span> <span class="dv">1</span> (<span class="dt">Rec1</span> <span class="dt">Pair</span>)</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true"></a><span class="ot">=</span> definition <span class="kw">of</span> <span class="dt">Compose2</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true"></a>    <span class="dt">K2</span> () (<span class="dt">Rec1</span> <span class="dt">Pair</span> c) (<span class="dt">Rec1</span> <span class="dt">Pair</span> j)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true"></a><span class="ot">=</span> <span class="dt">K2</span> () is still <span class="dv">1</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true"></a>    <span class="dv">1</span></span></code></pre></div>
 <p>Look at that, baby. Isomorphic types, that compute the same answer.</p>
 <p>As usual, today’s code is available on <a href="https://gist.github.com/isovector/8a02f5c21bdb5ff5034b661ef9d28d10">Github</a>.</p>
       ]]></content:encoded>
