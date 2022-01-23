@@ -671,7 +671,7 @@ So let's see:
     K2 () (Rec1 Pair c) (Rec1 Pair j)
 = K2 () is still 1
     1
-``
+```
 
 Look at that, baby. Isomorphic types, that compute the same answer.
 
