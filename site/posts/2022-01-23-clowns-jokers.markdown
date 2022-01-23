@@ -439,11 +439,12 @@ tsequence = pump . start
 ```
 
 It's not quite `Traversable`, since it requires a `Monad` instance instead of
-merely `Applicative`. Why's that? I think it's because applicatives don't care
-about the order in which you sequence them, but this `Dissectable` is very
-clearly an explicit ordering on the data dependencies in the container.
+merely `Applicative`. Why's that? I don't know, but [MonoidMusician][mm]
+suggested it's because applicatives don't care about the order in which you
+sequence them, but this `Dissectable` is very clearly an explicit ordering on
+the data dependencies in the container. Thanks MonoidMusician!
 
-<!-- TODO(sandy): MM said this -->
+[mm]: https://monoidmusician.github.io/monoidmusician.html
 
 Finally, we can implement the stack-based, tail-recursive catamorphism that
 we've been promised all along. The idea is simple --- we use the `Dissected`
