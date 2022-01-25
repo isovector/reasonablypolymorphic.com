@@ -245,7 +245,7 @@
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a>tmap fab <span class="ot">=</span> pump <span class="op">.</span> start</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a><span class="ot">    pump ::</span> <span class="dt">Suspension</span> p (<span class="dt">Dissected</span> p) b a <span class="ot">-&gt;</span> p b</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>    pump (<span class="dt">More</span> a dis) <span class="ot">=</span> continue <span class="op">$</span> proceed (fab a) dis</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>    pump (<span class="dt">More</span> a dis) <span class="ot">=</span> pump <span class="op">$</span> proceed (fab a) dis</span>
 <span id="cb28-6"><a href="#cb28-6" aria-hidden="true"></a>    pump (<span class="dt">Done</span> j) <span class="ot">=</span> j</span></code></pre></div>
 <p>We start the dissection, and then pump its suspension until we’re done, applying <code>fab</code> as we go.</p>
 <p>Perhaps more interestingly, we can <em>almost</em> get <code>Traversable</code> with this machinery:</p>
