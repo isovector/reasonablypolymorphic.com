@@ -417,7 +417,7 @@ tmap :: forall p a b. Dissectable p => (a -> b) -> p a -> p b
 tmap fab = pump . start
   where
     pump :: Suspension p (Dissected p) b a -> p b
-    pump (More a dis) = continue $ proceed (fab a) dis
+    pump (More a dis) = pump $ proceed (fab a) dis
     pump (Done j) = j
 ```
 
