@@ -276,3 +276,5 @@ record syntax" I'd seen in Agda. I don't yet love the copattern formulation of
 every example presented in the paper, but will admit that `Monad-State₂` and
 `zipWith` are particularly beautiful under copatterns.
 
+As usual, [the code is on Github.](https://gist.github.com/isovector/37a1c1e21a3618e4f4885482a1454396)
+
