@@ -7,13 +7,129 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2022-01-23T13:49:00Z</pubDate>
+  <pubDate>2022-01-29T11:39:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Review: Copatterns</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/review-copatterns/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/review-copatterns/index.html</guid>
+      <pubDate>2022-01-29T11:39:00Z</pubDate>
+      <content:encoded><![CDATA[
+        <p>Another week, another paper review. This week my plan was to look at the word2vec paper, but I made the mistake of not looking into it early in the week, and by the time I did, it was extremely underwhelming. So instead, we’re going to take a look at Abel, Pientka, Thibodeau and Setzer’s <a href="http://www2.tcs.ifi.lmu.de/~abel/popl13.pdf">Copatterns: Programming Infinite Structures by Observations</a>.</p>
+<p>In this paper, Abel et al. present <em>copatterns,</em> the categorical duals of pattern matching. I’d briefly encountered copatterns when playing with Agda, but thought it was just a funny syntax for building records. I didn’t look much into it — instead being distracted by all the cool things I could do with dependent types.</p>
+<p>The paper presents copatterns, gives some motivating examples, and then does a bunch of type theory stuff to prove they play nicely. Today I’m going to look only at the first two sections, omitting the type theory stuff. Not because I’m not interested, but because I’d like to find a nice introductory paper to type theory stuff, rather than try to hammer it through my thick skull at the same time as trying to figure out what Abel et al. are trying to show me. Note to self, that would be a good paper to tackle for next week.</p>
+<p>So, what is a copattern? While patterns let us map out of inductive types, copatterns let us map into coinductive types. Right, ok, but what does that really mean? Pattern matching lets us branch on the way a piece of data was built. But dually, copattern matching lets us branch to define a piece of codata.</p>
+<p>Some examples will help.</p>
+<p>The paper: “one should distinguish between finite, inductive data defined by constructors and infinite, coinductive data which is better described by observations… one can declare codatatypes via a list of their destructors.”</p>
+<p>It’s a little hard to see this for me, coming from Haskell where laziness lets us play very fast and loose in the differences between data and codata. But fundamentally, data is built inductively: by taking smaller pieces, and assembling them into something bigger. Thus, data is always finite.</p>
+<h2 id="streams">Streams</h2>
+<p>Codata, however, is infinite, and accomplishes that by being built out of <em>bigger</em> pieces. The canonical example given to us is a <code>Stream</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">record</span> Stream <span class="ot">(</span>A <span class="ot">:</span> <span class="dt">Set</span><span class="ot">)</span> <span class="ot">:</span> <span class="dt">Set</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="kw">coinductive</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="kw">constructor</span> <span class="ot">_</span>:&gt;<span class="ot">_</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="kw">field</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    head <span class="ot">:</span> A</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    tail <span class="ot">:</span> Stream A</span></code></pre></div>
+<p>In order to build a <code>Stream A</code>, <em>you must already have one.</em> There is no base case! That’s actually pretty wild, if you think about it!</p>
+<p>Returning to the paper, we can think of <code>Stream</code>s as being opaque objects, equipped with two observations:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>head <span class="ot">:</span> Stream A <span class="ot">-&gt;</span> A</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>tail <span class="ot">:</span> Stream A <span class="ot">-&gt;</span> Stream A</span></code></pre></div>
+<p>and fact, any other observation on <code>Stream</code>s “factors out” into at least one of these observations (by virtue of their being the definition of <code>Stream</code>.) The paper gives an example of a stream producer that builds the stream <code>N, N-1, N-2, ..., 0, N, N-1 ...</code>. Their presentation leaves a bit to be desired, so I’ve changed it a little here:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>cycleNats <span class="ot">:</span> Nat <span class="ot">-&gt;</span> Nat <span class="ot">-&gt;</span> Stream Nat</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>cycleNats N x <span class="ot">=</span> ?</span></code></pre></div>
+<p>where <code>N</code> is the <code>Nat</code> we’re counting down from, and <code>x</code> is the <code>Nat</code> we’re currently at. Here, we’d like to <em>build</em> a <code>Stream</code>, and the idea of copatterns is that we can define a function by defining every observation over it:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>cycleNats <span class="ot">:</span> Nat <span class="ot">-&gt;</span> Nat <span class="ot">-&gt;</span> Stream Nat</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>Stream<span class="ot">.</span>head <span class="ot">(</span>cycleNats N x<span class="ot">)</span> <span class="ot">=</span> ?</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>Stream<span class="ot">.</span>tail <span class="ot">(</span>cycleNats N x<span class="ot">)</span> <span class="ot">=</span> ?</span></code></pre></div>
+<p>Take a moment to think about what’s going on here, because it’s <em>fucking crazy</em> if you’re coming from Haskell like I am. We are defining <code>cycleNats</code> by giving two projections <em>out of it!</em> The <code>head</code> projection is easy to fill in:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>cycleNats <span class="ot">:</span> Nat <span class="ot">-&gt;</span> Nat <span class="ot">-&gt;</span> Stream Nat</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>Stream<span class="ot">.</span>head <span class="ot">(</span>cycleNats <span class="ot">_</span> x<span class="ot">)</span> <span class="ot">=</span> x</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>Stream<span class="ot">.</span>tail <span class="ot">(</span>cycleNats N x<span class="ot">)</span> <span class="ot">=</span> ?</span></code></pre></div>
+<p>but in the tail case, we want to wrap around from <code>x = zero</code> back to <code>x = N</code>. Thus, we can do a usual, everyday <strong>pattern</strong> match on <code>x</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>cycleNats <span class="ot">:</span> Nat <span class="ot">-&gt;</span> Nat <span class="ot">-&gt;</span> Stream Nat</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>Stream<span class="ot">.</span>head <span class="ot">(</span>cycleNats <span class="ot">_</span> x<span class="ot">)</span> <span class="ot">=</span> x</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>Stream<span class="ot">.</span>tail <span class="ot">(</span>cycleNats N zero<span class="ot">)</span> <span class="ot">=</span> ?</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>Stream<span class="ot">.</span>tail <span class="ot">(</span>cycleNats N <span class="ot">(</span>suc x<span class="ot">))</span> <span class="ot">=</span> ?</span></code></pre></div>
+<p>and can now give the <code>tail</code> projections of <code>cycleNats</code> in terms of <code>cycleNats</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>cycleNats <span class="ot">:</span> Nat <span class="ot">-&gt;</span> Nat <span class="ot">-&gt;</span> Stream Nat</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>Stream<span class="ot">.</span>head <span class="ot">(</span>cycleNats <span class="ot">_</span> x<span class="ot">)</span> <span class="ot">=</span> x</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>Stream<span class="ot">.</span>tail <span class="ot">(</span>cycleNats N zero<span class="ot">)</span> <span class="ot">=</span> cycleNats N N</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>Stream<span class="ot">.</span>tail <span class="ot">(</span>cycleNats N <span class="ot">(</span>suc x<span class="ot">))</span> <span class="ot">=</span> cycleNats N x</span></code></pre></div>
+<p>Amazingly, Agda accepts this program.</p>
+<p>So what happened here? We defined a function that produces a coinductive type indirectly, by giving the projections <em>out</em> of the function. The copatterns build new function heads, in which we can do everyday pattern matching to help refine the cases further.</p>
+<p>For the sake of comparison, I wanted to write <code>cycleNats</code> without copatterns, just to get a sense for it:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="pp">{-# TERMINATING #-}</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>cycleNats&#39; <span class="ot">:</span> Nat <span class="ot">-&gt;</span> Nat <span class="ot">-&gt;</span> Stream Nat</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>cycleNats&#39; N zero <span class="ot">=</span> zero :&gt; cycleNats&#39; N N</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>cycleNats&#39; N <span class="ot">(</span>suc x<span class="ot">)</span> <span class="ot">=</span> suc x :&gt; cycleNats&#39; N x</span></code></pre></div>
+<p>For arcane reasons I don’t understand, I need to mark <code>cycleNats'</code> as <code>TERMINATING</code> (but it’s not) in order for Agda to let me do any reasoning over it.</p>
+<p>Presented like this, the copattern version is definitely doing some work; it lets us factor out the shared logic for defining the <code>head</code>. The copattern version doesn’t yet feel natural to me, but that might be a byproduct of having my brain stuck in Haskell land for the better part of a decade.</p>
+<h2 id="lift-instances-over-newtypes">Lift Instances over Newtypes</h2>
+<p>We can write <code>Monad</code>s in Agda:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">record</span> Monad <span class="ot">(</span>M <span class="ot">:</span> <span class="dt">Set</span> <span class="ot">-&gt;</span> <span class="dt">Set</span><span class="ot">)</span> <span class="ot">:</span> <span class="dt">Set</span> <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>  <span class="kw">constructor</span> is-monad</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>  <span class="kw">field</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>    pure <span class="ot">:</span> <span class="ot">{</span>A <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> A <span class="ot">-&gt;</span> M A</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>    <span class="ot">_</span>&gt;&gt;=<span class="ot">_</span> <span class="ot">:</span> <span class="ot">{</span>A B <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> M A <span class="ot">-&gt;</span> <span class="ot">(</span>A <span class="ot">-&gt;</span> M B<span class="ot">)</span> <span class="ot">-&gt;</span> M B</span></code></pre></div>
+<p>and then define the <code>State</code> monad:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>State <span class="ot">:</span> <span class="dt">Set</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> <span class="ot">-&gt;</span> <span class="dt">Set</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>State S A <span class="ot">=</span> S <span class="ot">-&gt;</span> S × A</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>Monad-State <span class="ot">:</span> <span class="ot">{</span>S <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> Monad <span class="ot">(</span>State S<span class="ot">)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>pure Monad-State a s <span class="ot">=</span> s , a</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a><span class="ot">_</span>&gt;&gt;=<span class="ot">_</span> Monad-State ma f s <span class="ot">=</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>  <span class="kw">let</span> s&#39; , a <span class="ot">=</span> ma s</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>   <span class="kw">in</span> f a s&#39;</span></code></pre></div>
+<p>where we have used a copattern to define the <code>Monad</code> methods for <code>Monad-State</code>. But, the paper says, what if we want to implement <code>State</code> as a new type, rather than just a type alias? Fine:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="kw">record</span> State&#39; <span class="ot">(</span>S <span class="ot">:</span> <span class="dt">Set</span><span class="ot">)</span> <span class="ot">(</span>A <span class="ot">:</span> <span class="dt">Set</span><span class="ot">)</span> <span class="ot">:</span> <span class="dt">Set</span> <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>  <span class="kw">constructor</span> state</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>  <span class="kw">field</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>    runState <span class="ot">:</span> S <span class="ot">-&gt;</span> S × A</span></code></pre></div>
+<p>If we’d like now to give an instance of <code>Monad</code> for <code>State'</code>, the straight-forward way is to explicitly use the constructor to build a <code>State'</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>Monad-State₁ <span class="ot">:</span> <span class="ot">{</span>S <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> Monad <span class="ot">(</span>State&#39; S<span class="ot">)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a>pure Monad-State₁ a <span class="ot">=</span> state <span class="ot">λ</span> s <span class="ot">-&gt;</span> s , a</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="ot">_</span>&gt;&gt;=<span class="ot">_</span> Monad-State₁ ma f <span class="ot">=</span> state <span class="ot">λ</span> s <span class="ot">-&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>  <span class="kw">let</span> s&#39; , a <span class="ot">=</span> runState ma s</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>   <span class="kw">in</span> runState <span class="ot">(</span>f a<span class="ot">)</span> s&#39;</span></code></pre></div>
+<p>This is fine, but we’ve lost some symmetry with <code>Monad-State</code> — namely, we can no longer bind <code>s</code> on the left side of the equals sign, and we have this noisy <code>state</code> thing everywhere.</p>
+<p>Instead, the paper points out, we can use a copattern binding to define <code>Monad</code> for <code>State' S</code>. Not, mind you, a copattern to match on the monad methods, but a copattern to match on <code>runState</code> inside of the monad methods:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a>Monad-State₂ <span class="ot">:</span> <span class="ot">{</span>S <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> Monad <span class="ot">(</span>State&#39; S<span class="ot">)</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>runState <span class="ot">(</span>pure Monad-State₂ a<span class="ot">)</span> s <span class="ot">=</span> s , a</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>runState <span class="ot">(_</span>&gt;&gt;=<span class="ot">_</span> Monad-State₂ ma f<span class="ot">)</span> s <span class="ot">=</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>  <span class="kw">let</span> s&#39; , a <span class="ot">=</span> runState ma s</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a>   <span class="kw">in</span> runState <span class="ot">(</span>f a<span class="ot">)</span> s&#39;</span></code></pre></div>
+<p>This is <em>much</em> nicer than <code>Monad-State₁</code>! All of a sudden, <code>state</code> is gone, we can match <code>s</code> on the left side of the equals, and the whole thing looks a lot like <code>runState</code> over the original (type-synonymed) version of <code>Monad-State</code>.</p>
+<p>What’s also interesting here is the composition of copatterns; we’re defining <code>Monad</code> by giving it in terms of <code>pure</code> and <code>_&gt;&gt;=</code>, and then defining <em>those</em> by way of observing them via <code>runState</code>. I hadn’t noticed or appreciated this the first time through the paper, so it seems like my review project is facilitating more learning than I would be doing otherwise.</p>
+<h2 id="fibonacci-numbers">Fibonacci Numbers</h2>
+<p>As another example, the authors show us how to construct the Fibonacci numbers. Consider the following definition, in Haskell:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>fib <span class="op">:</span> [<span class="dt">Int</span>]</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>fib <span class="ot">=</span> <span class="dv">0</span> <span class="op">:</span> <span class="dv">1</span> <span class="op">:</span> <span class="fu">zipWith</span> (<span class="op">+</span>) fib (<span class="fu">tail</span> fib)</span></code></pre></div>
+<p>We can implement this too (but over <code>Stream Nat</code>) with copatterns. But first, let’s define <code>zipWith</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a>zipWith <span class="ot">:</span> <span class="ot">{</span>A B C <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> <span class="ot">(</span>A <span class="ot">-&gt;</span> B <span class="ot">-&gt;</span> C<span class="ot">)</span> <span class="ot">-&gt;</span> Stream A <span class="ot">-&gt;</span> Stream B <span class="ot">-&gt;</span> Stream C</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>zipWith f sa sb <span class="ot">=</span> ?</span></code></pre></div>
+<p>I think I’m starting to get the hang of this, so I tried defining it via a copattern, and the result was actually quite delightful:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>zipWith <span class="ot">:</span> <span class="ot">{</span>A B C <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">-&gt;</span> <span class="ot">(</span>A <span class="ot">-&gt;</span> B <span class="ot">-&gt;</span> C<span class="ot">)</span> <span class="ot">-&gt;</span> Stream A <span class="ot">-&gt;</span> Stream B <span class="ot">-&gt;</span> Stream C</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>head <span class="ot">(</span>zipWith f sa sb<span class="ot">)</span> <span class="ot">=</span> f <span class="ot">(</span>head sa<span class="ot">)</span> <span class="ot">(</span>head sb<span class="ot">)</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>tail <span class="ot">(</span>zipWith f sa sb<span class="ot">)</span> <span class="ot">=</span> zipWith f <span class="ot">(</span>tail sa<span class="ot">)</span> <span class="ot">(</span>tail sb<span class="ot">)</span></span></code></pre></div>
+<p>I really like how the copattern syntax makes clear the homomorpic nature of <code>zipWith</code>.</p>
+<p>We can now give a copattern definition for <code>fib</code>, where we explicitly copattern match on the first two terms:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>fib <span class="ot">:</span> Stream Nat</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>head fib <span class="ot">=</span> zero</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>head <span class="ot">(</span>tail fib<span class="ot">)</span> <span class="ot">=</span> suc zero</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>tail <span class="ot">(</span>tail fib<span class="ot">)</span> <span class="ot">=</span> zipWith <span class="ot">_</span>+<span class="ot">_</span> fib <span class="ot">(</span>tail fib<span class="ot">)</span></span></code></pre></div>
+<p>Again, notice the composition of copatterns here, in last two cases.</p>
+<p>I’m not sure how I feel about this definition; maybe it’s clearer to the math guys, but this one is a little harder for me to wrap my head around.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The rest of the paper is type theory stuff. There are quite a lot of gammas and turnstiles, way more than I want to try tackling today. But nevertheless, <em>Copatterns</em> has given me a significantly better understanding of that “weird record syntax” I’d seen in Agda. I don’t yet love the copattern formulation of every example presented in the paper, but will admit that <code>Monad-State₂</code> and <code>zipWith</code> are particularly beautiful under copatterns.</p>
+<p>As usual, <a href="https://gist.github.com/isovector/37a1c1e21a3618e4f4885482a1454396">the code is on Github.</a></p>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Review: Clowns to the Left of Me, Jokers to the Right</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -1595,125 +1711,6 @@ k2  = Pure ()
 <p>Now we can specialize <code>law_pushPop</code> (plus any other laws we might have written) for a would-be interpreter of <code>Stack s</code>. Any interpreter that passes all the properties is therefore proven to respect the desired semantics of <code>Stack s</code>.</p>
 <h2 id="wrapping-up">Wrapping Up</h2>
 <p><code>polysemy-check</code> can do lots more, but this post is overwhelming already. So next week we’ll discuss how to prove the equivalence of interpreters, and how to ensure your effects are sane with respect to one another.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Porting to Polysemy</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/porting-to-polysemy/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/porting-to-polysemy/index.html</guid>
-      <pubDate>2021-10-02T22:46:00Z</pubDate>
-      <content:encoded><![CDATA[
-        <p>Many years ago, when I first started using free monads in anger, I was tasked with porting our giant codebase to something that used an effect system. While it was a noble goal, my efforts slowly imploded upon their own weight. I didn’t know how to go about doing such a dramatic refactoring on a live codebase, and unwisely tried to do the whole thing in a single PR. A month later, as you might expect, it became overwhelming obvious that we were never going to merge the thing, and it died there.</p>
-<p>Several years older (and wiser), I’ve recently been contracted to port another codebase to Polysemy. Today we hit our first big milestone, and the experience has gone swimmingly. I wanted to spend some time today discussing how to actually go about Polysemizing a codebase. It’s not too onerous if you proceed cautiously. The trick is to do several passes over the codebase, each time introducing a few more effects, but at no point ever actually changing any code paths.</p>
-<h2 id="getting-your-foot-in-the-door">Getting Your Foot in the Door</h2>
-<p>The first step is to introduce Polysemy into your codebase. Your program is almost certainly structured around a main application monad, and that’s the right place to start. As a first step, we will swap out <code>IO</code> for <code>Sem</code>. For example, if your main monad were:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">App</span> a <span class="ot">=</span> <span class="dt">App</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  {<span class="ot"> unApp ::</span> <span class="dt">ReaderT</span> <span class="dt">Env</span> (<span class="dt">ExceptT</span> <span class="dt">AppError</span> <span class="dt">IO</span>) a</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  }</span></code></pre></div>
-<p>we will change it to:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">App</span> r a <span class="ot">=</span> <span class="dt">App</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  {<span class="ot"> unApp ::</span> <span class="dt">Member</span> (<span class="dt">Final</span> <span class="dt">IO</span>) r <span class="ot">=&gt;</span> <span class="dt">ReaderT</span> <span class="dt">Env</span> (<span class="dt">ExceptT</span> <span class="dt">AppError</span> (<span class="dt">Sem</span> r)) a</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  }</span></code></pre></div>
-<p>This change exposes the effect row (the <code>r</code> type variable,) and asserts that we always have a <code>Final IO</code> member in that row. Exposing <code>r</code> means we can gradually introduce <code>Member</code> constraints in application code as we begin teasing apart effects, and <code>Final IO</code> gives us a way to implement <code>MonadIO</code> for <code>App</code>. Let’s start with that:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">MonadIO</span> (<span class="dt">App</span> r) <span class="kw">where</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  liftIO a <span class="ot">=</span> <span class="dt">App</span> <span class="op">$</span> lift <span class="op">$</span> lift <span class="op">$</span> embedFinal a</span></code></pre></div>
-<p>Due to some quirks of how Haskell deals with impredicativity, this function can’t be written point-free.</p>
-<p>This change of <code>App</code> to <code>App r</code> isn’t the end-goal; it’s <em>just</em> enough that we can get Polysemy into the project without it being a huge change. In the medium term, our goal is to eliminate the <code>App</code> newtype altogether, leaving a bare <code>Sem</code> in its place. But one step at a time.</p>
-<p>You’ll need to rewrite any instances on <code>App</code> that you were previously newtype deriving. This sucks, but the answer is always just to <code>lift</code>. You might find that some instances used to be derived via <code>IO</code>, and thus now cannot be implemented via <code>lift</code>. In these cases, don’t be afraid to give an orphan instance for <code>Sem r</code>; orphans are bad, but we’ll be cleaning this all up very soon.</p>
-<p>Take some time to get everything compiling. It’s a lot of drudgery, but all you need to do is to add the <code>r</code> type variable to every type signature in your codebase that mentions <code>App</code>.</p>
-<p>You will also need an introduction function, to lift Polysemy actions into <code>App</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">liftSem ::</span> <span class="dt">Sem</span> r a <span class="ot">-&gt;</span> <span class="dt">App</span> r a</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>liftSem a <span class="ot">=</span> <span class="dt">App</span> <span class="op">$</span> lift <span class="op">$</span> lift a</span></code></pre></div>
-<p>as well as an elimination function which will evolve as you add effects. At some point in your (existing) program, you will need to actually run <code>App</code> down to <code>IO</code>. It probably looks something like this:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">runApp ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">App</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">AppError</span> a)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>runApp env <span class="ot">=</span> runExceptT <span class="op">.</span> <span class="fu">flip</span> runReaderT env <span class="op">.</span> unApp</span></code></pre></div>
-<p>instead we are going to create the <em>canonical</em> interpretation down to <code>IO</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">CanonicalEffects</span> <span class="ot">=</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  &#39;[ <span class="dt">Final</span> <span class="dt">IO</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>   ]</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="ot">canonicalAppToIO ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">App</span> <span class="dt">CanonicalEffects</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">AppError</span> a)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>canonicalAppToIO env</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>  <span class="ot">=</span> runFinal</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>  <span class="op">.</span> runExceptT</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>  <span class="op">.</span> <span class="fu">flip</span> runReaderT env</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>  <span class="op">.</span> unApp</span></code></pre></div>
-<p>As we pull effects out of the program, we will add them to <code>CanonicalEffects</code>, and their interpreters to <code>canonicalAppToIO</code>. But for now, this function is very boring.</p>
-<p>Once everything is up and compiling, all of the old tests should still pass. We haven’t changed anything, just installed some new machinery. But importantly, all of code paths are still exactly the same. Remember, this is a refactoring task! The goal is to do lots of little refactors, each one pulling out some effect machinery, but not changing any code paths. The entire porting project should be a series of no-op PRs that slowly carve your codebase into one with explicitly described effects.</p>
-<h2 id="first-effects">First Effects</h2>
-<p>Your medium term goal is to eliminate the <code>Final IO</code> constraint inside of <code>App</code>, which exists only to provide a <code>MonadIO</code> instance. So, our <em>real</em> goal is to systematically eliminate raw <code>IO</code> from <code>App</code>.</p>
-<p>The usual culprits here are database access, HTTP requests, and logging. If your team has been disciplined, database access and HTTP requests should already be relatively isolated from the rest of the codebase. Isolated here means “database calls are in their own functions,” rather than being inlined directly in the application code whenever it wants to talk to the database. If your database accesses are not isolated, take some time to uninline them before continuing.</p>
-<p>Our next step is to identify CRUD groups on the database. We generously interpret the “read” in CRUD to be any queries that exist against the logical datastructure that you’re serializing in the database. These CRUD groups might be organized by table, but they don’t necessarily need to be; by table is good enough for now if it corresponds to how the queries exist today.</p>
-<p>For each CRUD group, we want to make a new Polysemy effect, and thread it through the application, replacing each direct call to the database with a call to the effect action. Finish working on each effect before starting on the next; each group makes for a good PR.</p>
-<p>For example, maybe we’ve identified the following database accesses for table <code>users</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">insertUser       ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">User</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="ot">lookupUser       ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> <span class="dt">User</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a><span class="ot">getUsersByRegion ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">Region</span> <span class="ot">-&gt;</span> m [<span class="dt">User</span>]</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="ot">setUserLapsed    ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="ot">unsetUserLapsed  ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a><span class="ot">purgeUser        ::</span> <span class="dt">MonadDB</span> m <span class="ot">=&gt;</span> <span class="dt">UserNamr</span> <span class="ot">-&gt;</span> m ()</span></code></pre></div>
-<p>This CRUD group corresponds to an effect:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">App.Sem.UserStore</span> <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">UserStore</span> m a <span class="kw">where</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  <span class="dt">Insert</span><span class="ot">      ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">User</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  <span class="dt">Lookup</span><span class="ot">      ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m (<span class="dt">Maybe</span> <span class="dt">User</span>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>  <span class="dt">GetByRegion</span><span class="ot"> ::</span> <span class="dt">Region</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m [<span class="dt">User</span>]</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>  <span class="dt">SetLapsed</span><span class="ot">   ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>  <span class="dt">UnsetLapsed</span><span class="ot"> ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>  <span class="dt">Purge</span><span class="ot">       ::</span> <span class="dt">UserName</span> <span class="ot">-&gt;</span> <span class="dt">UserStore</span> m ()</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;UserStore</span></span></code></pre></div>
-<p>We can now replace all calls across the codebase to <code>insertUser a b</code> with <code>liftSem $ UserStore.insert a b</code>. Doing so will require you to propagate a <code>Member UserStore r</code> constraint throughout the callstack. I really like this process. It’s a bit annoying to push constraints upwards, but it really gives you a good sense for the hidden complexity in your program. As it turns out, <code>MonadIO</code> is hiding a metric ton of spaghetti code!</p>
-<p>All of this replacing and constraint propagating has given you dependency injection. But remember, at this step we’d like all of our changes to be no-ops, so we still need to inject the old codepath. For this we will make an interpreter of the <code>UserStore</code> effect:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">App.Sem.UserStore.IO</span> <span class="kw">where</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">TheDatabase</span> <span class="kw">as</span> <span class="dt">DB</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">App.Sem.UserStore</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>userStoreToDB</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> m r a</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>     <span class="op">.</span> (<span class="dt">Member</span> (<span class="dt">Embed</span> m) r, <span class="dt">MonadDB</span> m)</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Sem</span> (<span class="dt">UserStore</span> &#39;<span class="op">:</span> r) a</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>userStoreToDB <span class="ot">=</span> interpret <span class="op">$</span> embed <span class="op">@</span>m <span class="op">.</span> \<span class="kw">case</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>  <span class="dt">Insert</span> un u    <span class="ot">-&gt;</span> DB.insertUser un u</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a>  <span class="dt">Lookup</span> un      <span class="ot">-&gt;</span> DB.lookupUser un</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true"></a>  <span class="dt">GetByRegion</span> r  <span class="ot">-&gt;</span> DB.getUsersByRegion r</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true"></a>  <span class="dt">SetLapsed</span> un   <span class="ot">-&gt;</span> DB.setUserLapsed un</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true"></a>  <span class="dt">UnsetLapsed</span> un <span class="ot">-&gt;</span> DB.unsetUserLapsed un</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true"></a>  <span class="dt">Purge</span> un       <span class="ot">-&gt;</span> DB.purgeUser un</span></code></pre></div>
-<p>Make sure to add <code>UserStore</code> (and its dependency, <code>Embed DB</code>) to the head of <code>CanonicalEffects</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">CanonicalEffects</span> <span class="ot">=</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>  &#39;[ <span class="dt">UserStore</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>   , <span class="dt">Embed</span> <span class="dt">DB</span>  <span class="co">-- dependency of UserStore</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>   , <span class="dt">Embed</span> <span class="dt">IO</span>  <span class="co">-- dependency of Embed DB</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>   , <span class="dt">Final</span> <span class="dt">IO</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>   ]</span></code></pre></div>
-<p>and then we can update the canonical interpreter:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">canonicalAppToIO ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">App</span> <span class="dt">CanonicalEffects</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">AppError</span> a)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>canonicalAppToIO env</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>  <span class="ot">=</span> runFinal</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>  <span class="op">.</span> embedToFinal</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>  <span class="op">.</span> runEmbedded <span class="op">@</span><span class="dt">DB</span> <span class="op">@</span><span class="dt">IO</span> (however you run the <span class="dt">DB</span> <span class="kw">in</span> <span class="dt">IO</span>)</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>  <span class="op">.</span> userStoreToDB <span class="op">@</span><span class="dt">DB</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a>  <span class="op">.</span> runExceptT</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a>  <span class="op">.</span> <span class="fu">flip</span> runReaderT env</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a>  <span class="op">.</span> unApp</span></code></pre></div>
-<p>The general principle here is that you add the new effect somewhere near the top of the <code>CanonicalEffects</code> stack, making sure to add any effects that your intended interpreter requires lower in the stack. Then, add the new interpreter to <code>canonicalAppToIO</code>, in the same order (but perhaps presented “backwards”, since function application is right to left.) Make sure to add interpreters for the depended-upon effects too!</p>
-<p>As you pull more and more effects out, you’ll find that often you’ll already have the depended-upon effects in <code>CanonicalEffects</code>. This is a good thing — we will probably have several effects that can all be interpreted via <code>Embed DB</code>.</p>
-<p>The benefit here is that we have now separated our <em>application code</em> from the particular choice of database implementation. While we want to use <code>userStoreToDB</code> in production, it might make less sense to use in local testing environments, where we don’t want to spin up a database. Instead, we could just write a little interpreter that emulates the <code>UserStore</code> interface purely in memory! Once you’ve fully exorcised <code>IO</code> from your codebase, this approach gets extremely powerful.</p>
-<h2 id="choosing-effects">Choosing Effects</h2>
-<p>Carving out your effects is probably the hardest thing to do here. What’s difficult is that you need to forget your instincts! Things that would make a good MTL-style typeclass are often <em>terrible</em> choices for effects.</p>
-<p>Why’s that? There’s this extremely common pattern in the Haskell ecosystem for libraries that want to expose themselves to arbitrary applications’ monad stacks. To continue with the <code>MonadDB</code> example, it’s likely something like:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">class</span> (<span class="dt">MonadIO</span> m, <span class="dt">MonadThrow</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadDB</span> m <span class="kw">where</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="ot">  liftDB ::</span> <span class="dt">DB</span> a <span class="ot">-&gt;</span> m a</span></code></pre></div>
-<p>While this works fine for a single underlying implementation, it’s an awful effect for the same reason: there’s only one interpretation! Any meaningful interpreter for <code>MonadDB</code> is equivalent to writing your own implementation of the database! It’s the same reason we don’t like <code>IO</code> — <code>IO</code> is so big that every possible interpretation of it would necessarily need to be able to talk to the file system, to the network, to threads, and <em>everything else</em> that we can do in <code>IO</code>.</p>
-<p>Instead, when you’re looking for effects to pull out, you need to <em>forget entirely about the implementation,</em> and just look at the abstract interface. Don’t use an HTTP effect to talk to a REST API — it’s too big, and would require you to implement an entire HTTP protocol. Instead, just define an effect that talks to exactly the pieces of the API that you need to talk to. Forget that it’s REST entirely! That’s an implementation detail, and implementation details are the domain of the interpreter, not the effect.</p>
-<p>Furthermore, if you’re just using the standard <code>Polysemy</code> effects, pick the smallest effect that you can get away with. You’ll probably reach for <code>Reader</code> more often than you should. You don’t need to use <code>Reader</code> unless you need <code>local</code> — otherwise, prefer <code>Input</code>.</p>
-<h2 id="summing-up">Summing Up</h2>
-<p>That’s all I have for today, but I have a few more posts in mind for this series. One on how to actually go about testing all of this stuff, and another on how to follow up the refactoring of your new Polysemy codebase now that all of the <code>IO</code> has been removed.</p>
       ]]></content:encoded>
   </item>
 </channel>
