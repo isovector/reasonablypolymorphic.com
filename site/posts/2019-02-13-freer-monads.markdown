@@ -322,7 +322,7 @@ effect x -> Eff r x`.)
 For testing, you might also want a mock filesystem---`pureFileProvider :: Map
 FilePath ByteString -> _`.
 
-Our program can now provide provide an `Input` capability via a `FileProvider`
+Our program can now provide an `Input` capability via a `FileProvider`
 capability, via `IO` directly or via an `FTP` capability. You get the picture.
 
 Something we haven't yet handled is file decryption. It's worth noting that this
@@ -624,7 +624,7 @@ foo'' = do
 
 All of this is much less user-friendly than it should be. However, in my
 experience, people quickly learn how to debug problems like this. It was enough
-to have an "Eff mentor" on our team, whose job it was was to promptly reply to
+to have an "Eff mentor" on our team, whose job it was to promptly reply to
 "I don't know why this doesn't work."
 
 

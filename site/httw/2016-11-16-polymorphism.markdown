@@ -220,7 +220,7 @@ circuit = machine' [inputWire # scaleX 2.2, inputWire # scaleX 2.2, multiIn ":n"
 we wanted to be able to choose between `R`eading and `W`riting, so we needed a
 wire for that. But we also only wanted this machine to output the value at its
 `D`estination if we wanted to read things. We solved this problem by adding a
-`G`o wire, whose only job it was was to tell us when to actually do something.
+`G`o wire, whose only job it was to tell us when to actually do something.
 
 If we had `Maybe a` available to us back then, we could have gotten rid of `G`
 entirely, and instead just made `RW : Maybe Bool`, where a value of `Nothing`

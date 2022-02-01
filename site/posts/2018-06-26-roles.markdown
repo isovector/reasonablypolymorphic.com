@@ -14,7 +14,7 @@ little soliloquy about roles and turn it into a blog post, so here we are.
 [fpchat]: https://functionalprogramming.slack.com/
 
 You've heard of the type system, which makes sure your terms are sane. Maybe
-you're also aware of the kind system, whose job it is is to make sure your types
+you're also aware of the kind system, whose job it is to make sure your types
 are reasonable! But did you know Haskell has an even more obscure system than
 these? It's called the role system, and its purpose in life is to prevent you
 from shooting yourself in the foot when dealing with *coercions.*
