@@ -163,7 +163,7 @@
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>  send <span class="op">$</span> Data.Bytestring.readFile filename</span></code></pre></div>
 <p>Often you just want to reinterpret an effect in terms of some other effect you already have (here, <code>FTP</code> and <code>IO</code>, respectively). In this case, it’s sufficient to just use the <code>interpret</code> combinator, which takes implements your interpretation via a <em>natural transformation</em> (something of the form <code>forall x. effect x -&gt; Eff r x</code>.)</p>
 <p>For testing, you might also want a mock filesystem—<code>pureFileProvider :: Map FilePath ByteString -&gt; _</code>.</p>
-<p>Our program can now provide provide an <code>Input</code> capability via a <code>FileProvider</code> capability, via <code>IO</code> directly or via an <code>FTP</code> capability. You get the picture.</p>
+<p>Our program can now provide an <code>Input</code> capability via a <code>FileProvider</code> capability, via <code>IO</code> directly or via an <code>FTP</code> capability. You get the picture.</p>
 <p>Something we haven’t yet handled is file decryption. It’s worth noting that this concern is largely orthogonal to <code>FileProvider</code>s; we’d like to be able to mix-in the capability to deal with encrypted files regardless of what the actual mechanism for files looks like.</p>
 <p>For that, we’re exposed to yet another combinator for writing interpretations; <code>interpose</code>. This combinator allows us to interpret a capability in terms of itself. Which means, we can <em>intercept</em> calls to a capability without necessarily <em>handling</em> them. Providing decrypted files is a good use case for this—we can intercept requests for files, and silently decrypt them before giving them back.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>decryptFileProvider</span>
@@ -312,7 +312,7 @@
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>  tellInt <span class="dv">1</span></span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a>  tellInt <span class="dv">2</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true"></a>  tellInt <span class="dv">3</span></span></code></pre></div>
-<p>All of this is much less user-friendly than it should be. However, in my experience, people quickly learn how to debug problems like this. It was enough to have an “Eff mentor” on our team, whose job it was was to promptly reply to “I don’t know why this doesn’t work.”</p>
+<p>All of this is much less user-friendly than it should be. However, in my experience, people quickly learn how to debug problems like this. It was enough to have an “Eff mentor” on our team, whose job it was to promptly reply to “I don’t know why this doesn’t work.”</p>
 <h3 id="jesus-help-me-there-are-a-lot-of-unmaintained-freer-monad-packages">Jesus Help Me There Are A Lot of Unmaintained Free(r) Monad Packages</h3>
 <p>Tell me about it. Even as someone who is keenly interested in this stuff I have a hard time keeping up with the situation.</p>
 <p>Here’s the skinny—I’d strongly recommend <a href="https://github.com/lexi-lambda/freer-simple"><code>freer-simple</code></a>. Failing that, if you <em>really, really, really</em> need the performance, take a look at <a href="https://github.com/robrix/fused-effects"><code>fused-effects</code></a>.</p>
