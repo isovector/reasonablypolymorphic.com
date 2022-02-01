@@ -281,7 +281,7 @@
 <p>Internally, GHC uses lots of rewrite rules itself! All of its constant-folding (e.g. replacing <code>2 + 3</code> with <code>5</code> at compile time) is done via rewrite rules, which helps separate that logic from the main compiler.</p>
 <h2 id="specialization">Specialization</h2>
 <p>So with all of that background information out of the way, we’re finally ready to talk about how the specializer works.</p>
-<p>Recall our our original <code>mtl</code> program, transformed so it has its dictionaries explicitly passed:</p>
+<p>Recall our original <code>mtl</code> program, transformed so it has its dictionaries explicitly passed:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="ot">countdown ::</span> <span class="dt">Monad</span> m <span class="ot">-&gt;</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">-&gt;</span> m ()</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="co">-- There is a `Monad m` constraint on `MonadState s m`, which is where this</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="co">-- extra constraint comes from.</span></span>

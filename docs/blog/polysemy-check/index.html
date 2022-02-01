@@ -86,7 +86,7 @@
 <span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a>  <span class="dt">Opts</span> <span class="ot">-&gt;</span></span>
 <span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a>  <span class="dt">ServerT</span> <span class="dt">API</span> (<span class="dt">Sem</span> r)</span></code></pre></div>
 <p>Wow! Not so innocent-looking now, is it? Each <code>Member</code> constraint here is a unit of functionality that was previously smuggled in via <code>IO</code>. Not only have we made them more visible, but we’ve now exposed a big chunk of testable surface-area. You see, each one of these members provides an abstract interface, which we can implement in any way we’d like.</p>
-<p>Because <code>IO</code> is so hard to test, the idea of <code>polysemy</code> is that we can give several interpretaions for our program — one that is pure, lovely, functional, and, importantly, very easy to test. Another interpretation is one that that runs fast in <code>IO</code>. The trick then is to decompose the problem of testing into two steps:</p>
+<p>Because <code>IO</code> is so hard to test, the idea of <code>polysemy</code> is that we can give several interpretaions for our program — one that is pure, lovely, functional, and, importantly, very easy to test. Another interpretation is one that runs fast in <code>IO</code>. The trick then is to decompose the problem of testing into two steps:</p>
 <ol type="1">
 <li>show that the program is correct under the model interpreter</li>
 <li>show that the model interpreter is equivalent to the real interpreter</li>
