@@ -59,7 +59,7 @@ make an excellent addition to these chapters.
 I dug in to see how Bob had implement his, and I was amazed! [The poor bastard
 had done it all by hand!][source] My god, if that's not commitment, I don't know
 what is. There are like seventeen footnotes in that blog post. Someone should
-probably make Bob a saint for just how how patient he must be.
+probably make Bob a saint for just how patient he must be.
 
 [source]: https://raw.githubusercontent.com/munificent/journal/master/_posts/2015-09-08-the-hardest-program-ive-ever-written.md
 

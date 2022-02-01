@@ -58,7 +58,7 @@ not (and (not On) Off)
 
 Don't forget to replace bindings! Here, because `On` was the first input to
 `nandn`, we replaced all of the bindings `a` in the definition of `nandn` with
-`On`, and all of the bindings of `b` with `Off`. If we had had `nandn Off Off`
+`On`, and all of the bindings of `b` with `Off`. If we had `nandn Off Off`
 instead, we would have replaced `a` with `Off`.
 
 *Make sure you replace **all** of your bindings before proceeding.* If you don't

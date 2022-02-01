@@ -398,7 +398,7 @@ simple for `Maybe`:
 
 Again, this is function is pattern-matched, first for the case of trying to bind
 `Nothing` with any function (it doesn't matter what the function is; our
-computation has already failed). The other other option for a `Maybe a` is to be
+computation has already failed). The other option for a `Maybe a` is to be
 `Just x`, the result of which is applying `x` to the function `f` .
 
 Because Haskell has lazy evaluation, this operator definition is semantically
