@@ -1,11 +1,67 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2022-01-29T11:39:00Z</updated>
+  <updated>2022-01-31T21:46:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='atom.xml'/>
 
+    <entry>
+      <title>Underlining the Bugs</title>
+      <id>blog/underline-bugs/index.html</id>
+      <link href='blog/underline-bugs/index.html'/>
+      <published>2022-01-31T21:46:00Z</published>
+      <updated>2022-01-31T21:46:00Z</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p>I had a magical Haskell experience today, and want to share the story.</p>
+<p>My current big programming project is <a href="https://github.com/isovector/cornelis"><code>cornelis</code></a> — a vim plugin for interacting with Agda. The Agda compiler is really good at doing interactive programming, but until <code>cornelis</code>, all of this functionality has been locked away, only to be used by blessed emacs developers.</p>
+<p>Tooling for (neo)vim has gotten really good since I last looked at it, and these days you can write plugins in a language of your choice. For anyone lucky enough to not appreciate how lovely this is, vimscript’s comparison operator checks a global flag to see if it should be case-sensitive or not. From that perspective, it’s truly a testament that <em>anyone</em> has managed to write <em>anything</em> for vim.</p>
+<p>The Haskell library for talking to (neo)vim is <a href="https://github.com/neovimhaskell/nvim-hs">particularly excellent</a>, and I would strongly recommend it if you’re thinking about writing a vim plugin.</p>
+<p>So anyway, the Agda compiler has this cool mode where you can send it queries about your code, and it gives back answers in JSON. For example, you might ask “what type does this thing have?” or “please case split this for me” and Agda will give you back answers. A plugin like <code>cornelis</code> or <code>agda-mode</code> (for emacs) can turn Agda’s responses into a lovely editing environment, where the computer does most of the work of programming for you.</p>
+<p>Agda doesn’t actually make any changes for you, it just says things like “replace from characters 5 to 10 on line 17 with <code>foo</code>.” This is nice for editor integration, since Agda doesn’t assume anything about your editing environment.</p>
+<p>Rather interestingly, Agda even does its <em>syntax</em> highlighting like this. You ask the compiler what colors things should have, and it responds. Editor plugins just need to attach that information to the buffer, and you never need to write another janky regex.</p>
+<p>One of the first things I implemented in <code>cornelis</code> was this syntax highlighting. My first attempt looked something like this:</p>
+<figure>
+<img src="/images/underline/highlighting.png" alt="" /><figcaption>Syntax Highlighting</figcaption>
+</figure>
+<p>It’s… <em>almost</em> right. But those deep yellows should extend to the end of each line! However, notice that each of the light yellows on the left of the <code>:</code>s are right. So whatever’s going wrong here is getting reset every line.</p>
+<p>Looking closely at the subscript 1 on <code>f</code> gives us a clue what’s going wrong — unicode characters are throwing off the highlighting ranges! Some swearing and digging into the vim documentation shows that vim expects its highlighting ranges to be <em>byte-indexed</em> for some insane reason. Agda uses a lot of unicode, and (rightly) reports locations by their character-index, not their byte-index.</p>
+<p>The solution was to get the text being highlighted, and count its actual bytes in order to fix the numbers being sent to vim. Annoying, but workable. I left a comment and went on with my day.</p>
+<p>The next day, I was working on another feature, which is essentially interacting with typed-holes. The idea is you move your cursor over the hole, and then ask Agda to do something with it. But, sometimes, Agda would yell at me and say there was no hole there! Sure enough, that sometimes was when there was a unicode character earlier on the line. Same bug, same fix.</p>
+<p>Then the day after that, another bug caused by this unicode length stuff. OK, three strikes and you’re out. It was time to fix this bug once and for all. Fundamentally, the issue is that Agda-offsets don’t agree with Vim-offsets, which sounds like a type error to me. It seemed hard to patch the vim API, but I controlled all of the Agda-serialization stuff, so I <a href="https://github.com/isovector/cornelis/commit/d52708164d9e1e34a3ef941235d1396bacc937f7">made a patch</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="va">+ data OffsetType = Line | File</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="va">+</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="va">+ newtype Offset (a :: OffsetType) = Offset Int32</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="va">+   deriving stock Data</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="va">+   deriving newtype (Eq, Ord, Show, Read, FromJSON)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="va">+</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="va">+ type BufferOffset = Offset &#39;File</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="va">+ type LineOffset = Offset &#39;Line</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>  data Position&#39; a = Pn</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    { srcFile :: !a</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="st">-   , posPos  :: !Int32</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="va">+   , posPos  :: !BufferOffset</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>    , posLine :: !Int32</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a><span class="st">-   , posCol  :: !Int32</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a><span class="va">+   , posCol  :: !LineOffset</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    }</span></code></pre></div>
+<p>and then changed the types of the bug-fixing functions:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="st">- toBytes :: Text -&gt; Int -&gt; Int</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="va">+ toBytes :: Text -&gt; Offset a -&gt; Int</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="st">- fromBytes :: Text -&gt; Int -&gt; Int</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="va">+ fromBytes :: Text -&gt; Int -&gt; Offset a</span></span></code></pre></div>
+<p>After doing some plumbing to change all the function types to refer to <code>BufferOffset</code> and <code>LineOffset</code> rather than <code>Int</code>, I was left with a few type errors in the program: <em>corresponding exactly with the bug I had set out to fix, and two others I didn’t know about!</em></p>
+<figure>
+<img src="/images/underline/underline.png" alt="" /><figcaption>Underlined Bugs</figcaption>
+</figure>
+<p>Let me restate that. The computer <em>underlined the bugs</em> in my program. It found bugs in code I’d already written.</p>
+<p>If this isn’t one of the best arguments for static typing, I can’t imagine what would be.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Review: Copatterns</title>
       <id>blog/review-copatterns/index.html</id>
@@ -1621,117 +1677,6 @@ k2  = Pure ()
 <p>The counterexample here isn’t particularly helpful (I haven’t yet figured out how to <code>show</code> the generated program that fails,) but you can get a hint here by noticing that the stack (the <code>[0,0]</code>) is twice as big in the first result as in the second.</p>
 <p>Importantly, by specifying <code>@'[Stack Int]</code> when calling <code>prepropEquivalent</code>, we are guaranteed that the generated program will <em>only</em> use actions from <code>Stack Int</code>, so it’s not too hard to track down. This is another win for <code>polysemy</code> in my book — that we can isolate bugs with this level of granularity, even if we can’t yet perfectly point to them.</p>
 <p>All of today’s code (and more!) is <a href="https://github.com/polysemy-research/polysemy-check/blob/master/test/ExampleSpec.hs">available</a> as a test in <code>polysemy-check</code>, if you’d like to play around with it. But that’s all for now. Next week we’ll investigate how to use <code>polysemy-check</code> to ensure that the composition of your effects <em>themselves</em> is meaningful. Until then!</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Testing Polysemy With polysemy-check</title>
-      <id>blog/polysemy-check/index.html</id>
-      <link href='blog/polysemy-check/index.html'/>
-      <published>2021-10-09T14:23:00Z</published>
-      <updated>2021-10-09T14:23:00Z</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p><a href="/blog/porting-to-polysemy/">Last week</a> we covered how to port an existing codebase to <a href="https://hackage.haskell.org/package/polysemy"><code>polysemy</code></a>. The “why you might want to do this” was left implicit, but to be more explicit about things, it’s because littering your codebase with <code>IO</code> makes things highly-coupled and hard to test. By forcing yourself to think about effects, you are forced to pull concerns apart, and use the type-system to document what’s going on. But more importantly for today, it gives us a layer of indirection inside of which we can insert testing machinery.</p>
-<p>To take an extreme example from the codebase I’m currently working on, compare a function with its original (non-polysemized) type:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">api ::</span> <span class="dt">Opts</span> <span class="ot">-&gt;</span> <span class="dt">ServerT</span> <span class="dt">API</span> <span class="dt">App</span></span></code></pre></div>
-<p>which looks very simple, and gives the false impression that <code>api</code> is fairly uninteresting. However, there is an amazing amount of <code>IO</code> hiding inside of <code>App</code>, which becomes <em>significantly more evident</em> when we give this type explicit dependency constraints:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">api ::</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="dt">Members</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    &#39;[ <span class="dt">AReqIDStore</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>       <span class="dt">AssIDStore</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>       <span class="dt">BindCookieStore</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>       <span class="dt">BrigAccess</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>       <span class="dt">DefaultSsoCode</span>,</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>       <span class="dt">Error</span> <span class="dt">SparError</span>,</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>       <span class="dt">GalleyAccess</span>,</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>       <span class="dt">IdP</span>,</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>       <span class="dt">Input</span> <span class="dt">Opts</span>,</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>       <span class="dt">Logger</span> (<span class="dt">Msg</span> <span class="ot">-&gt;</span> <span class="dt">Msg</span>)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>       <span class="dt">Logger</span> <span class="dt">String</span>,</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>       <span class="dt">Now</span>,</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>       <span class="dt">Random</span>,</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>       <span class="dt">Reporter</span>,</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>       <span class="dt">SAML2</span>,</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>       <span class="dt">SAMLUserStore</span>,</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>       <span class="dt">SamlProtocolSettings</span>,</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>       <span class="dt">ScimExternalIdStore</span>,</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>       <span class="dt">ScimTokenStore</span>,</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>       <span class="dt">ScimUserTimesStore</span>,</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a>     ]</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a>    r <span class="ot">=&gt;</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a>  <span class="dt">Opts</span> <span class="ot">-&gt;</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a>  <span class="dt">ServerT</span> <span class="dt">API</span> (<span class="dt">Sem</span> r)</span></code></pre></div>
-<p>Wow! Not so innocent-looking now, is it? Each <code>Member</code> constraint here is a unit of functionality that was previously smuggled in via <code>IO</code>. Not only have we made them more visible, but we’ve now exposed a big chunk of testable surface-area. You see, each one of these members provides an abstract interface, which we can implement in any way we’d like.</p>
-<p>Because <code>IO</code> is so hard to test, the idea of <code>polysemy</code> is that we can give several interpretaions for our program — one that is pure, lovely, functional, and, importantly, very easy to test. Another interpretation is one that that runs fast in <code>IO</code>. The trick then is to decompose the problem of testing into two steps:</p>
-<ol type="1">
-<li>show that the program is correct under the model interpreter</li>
-<li>show that the model interpreter is equivalent to the real interpreter</li>
-</ol>
-<p>This sounds great in principle, but as far as I know, it’s never been actually done in practice. My suspicion is that people using <code>polysemy</code> in the wild don’t get further than step 1 (which is OK — a good chunk of the value in effect systems is in the decomposition itself.) Doing all of the work to show equivalence of your interpreters is a significant amount of work, and until now, there have been no tools to help.</p>
-<p><strong>Introducing <a href="https://hackage.haskell.org/package/polysemy-check"><code>polysemy-check</code></a>:</strong> a new library for proving all the things you’d want to prove about a <code>polysemy</code> codebase. <code>polysemy-check</code> comes with a few tools for synthesizing <a href="https://hackage.haskell.org/package/QuickCheck"><code>QuickCheck</code></a> properties, plus machinery for getting <code>Arbitrary</code> instances for effects for free.</p>
-<h2 id="using-polysemy-check">Using polysemy-check</h2>
-<p>To get started, you’re going to need to give two instances for every effect in your system-under-test. Let’s assume we have a stack effect:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stack</span> s m a <span class="kw">where</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="dt">Push</span><span class="ot"> ::</span> s <span class="ot">-&gt;</span> <span class="dt">Stack</span> s m ()</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">Pop</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m (<span class="dt">Maybe</span> s)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  <span class="dt">RemoveAll</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m ()</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  <span class="dt">Size</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m <span class="dt">Int</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
-<p>The instances we need are given by:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">deriving</span> <span class="kw">instance</span> (<span class="dt">Show</span> s, <span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">Stack</span> s m a)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>deriveGenericK &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
-<p>where <code>deriveGenericK</code> is TemplateHaskell that from <a href="https://hackage.haskell.org/package/kind-generics"><code>kind-generics</code></a> (but is re-exported by <code>polysemy-check</code>.) <code>kind-generics</code> is <code>GHC.Generics</code> on steroids: it’s capable of deriving generic code for GADTs.</p>
-<p>The first thing that probably comes to mind when you consider <code>QuickCheck</code> is “checking for laws.” For example, we should expect that <code>push s</code> followed by <code>pop</code> should be equal to <code>pure (Just s)</code>. Laws of this sort <em>give meaning to effects,</em> and act as <em>sanity checks on their interpreters.</em></p>
-<p>Properties for laws can be created via <code>prepropLaw</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>prepropLaw</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> effs r a f</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>     <span class="op">.</span> ( (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Eq</span> z <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f z))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Show</span> z <span class="ot">=&gt;</span> <span class="dt">Show</span> (f z))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>       )</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    <span class="ot">=&gt;</span> ( <span class="dt">Eq</span> a</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>       , <span class="dt">Show</span> a</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>       , <span class="dt">ArbitraryEff</span> effs r</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>       )</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Gen</span> (<span class="dt">Sem</span> r a, <span class="dt">Sem</span> r a)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Sem</span> r (a, z) <span class="ot">-&gt;</span> <span class="dt">IO</span> (f (a, z)))</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span></code></pre></div>
-<p>Sorry for the atrocious type. If you’re looking for Boring Haskell, you’d best look elsewhere.</p>
-<p>The first argument here is a <code>QuickCheck</code> generator which produces two programs that should be equivalent. The second argument is the interpreter for <code>Sem</code> under which the programs must be equivalent, or will fail the resulting <code>Property</code>. Thus, we can write the <code>push/pop</code> law above as:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>law_pushPop</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> s r f effs res</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>     <span class="op">.</span> (</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>         <span class="co">-- The type that our generator returns</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>         res <span class="op">~</span> (<span class="dt">Maybe</span> s)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>         <span class="co">-- The effects we want to be able to synthesize for contextualized</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>         <span class="co">-- testing</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>       , effs <span class="op">~</span> &#39;[<span class="dt">Stack</span> s]</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>         <span class="co">-- Misc constraints you don&#39;t need to care about</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>       , <span class="dt">Arbitrary</span> s</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>       , <span class="dt">Eq</span> s</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>       , <span class="dt">Show</span> s</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>       , <span class="dt">ArbitraryEff</span> effs r</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a>       , <span class="dt">Members</span> effs r</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Eq</span> z <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f z))</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true"></a>       , (<span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Show</span> z <span class="ot">=&gt;</span> <span class="dt">Show</span> (f z))</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true"></a>       )</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r (res, a) <span class="ot">-&gt;</span> <span class="dt">IO</span> (f (res, a)))</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true"></a>law_pushPop <span class="ot">=</span> prepropLaw <span class="op">@</span>effs <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true"></a>  s <span class="ot">&lt;-</span> arbitrary</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true"></a>  <span class="fu">pure</span> ( push s <span class="op">&gt;&gt;</span> pop</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true"></a>       , <span class="fu">pure</span> (<span class="dt">Just</span> s)</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true"></a>       )</span></code></pre></div>
-<p>Sorry. Writing gnarly constraints is the cost not needing to write gnarly code. If you know how to make this better, please open a PR!</p>
-<p>There’s something worth paying attention to in <code>law_pushPop</code> — namely the type of the interpreter <code>(forall a. Sem r (Maybe s, a) -&gt; IO (f (Maybe s, a)))</code>. What is this <code>forall a</code> thing doing, and where does it come from? As written, our generator would merely checks the equivalence of the exact two given programs, but this is an insufficient test. We’d instead like to prove the equivalence of the <code>push/pop</code> law <em>under all circumstances.</em></p>
-<p>Behind the scenes, <code>prepropLaw</code> is synthesizing a monadic action to run <em>before</em> our given law, as well as some actions to run <em>after</em> it. These actions are randomly pulled from the effects inside the <code>effs ~ '[Stack s]</code> row (and so here, they will only be random <code>Stack</code> actions.) The <code>a</code> here is actually the result of these “contextual” actions. Complicated, but you really only need to get it right once, and can copy-paste it forevermore.</p>
-<p>Now we can specialize <code>law_pushPop</code> (plus any other laws we might have written) for a would-be interpreter of <code>Stack s</code>. Any interpreter that passes all the properties is therefore proven to respect the desired semantics of <code>Stack s</code>.</p>
-<h2 id="wrapping-up">Wrapping Up</h2>
-<p><code>polysemy-check</code> can do lots more, but this post is overwhelming already. So next week we’ll discuss how to prove the equivalence of interpreters, and how to ensure your effects are sane with respect to one another.</p>
         ]]>
       </content>
     </entry>
