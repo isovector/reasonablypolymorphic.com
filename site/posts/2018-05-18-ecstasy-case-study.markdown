@@ -55,7 +55,7 @@ Finally, `a :: *` is the actual type you want the field to have.
 
 Having data is a great first step, but it's currently just an opaque blob to the
 library. This is where [GHC.Generics][generics] comes in -- given an
-(auto-derivable) `Generic` instance for our world, we can use use `GHC.Generics`
+(auto-derivable) `Generic` instance for our world, we can use `GHC.Generics`
 to automatically further derive more specialized machinery for ourselves.
 
 As an example, assume our world looked like this (absent the `Component`
