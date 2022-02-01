@@ -167,7 +167,7 @@ memory tape is `Zero`, and if it is, it calls `gotoExit`. If not, we don't do
 anything.
 
 We need still to write `instrExit`, but we will leave it as an exercise to the
-reader. `instrExit` is symmetric to `instrEnter`, except that it it attempts to
+reader. `instrExit` is symmetric to `instrEnter`, except that it attempts to
 find a matching `EnterLoop` (rather than a matching `ExitLoop`) if the read head
 of the memory tape *is* $0$.
 

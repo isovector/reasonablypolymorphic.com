@@ -381,7 +381,7 @@ which helps separate that logic from the main compiler.
 So with all of that background information out of the way, we're finally ready
 to talk about how the specializer works.
 
-Recall our our original `mtl` program, transformed so it has its dictionaries
+Recall our original `mtl` program, transformed so it has its dictionaries
 explicitly passed:
 
 ```haskell

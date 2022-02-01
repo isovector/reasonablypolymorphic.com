@@ -66,7 +66,7 @@ implement in any way we'd like.
 
 Because `IO` is so hard to test, the idea of `polysemy` is that we can give
 several interpretaions for our program --- one that is pure, lovely, functional,
-and, importantly, very easy to test. Another interpretation is one that that
+and, importantly, very easy to test. Another interpretation is one that 
 runs fast in `IO`. The trick then is to decompose the problem of testing into
 two steps:
 

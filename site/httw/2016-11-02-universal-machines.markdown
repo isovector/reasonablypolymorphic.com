@@ -342,7 +342,7 @@ we'll explore further next chapter.
 ## Exercises
 
 1) Build an `or` gate entirely out of `nand` gates. Derive a function table for
-   it, to really convince yourself that you you got it right.
+   it, to really convince yourself that you got it right.
 2) What would a `nor` gate look like? Write its function table, and take a guess
    at what its symbol would be.
 3) Would a `nor` gate *also* be universal? Why or why not? If so, build a `nand`
