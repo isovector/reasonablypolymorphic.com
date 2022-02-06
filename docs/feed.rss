@@ -7,13 +7,335 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2022-01-31T21:46:00Z</pubDate>
+  <pubDate>2022-02-05T17:59:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Review: Sorting with Bialgebras and Distributive Laws</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/bialgebras/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/bialgebras/index.html</guid>
+      <pubDate>2022-02-05T17:59:00Z</pubDate>
+      <content:encoded><![CDATA[
+        <p>Today’s paper is <a href="http://www.cs.ox.ac.uk/people/daniel.james/sorting/sorting.pdf">Sorting with Bialgebras and Distributive Laws</a> by Hinze et al. The main thrust of the paper is that many well-known sorting algorithms are categorical duals of one another! As seems to be usual for the papers I review, there’s a lot of <a href="/blog/recursion-schemes">recursion scheme</a> stuff here, so go read that first if you’re unfamiliar with it.</p>
+<p>Something that’s stymied me while working through <em>Sorting with Bialgebras</em> is that whatever it is we’re doing here, it’s not observable. All sorting functions are extentionally equal — so the work being done here is necessarily below the level of equality. This doesn’t jive well with how I usually think about programming, and has made it very hard for me to see exactly what the purpose of all of this is. But I digress.</p>
+<h2 id="bubblesort-and-naive-insertion-sort">Bubblesort and Naive Insertion Sort</h2>
+<p>Hinze et al. begin by showing us that insertion sort and bubble sort have terse implementations:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">insertSort ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a]</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>insertSort <span class="ot">=</span> <span class="fu">foldr</span> insert []</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">selectSort ::</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>selectSort <span class="ot">=</span> unfoldr select</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="ot">    select ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, [a])</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    select [] <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    select as <span class="ot">=</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>      <span class="kw">let</span> x <span class="ot">=</span> <span class="fu">minimum</span> as</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>          xs <span class="ot">=</span> delete x as</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>       <span class="kw">in</span> <span class="dt">Just</span> (x, xs)</span></code></pre></div>
+<p>and that there are two dualities here, <code>foldr</code> is dual to <code>unfoldr</code>, and <code>insert :: Ord a =&gt; a -&gt; [a] -&gt; [a]</code> is dual to <code>select :: Ord a =&gt; [a] -&gt; Maybe (a, [a])</code>.</p>
+<p>The rest of the paper is pulling on this thread to see where it goes. As a first step, it’s noted that <code>foldr</code> and <code>unfoldr</code> are hiding a lot of interesting details, so instead we will divide the sorting problem into two halves: a catamorphism to tear down the unsorted list, and an anamorphism to build up the sorted version.</p>
+<p>Begin by defining <code>Mu</code> and <code>Nu</code>, which are identical in Haskell. The intention here is that we can tear down <code>Mu</code>s, and build up <code>Nu</code>s:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Mu</span> f <span class="ot">=</span> <span class="dt">Mu</span> {<span class="ot"> unMu ::</span> f (<span class="dt">Mu</span> f) }</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Nu</span> f <span class="ot">=</span> <span class="dt">Nu</span> {<span class="ot"> unNu ::</span> f (<span class="dt">Nu</span> f) }</span></code></pre></div>
+<p>as witnessed by <code>cata</code> and <code>ana</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">cata ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> (f a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Mu</span> f <span class="ot">-&gt;</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>cata f <span class="ot">=</span> f <span class="op">.</span> <span class="fu">fmap</span> (cata f) <span class="op">.</span> unMu</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="ot">ana ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> f a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Nu</span> f</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>ana f <span class="ot">=</span> <span class="dt">Nu</span> <span class="op">.</span> <span class="fu">fmap</span> (ana f) <span class="op">.</span> f</span></code></pre></div>
+<p>We’ll also need a pattern functor to talk about lists:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">ListF</span> (<span class="ot">t ::</span> <span class="dt">Tag</span>) a k <span class="ot">=</span> <span class="dt">Nil</span> <span class="op">|</span> a <span class="op">:&gt;</span> k</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Functor</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="kw">infixr</span> <span class="dv">5</span> <span class="op">:&gt;</span></span></code></pre></div>
+<p>This <code>Tag</code> thing is of my own devising, it’s a phantom type to track whether or not our list is sorted:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Tag</span> <span class="ot">=</span> <span class="dt">UnsortedTag</span> <span class="op">|</span> <span class="dt">SortedTag</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Unsorted</span> <span class="ot">=</span> <span class="dt">ListF</span> <span class="dt">&#39;UnsortedTag</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Sorted</span> <span class="ot">=</span> <span class="dt">ListF</span> <span class="dt">&#39;SortedTag</span></span></code></pre></div>
+<p>Note that in Haskell, nothing ensures that <code>Sorted</code> values are actually sorted! This is just some extra machinery to get more informative types.</p>
+<p>With everything in place, we can now write the type of a sorting function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">SortingFunc</span> a <span class="ot">=</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> <span class="dt">Mu</span> (<span class="dt">Unsorted</span> a) <span class="ot">-&gt;</span> <span class="dt">Nu</span> (<span class="dt">Sorted</span> a)</span></code></pre></div>
+<p>that is, a sorting function is something that tears down an unsorted list, and builds up a sorted list in its place. Makes sense, and the extra typing helps us keep track of which bits are doing what.</p>
+<p>Most of the paper stems from the fact that we can implement a <code>SortingFunc</code> in two ways. We can either:</p>
+<ol type="1">
+<li>write a <code>cata</code> that tears down the <code>Mu</code> by building up a <code>Nu</code> via <code>ana</code>, or</li>
+<li>write an <code>ana</code> that builds up the <code>Nu</code> that tears down the <code>Mu</code> via <code>cata</code></li>
+</ol>
+<p>Let’s look at the first case:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">naiveInsertSort ::</span> <span class="dt">SortingFunc</span> a</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>naiveInsertSort <span class="ot">=</span> cata <span class="op">$</span> ana _</span></code></pre></div>
+<p>this hole has type</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>               <span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a)))</span></code></pre></div>
+<p>which we can think of as having stuck an element on the front of an otherwise sorted list, and then needing to push that unsortedness one layer deeper. That does indeed sound like insertion sort: take a sorted list, and then traverse through it, sticking the unsorted element in the right place. It’s “naive” because the recursion doesn’t stop once it’s in the right place — since the remainder of the list is already sorted, it’s OK to stop.</p>
+<p>The paper deals with this issue later.</p>
+<p>Let’s write a function with this type:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>naiveIns</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a)))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>naiveIns <span class="dt">Nil</span>                 <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>naiveIns (a <span class="op">:&gt;</span> <span class="dt">Nu</span> <span class="dt">Nil</span>)       <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Nil</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>naiveIns (a <span class="op">:&gt;</span> <span class="dt">Nu</span> (b <span class="op">:&gt;</span> x))</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b                   <span class="ot">=</span> a <span class="op">:&gt;</span> b <span class="op">:&gt;</span> x</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span>                <span class="ot">=</span> b <span class="op">:&gt;</span> a <span class="op">:&gt;</span> x</span></code></pre></div>
+<p>The first two cases are uninteresting. But the cons-cons case is — we need to pick whichever of the two elements is smaller, and stick it in front. In doing so, we have sorted the first element in the list, and pushed the unsortedness deeper.</p>
+<p>This all makes sense to me. But I find the dual harder to think about. Instead of making a <code>cata . ana</code>, let’s go the other way with an <code>ana . cata</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">bubbleSort ::</span> <span class="dt">SortingFunc</span> a</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>bubbleSort <span class="ot">=</span> ana <span class="op">$</span> cata _</span></code></pre></div>
+<p>this hole now has type:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>     <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a)))</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>  <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a))</span></code></pre></div>
+<p>which is now an unsorted element in front of a sorted element, in front of the remainder of an unsorted list. What does it mean to be a single sorted element? Well, it must be the smallest element in the otherwise unsorted list. Thus, the smallest element in a list bubbles its way to the front.</p>
+<p>On my first reading of this, I thought to myself “that sure sounds a lot like selection sort!” But upon close reading later, it’s not. Insertion sort knows where to put the smallest element it’s found, and does that in constant time. Bubble sort instead swaps adjacent elements, slowly getting the smallest element closer and closer to the front.</p>
+<p>Let’s implement a function with this type:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>bub</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a)))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a))</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>bub <span class="dt">Nil</span>            <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a>bub (a <span class="op">:&gt;</span> <span class="dt">Nil</span>)     <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Mu</span> <span class="dt">Nil</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true"></a>bub (a <span class="op">:&gt;</span> b <span class="op">:&gt;</span> x)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b         <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Mu</span> (b <span class="op">:&gt;</span> x)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span>      <span class="ot">=</span> b <span class="op">:&gt;</span> <span class="dt">Mu</span> (a <span class="op">:&gt;</span> x)</span></code></pre></div>
+<p>While <code>naiveIns</code> pushes unsorted elements inwards, <code>bub</code> pulls sorted elements outwards. But, when you look at the implementations of <code>bub</code> and <code>naiveIns</code>, they’re awfully similar! This is the main thrust of the paper — we can factor out a common core of <code>naiveIns</code> and <code>bub</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a>swap</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a x)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a x)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a>swap <span class="dt">Nil</span>            <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true"></a>swap (a <span class="op">:&gt;</span> <span class="dt">Nil</span>)     <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Nil</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true"></a>swap (a <span class="op">:&gt;</span> b <span class="op">:&gt;</span> x)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b          <span class="ot">=</span> a <span class="op">:&gt;</span> b <span class="op">:&gt;</span> x</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span>       <span class="ot">=</span> b <span class="op">:&gt;</span> a <span class="op">:&gt;</span> x</span></code></pre></div>
+<p>It wasn’t immediately clear to me why this works, since the types of <code>bub</code> and <code>ins</code> seem to be more different than this. But when we compare them, this is mostly an artifact of the clunky fixed-point encodings:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="co">-- type of bub</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>   <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a)))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a><span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a><span class="co">-- unroll a Mu:</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true"></a>   <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a)))</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true"></a><span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a)))</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true"></a><span class="co">-- let x ~ Mu (Unsorted a)</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true"></a>   <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a x)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true"></a><span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a x)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true"></a><span class="co">-- let x ~ Nu (Sorted a)</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true"></a>   <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true"></a><span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a)))</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true"></a></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true"></a><span class="co">-- unroll a Nu</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true"></a>   <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a)))</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true"></a><span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a)))</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true"></a></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true"></a><span class="co">-- type of naiveIns</span></span></code></pre></div>
+<p>The only difference here is we are no longer packing <code>Mu</code>s and unpacking <code>Nu</code>s. We can pull that stuff out:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="ot">bubbleSort&#39;&#39; ::</span> <span class="dt">SortingFunc</span> a</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>bubbleSort&#39;&#39; <span class="ot">=</span> ana <span class="op">$</span> cata <span class="op">$</span> <span class="fu">fmap</span> <span class="dt">Mu</span> <span class="op">.</span> swap</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a><span class="ot">naiveInsertSort&#39;&#39; ::</span> <span class="dt">SortingFunc</span> a</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a>naiveInsertSort&#39;&#39; <span class="ot">=</span> cata <span class="op">$</span> ana <span class="op">$</span> swap <span class="op">.</span> <span class="fu">fmap</span> unNu</span></code></pre></div>
+<p>and thus have shown that <code>bubbleSort''</code> and <code>naiveInsertSort''</code> are duals of one another.</p>
+<h2 id="bialgebras">Bialgebras</h2>
+<p>Allegedly, this stuff is all “just a bialgebra.” So, uh, what’s that? The authors draw a bunch of cool looking commutative diagrams that I would love to try to prove, but my attempts to do this paper in Agda were stymied by <code>Mu</code> and <code>Nu</code> being too recursive. So instead we’ll have to puzzle through it like peasants instead.</p>
+<p>The universal mapping property of initial algebras (here, <code>Mu</code>) is the following:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>cata f <span class="op">.</span> <span class="dt">Mu</span> <span class="ot">=</span> f <span class="op">.</span> <span class="fu">fmap</span> (cata f)</span></code></pre></div>
+<p>and dually, for terminal coalgebras (<code>Nu</code>):</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>unNu <span class="op">.</span> ana f <span class="ot">=</span> <span class="fu">fmap</span> (ana f) <span class="op">.</span> f</span></code></pre></div>
+<p>Let’s work on the <code>cata</code> diagram, WLOG. This UMP gives us:</p>
+<pre><code>                     fmap (cata bub)
+Unsorted (Mu Unsorted)  ---------&gt;  Unsorted (Sorted (Mu Unsorted))
+         |                                      |
+     Mu  |                                      |  bub
+         v                                      v
+   Mu Unsorted  ----------------------&gt;  Sorted (Mu Unsorted)
+                     cata bub</code></pre>
+<p>but as we saw in <code>bubbleSort''</code>, <code>bub = fmap Mu . swap</code>, thus:</p>
+<pre><code>                     fmap (cata bub)
+Unsorted (Mu Unsorted)  ---------&gt;  Unsorted (Sorted (Mu Unsorted))
+         |                                      |
+         |                                      |  swap
+         |                                      v
+     Mu  |                        Sorted (Unsorted (Mu Unsorted))
+         |                                      |
+         |                                      |  fmap Mu
+         v                                      v
+   Mu Unsorted  ----------------------&gt;  Sorted (Mu Unsorted)
+                     cata bub</code></pre>
+<p>If we let <code>c = cata bub</code> and <code>a = Mu</code>, this diagram becomes</p>
+<pre><code>                          fmap c
+Unsorted (Mu Unsorted)  ---------&gt;  Unsorted (Sorted (Mu Unsorted))
+         |                                      |
+         |                                      |  swap
+         |                                      v
+      a  |                        Sorted (Unsorted (Mu Unsorted))
+         |                                      |
+         |                                      |  fmap a
+         v                                      v
+   Mu Unsorted  ----------------------&gt;  Sorted (Mu Unsorted)
+                          c</code></pre>
+<p>and allgedly, this is the general shape of an <code>f</code>-<em>bialgebra</em>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a>c <span class="op">.</span> a <span class="ot">=</span> <span class="fu">fmap</span> a <span class="op">.</span> f <span class="op">.</span> <span class="fu">fmap</span> c</span></code></pre></div>
+<p>where <code>a : forall x. F x -&gt; x</code> and <code>c : forall x. x -&gt; G x</code>, thus <code>f : forall x. F (G x) -&gt; G (F x)</code>. In Agda:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a><span class="kw">record</span> Bialgebra</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true"></a>       <span class="ot">{</span>F G <span class="ot">:</span> <span class="dt">Set</span> <span class="ot">→</span> <span class="dt">Set</span><span class="ot">}</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true"></a>       <span class="ot">{</span>F-functor <span class="ot">:</span> Functor F<span class="ot">}</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true"></a>       <span class="ot">{</span>G-functor <span class="ot">:</span> Functor G<span class="ot">}</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true"></a>       <span class="ot">(</span>f <span class="ot">:</span> <span class="ot">{</span>X <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">→</span> F <span class="ot">(</span>G X<span class="ot">)</span> <span class="ot">→</span> G <span class="ot">(</span>F X<span class="ot">))</span> <span class="ot">:</span> <span class="dt">Set</span> <span class="kw">where</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true"></a>  <span class="kw">field</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true"></a>    a <span class="ot">:</span> <span class="ot">{</span>X <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">→</span> F X <span class="ot">→</span> X</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true"></a>    c <span class="ot">:</span> <span class="ot">{</span>X <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span> <span class="ot">→</span> X <span class="ot">→</span> G X</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true"></a>    bialgebra-proof</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true"></a>      <span class="ot">:</span> <span class="ot">{</span>X <span class="ot">:</span> <span class="dt">Set</span><span class="ot">}</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true"></a>      <span class="ot">→</span> c <span class="ot">{</span>X<span class="ot">}</span> ∘ a ≡ map G-functor a ∘ f ∘ map F-functor c</span></code></pre></div>
+<p>where we can build two separate <code>Bialgebra swap</code>s:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true"></a>bubbleSort <span class="ot">:</span> Bialgebra swap</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>a bubbleSort <span class="ot">=</span> cata bub</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>c bubbleSort <span class="ot">=</span> Mu</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>bialgebra-proof bubbleSort <span class="ot">=</span> <span class="co">-- left as homework</span></span></code></pre></div>
+<p>and</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a>naiveInsertSort <span class="ot">:</span> Bialgebra swap</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>a naiveInsertSort <span class="ot">=</span> unNu</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>c naiveInsertSort <span class="ot">=</span> ana bub</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>bialgebra-proof naiveInsertSort <span class="ot">=</span> <span class="co">-- left as homework</span></span></code></pre></div>
+<p>I’m not entirely confident about this, since as said earlier, I don’t have this formalized in Agda. It’s a shame, because this looks like it would be a lot of fun to do. We’re left with a final diagram, equaqting <code>cata (ana naiveIns)</code> and <code>ana (cata bub)</code>:</p>
+<pre><code>                  ?fmap (cata (ana naiveIns))?
+ Unsorted (Mu Unsorted)  - - - - -&gt;  Unsorted (Nu Sorted)
+          |                                      |
+      Mu  |                                      |  ana naiveIns
+          v           cata (ana naiveIns)        v
+      Mu Unsorted  - - - - - -|| - - - - -&gt;  Nu Sorted
+          |             ana (cata bub)           |
+cata bub  |                                      |  unNu
+          v                                      v
+   Sorted (Mu Unsorted)  - - - - - -&gt;  Sorted (Nu Sorted)
+                   ?fmap (ana (cata bub)?</code></pre>
+<p>The morphisms surrounded by question marks aren’t given in the paper, but I’ve attempted to fill them in. The ones I’ve given complete the square, but they’re the opposite of what I’d expect from the initial algebra / terminal coalgebra UMPs. This is something to come back to, I think, but is rather annoying since Agda would just tell me the damn answer.</p>
+<h2 id="paramorphisms-and-apomorphisms">Paramorphisms and Apomorphisms</h2>
+<p>Standard recursion scheme machinery:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a><span class="ot">para ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> (f (<span class="dt">Mu</span> f, a) <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Mu</span> f <span class="ot">-&gt;</span> a</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true"></a>para f <span class="ot">=</span> f <span class="op">.</span> <span class="fu">fmap</span> (<span class="fu">id</span> <span class="op">&amp;&amp;&amp;</span> para f) <span class="op">.</span> unMu</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true"></a><span class="ot">apo ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> f (<span class="dt">Either</span> (<span class="dt">Nu</span> f) a)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Nu</span> f</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true"></a>apo f <span class="ot">=</span> <span class="dt">Nu</span> <span class="op">.</span> <span class="fu">fmap</span> (<span class="fu">either</span> <span class="fu">id</span> (apo f)) <span class="op">.</span> f</span></code></pre></div>
+<p>The idea is that <code>para</code>s can look at all the structure that hasn’t yet been folded, while <code>apo</code>s can exit early by giving a <code>Left</code>.</p>
+<h2 id="insertion-and-selection-sort">Insertion and Selection Sort</h2>
+<p>The paper brings us back to insertion sort. Instead of writing the naive version as a <code>cata . ana</code>, we will now try writing it as a <code>cata . apo</code>. Under this new phrasing, we get the type:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a>     <span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a>  <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true"></a>                      (<span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))))</span></code></pre></div>
+<p>which is quite a meaningful type. Now, our type can signal that the resuling list is already sorted all the way through, or that we had to push an unsorted value inwards. As a result, <code>ins</code> looks exactly like <code>bub</code>, except that we can stop early in most cases, safe in the knowledge that we haven’t changed the sortedness of the rest of the list. The <code>b &lt; a</code> case is the only one which requires further recursion.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a>ins</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>                        (<span class="dt">Unsorted</span> a (<span class="dt">Nu</span> (<span class="dt">Sorted</span> a))))</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true"></a>ins <span class="dt">Nil</span>                 <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true"></a>ins (a <span class="op">:&gt;</span> <span class="dt">Nu</span> <span class="dt">Nil</span>)       <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Left</span> (<span class="dt">Nu</span> <span class="dt">Nil</span>)</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true"></a>ins (a <span class="op">:&gt;</span> <span class="dt">Nu</span> (b <span class="op">:&gt;</span> x))</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b              <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Left</span> (<span class="dt">Nu</span> (b <span class="op">:&gt;</span> x))  <span class="co">-- already sorted!</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span>           <span class="ot">=</span> b <span class="op">:&gt;</span> <span class="dt">Right</span> (a <span class="op">:&gt;</span> x)</span></code></pre></div>
+<p>Let’s think now about selection sort. Which should be an <code>ana . para</code> by duality, with the resulting type:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a>     <span class="dt">Unsorted</span> a ( <span class="dt">Mu</span> (<span class="dt">Unsorted</span> a)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a>                , <span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a))</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>                )</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true"></a>  <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Mu</span> (<span class="dt">Unsorted</span> a))</span></code></pre></div>
+<p>It’s much harder for me to parse any sort of meaning out of this type. Now our input has both all the unsorted remaining input, as well as a single term bubbling up. I actually can’t figure out how this helps us; presumably it’s something about laziness and not needing to do something with the sorted side’s unsorted tail? But I don’t know. Maybe a reader can drop a helpful comment.</p>
+<p>Anyway, the paper gives us <code>sel</code> which implements the type:</p>
+<pre><code>sel
+    :: Ord a
+    =&gt; Unsorted a ( Mu (Unsorted a)
+                  , Sorted a (Mu (Unsorted a))
+                  )
+    -&gt; Sorted a (Mu (Unsorted a))
+sel Nil                  = Nil
+sel (a :&gt; (x, Nil))      = a :&gt; x
+sel (a :&gt; (x, b :&gt; x&#39;))
+  | a &lt;= b               = a :&gt; x
+  | otherwise            = b :&gt; Mu (a :&gt; x&#39;)</code></pre>
+<p>Getting an intution here as to why the <code>otherwise</code> case uses <code>x'</code> instead of <code>x</code> is an exercise left to the reader, who can hopefully let me in on the secret.</p>
+<p>As before, we can pull a bialgebra out of <code>ins</code> and <code>sel</code>. This time, the input side uses the <code>(,)</code>, and the output uses <code>Either</code>, and I suppose we get the best of both worlds: early stopping, and presumably whatever caching comes from <code>(,)</code>:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true"></a>swop</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (x, <span class="dt">Sorted</span> a x)</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> x (<span class="dt">Unsorted</span> a x))</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true"></a>swop <span class="dt">Nil</span>                    <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true"></a>swop (a <span class="op">:&gt;</span> (x, <span class="dt">Nil</span>))        <span class="ot">=</span> a <span class="op">:&gt;</span> (<span class="dt">Left</span> x)</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true"></a>swop (a <span class="op">:&gt;</span> (x, (b <span class="op">:&gt;</span> x&#39;)))</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b                  <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Left</span> x</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span>               <span class="ot">=</span> b <span class="op">:&gt;</span> <span class="dt">Right</span> (a <span class="op">:&gt;</span> x&#39;)</span></code></pre></div>
+<p>This time our bialgebras are:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true"></a>insertSort <span class="ot">:</span> Bialgebra swop</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>a insertSort <span class="ot">=</span> apo ins</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>c insertSort <span class="ot">=</span> id &amp;&amp;&amp; unNu</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>bialgebra-proof insertSort <span class="ot">=</span> <span class="co">-- left as homework</span></span></code></pre></div>
+<p>and</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true"></a>selectSort <span class="ot">:</span> Bialgebra swop</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>a selectSort <span class="ot">=</span> para sel</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>c selectSort <span class="ot">=</span> either id Mu</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true"></a>Bialgebra<span class="ot">.</span>bialgebra-proof selectSort <span class="ot">=</span> <span class="co">-- left as homework</span></span></code></pre></div>
+<h2 id="quicksort-and-treesort">Quicksort and Treesort</h2>
+<p>Lots of the same techniques, and I’m running out of time, so we’ll go quickly. The key insight thus far is that select sort and insert sort both suck. How do we go faster than <span class="math inline">\(O(n^2)\)</span>? Quicksort, and Treesort!</p>
+<p>What’s interesting to me is I never considered Quicksort to be a tree-sorting algorithm. But of course it is; it’s recursively dividing an array in half, sorting each, and then putting them back together. But that fact is obscured by all of this “pivoting” nonsense; it’s just a <a href="https://www.youtube.com/watch?v=oaIMMclGuog">tree algorithm projected onto arrays</a>.</p>
+<p>Hinze et al. present specialized versions of Quicksort and Treesort, but we’re just going to skip to the bialgebra bits:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Tree</span> a k <span class="ot">=</span> <span class="dt">Empty</span> <span class="op">|</span> <span class="dt">Node</span> k a k</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Functor</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true"></a>sprout</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (x, <span class="dt">Tree</span> a x)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Tree</span> a (<span class="dt">Either</span> x (<span class="dt">Unsorted</span> a x))</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true"></a>sprout <span class="dt">Nil</span>                <span class="ot">=</span> <span class="dt">Empty</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true"></a>sprout (a <span class="op">:&gt;</span> (x, <span class="dt">Empty</span>))  <span class="ot">=</span> <span class="dt">Node</span> (<span class="dt">Left</span> x) a (<span class="dt">Left</span> x)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true"></a>sprout (a <span class="op">:&gt;</span> (x, (<span class="dt">Node</span> l b r)))</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b                <span class="ot">=</span> <span class="dt">Node</span> (<span class="dt">Right</span> (a <span class="op">:&gt;</span> l)) b (<span class="dt">Left</span> r)</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span>             <span class="ot">=</span> <span class="dt">Node</span> (<span class="dt">Left</span> l) b (<span class="dt">Right</span> (a <span class="op">:&gt;</span> r))</span></code></pre></div>
+<p>This is the creation of a binary search tree. <code>Left</code> trees don’t need to be manipulated, and <code>Right</code> ones need to have the new unsorted element pushed down. The other half of the problem is to extract elements from the BST:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true"></a>wither</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Tree</span> a (x, <span class="dt">Sorted</span> a x)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> x (<span class="dt">Tree</span> a x))</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true"></a>wither <span class="dt">Empty</span>                        <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true"></a>wither (<span class="dt">Node</span> (_, <span class="dt">Nil</span>) a (r, _))     <span class="ot">=</span> a <span class="op">:&gt;</span> <span class="dt">Left</span> r</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true"></a>wither (<span class="dt">Node</span> (_, b <span class="op">:&gt;</span> l&#39;) a (r, _)) <span class="ot">=</span> b <span class="op">:&gt;</span> <span class="dt">Right</span> (<span class="dt">Node</span> l&#39; a r)</span></code></pre></div>
+<p>I think I understand what’s going on here. We have a tree with nodes <code>a</code> and “subtrees” <code>Sorted a x</code>, where remember, <code>x</code> ties the knot. Thus, in the first level of the tree, our root node is the pivot, and then the left “subtree” is the subtree itself, plus a view on it corresponding to the smallest element in it. That is, in <code>(x, Sorted a x)</code>, the <code>fst</code> is the tree, and the <code>snd</code> is the smallest element that has already been pulled out.</p>
+<p>So, if we have a left cons, we want to return that, since it’s necessarily smaller than our root. But we continue (via <code>Right</code>) with a new tree, using the same root and right sides, letting the recursion scheme machinery reduce that into its smallest term.</p>
+<p>But I must admit that I’m hand-waving on this one. I suspect better understanding would come from getting better intutions behind <code>para</code> and <code>apo</code>.</p>
+<p>Let’s tie things off then, since I’ve clearly hit my limit of understanding on this paper for this week. While having a deadline is a nice forcing function to actually go through papers, it’s not always the best for deeply understanding them! Alas, something to think about for the future.</p>
+<p>We’re given two implementations of <code>grow</code>:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true"></a>grow,<span class="ot"> grow&#39; ::</span> <span class="dt">Mu</span> <span class="dt">Unsorted</span> <span class="ot">-&gt;</span> <span class="dt">Nu</span> <span class="dt">Tree</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true"></a>grow  <span class="ot">=</span> ana  <span class="op">.</span> para <span class="op">$</span> <span class="fu">fmap</span> (<span class="fu">either</span> <span class="fu">id</span> unNu) <span class="op">.</span> sprout</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true"></a>grow&#39; <span class="ot">=</span> cata <span class="op">.</span> apo  <span class="op">$</span> sprout <span class="op">.</span> <span class="fu">fmap</span> (<span class="fu">id</span> <span class="op">&amp;&amp;&amp;</span> <span class="dt">Mu</span>)</span></code></pre></div>
+<p>as well as two for <code>flatten</code>:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true"></a>flatten,<span class="ot"> flatten&#39; ::</span> <span class="dt">Mu</span> <span class="dt">Tree</span> <span class="ot">-&gt;</span> <span class="dt">Nu</span> <span class="dt">Sorted</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true"></a>grow  <span class="ot">=</span> cata <span class="op">.</span> apo  <span class="op">$</span> wither <span class="op">.</span> <span class="fu">fmap</span> (<span class="fu">id</span> <span class="op">&amp;&amp;&amp;</span> unNu)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true"></a>grow&#39; <span class="ot">=</span> ana  <span class="op">.</span> para <span class="op">$</span> <span class="fu">fmap</span> (<span class="fu">either</span> <span class="fu">id</span> <span class="dt">Mu</span>) <span class="op">.</span> wither</span></code></pre></div>
+<p>and then finally, give us <code>quickSort</code> and <code>treeSort</code>:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true"></a>quickSort,<span class="ot"> treeSort ::</span> <span class="dt">SortingFunc</span> a</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true"></a>quickSort <span class="ot">=</span> flatten  <span class="op">.</span> downcast <span class="op">.</span> grow</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true"></a>treeSort  <span class="ot">=</span> flatten&#39; <span class="op">.</span> downcast <span class="op">.</span> grow&#39;</span></code></pre></div>
+<p>where <code>downcast</code> was given earlier as:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true"></a><span class="ot">downcast ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Nu</span> f <span class="ot">-&gt;</span> <span class="dt">Mu</span> f</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true"></a>downcast <span class="ot">=</span> <span class="dt">Mu</span> <span class="op">.</span> <span class="fu">fmap</span> downcast <span class="op">.</span> unNu</span></code></pre></div>
+<p>This is interesting, but comes with an obvious questions: what if we intermix <code>flatten</code> with <code>grow'</code>, and vice versa? Rather unexcitingly, they still sort the list, and don’t seem to have different asymptotics. As a collorary, we must thus be excited, and assume that these are two “new” sorting functions, at least, ones without names. I guess that’s not too surprising; there are probably infinite families of sorting functions.</p>
+<h2 id="conclusions-notes-to-self">Conclusions / Notes to Self</h2>
+<p>What a fun paper! I did a bad thing by jumping into Agda too quickly, hoping it would let me formalize the “this is a sorted list” stuff. But that turned out to be premature, since the <code>Sorted</code> wrapper is only ever a pair, and exists only to signal some information to the reader. Thus, I spent six hours working through the Agda stuff before realizing my deadline was coming up sooner than later.</p>
+<p>Implicit in that paragraph is that I started implementing before I had read through the entire paper, which was unwise, as it meant I spent a lot of time on things that turned out to be completely unrelated. Note to self to not do this next time.</p>
+<p>Also, it turns out I’m not as firm on recursion schemes as I thought! It’d be valuable for me to go through <code>para</code>s in much more depth than I have now, and to work harder at following the stuff in this paper. How do the authors keep everything straight? Do they just have more experience, or are they using better tools than I am?</p>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Underlining the Bugs</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -1554,108 +1876,6 @@ k2  = Pure ()
 <li id="fn1" role="doc-endnote"><p>Well, there is a second condition regarding distributivity that is required for correctness. The paper goes into it, but <code>polysemy-check</code> doesn’t yet implement it.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Proving Equivalence of Polysemy Interpreters</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/proving-equivalence/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/proving-equivalence/index.html</guid>
-      <pubDate>2021-10-16T12:06:00Z</pubDate>
-      <content:encoded><![CDATA[
-        <p>Let’s talk <a href="https://reasonablypolymorphic.com/blog/polysemy-check/">more</a> about <a href="https://github.com/polysemy-research/polysemy-check"><code>polysemy-check</code></a>. Last week we looked at how to do property-testing for a <code>polysemy</code> effects’ laws. Today, we’ll investigate how to show that two interpretations are equivalent.</p>
-<p>To continue with last week’s example, let’s say we have an effect that corresponds to having a <code>Stack</code> that we can push and pop:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stack</span> s m a <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dt">Push</span><span class="ot">      ::</span> s <span class="ot">-&gt;</span> <span class="dt">Stack</span> s m ()</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="dt">Pop</span><span class="ot">       ::</span> <span class="dt">Stack</span> s m (<span class="dt">Maybe</span> s)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="dt">RemoveAll</span><span class="ot"> ::</span> <span class="dt">Stack</span> s m ()</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="dt">Size</span><span class="ot">      ::</span> <span class="dt">Stack</span> s m <span class="dt">Int</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> s <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">Stack</span> s m a)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>deriveGenericK &#39;<span class="dt">&#39;Stack</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;Stack</span></span></code></pre></div>
-<p>Since we’d like to prove the equivalence of two interpretations, we’ll need to first write two interpretations. But, to illustrate, we’re going simulate multiple interpreters via a single interpretation, parameterized by which bugs should be present in it.</p>
-<p>purposes of brevity, we’ll write a single interpretation of <code>Stack s</code> in terms of <code>State [s]</code>, and then interpret <em>that</em> in two different ways. In essence, what we’re really testing here is the equivalence of two <code>State</code> interpretations, but it’s good enough for an example.</p>
-<p>We’ll start with the bugs:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Bug</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="ot">=</span> <span class="dt">PushTwice</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">DontRemove</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  <span class="kw">deriving</span> stock (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Enum</span>, <span class="dt">Bounded</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Bug</span> <span class="kw">where</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  arbitrary <span class="ot">=</span> elements [<span class="fu">minBound</span><span class="op">..</span><span class="fu">maxBound</span>]</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="ot">hasBug ::</span> [<span class="dt">Bug</span>] <span class="ot">-&gt;</span> <span class="dt">Bug</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>hasBug <span class="ot">=</span> <span class="fu">flip</span> <span class="fu">elem</span></span></code></pre></div>
-<p>The <code>PushTwice</code> bug, as you might expect, dispatched a <code>Push</code> command so that it pushes twice onto the stack. The <code>DontRemove</code> bug causes <code>RemoveAll</code> to be a no-op. Armed with our bugs, we can write a little interpreter for <code>Stack</code> that translates <code>Stack s</code> commands into <code>State [s]</code> commands, and then immediately runs the <code>State</code> effect:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>runStack</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="ot">    ::</span> [<span class="dt">Bug</span>]</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> (<span class="dt">Stack</span> s &#39;<span class="op">:</span> r) a</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r ([s], a)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>runStack bugs <span class="ot">=</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  (runState [] <span class="op">.</span>) <span class="op">$</span> reinterpret <span class="op">$</span> \<span class="kw">case</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>    <span class="dt">Push</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>      modify (s <span class="op">:</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>      when (hasBug bugs <span class="dt">PushTwice</span>) <span class="op">$</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>        modify (s <span class="op">:</span>)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>    <span class="dt">Pop</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>      r <span class="ot">&lt;-</span> gets listToMaybe</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>      modify (<span class="fu">drop</span> <span class="dv">1</span>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>      <span class="fu">pure</span> r</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>    <span class="dt">RemoveAll</span> <span class="ot">-&gt;</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>      unless (hasBug bugs <span class="dt">DontRemove</span>) <span class="op">$</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a>        put []</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a>    <span class="dt">Size</span> <span class="ot">-&gt;</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a>      gets <span class="fu">length</span></span></code></pre></div>
-<p>For our efforts we are rewarded: <code>runState</code> gives rise to four interpreters for the price of one. We can now ask whether or not these interpreters are equivalent. Enter <code>propEquivalent</code>:</p>
-<p>With these interpreters out of the way, it’s time to answer our original question: are <code>pureStack</code> and <code>ioStack</code> equivalent? Which is to say, do they get the same answer for every possible program? Enter <code>propEquivalent</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>prepropEquivalent</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="kw">forall</span> effs r1 r2 f</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>     <span class="op">.</span> ( <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">Show</span> (f a)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>       , <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Eq</span> (f a)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>       )</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    <span class="ot">=&gt;</span> ( <span class="dt">Inject</span> effs r1</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>       , <span class="dt">Inject</span> effs r2</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>       , <span class="dt">Arbitrary</span> (<span class="dt">Sem</span> effs <span class="dt">Int</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>       )</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r1 a <span class="ot">-&gt;</span> <span class="dt">IO</span> (f a))</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Sem</span> r2 a <span class="ot">-&gt;</span> <span class="dt">IO</span> (f a))</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Property</span></span></code></pre></div>
-<p>All of the functions in <code>polysemy-check</code> have fun type signatures like this one. But despite the preponderance of <code>forall</code>s, it’s not as terrible as you might think. The first ten lines here are just constraints. There are only two arguments to <code>prepropEquivalent</code>, and they are the two interpreters you’d like to test.</p>
-<p>This type is crazy, and it will be beneficial to understand it. There are four type variables, three of which are effect rows. We can distinguish between them:</p>
-<ul>
-<li><code>effs</code>: The effect(s) you’re interested in testing. In our case, our interpreter handles <code>Stack s</code>, so we let <code>effs ~ Stack s</code>.</li>
-<li><code>r1</code>: The effects handled by interpreter 1. Imagine we had an interpreter for <code>Stack s</code> that ran it via <code>IO</code> instead. In that case, <code>r1 ~ '[State s, Embed   IO]</code>.</li>
-<li><code>r2</code> The effects handled by interpreter 2.</li>
-</ul>
-<p>The relationships that must between <code>effs</code>, <code>r1</code> and <code>r2</code> are <span class="math inline">\(effs \subset r1\)</span> and <span class="math inline">\(effs \subset r2\)</span>. When running <code>prepropEquivalent</code>, you <em>must</em> type-apply <code>effs</code>, because Haskell isn’t smart enough to figure it out for itself.</p>
-<p>The other type variable to <code>prepropEquivalent</code> is <code>f</code>, which allows us to capture the “resulting state” of an interpreter. In <code>runStack :: [Bug] -&gt; Sem (Stack s ': r) a -&gt; Sem r ([s], a)</code>, you’ll notice we transform a program returning <code>a</code> into one returning <code>([s], a)</code>, and thus <code>f ~ (,) [s]</code>. If your interpreter doesn’t produce any resulting state, feel free to let <code>f ~ Identity</code>.</p>
-<p>We’re finally ready to test our interpreters! For any equivalence relationship, we should expect something to be equivalent to itself. And this is true regardless of which bugs we enable:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">prop_reflexive ::</span> <span class="dt">Property</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>prop_reflexive <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  bugs <span class="ot">&lt;-</span> arbitrary</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>  <span class="fu">pure</span> <span class="op">$</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    prepropEquivalent <span class="op">@</span>&#39;[<span class="dt">Stack</span> <span class="dt">Int</span>]</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack bugs)  <span class="co">-- pure is getting us into IO</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack bugs)</span></code></pre></div>
-<p>So what’s happening here? Internally, <code>prepropEquivalent</code> is generating random programs of type <code>Sem '[Stack Int] Int</code>, and lifting that into <code>Sem r1 Int</code> and <code>Sem r2 Int</code>, and then running both interpreters and ensuring the result is the same for every program. Note that this means any fundamental non-determinism in your interpretation will break the test! Make sure to use appropriate interpreters for things like clocks and random values!</p>
-<p>To strengthen our belief in <code>prepropEquivalent</code>, we can also check that <code>runStack</code> is <em>not</em> equivalent to itself if different bugs are enabled:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="ot">prop_bugsNotEquivalent ::</span> <span class="dt">Property</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>prop_bugsNotEquivalent <span class="ot">=</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  expectFailure <span class="op">$</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    prepropEquivalent <span class="op">@</span>&#39;[<span class="dt">Stack</span> <span class="dt">Int</span>]</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack [<span class="dt">PushTwice</span>])</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>      (<span class="fu">pure</span> <span class="op">.</span> run <span class="op">.</span> runStack [])</span></code></pre></div>
-<p>Running this test will give us output like:</p>
-<pre><code>+++ OK, failed as expected. Falsified (after 3 tests):
-([0,0],1) /= ([0],1)</code></pre>
-<p>The counterexample here isn’t particularly helpful (I haven’t yet figured out how to <code>show</code> the generated program that fails,) but you can get a hint here by noticing that the stack (the <code>[0,0]</code>) is twice as big in the first result as in the second.</p>
-<p>Importantly, by specifying <code>@'[Stack Int]</code> when calling <code>prepropEquivalent</code>, we are guaranteed that the generated program will <em>only</em> use actions from <code>Stack Int</code>, so it’s not too hard to track down. This is another win for <code>polysemy</code> in my book — that we can isolate bugs with this level of granularity, even if we can’t yet perfectly point to them.</p>
-<p>All of today’s code (and more!) is <a href="https://github.com/polysemy-research/polysemy-check/blob/master/test/ExampleSpec.hs">available</a> as a test in <code>polysemy-check</code>, if you’d like to play around with it. But that’s all for now. Next week we’ll investigate how to use <code>polysemy-check</code> to ensure that the composition of your effects <em>themselves</em> is meaningful. Until then!</p>
       ]]></content:encoded>
   </item>
 </channel>
