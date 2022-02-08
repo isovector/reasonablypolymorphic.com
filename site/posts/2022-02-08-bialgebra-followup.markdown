@@ -3,7 +3,7 @@ layout: post
 title: Followup to Sorting with Bialgebras
 date: 2022-02-08 12:57
 comments: true
-tags: foo, bar
+tags: followup, bialgebra, sorting, recursion schemes, performance
 ---
 
 Last week I was pretty down on the results of my [exploration into Sorting with
