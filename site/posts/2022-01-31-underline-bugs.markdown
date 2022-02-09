@@ -84,7 +84,7 @@ controlled all of the Agda-serialization stuff, so I [made a patch][diff]:
 +   deriving newtype (Eq, Ord, Show, Read, FromJSON)
 +
 + type BufferOffset = Offset 'File
-+ type LineOffset = Offset 'Line
++ type LineOffset = Offset 'Line
 
   data Position' a = Pn
     { srcFile :: !a
