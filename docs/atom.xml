@@ -1,11 +1,245 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2022-02-08T12:57:00Z</updated>
+  <updated>2022-02-10T18:57:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='atom.xml'/>
 
+    <entry>
+      <title>Review: Codata in Action</title>
+      <id>blog/review-codata/index.html</id>
+      <link href='blog/review-codata/index.html'/>
+      <published>2022-02-10T18:57:00Z</published>
+      <updated>2022-02-10T18:57:00Z</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p>Today we’re looking at <a href="https://www.microsoft.com/en-us/research/uploads/prod/2020/01/CoDataInAction.pdf">Codata in Action</a> by Downen, Sullivan, Ariola and Peyton Jones. Please excuse my lack of any sort of theme as I review papers, I’m just picking things that seem interesting to me. This paper in particular was recommended to me by <a href="https://jonathanlorimer.dev/">Jonathan Lorimer</a> in the inaugural edition of the <a href="https://anchor.fm/cofree-coffee">Cofree Coffee Cast</a>, which is an excellent podcast that I may or may not be involved in.</p>
+<p>So anyway, today we’re looking at codata. What’s that? Essentially, lazy records. By virtue of being lazy, Haskell makes the differentiation between data and codata rather hard to spot. The claim is that functional languages are big on data, object-oriented languages really like codata, and that everything you can do with one can be emulated by the other, which is useful if you’d like to compile FP to OOP, or vice versa.</p>
+<p>Codata, like the name implies, have a lot of duals with regular ol’ data. The paper introduces a bunch of parallels between the two:</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Data</th>
+<th style="text-align: center;">Codata</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Concerned with construction</td>
+<td style="text-align: center;">Concerned with destruction</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Define the types of constructors</td>
+<td style="text-align: center;">Define the types of destructors</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Directly observable</td>
+<td style="text-align: center;">Observable only via their interface</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Common in FP</td>
+<td style="text-align: center;">Common in OOP</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Initial algebras</td>
+<td style="text-align: center;">Terminal coalgebras</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Algebraic data structures</td>
+<td style="text-align: center;">Abstract data structures</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><code>data</code></td>
+<td style="text-align: center;"><code>class</code></td>
+</tr>
+</tbody>
+</table>
+<p>The paper’s claim is that codata is a very useful tool for doing real-world work, and that we are doing ourselves a disservice by not making it first-class:</p>
+<blockquote>
+<p>While codata types can be seen in the shadows behind many examples of programming—often hand-compiled away by the programmer—not many functional languages have support for them.</p>
+</blockquote>
+<p>That’s a particularly interesting claim; that we’re all already using codata, but it’s hidden away inside of an idiom rather than being a first-class citizen. I’m always excited to see the ghosts behind the patterns I am already using.</p>
+<h2 id="examples-of-codata">Examples of Codata</h2>
+<p>The paper gives a big list of codata that we’re all already using without knowing it:</p>
+<h3 id="churchboehmberarducci-encodings">Church/Boehm–Berarducci encodings</h3>
+<p>Instead of writing</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Bool</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dt">True</span><span class="ot"> ::</span> <span class="dt">Bool</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="dt">False</span><span class="ot"> ::</span> <span class="dt">Bool</span></span></code></pre></div>
+<p>I can instead do the usual Church encoding:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>codata <span class="dt">Bool</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ot">  if ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span></code></pre></div>
+<p>which I might express more naturally in Haskell via:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">ifThenElse ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>ifThenElse <span class="dt">True</span> t _ <span class="ot">=</span> t</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>ifThenElse <span class="dt">True</span> _ f <span class="ot">=</span> f</span></code></pre></div>
+<p>(I suspect this is that “hand-compiling away” that the authors were talking about)</p>
+<p>However, in the codata presentation, I can recover <code>true</code> and <code>false</code> by building specific objects that fiddle with their arguments just right (using <a href="">copatterns</a> from a few weeks ago):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="dt">True</span> <span class="op">:</span> <span class="dt">Bool</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">if</span> <span class="dt">True</span> t _ <span class="ot">=</span> t</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="dt">False</span> <span class="op">:</span> <span class="dt">Bool</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="kw">if</span> <span class="dt">False</span> _ f <span class="ot">=</span> f</span></code></pre></div>
+<p>That’s neat, I guess!</p>
+<p>As a follow-up, we can try talking about <code>Tree</code>s. Rather than the usual <code>data</code> definition:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Tree</span> t <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>  <span class="dt">Leaf</span><span class="ot"> ::</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="dt">Branch</span><span class="ot"> ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="ot">walk ::</span> (t <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> a</span></code></pre></div>
+<p>we can do it in codata:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>codata <span class="dt">Tree</span> t <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">  walk ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a</span></code></pre></div>
+<p>and reconstruct the “constructors:”</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="dt">Leaf</span><span class="ot"> x ::</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>walk (<span class="dt">Leaf</span> t) mk _ <span class="ot">=</span> mk t</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="dt">Branch</span><span class="ot"> ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>walk (<span class="dt">Branch</span> l r) mk comb <span class="ot">=</span> comb (walk l mk comb) (walk r mk comb)</span></code></pre></div>
+<p>The presentation in the paper hand-compiles <code>Tree!data</code> into two declarations:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>codata <span class="dt">TreeVisitor</span> t a <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  {<span class="ot"> visitLeaf   ::</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  ,<span class="ot"> visitBranch ::</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  }</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>codata <span class="dt">Tree</span> t <span class="kw">where</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a><span class="ot">  walk ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> a</span></code></pre></div>
+<p>which is the same thing, but with better named destructors.</p>
+<h3 id="demand-driven-programming-laziness">Demand-Driven Programming / Laziness</h3>
+<p>You know the problem. You’re programming some search, and want to have a stopping depth. Maybe you’re writing a chessai and don’t want to wait until the ends of time for the search to finish. Easy enough, right? Just add an integer that counts down whenever you recurse:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">search ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Position</span> <span class="ot">-&gt;</span> [<span class="dt">Position</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>search <span class="dv">0</span> _ <span class="ot">=</span> []</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>search n as <span class="ot">=</span> <span class="co">-- do lots of work</span></span></code></pre></div>
+<p>So you set <code>n</code> to something that seems reasonable, and get your moves back. But then you realize you had more time to kill, so you’d like to resume the search where you left off. But there’s no good way to do this, and starting back from the beginning would involve wasting a lot of effort. You can certainly program around it, but again, it’s hand-compiling away codata.</p>
+<p>Instead, we can express the problem differently:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>codata <span class="dt">Rose</span> a <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>  {<span class="ot"> node ::</span> <span class="dt">Rose</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>  ,<span class="ot"> children ::</span> <span class="dt">Rose</span> a <span class="ot">-&gt;</span> [<span class="dt">Rose</span> a]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>Recall that codata is built-in lazy, so by repeatedly following <code>children</code> we can further explore the tree state. In OOP I guess we’d call this a generator or an iterator or something. Probably a factory of some sort.</p>
+<p>But once we have <code>Rose</code> we can implement pruning:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">prune ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Rose</span> <span class="dt">Position</span> <span class="ot">-&gt;</span> <span class="dt">Rose</span> <span class="dt">Position</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>node (prune n t) <span class="ot">=</span> node t</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>children (prune <span class="dv">0</span> t) <span class="ot">=</span> []</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>children (prune n t) <span class="ot">=</span> <span class="fu">fmap</span> (prune (n <span class="op">-</span> <span class="dv">1</span>)) <span class="op">$</span> children t</span></code></pre></div>
+<p>I <em>really</em> like copattern matching.</p>
+<h3 id="abstract-data-types">Abstract Data Types</h3>
+<p>You know how we have extentional and intentional definitions for sets? Like, compare:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Set</span> a <span class="ot">=</span> <span class="dt">Set</span> {<span class="ot"> unSet ::</span> [a] }</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="fu">lookup</span><span class="ot"> ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a><span class="fu">lookup</span> s t <span class="ot">=</span> <span class="fu">elem</span> t <span class="op">$</span> unset s</span></code></pre></div>
+<p>vs</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Set</span> a <span class="ot">=</span> <span class="dt">Set</span> {<span class="ot"> lookup ::</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span> }</span></code></pre></div>
+<p>That latter version is the Church-encoded version. Instead we can give an interface for both sorts of sets as codata, defined by their <em>interface</em> as sets. This is everyday OOP stuff, but a little weird in FP land:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>codata <span class="dt">Set</span> a <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>  {<span class="ot"> isEmpty ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>  ,<span class="ot"> lookup ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>  ,<span class="ot"> insert ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a>  ,<span class="ot"> union ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>My dudes this is just an interface for how you might want to interact with a Set. We can implement the listy version from above:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="ot">listySet ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>isEmpty (listySet ls) <span class="ot">=</span> <span class="fu">null</span> ls</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a><span class="fu">lookup</span> (listySet ls) a <span class="ot">=</span> <span class="fu">elem</span> a ls</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>insert (listySet ls) a <span class="ot">=</span> listSet (a <span class="op">:</span> ls)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a>union (listySet ls) s <span class="ot">=</span> <span class="fu">foldr</span> insert s ls</span></code></pre></div>
+<p>but we can also implement an infinitely big set akin to our functiony-version:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="ot">evensUnion ::</span> <span class="dt">Set</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> <span class="dt">Int</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>isEmpty (evensUnion s) <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a><span class="fu">lookup</span> (evensUnion s) a <span class="ot">=</span> <span class="fu">mod</span> a <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span> <span class="op">||</span> <span class="fu">lookup</span> a s</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>insert (evensUnion s) a <span class="ot">=</span> evensUnion <span class="op">$</span> insert s a</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a>union (evensUnion s) s&#39; <span class="ot">=</span> evensUnion <span class="op">$</span> union s s&#39;</span></code></pre></div>
+<p>This thing is a little odd, but <code>evensUnion</code> is the set of the even numbers unioned with some other set. The built-in unioning is necessary to be able to extend this thing. Maybe we might call it a decorator pattern in OOP land?</p>
+<h3 id="pre-and-post-conditions">Pre and Post Conditions</h3>
+<p>One last example, using type indices to represent the state of something. The paper gives sockets:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">State</span> <span class="ot">=</span> <span class="dt">Raw</span> <span class="op">|</span> <span class="dt">Bound</span> <span class="op">|</span> <span class="dt">Live</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Socket</span><span class="ot"> ::</span> <span class="dt">State</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>codata <span class="dt">Socket</span> i <span class="kw">where</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>  {<span class="ot"> bind    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Raw</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="dt">&#39;Bound</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a>  ,<span class="ot"> connect ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Bound</span> <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true"></a>  ,<span class="ot"> send    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> ()</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true"></a>  ,<span class="ot"> recv    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true"></a>  ,<span class="ot"> close   ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> ()</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>The type indices here ensure that we’ve bound the socket before connecting to it, and connected to it before we can send or receive.</p>
+<p>Contrast this against what we can do with GADTs, which tell us how something was built, not how it can be used.</p>
+<h2 id="converting-between-data-and-codata">Converting Between Data and Codata</h2>
+<p>Unsurprisingly, data and codata are two sides of the same coin: we can compile one to the other and vice versa.</p>
+<h3 id="data-to-codata">Data to Codata</h3>
+<p>Going from data to codata is giving a final encoding for the thing; as we’ve seen, this corresponds to the Boehm-Berarducci encoding. The trick is to replace the type with a function. Each data constructor corresponds to an argument of the function, the type of which is another function that returns <code>a</code>, and as arguments takes each argument to the data constructor. To tie the knot, replace the recursive bits with <code>a</code>.</p>
+<p>Let’s take a look at a common type:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">List</span> a <span class="ot">=</span> <span class="dt">Nil</span> <span class="op">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</span></code></pre></div>
+<p>We will encode this as a function, that returns some new type variable. Let’s call it <code>x</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="op">...</span> <span class="ot">-&gt;</span> x</span></code></pre></div>
+<p>and then we need to give eliminators for each case:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a>elim_nil <span class="ot">-&gt;</span> elim_cons <span class="ot">-&gt;</span> x</span></code></pre></div>
+<p>and then replace each eliminator with a function that takes its arguments, and returns <code>x</code>. For <code>Nil</code>, there are no arguments, so it’s just:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a>x <span class="ot">-&gt;</span> elim_cons <span class="ot">-&gt;</span> x</span></code></pre></div>
+<p>and then we do the same thing for <code>Cons :: a -&gt; List a -&gt; List a</code>:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a>x <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> x</span></code></pre></div>
+<p>of course, there is no <code>List a</code> type anymore, so we replace that with <code>x</code> too:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true"></a>x <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> x</span></code></pre></div>
+<p>And thus we have our codata-encoded list. For bonus points, we can do a little shuffling and renaming:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a>(a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span></code></pre></div>
+<p>which looks very similar to our old friend <code>foldr</code>:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true"></a><span class="fu">foldr</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span></code></pre></div>
+<p>In fact, a little more reshuffling shows us that <code>foldr</code> is exactly the codata transformation we’ve been looking for:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a><span class="fu">foldr</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span></code></pre></div>
+<p>Cool. The paper calls this transformation the “visitor pattern” which I guess makes sense; in order to call this thing we need to give instructions for what to do in every possible case.</p>
+<p>This is an encoding of the type itself! But we also need codata encodings for the data constructors. The trick is to just ignore the “handlers” in the type that don’t correspond to your constructor. For example:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a><span class="dt">Nil</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a><span class="dt">Nil</span> _ nil <span class="ot">=</span> nil</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true"></a><span class="dt">Cons</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true"></a><span class="ot">    ::</span> a</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true"></a>    <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true"></a>    <span class="ot">-&gt;</span> b</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true"></a>    <span class="ot">-&gt;</span> b</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true"></a><span class="dt">Cons</span> <span class="fu">head</span> <span class="fu">tail</span> cons nil <span class="ot">=</span> cons nil (<span class="fu">tail</span> cons nil)</span></code></pre></div>
+<p>Really, these write themselves once you have an eye for them. One way to think about it is that the handlers are “continuations” for how you want to continue. This is the dreaded CPS transformation!</p>
+<h3 id="codata-to-data">Codata to Data</h3>
+<p>Let’s go the other way too. Appropriately, we can use codata streams:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a>codata <span class="dt">Stream</span> a <span class="kw">where</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a>  {<span class="ot"> head ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a>  ,<span class="ot"> tail ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>I’m winging it here, but it’s more fun to figure out how to transform this than to get the information from the paper.</p>
+<p>The obvious approach here is to just turn this thing directly into a record by dropping the <code>Stream a -&gt;</code> part of each field:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stream</span> a <span class="ot">=</span> <span class="dt">Stream</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a>  {<span class="ot"> head ::</span> a</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>  ,<span class="ot"> tail ::</span> <span class="dt">Stream</span> a</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>While this works in Haskell, it doesn’t play nicely with strict languages. So, we can just lazify it by sticking each one behind a function:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stream</span> a <span class="ot">=</span> <span class="dt">Stream</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true"></a>  {<span class="ot"> head ::</span> () <span class="ot">-&gt;</span> a</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true"></a>  ,<span class="ot"> tail ::</span> () <span class="ot">-&gt;</span> <span class="dt">Stream</span> a</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<p>Looks good to me. But is this what the paper does? It mentions that we can <code>tabulate</code> a function, e.g., represent <code>Bool -&gt; String</code> as <code>(String, String)</code>. It doesn’t say much more than this, but we can do our own research. Peep the <code>Representable</code> class from <a href="https://hackage.haskell.org/package/adjunctions-4.4/docs/Data-Functor-Rep.html#t:Representable">adjunctions</a>:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">Distributive</span> f <span class="ot">=&gt;</span> <span class="dt">Representable</span> f <span class="kw">where</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true"></a>  <span class="kw">type</span> <span class="dt">Rep</span><span class="ot"> f ::</span> <span class="op">*</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true"></a><span class="ot">  tabulate ::</span> (<span class="dt">Rep</span> f <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> f a</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true"></a><span class="ot">  index    ::</span> f a <span class="ot">-&gt;</span> <span class="dt">Rep</span> f <span class="ot">-&gt;</span> a</span></code></pre></div>
+<p>This thing is exactly the transformation we’re looking for; we can “represent” some structure <code>f a</code> as a function <code>Rep f -&gt; a</code>, and tabulating gets us back the thing we had in the first place.</p>
+<p>So the trick here is then to determine <code>f</code> for the <code>Rep f</code> that corresponds to our <code>codata</code> structure. Presumably that thing is exactly the record we worked out above.</p>
+<p>What’s interesting about this approach is that it’s exactly <a href="https://www.haskellforall.com/2012/05/scrap-your-type-classes.html">scrap-your-typeclasses.</a> And it’s exactly how typeclasses are implemented in Haskell. And last I looked, it’s the approach that Elm recommends doing instead of having typeclasses. Which makes sense why it’s annoying in Elm, because the language designers are forcing us to hand-compile our code! But I don’t need to beat that dead horse any further.</p>
+<h2 id="thoughts">Thoughts</h2>
+<p>Something that piqued my interest is a quote from the paper:</p>
+<blockquote>
+<p>Functional langauges are typically rich in data types … but a paucity of codata types (usually just function types.)</p>
+</blockquote>
+<p>This is interesting, because functions are the only non-trivial source of contravariance in Haskell. Contravariance is the co- version of (the poorly named, IMO) covariance. Which is a strong suggestion that functions are a source of contravariance <em>because they are codata,</em> rather than contravariance being a special property of functions themselves.</p>
+<p>I asked my super smart friend <a href="https://totbwf.github.io/">Reed Mullanix</a> (who also has a great podcast episode), and he said something I didn’t understand about presheafs and functors. Maybe presheafs would make a good next paper.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>This was a helpful paper to to wrap my head around all this codata stuff that smart people in my circles keep talking about. None of it is <em>new,</em> but as a concept it helps solidify a lot of disparate facts I had rattling around in my brain. Doing this final tagless encoding of data types gives us a fast CPS thing that is quick as hell to run because it gets tail-optimized and doesn’t need to build any intermediary data structures, and gets driven by its consumer. The trade-off is that CPS stuff is a damn mind-melter.</p>
+<p>At Zurihac 2018, I met some guy (whose name I can’t remember, sorry!) who was working on a new language that supported this automatic transformation between data and codata. I don’t remember anything about it, except he would just casually convert between data and codata whenever was convenient, and the compiler would do the heavy lifting of making everything work out. It was cool. I wish I knew what I was talking about.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Followup to Sorting with Bialgebras</title>
       <id>blog/bialgebra-followup/index.html</id>
@@ -1838,46 +2072,6 @@ import Data.Eq (:[pre]Eq, (==), (/=):[post])
 <p>Save this file as <code>eq.toml</code>, and run <code>comby</code> in your project root via:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>$ <span class="ex">comby</span> -config eq.toml -matcher .hs -i -f .hs</span></code></pre></div>
 <p>Comby will find and make all the changes you need, in place. Check the diff, and make whatever changes you might need. In particular, it might bork some of your whitespace — there’s an issue to get comby to play more nicely with layout-aware languages. A more specialized tool that had better awareness of Haskell’s idiosyncrasies would help here, if you have some spare engineering cycles. But when all’s said and done, comby does a damn fine job.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Dragging Haskell Kicking and Screaming into the Century of the Fruitbat</title>
-      <id>blog/century-of-the-fruitbat/index.html</id>
-      <link href='blog/century-of-the-fruitbat/index.html'/>
-      <published>2021-11-12T12:15:00Z</published>
-      <updated>2021-11-12T12:15:00Z</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p>Yesterday, the new Haskell CLC <a href="https://github.com/haskell/core-libraries-committee/issues/3">decided</a> to remove <code>(/=)</code> from the <code>Eq</code> typeclass. As expected, the community has <a href="https://twitter.com/Augustsson/status/1458963074556256257">embraced</a> this change <a href="https://twitter.com/snoyberg/status/1459118062674890752">with</a> <a href="https://twitter.com/haskellhutt/status/1459147447863816200?s=20">characteristic</a> <a href="https://twitter.com/ChShersh/status/1458935578137931780">grace</a>. The usual state of affairs is that people who like the changes are silent, while people who don’t are exceptionally vocal. The result: people working hard to improve things only ever get yelled at, and nobody says “hey, you’re doing a great job. Thank you!”</p>
-<p>To the new Haskell CLC, with my deepest sincerity:</p>
-<p><strong>You’re doing a great job! Thank you.</strong></p>
-<p>Today I’d like to talk a little about the problems I see in the Haskell ecosystem. These are by no means insurmountable problems. They’re not even technical problems. They’re <em>social</em> problems, which suck, because those are the sort that are hard to solve.</p>
-<p>The <code>(/=)</code> proposal has caused a surprising amount of uproar about such a stupid change. But why? Nobody <em>actually</em> cares technically about whether we can define not-equals instead of equals. I mean, I don’t care. You don’t care. I’m willing to bet dollars to donuts that nobody reading this essay <em>has actually ever defined <code>(/=)</code> in an instance.</em></p>
-<p>No, the outcry is because <code>(/=)</code> is a proxy for the real issue. As best I can tell, there are three camps, and everyone is talking past one another. This is my attempt to organize the camps, steel-man them (well, two out of three), and respond with my commentary.</p>
-<p><em>Personally,</em> I support the removal of <code>(/=)</code> because it’s a tiny, inconspicuous change that nobody is going to notice. It’s a bright beacon in the darkness of the ecosystem saying “hey, the situation sucks, <em>but we’re willing to improve the situation.</em>” Haskell has tons of problems like this, none of which are controversial — things like how <code>head</code> is antithetical to everything we like about Haskell, and yet it’s included <em>by default</em> in every fucking module of all time. Yes, there are valid arguments as to why it shouldn’t be removed, but nobody would argue to put it in if we were designing <code>Prelude</code> today.</p>
-<p>In my eyes, removing <code>(/=)</code> from <code>Eq</code> shows that we as a community are willing to pay the cost to move out of a bad Nash equilibrium. Because as far as I see it, there are only two options:</p>
-<ol type="1">
-<li>break backwards compatibility and pay the migration costs</li>
-<li>don’t break backwards compatibility, and pay the costs of having a shitty standard library forever</li>
-</ol>
-<p>Asymptotically, option 1 is better than option 2. There is a constant amount of code today that we will need to fix, compared to a linear (or worse!) amount of work in the future to work around having a shitty standard library. And yes, that cost probably is forever, because if we have too much code to break today, we’re going to have even more code that will break tomorrow.</p>
-<p>I want us to be able to remove <code>(/=)</code>, because it gives me hope that one day we will be able to add <code>Foldable1</code>, and get <code>join</code> and <code>liftA2</code> into <code>Prelude</code>, and the other hundreds of tiny improvements that would <em>all of our lives better.</em> Not profoundly, but each one saves us a few seconds, multiplied by the number of practitioners, integrated over all of our careers.</p>
-<p>And yes, those things will come at a cost, but it’s a cost that is getting bigger the longer we don’t pay it.</p>
-<p>In the particular example of <code>(/=)</code>, there isn’t even any cost. There are ~50 packages that define <code>(/=)</code>, and the solution is just to delete those definitions. Yes, it’s churn, but <em>I personally</em> am willing to send a patch to each package. If you’re the maintainer of such a package, email me and I’ll just go fix it for you.</p>
-<p>This is not a big issue.</p>
-<p><em>The second camp</em> as best I can tell, are educators who aren’t particularly up to date on what Haskell <em>is</em> in 2021. These are the people saying “this will break our tutorials” (and, I suspect, are also the ones who say “we need <code>head</code> in <code>Prelude</code> because it’s good for beginners”.) While this group clearly has good intentions, I don’t think they <em>get it.</em> Educational materials for everything go obsolete, made much worse by the <a href="https://en.wikipedia.org/wiki/Half-life_of_knowledge">half-life of knowledge</a>. If this is truly a thing you care about, <em>just update your tutorials.</em> There is no shortage of people in the community writing explanatory material, and I guarantee they will rush in to fill any void.</p>
-<p>Of much more importance is <em>third camp.</em> They also seems to not care about <code>(/=)</code> <em>in particular.</em> But they are concerned about “backwards compatibility at all costs.” And to them, it seems, <code>(/=)</code> is a slippery slope. If we can’t maintain backwards compatibility for something as stupid as <code>(/=)</code>, we’ve got no chance of having long-term maintainability. It’s a perfectly good argument.</p>
-<p>To quote <a href="https://github.com/haskell/core-libraries-committee/issues/12#issuecomment-967204354">Dmitrii</a>:</p>
-<blockquote>
-<p>The size of breakage doesn’t matter. Breakage is breakage.</p>
-</blockquote>
-<p>My personal rebuttal against this attitude is that it gets us stuck in extremely suboptimal equilibria. If we can never break anything, then every mistake must exist <em>for perpetuity.</em> By virtue of being human, we’re unfortunately fallible, and thus are going to make mistakes.</p>
-<p>However, I can definitely sympathize here. If every week you are called on to fix a tiny, breaking change, sooner than later you’re going to quit. We should not encourage any behavior that leads to burnout in our best players. That’s a bad long term plan.</p>
-<p>But in my experience, it’s not breaking changes that are the problem. It’s <em>lots</em> of breaking changes that are the problem. Breaking changes are annoying, sure, but what’s worse is the <em>context shifting</em> necessary to fix a breaking change. Doing the work is <span class="math inline">\(O(n)\)</span> with respect to the breakages, but there is an extremely high constant factor. With this in mind, one big breakage is significantly better than lots of tiny breakages.</p>
-<p>Since we’re just about to break things, might I again suggest we add <code>Foldable1</code>, and clean up <code>Prelude</code>? If breakage is breakage (it is), we might as well take advantage of it and do as much cleanup as possible. This is an excellent opportunity. The status-quo is for all of us to argue about it every week, with half the people saying “these are bad circumstances and we should fix them,” with the other half saying “yes, they are bad circumstances, but breakage is worse.”</p>
-<p>But given that <em>we now have breakage,</em> let’s make the most of it.</p>
         ]]>
       </content>
     </entry>
