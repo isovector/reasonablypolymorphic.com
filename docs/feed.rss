@@ -181,7 +181,7 @@
 <h2 id="agda-woes">Agda Woes</h2>
 <p>My implementation isn’t 100% complete, I still need to prove that <code>*H</code> is commutative:</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true"></a>*H-comm <span class="ot">:</span> <span class="ot">∀</span> j k <span class="ot">→</span> j *H k ≡ k *H j</span></code></pre></div>
-<p>which shouldn’t be hard, because it is commutative. Unfortunately, Agda has gone into hysterics, and won’t even typecheck the type of <code>*H-comm</code>, because it can’t figure out that <code>m + n = n + m</code> (the implicit indices on the result of <code>*H</code>). As far as I can tell, there is no easy fix here; there’s some weird <code>cong</code>-like thing for types called <code>subst</code>, but it seems to infect a program and push these weird-ass constraints everywhere.</p>
+<p>which shouldn’t be hard, because it <em>is</em> commutative. Unfortunately, Agda has gone into hysterics, and won’t even typecheck the type of <code>*H-comm</code>, because it can’t figure out that <code>m + n = n + m</code> (the implicit indices on the result of <code>*H</code>). As far as I can tell, there is no easy fix here; there’s some weird <code>cong</code>-like thing for types called <code>subst</code>, but it seems to infect a program and push these weird-ass constraints everywhere.</p>
 <p>This is extremely frustrating, because it’s literally the last thing to prove after 300 grueling lines of proof. And it’s also true and isn’t even hard to show. It’s just that I can’t get Agda to accept the type of the proof because it’s an idiot that doesn’t know about additive commutativity. After a few hours of fighting with getting this thing to typecheck, I just said fuck it and postulated <code>*H-comm</code>.</p>
 <p>Stupid Agda.</p>
 <p>If you know what I’ve done wrong to deserve this sort of hell, please let me know. It would be nice to be able to avoid problems like this in the future, or resolve them with great ease.</p>
@@ -200,7 +200,7 @@
 <span id="cb26-11"><a href="#cb26-11" aria-hidden="true"></a>    <span class="ot">→</span> <span class="ot">(</span>x +A #1<span class="ot">)</span> *A <span class="ot">(</span>x +A #1<span class="ot">)</span> ≡ <span class="ot">(</span>x *A x<span class="ot">)</span> +A <span class="ot">(</span>#1 +A #1<span class="ot">)</span> *A x +A #1</span>
 <span id="cb26-12"><a href="#cb26-12" aria-hidden="true"></a>success x <span class="ot">=</span> solve test-a test-b refl x</span></code></pre></div>
 <p>which Agda happily accepts!</p>
-<p>I don’t exactly know offhand how to generalize this to multivariate polynomial, but I think the trick is to just find a normal form for them.</p>
+<p>I don’t exactly know offhand how to generalize this to multivariate polynomials, but I think the trick is to just find a normal form for them.</p>
 <p>As usual, the code for this post is <a href="https://github.com/isovector/reviews/blob/master/agda-src/RingSolving.agda">available on Github.</a></p>
       ]]></content:encoded>
   </item>
