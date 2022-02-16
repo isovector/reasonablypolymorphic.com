@@ -365,12 +365,12 @@ commutative:
 *H-comm : ∀ j k → j *H k ≡ k *H j
 ```
 
-which shouldn't be hard, because it is commutative. Unfortunately, Agda has gone
-into hysterics, and won't even typecheck the type of `*H-comm`, because it can't
-figure out that `m + n = n + m` (the implicit indices on the result of `*H`).
-As far as I can tell, there is no easy fix here; there's some weird `cong`-like
-thing for types called `subst`, but it seems to infect a program and push these
-weird-ass constraints everywhere.
+which shouldn't be hard, because it _is_ commutative. Unfortunately, Agda has
+gone into hysterics, and won't even typecheck the type of `*H-comm`, because it
+can't figure out that `m + n = n + m` (the implicit indices on the result of
+`*H`). As far as I can tell, there is no easy fix here; there's some weird
+`cong`-like thing for types called `subst`, but it seems to infect a program and
+push these weird-ass constraints everywhere.
 
 This is extremely frustrating, because it's literally the last thing to prove
 after 300 grueling lines of proof. And it's also true and isn't even hard to
@@ -409,7 +409,7 @@ success x = solve test-a test-b refl x
 
 which Agda happily accepts!
 
-I don't exactly know offhand how to generalize this to multivariate polynomial,
+I don't exactly know offhand how to generalize this to multivariate polynomials,
 but I think the trick is to just find a normal form for them.
 
 As usual, the code for this post is [available on Github.][code]
