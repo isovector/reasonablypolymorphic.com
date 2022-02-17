@@ -269,8 +269,8 @@
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ot">  if ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>which I might express more naturally in Haskell via:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">ifThenElse ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>ifThenElse <span class="dt">True</span> t _ <span class="ot">=</span> t</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>ifThenElse <span class="dt">True</span> _ f <span class="ot">=</span> f</span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>ifThenElse <span class="dt">True</span>  t _ <span class="ot">=</span> t</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>ifThenElse <span class="dt">False</span> _ f <span class="ot">=</span> f</span></code></pre></div>
 <p>(I suspect this is that “hand-compiling away” that the authors were talking about)</p>
 <p>However, in the codata presentation, I can recover <code>true</code> and <code>false</code> by building specific objects that fiddle with their arguments just right (using <a href="">copatterns</a> from a few weeks ago):</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="dt">True</span> <span class="op">:</span> <span class="dt">Bool</span></span>
