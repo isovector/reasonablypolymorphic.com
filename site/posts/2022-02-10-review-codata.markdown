@@ -75,8 +75,8 @@ which I might express more naturally in Haskell via:
 
 ```haskell
 ifThenElse :: Bool -> a -> a -> a
-ifThenElse True t _ = t
-ifThenElse True _ f = f
+ifThenElse True  t _ = t
+ifThenElse False _ f = f
 ```
 
 (I suspect this is that "hand-compiling away" that the authors were talking
