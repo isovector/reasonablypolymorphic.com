@@ -100,7 +100,7 @@ main = site $ do
                   & _Object . at "date"       ?~ _String . _Text #
                       formatTime defaultTimeLocale "%B %e, %Y" date
                   & _Object . at "date_no_year"       ?~ _String . _Text #
-                      formatTime defaultTimeLocale "%B %e" date
+                      formatTime defaultTimeLocale "%b %e" date
       slugList = M.fromList
                $ fmap ((^?! _Object . at "slug" . _Just . _String) &&& id) posts
       posts = flip fmap posts' $ \post ->
