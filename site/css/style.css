@@ -97,8 +97,8 @@ h1 a, h2 a {
 article {
     /* color: #; */
     padding: 0 48px 20px;
-    /*background: #fff url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=); /* */
-    width: 70%;
+    /* background: #fff url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAUCAYAAACnOeyiAAAAF0lEQVQIW2NkgALGwc8oLy//39nZyQgAG6YEFW6EBNcAAAAASUVORK5CYII=); */
+    width: 42em;
     margin: 0 auto;
 }
 
