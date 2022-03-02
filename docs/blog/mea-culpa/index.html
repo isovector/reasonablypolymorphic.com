@@ -1,61 +1,50 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Polysemy: Mea Culpa :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/mea-culpa">Polysemy: Mea Culpa</a></h1>
+  <h1><a href="/blog/mea-culpa/index.html#">Polysemy: Mea Culpa</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/linux-daw">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/algebra-driven-design">&rarr;</a>
-    </span>
-    <time>June 14, 2020</time>
+    <time>2020-06-14</time>
 
     <span class="tags">
-        <a href="/tags/polysemy.html">polysemy</a>
+        
     </span>
 </p>
 <div class="content">
-    <p><a href="https://lexi-lambda.github.io/">Alexis King</a> gave an <a href="https://www.youtube.com/watch?v=0jI-AlWEwYI">utterly fantastic talk</a> today on the deep inner workings of Haskell programs’ performance profiles. It’s really very excellent and you should go watch it if you haven’t already. I’ve been extremely <a href="https://sandymaguire.me/blog/burnout/">burned out</a> on Polysemy and effect-system-related topics lately, but it seems like as good a time as any to discuss what’s going on with the library. Why do Alexis’ benchmarks clearly show something other than my claim that Polysemy was “zero cost?” In short:</p>
+    <p><a href="https://lexi-lambda.github.io/">Alexis King</a> gave an <a href="https://www.youtube.com/watch#v=0jI-AlWEwYI">utterly fantastic talk</a> today on the deep inner workings of Haskell programs’ performance profiles. It’s really very excellent and you should go watch it if you haven’t already. I’ve been extremely <a href="https://sandymaguire.me/blog/burnout/">burned out</a> on Polysemy and effect-system-related topics lately, but it seems like as good a time as any to discuss what’s going on with the library. Why do Alexis’ benchmarks clearly show something other than my claim that Polysemy was “zero cost?” In short:</p>
 <p>I screwed up.</p>
 <p>The core Haskell that’s being run in Alexis’ benchmark probably looks <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#file-t16473-dump-simpl">like this</a>, though at one point I did indeed get the countdown benchmark to completely <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2883147">optimize away.</a> My claim to being zero-cost was based on this result, which was possible, but required <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/668">patching GHC</a>, enabling <code>-flate-specialise -O2 -fstatic-argument-transformation -fmax-simplifier-iterations=10</code> as well as a <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2872671">GHC patch cajoling the optimizer into running extra hard.</a></p>
 <p>My patch to GHC just barely missed the 8.8 deadline, which meant it wouldn’t be publicly available until GHC 8.10, roughly a year away. And until then, Polysemy had no chance of being fast.</p>
@@ -67,19 +56,19 @@
 <p>So that’s more or less the story. But there are a few loose ends; such as why Lexi and I are seeing different benchmarking results. I realize this doesn’t actually matter, and I agree with her that Polysemy <em>is in fact slow.</em> That being said, I feel like enough of my reputation is on the line that I’d like to put towards some more evidence that I didn’t fabricate the whole thing. Also, the investigation will unearth some more systematic problems.</p>
 <p>First and foremost, the last time I looked at the source of Lexi’s benchmarks, I noted that they don’t use <code>polysemy-plugin</code>, which <a href="https://github.com/polysemy-research/polysemy#stellar-engineering---aligning-the-stars-to-optimize-polysemy-away">the documentation states is necessary for the good performance</a>. I don’t remember where these benchmarks actually are, but it doesn’t matter, because even if she had enabled the plugin, Polysemy <em>would still not optimize away.</em></p>
 <p>Why not? Polysemy’s performance was extremely reliant on unfolding of its recursive bind operation. As <a href="https://reasonablypolymorphic.com/blog/writing-custom-optimizations/#inlining-recursive-calls">described here</a>, you could trick GHC into unfolding a recursive call once by explicitly giving a loop-breaker. In essence, it required transforming the following recursive call:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial (n <span class="op">-</span> <span class="dv">1</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">{-# INLINE factorial #-}</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# INLINE factorial #-}</span></span></code></pre></div>
 <p>Into this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial&#39; (n <span class="op">-</span> <span class="dv">1</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="ot">{-# INLINE factorial #-}</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="ot">factorial&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>factorial&#39; <span class="ot">=</span> factorial</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="ot">{-# NOINLINE factorial&#39; #-}</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial&#39; (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# INLINE factorial #-}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>factorial&#39; <span class="ot">=</span> factorial</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# NOINLINE factorial&#39; #-}</span></span></code></pre></div>
 <p>For whatever reason, this trick exposes enough of Polysemy’s bind so that the simplifier could inline away the expensive bits. But this was tedious! Every recursive call needed an explicit loop-breaker, and missing one would silently jeopardize your performance! Doing this by hand seemed antithetical to Polysemy’s other goal of no-boilerplate, and so at some point we factored out this logic into a GHC plugin, and then <a href="https://github.com/polysemy-research/polysemy/commit/8bbd9dc7d6ff1d55c9f8ea5f7f160ecf337d0e6e#diff-a6a5069006aaf9c213df8bfcf538bda8">removed our hand-written loop-breakers.</a>. The initial implementation of that plugin is described <a href="https://reasonablypolymorphic.com/blog/writing-custom-optimizations/">in this blog post</a>.</p>
 <p>In retrospect, this explicit breaking-of-loops doesn’t seem to be required in the benchmark — only in Polysemy — but that escaped my attention at the time and believing that user-code required this optimization was the main motivation in turning it into a GHC plugin. Anyway…</p>
 <p>As it turns out, this plugin <em>didn’t actually work!</em> It was successfully rewriting the core into the explicitly loop-broken version, but for whatever reason, <a href="https://github.com/polysemy-research/polysemy/pull/90#issuecomment-500090395">the simplifier wasn’t picking up where we left off.</a> To this day I don’t know why it doesn’t work, but it doesn’t. Instead we proposed to implement this plugin as a renamer pass, but that presents serious implementation problems. Since there was no way in hell Polysemy could possibly be fast before GHC 8.10 (to be released roughly a year in the future) motivation to find a solution to this problem was understandably low, and it fell by the wayside. It has never been fixed, and remains disabled and half-worked around in Polysemy to this day.</p>
@@ -139,40 +128,29 @@
 <p>All in all, this is has been the embarrassing affair. But then again, <em>if you haven’t failed in recent memory, you’re not trying hard enough.</em> I’ll strive to do better in the future.</p>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/linux-daw">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/algebra-driven-design">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -183,23 +161,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

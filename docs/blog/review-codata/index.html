@@ -1,57 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Review: Codata in Action :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/review-codata">Review: Codata in Action</a></h1>
+  <h1><a href="/blog/review-codata/index.html#">Review: Codata in Action</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/bialgebra-followup">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/ring-solving">&rarr;</a>
-    </span>
-    <time>February 10, 2022</time>
+    <time>2022-02-10</time>
 
     <span class="tags">
-        <a href="/tags/review.html">review</a>, <a href="/tags/data.html">data</a>, <a href="/tags/codata.html">codata</a>, <a href="/tags/downen.html">downen</a>, <a href="/tags/sullivan.html">sullivan</a>, <a href="/tags/ariola.html">ariola</a>, <a href="/tags/spj.html">spj</a>
+        
     </span>
 </p>
 <div class="content">
@@ -101,218 +90,207 @@
 <p>While codata types can be seen in the shadows behind many examples of programming—often hand-compiled away by the programmer—not many functional languages have support for them.</p>
 </blockquote>
 <p>That’s a particularly interesting claim; that we’re all already using codata, but it’s hidden away inside of an idiom rather than being a first-class citizen. I’m always excited to see the ghosts behind the patterns I am already using.</p>
-<h2 id="examples-of-codata">Examples of Codata</h2>
+<h2 id="examples-of-codata"><a href="#examples-of-codata" class="header-link">Examples of Codata<span class="header-link-emoji">🔗</span></a></h2>
 <p>The paper gives a big list of codata that we’re all already using without knowing it:</p>
-<h3 id="churchboehmberarducci-encodings">Church/Boehm–Berarducci encodings</h3>
+<h3 id="churchboehmberarducci-encodings"><a href="#churchboehmberarducci-encodings" class="header-link">Church/Boehm–Berarducci encodings<span class="header-link-emoji">🔗</span></a></h3>
 <p>Instead of writing</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Bool</span> <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dt">True</span><span class="ot"> ::</span> <span class="dt">Bool</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="dt">False</span><span class="ot"> ::</span> <span class="dt">Bool</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Bool</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">True</span><span class="ot"> ::</span> <span class="dt">Bool</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">False</span><span class="ot"> ::</span> <span class="dt">Bool</span></span></code></pre></div>
 <p>I can instead do the usual Church encoding:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>codata <span class="dt">Bool</span> <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ot">  if ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Bool</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  if ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>which I might express more naturally in Haskell via:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">ifThenElse ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>ifThenElse <span class="dt">True</span>  t _ <span class="ot">=</span> t</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>ifThenElse <span class="dt">False</span> _ f <span class="ot">=</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">ifThenElse ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ifThenElse <span class="dt">True</span>  t _ <span class="ot">=</span> t</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>ifThenElse <span class="dt">False</span> _ f <span class="ot">=</span> f</span></code></pre></div>
 <p>(I suspect this is that “hand-compiling away” that the authors were talking about)</p>
-<p>However, in the codata presentation, I can recover <code>true</code> and <code>false</code> by building specific objects that fiddle with their arguments just right (using <a href="">copatterns</a> from a few weeks ago):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="dt">True</span> <span class="op">:</span> <span class="dt">Bool</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">if</span> <span class="dt">True</span> t _ <span class="ot">=</span> t</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="dt">False</span> <span class="op">:</span> <span class="dt">Bool</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="kw">if</span> <span class="dt">False</span> _ f <span class="ot">=</span> f</span></code></pre></div>
+<p>However, in the codata presentation, I can recover <code>true</code> and <code>false</code> by building specific objects that fiddle with their arguments just right (using <a href>copatterns</a> from a few weeks ago):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">True</span> <span class="op">:</span> <span class="dt">Bool</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span> <span class="dt">True</span> t _ <span class="ot">=</span> t</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="dt">False</span> <span class="op">:</span> <span class="dt">Bool</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span> <span class="dt">False</span> _ f <span class="ot">=</span> f</span></code></pre></div>
 <p>That’s neat, I guess!</p>
 <p>As a follow-up, we can try talking about <code>Tree</code>s. Rather than the usual <code>data</code> definition:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Tree</span> t <span class="kw">where</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>  <span class="dt">Leaf</span><span class="ot"> ::</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="dt">Branch</span><span class="ot"> ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="ot">walk ::</span> (t <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Tree</span> t <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Leaf</span><span class="ot"> ::</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Branch</span><span class="ot"> ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ot">walk ::</span> (t <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>we can do it in codata:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>codata <span class="dt">Tree</span> t <span class="kw">where</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">  walk ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Tree</span> t <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  walk ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>and reconstruct the “constructors:”</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="dt">Leaf</span><span class="ot"> x ::</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>walk (<span class="dt">Leaf</span> t) mk _ <span class="ot">=</span> mk t</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="dt">Branch</span><span class="ot"> ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>walk (<span class="dt">Branch</span> l r) mk comb <span class="ot">=</span> comb (walk l mk comb) (walk r mk comb)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Leaf</span><span class="ot"> x ::</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>walk (<span class="dt">Leaf</span> t) mk _ <span class="ot">=</span> mk t</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="dt">Branch</span><span class="ot"> ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">Tree</span> t</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>walk (<span class="dt">Branch</span> l r) mk comb <span class="ot">=</span> comb (walk l mk comb) (walk r mk comb)</span></code></pre></div>
 <p>The presentation in the paper hand-compiles <code>Tree!data</code> into two declarations:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>codata <span class="dt">TreeVisitor</span> t a <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  {<span class="ot"> visitLeaf   ::</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  ,<span class="ot"> visitBranch ::</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  }</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>codata <span class="dt">Tree</span> t <span class="kw">where</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a><span class="ot">  walk ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">TreeVisitor</span> t a <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> visitLeaf   ::</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> visitBranch ::</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Tree</span> t <span class="kw">where</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ot">  walk ::</span> <span class="dt">Tree</span> t <span class="ot">-&gt;</span> <span class="dt">TreeVisitor</span> t a <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>which is the same thing, but with better named destructors.</p>
-<h3 id="demand-driven-programming-laziness">Demand-Driven Programming / Laziness</h3>
+<h3 id="demand-driven-programming-laziness"><a href="#demand-driven-programming-laziness" class="header-link">Demand-Driven Programming / Laziness<span class="header-link-emoji">🔗</span></a></h3>
 <p>You know the problem. You’re programming some search, and want to have a stopping depth. Maybe you’re writing a chessai and don’t want to wait until the ends of time for the search to finish. Easy enough, right? Just add an integer that counts down whenever you recurse:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">search ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Position</span> <span class="ot">-&gt;</span> [<span class="dt">Position</span>]</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>search <span class="dv">0</span> _ <span class="ot">=</span> []</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>search n as <span class="ot">=</span> <span class="co">-- do lots of work</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">search ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Position</span> <span class="ot">-&gt;</span> [<span class="dt">Position</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>search <span class="dv">0</span> _ <span class="ot">=</span> []</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>search n as <span class="ot">=</span> <span class="co">-- do lots of work</span></span></code></pre></div>
 <p>So you set <code>n</code> to something that seems reasonable, and get your moves back. But then you realize you had more time to kill, so you’d like to resume the search where you left off. But there’s no good way to do this, and starting back from the beginning would involve wasting a lot of effort. You can certainly program around it, but again, it’s hand-compiling away codata.</p>
 <p>Instead, we can express the problem differently:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>codata <span class="dt">Rose</span> a <span class="kw">where</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>  {<span class="ot"> node ::</span> <span class="dt">Rose</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>  ,<span class="ot"> children ::</span> <span class="dt">Rose</span> a <span class="ot">-&gt;</span> [<span class="dt">Rose</span> a]</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Rose</span> a <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> node ::</span> <span class="dt">Rose</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> children ::</span> <span class="dt">Rose</span> a <span class="ot">-&gt;</span> [<span class="dt">Rose</span> a]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>Recall that codata is built-in lazy, so by repeatedly following <code>children</code> we can further explore the tree state. In OOP I guess we’d call this a generator or an iterator or something. Probably a factory of some sort.</p>
 <p>But once we have <code>Rose</code> we can implement pruning:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">prune ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Rose</span> <span class="dt">Position</span> <span class="ot">-&gt;</span> <span class="dt">Rose</span> <span class="dt">Position</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>node (prune n t) <span class="ot">=</span> node t</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>children (prune <span class="dv">0</span> t) <span class="ot">=</span> []</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>children (prune n t) <span class="ot">=</span> <span class="fu">fmap</span> (prune (n <span class="op">-</span> <span class="dv">1</span>)) <span class="op">$</span> children t</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">prune ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Rose</span> <span class="dt">Position</span> <span class="ot">-&gt;</span> <span class="dt">Rose</span> <span class="dt">Position</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>node (prune n t) <span class="ot">=</span> node t</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>children (prune <span class="dv">0</span> t) <span class="ot">=</span> []</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>children (prune n t) <span class="ot">=</span> <span class="fu">fmap</span> (prune (n <span class="op">-</span> <span class="dv">1</span>)) <span class="op">$</span> children t</span></code></pre></div>
 <p>I <em>really</em> like copattern matching.</p>
-<h3 id="abstract-data-types">Abstract Data Types</h3>
+<h3 id="abstract-data-types"><a href="#abstract-data-types" class="header-link">Abstract Data Types<span class="header-link-emoji">🔗</span></a></h3>
 <p>You know how we have extentional and intentional definitions for sets? Like, compare:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Set</span> a <span class="ot">=</span> <span class="dt">Set</span> {<span class="ot"> unSet ::</span> [a] }</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="fu">lookup</span><span class="ot"> ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a><span class="fu">lookup</span> s t <span class="ot">=</span> <span class="fu">elem</span> t <span class="op">$</span> unset s</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Set</span> a <span class="ot">=</span> <span class="dt">Set</span> {<span class="ot"> unSet ::</span> [a] }</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span><span class="ot"> ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> s t <span class="ot">=</span> <span class="fu">elem</span> t <span class="op">$</span> unset s</span></code></pre></div>
 <p>vs</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Set</span> a <span class="ot">=</span> <span class="dt">Set</span> {<span class="ot"> lookup ::</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span> }</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Set</span> a <span class="ot">=</span> <span class="dt">Set</span> {<span class="ot"> lookup ::</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span> }</span></code></pre></div>
 <p>That latter version is the Church-encoded version. Instead we can give an interface for both sorts of sets as codata, defined by their <em>interface</em> as sets. This is everyday OOP stuff, but a little weird in FP land:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>codata <span class="dt">Set</span> a <span class="kw">where</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>  {<span class="ot"> isEmpty ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>  ,<span class="ot"> lookup ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>  ,<span class="ot"> insert ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a>  ,<span class="ot"> union ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Set</span> a <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> isEmpty ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> lookup ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> insert ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> union ::</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>My dudes this is just an interface for how you might want to interact with a Set. We can implement the listy version from above:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="ot">listySet ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>isEmpty (listySet ls) <span class="ot">=</span> <span class="fu">null</span> ls</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a><span class="fu">lookup</span> (listySet ls) a <span class="ot">=</span> <span class="fu">elem</span> a ls</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>insert (listySet ls) a <span class="ot">=</span> listSet (a <span class="op">:</span> ls)</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a>union (listySet ls) s <span class="ot">=</span> <span class="fu">foldr</span> insert s ls</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">listySet ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Set</span> a</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>isEmpty (listySet ls) <span class="ot">=</span> <span class="fu">null</span> ls</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> (listySet ls) a <span class="ot">=</span> <span class="fu">elem</span> a ls</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>insert (listySet ls) a <span class="ot">=</span> listSet (a <span class="op">:</span> ls)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>union (listySet ls) s <span class="ot">=</span> <span class="fu">foldr</span> insert s ls</span></code></pre></div>
 <p>but we can also implement an infinitely big set akin to our functiony-version:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="ot">evensUnion ::</span> <span class="dt">Set</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> <span class="dt">Int</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>isEmpty (evensUnion s) <span class="ot">=</span> <span class="dt">False</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a><span class="fu">lookup</span> (evensUnion s) a <span class="ot">=</span> <span class="fu">mod</span> a <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span> <span class="op">||</span> <span class="fu">lookup</span> a s</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>insert (evensUnion s) a <span class="ot">=</span> evensUnion <span class="op">$</span> insert s a</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a>union (evensUnion s) s&#39; <span class="ot">=</span> evensUnion <span class="op">$</span> union s s&#39;</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">evensUnion ::</span> <span class="dt">Set</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> <span class="dt">Int</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>isEmpty (evensUnion s) <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> (evensUnion s) a <span class="ot">=</span> <span class="fu">mod</span> a <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span> <span class="op">||</span> <span class="fu">lookup</span> a s</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>insert (evensUnion s) a <span class="ot">=</span> evensUnion <span class="op">$</span> insert s a</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>union (evensUnion s) s&#39; <span class="ot">=</span> evensUnion <span class="op">$</span> union s s&#39;</span></code></pre></div>
 <p>This thing is a little odd, but <code>evensUnion</code> is the set of the even numbers unioned with some other set. The built-in unioning is necessary to be able to extend this thing. Maybe we might call it a decorator pattern in OOP land?</p>
-<h3 id="pre-and-post-conditions">Pre and Post Conditions</h3>
+<h3 id="pre-and-post-conditions"><a href="#pre-and-post-conditions" class="header-link">Pre and Post Conditions<span class="header-link-emoji">🔗</span></a></h3>
 <p>One last example, using type indices to represent the state of something. The paper gives sockets:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">State</span> <span class="ot">=</span> <span class="dt">Raw</span> <span class="op">|</span> <span class="dt">Bound</span> <span class="op">|</span> <span class="dt">Live</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Socket</span><span class="ot"> ::</span> <span class="dt">State</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>codata <span class="dt">Socket</span> i <span class="kw">where</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>  {<span class="ot"> bind    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Raw</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="dt">&#39;Bound</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a>  ,<span class="ot"> connect ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Bound</span> <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true"></a>  ,<span class="ot"> send    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> ()</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true"></a>  ,<span class="ot"> recv    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true"></a>  ,<span class="ot"> close   ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> ()</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">State</span> <span class="ot">=</span> <span class="dt">Raw</span> <span class="op">|</span> <span class="dt">Bound</span> <span class="op">|</span> <span class="dt">Live</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Socket</span><span class="ot"> ::</span> <span class="dt">State</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Socket</span> i <span class="kw">where</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> bind    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Raw</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="dt">&#39;Bound</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> connect ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Bound</span> <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> send    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> ()</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> recv    ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> close   ::</span> <span class="dt">Socket</span> <span class="dt">&#39;Live</span> <span class="ot">-&gt;</span> ()</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>The type indices here ensure that we’ve bound the socket before connecting to it, and connected to it before we can send or receive.</p>
 <p>Contrast this against what we can do with GADTs, which tell us how something was built, not how it can be used.</p>
-<h2 id="converting-between-data-and-codata">Converting Between Data and Codata</h2>
+<h2 id="converting-between-data-and-codata"><a href="#converting-between-data-and-codata" class="header-link">Converting Between Data and Codata<span class="header-link-emoji">🔗</span></a></h2>
 <p>Unsurprisingly, data and codata are two sides of the same coin: we can compile one to the other and vice versa.</p>
-<h3 id="data-to-codata">Data to Codata</h3>
+<h3 id="data-to-codata"><a href="#data-to-codata" class="header-link">Data to Codata<span class="header-link-emoji">🔗</span></a></h3>
 <p>Going from data to codata is giving a final encoding for the thing; as we’ve seen, this corresponds to the Boehm-Berarducci encoding. The trick is to replace the type with a function. Each data constructor corresponds to an argument of the function, the type of which is another function that returns <code>a</code>, and as arguments takes each argument to the data constructor. To tie the knot, replace the recursive bits with <code>a</code>.</p>
 <p>Let’s take a look at a common type:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">List</span> a <span class="ot">=</span> <span class="dt">Nil</span> <span class="op">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">List</span> a <span class="ot">=</span> <span class="dt">Nil</span> <span class="op">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</span></code></pre></div>
 <p>We will encode this as a function, that returns some new type variable. Let’s call it <code>x</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="op">...</span> <span class="ot">-&gt;</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">...</span> <span class="ot">-&gt;</span> x</span></code></pre></div>
 <p>and then we need to give eliminators for each case:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a>elim_nil <span class="ot">-&gt;</span> elim_cons <span class="ot">-&gt;</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>elim_nil <span class="ot">-&gt;</span> elim_cons <span class="ot">-&gt;</span> x</span></code></pre></div>
 <p>and then replace each eliminator with a function that takes its arguments, and returns <code>x</code>. For <code>Nil</code>, there are no arguments, so it’s just:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a>x <span class="ot">-&gt;</span> elim_cons <span class="ot">-&gt;</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">-&gt;</span> elim_cons <span class="ot">-&gt;</span> x</span></code></pre></div>
 <p>and then we do the same thing for <code>Cons :: a -&gt; List a -&gt; List a</code>:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a>x <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> x</span></code></pre></div>
 <p>of course, there is no <code>List a</code> type anymore, so we replace that with <code>x</code> too:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true"></a>x <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> x</span></code></pre></div>
 <p>And thus we have our codata-encoded list. For bonus points, we can do a little shuffling and renaming:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a>(a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>(a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span></code></pre></div>
 <p>which looks very similar to our old friend <code>foldr</code>:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true"></a><span class="fu">foldr</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">foldr</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span></code></pre></div>
 <p>In fact, a little more reshuffling shows us that <code>foldr</code> is exactly the codata transformation we’ve been looking for:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a><span class="fu">foldr</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">foldr</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span></code></pre></div>
 <p>Cool. The paper calls this transformation the “visitor pattern” which I guess makes sense; in order to call this thing we need to give instructions for what to do in every possible case.</p>
 <p>This is an encoding of the type itself! But we also need codata encodings for the data constructors. The trick is to just ignore the “handlers” in the type that don’t correspond to your constructor. For example:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a><span class="dt">Nil</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a><span class="dt">Nil</span> _ nil <span class="ot">=</span> nil</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true"></a><span class="dt">Cons</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true"></a><span class="ot">    ::</span> a</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true"></a>    <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true"></a>    <span class="ot">-&gt;</span> b</span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true"></a>    <span class="ot">-&gt;</span> b</span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true"></a><span class="dt">Cons</span> <span class="fu">head</span> <span class="fu">tail</span> cons nil <span class="ot">=</span> cons nil (<span class="fu">tail</span> cons nil)</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Nil</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Nil</span> _ nil <span class="ot">=</span> nil</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="dt">Cons</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> a</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> b</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> b</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="dt">Cons</span> <span class="fu">head</span> <span class="fu">tail</span> cons nil <span class="ot">=</span> cons nil (<span class="fu">tail</span> cons nil)</span></code></pre></div>
 <p>Really, these write themselves once you have an eye for them. One way to think about it is that the handlers are “continuations” for how you want to continue. This is the dreaded CPS transformation!</p>
-<h3 id="codata-to-data">Codata to Data</h3>
+<h3 id="codata-to-data"><a href="#codata-to-data" class="header-link">Codata to Data<span class="header-link-emoji">🔗</span></a></h3>
 <p>Let’s go the other way too. Appropriately, we can use codata streams:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a>codata <span class="dt">Stream</span> a <span class="kw">where</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a>  {<span class="ot"> head ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a>  ,<span class="ot"> tail ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>codata <span class="dt">Stream</span> a <span class="kw">where</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> head ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> tail ::</span> <span class="dt">Stream</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> a</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>I’m winging it here, but it’s more fun to figure out how to transform this than to get the information from the paper.</p>
 <p>The obvious approach here is to just turn this thing directly into a record by dropping the <code>Stream a -&gt;</code> part of each field:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stream</span> a <span class="ot">=</span> <span class="dt">Stream</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a>  {<span class="ot"> head ::</span> a</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>  ,<span class="ot"> tail ::</span> <span class="dt">Stream</span> a</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Stream</span> a <span class="ot">=</span> <span class="dt">Stream</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> head ::</span> a</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> tail ::</span> <span class="dt">Stream</span> a</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>While this works in Haskell, it doesn’t play nicely with strict languages. So, we can just lazify it by sticking each one behind a function:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stream</span> a <span class="ot">=</span> <span class="dt">Stream</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true"></a>  {<span class="ot"> head ::</span> () <span class="ot">-&gt;</span> a</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true"></a>  ,<span class="ot"> tail ::</span> () <span class="ot">-&gt;</span> <span class="dt">Stream</span> a</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Stream</span> a <span class="ot">=</span> <span class="dt">Stream</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> head ::</span> () <span class="ot">-&gt;</span> a</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> tail ::</span> () <span class="ot">-&gt;</span> <span class="dt">Stream</span> a</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>Looks good to me. But is this what the paper does? It mentions that we can <code>tabulate</code> a function, e.g., represent <code>Bool -&gt; String</code> as <code>(String, String)</code>. It doesn’t say much more than this, but we can do our own research. Peep the <code>Representable</code> class from <a href="https://hackage.haskell.org/package/adjunctions-4.4/docs/Data-Functor-Rep.html#t:Representable">adjunctions</a>:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">Distributive</span> f <span class="ot">=&gt;</span> <span class="dt">Representable</span> f <span class="kw">where</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true"></a>  <span class="kw">type</span> <span class="dt">Rep</span><span class="ot"> f ::</span> <span class="op">*</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true"></a><span class="ot">  tabulate ::</span> (<span class="dt">Rep</span> f <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> f a</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true"></a><span class="ot">  index    ::</span> f a <span class="ot">-&gt;</span> <span class="dt">Rep</span> f <span class="ot">-&gt;</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Distributive</span> f <span class="ot">=&gt;</span> <span class="dt">Representable</span> f <span class="kw">where</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Rep</span><span class="ot"> f ::</span> <span class="op">*</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  tabulate ::</span> (<span class="dt">Rep</span> f <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> f a</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  index    ::</span> f a <span class="ot">-&gt;</span> <span class="dt">Rep</span> f <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>This thing is exactly the transformation we’re looking for; we can “represent” some structure <code>f a</code> as a function <code>Rep f -&gt; a</code>, and tabulating gets us back the thing we had in the first place.</p>
 <p>So the trick here is then to determine <code>f</code> for the <code>Rep f</code> that corresponds to our <code>codata</code> structure. Presumably that thing is exactly the record we worked out above.</p>
 <p>What’s interesting about this approach is that it’s exactly <a href="https://www.haskellforall.com/2012/05/scrap-your-type-classes.html">scrap-your-typeclasses.</a> And it’s exactly how typeclasses are implemented in Haskell. And last I looked, it’s the approach that Elm recommends doing instead of having typeclasses. Which makes sense why it’s annoying in Elm, because the language designers are forcing us to hand-compile our code! But I don’t need to beat that dead horse any further.</p>
-<h2 id="thoughts">Thoughts</h2>
+<h2 id="thoughts"><a href="#thoughts" class="header-link">Thoughts<span class="header-link-emoji">🔗</span></a></h2>
 <p>Something that piqued my interest is a quote from the paper:</p>
 <blockquote>
 <p>Functional langauges are typically rich in data types … but a paucity of codata types (usually just function types.)</p>
 </blockquote>
 <p>This is interesting, because functions are the only non-trivial source of contravariance in Haskell. Contravariance is the co- version of (the poorly named, IMO) covariance. Which is a strong suggestion that functions are a source of contravariance <em>because they are codata,</em> rather than contravariance being a special property of functions themselves.</p>
 <p>I asked my super smart friend <a href="https://totbwf.github.io/">Reed Mullanix</a> (who also has a great podcast episode), and he said something I didn’t understand about presheafs and functors. Maybe presheafs would make a good next paper.</p>
-<h2 id="conclusions">Conclusions</h2>
+<h2 id="conclusions"><a href="#conclusions" class="header-link">Conclusions<span class="header-link-emoji">🔗</span></a></h2>
 <p>This was a helpful paper to to wrap my head around all this codata stuff that smart people in my circles keep talking about. None of it is <em>new,</em> but as a concept it helps solidify a lot of disparate facts I had rattling around in my brain. Doing this final tagless encoding of data types gives us a fast CPS thing that is quick as hell to run because it gets tail-optimized and doesn’t need to build any intermediary data structures, and gets driven by its consumer. The trade-off is that CPS stuff is a damn mind-melter.</p>
 <p>At Zurihac 2018, I met some guy (whose name I can’t remember, sorry!) who was working on a new language that supported this automatic transformation between data and codata. I don’t remember anything about it, except he would just casually convert between data and codata whenever was convenient, and the compiler would do the heavy lifting of making everything work out. It was cool. I wish I knew what I was talking about.</p>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/bialgebra-followup">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/ring-solving">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -323,23 +301,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

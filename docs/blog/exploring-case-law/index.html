@@ -1,57 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Exploring Case Law :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/exploring-case-law">Exploring Case Law</a></h1>
+  <h1><a href="/blog/exploring-case-law/index.html#">Exploring Case Law</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/roomba">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/porting-to-polysemy">&rarr;</a>
-    </span>
-    <time>February  8, 2021</time>
+    <time>2021-02-08</time>
 
     <span class="tags">
-        <a href="/tags/law.html">law</a>, <a href="/tags/data.html">data</a>, <a href="/tags/visualization.html">visualization</a>, <a href="/tags/scraping.html">scraping</a>, <a href="/tags/analysis.html">analysis</a>
+        
     </span>
 </p>
 <div class="content">
@@ -59,7 +48,7 @@
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script src="/js/charts.js"></script>
 <p><link rel="stylesheet" href="/css/law.css"></p>
-<h2 id="overview">Overview</h2>
+<h2 id="overview"><a href="#overview" class="header-link">Overview<span class="header-link-emoji">🔗</span></a></h2>
 <p>In early 2021, spurred on by many discussions with my incredible, law-student (among many other fantastic characteristics) girlfriend, I decided to try my hand at analyzing Canada’s legal system. Absolutely everything I know about the law I’ve learned from TV shows and a year’s worth of hanging out with law students — which is to say, I don’t know anything.</p>
 <p>Oh yeah, and also I don’t know anything about data science or visualization. I’m a computer scientist by trade, and can navigate my way around complicated mathematics better than your average Joe. This projected seemed like a good opportunity to teach myself some of the more obscure bits of graph theory, interactive web design (most of the charts on this page are interactive,) data scraping and subsequent mining.</p>
 <p>Often, outsiders can bring new ideas and techniques to otherwise insular communities. Despite knowing nothing, I managed to:</p>
@@ -73,7 +62,7 @@
 </ul>
 <p>These are not half-bad results, if I do say so myself. And if one guy who doesn’t really know how to use this technology can do this well, imagine how much damage someone with high-quality data, a budget, and knowledge could do. If you are in the legal field and aren’t yet positioning yourself for the upcoming automation wave, maybe this essay will help convince you that the system isn’t nearly as robust to automation as you might think. I did all of this in two weeks, as an outsider, with no domain knowledge. That should scare you.</p>
 <p>Overall, I needed to collect and analyze all of the data myself. I spent maybe fifteen hours programming things, and roughly 336 hours collecting data. I fought with analytics tools for another ten hours, and this write-up took maybe twenty hours. It was a fun project, but I’m happy to be done with it.</p>
-<h2 id="methodology">Methodology</h2>
+<h2 id="methodology"><a href="#methodology" class="header-link">Methodology<span class="header-link-emoji">🔗</span></a></h2>
 <p>My assumption is that the citation graph of Canadian case law is sufficient to find interesting data in the law. Unfortunately, this data doesn’t seem to exist in any convenient format. <a href="https://canlii.org">CanLII</a> makes the data available on the web, but doesn’t provide any sort of downloadable database. So I needed to make my own.</p>
 <p>I wired up a small web-scraper that would connect to CanLII and crawl through the millions of cases available there. My program loaded all the cases from the Supreme Court and provincial courts of appeal, then followed every cited case. And every case cited by every one of <em>those.</em> And so on and so forth, until there were no more cited cases I hadn’t yet downloaded.</p>
 <p>After a few weeks of downloading, I was finished. In total, I downloaded 378,732 decisions from 269 different courts. Between these cases, there are 1,998,118 citations. Frighteningly, this is nowhere near the extent of Canadian case law; it’s maybe one tenth of the full corpus. But I feel comfortable in saying that <em>this subset is the law as it exists today.</em> If a case doesn’t lie anywhere in the transitive dependencies of the Supreme Court or a court of appeals, it’s not contentious for anyone to care about.</p>
@@ -283,16 +272,16 @@ citation data
 </figure>
 <p>Again, no <em>actual</em> information here.</p>
 <p>To reiterate, there’s nothing at all that we can use to learn what any particular case was <em>about.</em> In this database, the vanishing majority of the information available to us is which cases cite whom. Anything we want to figure out needs to be inferred from that.</p>
-<h3 id="possible-issues">Possible Issues</h3>
+<h3 id="possible-issues"><a href="#possible-issues" class="header-link">Possible Issues<span class="header-link-emoji">🔗</span></a></h3>
 <p>The Canadian legal system has existed much longer than the idea that information should be freely available. While CanLII is an excellent source of data, it explicitly states how complete its records are from each court. For example, while CanLII has the entire corpus of Supreme Court decisions, it’s only maintained continuous coverage of the BC Court of Appeal (BCCA) since 1990. Other courts have different starting dates for their continuous coverage.</p>
 <p>This presents a systematic bias in our data, namely that more recent cases are more readily available. To illustrate, the database contains 6,212 cases from the BCCA before 1990, but 19,368 cases since. While we might be interested in whether the volume of law is increasing over time, we must be careful to restrict ourselves to the range of continuous coverage.</p>
 <p>Looking only at citation data introduces another systematic bias in the dataset: older cases have had a longer time to accumulate citations. Because we mainly keep track of relationships between cases, it’s possible for recent cases to contradict previous decisions. Such a case is clearly very important to the law, but will fly under our radar until it becomes commonly cited.</p>
-<h2 id="verifying-the-dataset">Verifying the Dataset</h2>
+<h2 id="verifying-the-dataset"><a href="#verifying-the-dataset" class="header-link">Verifying the Dataset<span class="header-link-emoji">🔗</span></a></h2>
 <p>Before getting started, let’s make sure our data is sane. For example, since case law is immutable, it’s impossible for a case to cite a decision in the future. Therefore we should never see any time-traveling citations in our dataset.</p>
 <p>But in fact, there are 1197 cases on CanLII which cite decisions in the future! For example, <a href="https://www.canlii.org/en/ab/abqb/doc/1998/1998abqb476/1998abqb476.html">Molson v. Molson, 1998</a> cites <a href="https://www.canlii.org/en/sk/skqb/doc/2016/2016skqb387/2016skqb387.html">C.T.G. v R.R.G., 2016</a>. Clicking through the first link here shows that what is labeled as “Molson v. Molson, 1998” is <em>actually</em> “Richardson v. Richardson, 2019.”</p>
 <p>A few other oddities show up, some of which are trial level courts citing their appeal. These seem more reasonable, and I read this as <em>whoever was doing data entry was typing in the wrong field.</em></p>
 <p>This erroneous data makes up only 0.31% of our dataset, so it doesn’t seem like fixing it is worth the effort.</p>
-<h2 id="average-age-of-citation">Average Age of Citation</h2>
+<h2 id="average-age-of-citation"><a href="#average-age-of-citation" class="header-link">Average Age of Citation<span class="header-link-emoji">🔗</span></a></h2>
 <p>How long do decisions stay relevant for? By looking at the average age at which a decision is cited, we can get a feel.</p>
 <figure>
 <div id="avg-duration">
@@ -399,7 +388,7 @@ Average age of citation, by court
 </figure>
 <p>Wow! Look at the big courts. There is almost no variance in the average age of citations — they’re all clustered right around 13. Seeing as these are all of the appeal-level courts, it strongly suggests that <strong>this is the speed of our legal system.</strong> It takes thirteen years on average to make it through the entire appeal process. Disgustingly slow.</p>
 <p>There’s nothing interesting in the small courts graph — they show the same variances as in the duration of case relevance.</p>
-<h2 id="complexity-of-the-law">Complexity of the Law</h2>
+<h2 id="complexity-of-the-law"><a href="#complexity-of-the-law" class="header-link">Complexity of the Law<span class="header-link-emoji">🔗</span></a></h2>
 <p>Although there are nearly 400,000 cases in our dataset, I don’t think most of those can possibly be interesting. My understanding of case law is that usually a precedent has already been set, and the judge almost always defers to that precedent. To find cases like these, we can look at the number of decisions cited by a case. If a case cites only a few decisions (let’s say three or fewer,) it’s probably just agreeing with precedent.</p>
 <figure>
 <div id="complexity">
@@ -509,7 +498,7 @@ Cases by number of decisions cited (QCCA)
 </figcaption>
 </figure>
 <p>Pretty close to <em>half</em> of the cases that come through these appeal-level courts are trivial. If we could automate decisions of this sort, we should be able to make the appeal system roughly 70% faster — reducing the average time per case from 13 years to 7.5. I can’t find any numbers on how expensive the court system is to run, but this would reduce its cost by 70% as well, which is almost certainly something worth investigating.</p>
-<h2 id="volume-of-law">Volume of Law</h2>
+<h2 id="volume-of-law"><a href="#volume-of-law" class="header-link">Volume of Law<span class="header-link-emoji">🔗</span></a></h2>
 <p>What’s the rate of law being accumulated? Is it accelerating? We can look at the number of cases per year per court over the last 30 years<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to get a sense of the acceleration of accumulation:</p>
 <figure>
 <div id="volume">
@@ -564,7 +553,7 @@ Number of courts in existence, by year
 </figcaption>
 </figure>
 <p>This graph estimates the number of courts in existence by the first decision we have from that court being the year it was created — which seems like a satisfactory proxy. The curve appears to have leveled off, but I think this is due to 2020 being a GLOBAL PANDEMIC. If I had to guess, I’d say the inflection point around 1997 is an artifact of the digitization of law, and that this curve will continue linearly.</p>
-<h2 id="who-cites-whom">Who Cites Whom?</h2>
+<h2 id="who-cites-whom"><a href="#who-cites-whom" class="header-link">Who Cites Whom?<span class="header-link-emoji">🔗</span></a></h2>
 <p>Are certain provinces “friends?” Which provinces influence which others? Let’s look at the percentage by which one provinces’ courts cite another provinces:</p>
 <figure>
 <div id="juris-cite-juris">
@@ -619,20 +608,20 @@ Citing court (left) by cited court (top), in percent. Blue is less often.
 </figure>
 <p>There’s an interesting feature of this graph, namely the “friendship pairs” that lie along the diagonal. For example, <code>bcsc</code> cites <code>bcca</code> much more than it cites anything but the <code>scc</code> — and vice versa! Thinking about it, I guess this makes sense, and is mainly showing us the hierarchical nature of such courts. Of course <code>bcsc</code> cites <code>bcca</code> more than chance, since it must defer. And vice versa also makes sense, because a case must go through <code>bcsc</code> in order to get to <code>bcca</code>.</p>
 <p>Well, not every stream you pan will have gold.</p>
-<h2 id="determining-important-cases">Determining Important Cases</h2>
+<h2 id="determining-important-cases"><a href="#determining-important-cases" class="header-link">Determining Important Cases<span class="header-link-emoji">🔗</span></a></h2>
 <p>The sheer size of the case law corpus is staggering. My dataset contains roughly 400,000 decisions — a small fraction of the <em>actual law.</em> And this is a few orders of magnitude larger than any human could possibly remember.</p>
 <p>Thankfully, most of this data is noise. Most cases taken to court are decided uninterestingly: the presiding judge simply defers to precedent and everyone goes on their way. It’s safe to say that decisions of this sort are unimportant. In my opinion, the desired end-state of the law is for all cases to be decided like this — at that point, we’ve got a stable, entirely-predictable system.</p>
 <p>But that is not (yet!) the world we live in. Some cases <em>are</em> interesting — for example, the ones which <em>set</em> precedent, and the ones which <em>contradict</em> precedent. How can we find these cases?</p>
 <p>Humans would probably look at the cases, and think about first principles, and talk to other people they think are smart, and think really hard, and maybe go consult some textbooks, in an attempt to determine which cases are important. The computer is too dumb to do any of that. It’s only good at moving numbers around ridiculous fast, and I’m very good at turning problems that don’t sound like they involve numbers into ones that do.</p>
 <p>So how can we introduce numbers into this problem?</p>
-<p>Rather than trying to compute importance directly, let’s instead try to approximate it. Intuitively, cases which are important will be cited more often than cases which are not important. Thus, citation count is — to a first approximation — a good model for importance. Indeed, this seems to be how most <a href="https://www.lexisnexis.com/ln-media/totg/p/lotg.aspx?mediaid=121105">law software</a> computes importance.</p>
+<p>Rather than trying to compute importance directly, let’s instead try to approximate it. Intuitively, cases which are important will be cited more often than cases which are not important. Thus, citation count is — to a first approximation — a good model for importance. Indeed, this seems to be how most <a href="https://www.lexisnexis.com/ln-media/totg/p/lotg.aspx#mediaid=121105">law software</a> computes importance.</p>
 <p>To improve our model, let’s take an intellectual detour and think about the importance of websites. Imagine the website for Reputable News Network (RNN). By virtue of being a reputable news site, it will naturally be linked to quite often. Like in the case law example, this should improve our estimate of RNN being an important site.</p>
 <p>But now consider <em>the sites that RNN links to.</em> Maybe RNN is running a story on bloggers, and links to Paul Podunk’s Personal Page (PPPP). PPPP is news-worthy by definition due to being on RNN, and surely news-worthy things are more important than non-influential things. Thus, PPPP should be considered more important, sheerly by virtue of having been linked-to by an important thing.</p>
 <p>Of course, this new influence that PPPP has acquired from RNN should also be accounted for — sites that PPPP links to become more important due to their relevance to PPPP. And so on, and so forth. But critically, these sites are considered <em>less</em> important than they would be if RNN linked to them directly, since RNN is significantly more influential than PPPP.</p>
 <p>The key assumption of this model is that important things run in the same circles as other important things. This jives with my intuition. It’s clearly true in the news cycle. It’s why people name drop in order to raise their social standing — if they know important people, they must too be important. Of course, this is not a perfect model for importance, but it gets the broad strokes.</p>
 <p>And, if you have any remaining doubts, this exact algorithm is what powers Google search. Clearly, Google (an important entity) wouldn’t be using this technique if it didn’t work. Therefore it probably does work. See? This technique works <em>everywhere.</em></p>
 <p>Returning to law, let’s replace “websites” with “decisions,” and “links” with “citations.” We can compute the importance of cases by seeing which important cases they’re connected to.</p>
-<h3 id="verifying-important-cases">Verifying Important Cases</h3>
+<h3 id="verifying-important-cases"><a href="#verifying-important-cases" class="header-link">Verifying Important Cases<span class="header-link-emoji">🔗</span></a></h3>
 <p>After crunching the numbers for a few hours, I came up with an <em>importance score</em> for each case. It’s hard to get a real intuition for <a href="https://en.wikipedia.org/wiki/Eigenvector_centrality">what these scores <em>are</em></a>, but a safe interpretation is that a higher importance score corresponds to a more-important case.</p>
 <p>To verify that these importance scores actually correspond with reality, I took the names and years of the top 50 cases, and searched for a Wikipedia page on the topic. My theory is that <em>really</em> important cases will be important enough to have Wikipedia commentary about them for laypeople like me.</p>
 <p>At time of writing, of the top 50 cases, 34 have Wikipedia articles. And among those, 22 are described in the first sentence as either a “landmark” or a “leading” case.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> That’s a pretty good sign.</p>
@@ -794,7 +783,7 @@ Mission Institution v. Khela, 2014
 <p>Anyway, it seems like my calculated importance score correlates pretty well with real-world importance. But let’s try to falsify that hypothesis, and see if the bottom-ranked cases have Wikipedia articles.</p>
 <p>I checked. They don’t. Not a single hit in the 50 I tried<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. I also checked for Wikipedia articles on a randomly-selected set of 50 cases, in an attempt to find the base-rate we should expect to see. Again, there wasn’t a single hit.</p>
 <p>These negative results add strong evidence that my importance score is <em>measuring something real.</em> Remember, there is absolutely no human judgment going into this analysis; <em>my program is simply crunching the numbers based on who cites whom.</em> The fact that it can identify <em>any</em> important cases whatsoever is jaw-dropping.</p>
-<h3 id="statistical-biases">Statistical Biases</h3>
+<h3 id="statistical-biases"><a href="#statistical-biases" class="header-link">Statistical Biases<span class="header-link-emoji">🔗</span></a></h3>
 <p>So we’ve successfully found important cases. My first question is, how necessary was all of this fancy math? Could I just have ignored it and gone straight to number of citations? How correlated is the importance metric with the raw number of citations? Let’s see:</p>
 <figure>
 <div id="correlation">
@@ -915,7 +904,7 @@ Number of top 1000 important cases with the sum importance metric, by year
 <p>It took five decades after the Statute of Westminster for Canada to make its final step toward full sovereignty. In 1982, it adopted its own constitution and became a completely independent country.</p>
 </blockquote>
 <p>Emphasis mine. Maybe this “taking its time” stuff was just Canada coasting? Hopefully the law and/or history people can get in touch and let me know if this graph of mine is at all meaningful. This is flaw in the data-driven approach — your analysis can only be as good as your data is. We’re always going to need subject matter experts.</p>
-<h2 id="discovering-neighborhoods">Discovering Neighborhoods</h2>
+<h2 id="discovering-neighborhoods"><a href="#discovering-neighborhoods" class="header-link">Discovering Neighborhoods<span class="header-link-emoji">🔗</span></a></h2>
 <p>Imagine I give you a map of the world’s road network, with all of the topological features like water and altitude removed, as well as all landmarks and zoning information. For example:</p>
 <p><img src="/images/law/city.png" style="width: 100%"></p>
 <p>There are two cities on this map. It’s not very hard to spot them, is it? The cities are exceptionally dense networks of roads, compared to the relatively spare highways that connect them.</p>
@@ -924,7 +913,7 @@ Number of top 1000 important cases with the sum importance metric, by year
 <p>It’s easy to find downtown on this map, and if you pay attention to what are obviously bridges, you can find the smaller cities that make up the big metropolitan area. Again, the trick is to identify areas that have tightly woven intra-road networks, but relatively sparse interconnections.</p>
 <p>We can use this same trick to identify “neighborhoods” of law — that is, clusters of cases that commonly cite one another, but which rarely cite other neighborhoods. <a href="https://en.wikipedia.org/wiki/Louvain_method">Our algorithm</a> starts by putting every case in its own (very lonely) community, and then merging communities which are more interconnected than should be expected by random.</p>
 <p>After crunching the numbers, the five most important decisions in each of our three most important, highly-populated communities are:</p>
-<h3 id="community-249">Community 249</h3>
+<h3 id="community-249"><a href="#community-249" class="header-link">Community 249<span class="header-link-emoji">🔗</span></a></h3>
 <ul>
 <li>
 <a href="https://canlii.org/en/ca/scc/doc/2008/2008scc9/2008scc9.html">Dunsmuir v. New Brunswick</a>
@@ -955,7 +944,7 @@ Number of top 1000 important cases with the sum importance metric, by year
 </ul>
 <p>Looks like community 249 is really some sort of administrative review of law.</p>
 <p>Remember, I only looked at these tags in order to try to give a human-appropriate name to community 249. The computer didn’t have access to these tags when it was discovering it; it was merely looking at where the roads are dense.</p>
-<h3 id="community-527">Community 527</h3>
+<h3 id="community-527"><a href="#community-527" class="header-link">Community 527<span class="header-link-emoji">🔗</span></a></h3>
 <ul>
 <li>
 <a href="https://canlii.org/en/ca/scc/doc/1986/1986canlii46/1986canlii46.html">R. v. Oakes</a>
@@ -983,7 +972,7 @@ Number of top 1000 important cases with the sum importance metric, by year
 <li>Constitutional law – Charter of Rights – Reasonable limits</li>
 </ul>
 <p>Seems pretty cut and dried. “Charter of Rights.”</p>
-<h3 id="community-192">Community 192</h3>
+<h3 id="community-192"><a href="#community-192" class="header-link">Community 192<span class="header-link-emoji">🔗</span></a></h3>
 <ul>
 <li>
 <a href="https://canlii.org/en/ca/scc/doc/1984/1984canlii33/1984canlii33.html">Hunter et al. v. Southam Inc.</a>
@@ -1016,7 +1005,7 @@ Number of top 1000 important cases with the sum importance metric, by year
 </ul>
 <p>This one is very clearly on the police being naughty and doing things they shouldn’t.</p>
 <p>I’ve said it before but I’m going to say it again. There is <em>very clearly</em> a theme in these cases, and <em>we found it using only math, with absolutely no knowledge of the law.</em></p>
-<h3 id="continuing-analysis-of-communities">Continuing Analysis of Communities</h3>
+<h3 id="continuing-analysis-of-communities"><a href="#continuing-analysis-of-communities" class="header-link">Continuing Analysis of Communities<span class="header-link-emoji">🔗</span></a></h3>
 <p>Just for fun, let’s chart decisions by year and community for the six most populated communities.</p>
 <figure>
 <div id="chart-importance">
@@ -1038,7 +1027,7 @@ Important cases by year and community. Larger dots are more important. Community
 </figure>
 <p>This gives us a sense of what sorts of things the law is focused on over time. For example, since 2010 there’s been a huge flurry of activity in community 249 (review of law.) Why? I don’t know, but clearly something is going on. The activity seems to be precipitated by <em>Dunsmuir v. New Brunswick,</em> so what we’re seeing is all the fallout from that case.</p>
 <p>And we can see that community 192 (police being naughty) was very active from 1985 to 1995, but quieted down until a spike in 2009, and has been quiet since 2014. Maybe the police have been on good behavior since then?</p>
-<h2 id="conclusion">Conclusion</h2>
+<h2 id="conclusion"><a href="#conclusion" class="header-link">Conclusion<span class="header-link-emoji">🔗</span></a></h2>
 <p>I’ve now been writing for eight hours straight, and I can no longer reliably spell “jurisdiction.” So it’s time to finish this up and then go directly to bed.</p>
 <p>Personally, I find it fascinating just how much information can be gleamed from nothing but citation data and some clever choices of visualizations. The biggest takeaways in terms of policy from this project in my opinion are:</p>
 <ul>
@@ -1065,40 +1054,29 @@ Important cases by year and community. Larger dots are more important. Community
 </section>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/roomba">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/porting-to-polysemy">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -1109,23 +1087,25 @@ Important cases by year and community. Larger dots are more important. Community
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

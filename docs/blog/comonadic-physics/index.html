@@ -1,57 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Comonadic Collision Resolution :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/comonadic-physics">Comonadic Collision Resolution</a></h1>
+  <h1><a href="/blog/comonadic-physics/index.html#">Comonadic Collision Resolution</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/book-announcement">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/dont-eff-it-up">&rarr;</a>
-    </span>
-    <time>January  1, 2017</time>
+    <time>2017-01-01</time>
 
     <span class="tags">
-        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/comonads.html">comonads</a>, <a href="/tags/physics.html">physics</a>, <a href="/tags/game.html">game</a>
+        
     </span>
 </p>
 <div class="content">
@@ -88,7 +77,7 @@
 <p>Big shout-outs to <a href="http://blog.higher-order.com/">Rúnar Bjarnason</a> for steering me into the right direction: what I was looking for was not in fact a comonad (a data-type with a <code>Comonad</code> instance), but instead a <em>specific</em> Cokleisli arrow (a function of type <code>Comonad w =&gt; w a -&gt; b</code>).</p>
 <p>Comonadic co-actions such as these can be thought of the process of answering some query <code>b</code> about an <code>a</code> in some context <code>w</code>. And so, in my case, I was looking for the function <code>w Capsule -&gt; Capsule</code>, with some <code>w</code> suitable to the cause. The <code>w Capsule</code> obviously needed the semantics of “be capable of storing all of the relevant <code>Capsule</code>s.” Implicitly in these semantics are that <code>w</code> need also have a <em>specific</em> <code>Capsule</code> under focus<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <p>To relieve the unbearable tension you’re experience about what comonad <code>w</code> is, it’s a <code>Store</code>. If you’re unfamiliar with <code>Store</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Store</span> s a <span class="ot">=</span> <span class="dt">Store</span> s (s <span class="ot">-&gt;</span> a)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Store</span> s a <span class="ot">=</span> <span class="dt">Store</span> s (s <span class="ot">-&gt;</span> a)</span></code></pre></div>
 <p>which I kind of think of as a warehouse full of <code>a</code>s, ordered by <code>s</code>es, with a forklift that drives around but is currently ready to get a particular <code>a</code> off the shelves.</p>
 <p>With all of this machinery in place, we’re ready to implement the Cokleisli arrow, <code>stepCapsule</code>, for resolving physics collisions. The algorithm looks like this:</p>
 <ol type="1">
@@ -102,8 +91,8 @@
 <p>There’s only one problem left. While <code>extend stepCapsule</code> ensures that if any capsules were previously colliding no longer do, it doesn’t enforce that the newly moved capsules don’t collide with something new!</p>
 <p>Observe of the algorithm that if no objects are colliding, no objects will be moved after running <code>extend stepCapsule</code> over them. And this is in fact just the trick we need! If we can find a fix point of resolving the capsules, that fix point must have the no-collisions invariant we want.</p>
 <p>However, notice that this is not the usual least-fixed point we’re used to dealing with in Haskell (<code>fix</code>). What we are looking for is an iterated fixed point:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">iterFix ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>iterFix f <span class="ot">=</span> <span class="fu">head</span> <span class="op">.</span> <span class="fu">filter</span> (<span class="op">==</span>) <span class="op">.</span> ap <span class="fu">zip</span> <span class="fu">tail</span> <span class="op">.</span> <span class="fu">iterate</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">iterFix ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>iterFix f <span class="ot">=</span> <span class="fu">head</span> <span class="op">.</span> <span class="fu">filter</span> (<span class="op">==</span>) <span class="op">.</span> ap <span class="fu">zip</span> <span class="fu">tail</span> <span class="op">.</span> <span class="fu">iterate</span> f</span></code></pre></div>
 <p>And voila, <code>iterFix (unpack . extend stepCapsule . pack)</code> is our final, functional solution to resolving collisions. It’s surprisingly elegant, especially when compared to <a href="https://github.com/isovector/jam-time/blob/master/jam/game/CapsuleManager.py#L18-L56">my original imperative solution</a>. For bonus points, it feels <em>a lot</em> like the way I understand actual real-life physics to work: somehow running a local computation everywhere, simultaneously.</p>
 <p>While time forms a monad, physics forms a comonad. At least in this context.</p>
 <section class="footnotes" role="doc-endnotes">
@@ -115,40 +104,29 @@
 </section>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/book-announcement">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/dont-eff-it-up">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -159,23 +137,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

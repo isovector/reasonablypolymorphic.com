@@ -1,57 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Towards Tactic Metaprogramming in Haskell :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/towards-tactics">Towards Tactic Metaprogramming in Haskell</a></h1>
+  <h1><a href="/blog/towards-tactics/index.html#">Towards Tactic Metaprogramming in Haskell</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/algebra-driven-design">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/separate-your-views-reify-your-reasoning">&rarr;</a>
-    </span>
-    <time>October 12, 2020</time>
+    <time>2020-10-12</time>
 
     <span class="tags">
-        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/hls.html">hls</a>, <a href="/tags/tactics.html">tactics</a>
+        
     </span>
 </p>
 <div class="content">
@@ -62,7 +51,7 @@
 <p>When you stop and think about it, that’s like the stupidest idea ever. We as the authors don’t think of our code as bytes, nor does our interpreter or compiler. But instead we take the semantic understanding inside of our heads, serialize it into bytes, and then get the compiler to parse and rediscover the ideas inside our head. What a waste of effort.</p>
 <p>Instead, you can use the incredible <a href="https://totbwf.github.io/">TOTBWF</a> and my new Tactics Plugin for the <a href="https://github.com/haskell/haskell-language-server">Haskell Language Server</a>, which will automatically and intelligently fill holes in your Haskell programs.</p>
 <p>This blog post describes what a tactics engine is and why you want one, and is a good introduction to how in the hell we can automatically write your code for you.</p>
-<h2 id="tactics">Tactics</h2>
+<h2 id="tactics"><a href="#tactics" class="header-link">Tactics<span class="header-link-emoji">🔗</span></a></h2>
 <p>Imagine you’re pair programming with a junior engineer. In the navigator seat, you’ll be guiding your partner through the implementation, guiding them through the high-level strokes and letting them actually do the coding part. In order to implement <code>foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b</code>, for example, the guidance you give your partner might be:</p>
 <ol type="1">
 <li>Bind the function arguments</li>
@@ -74,144 +63,133 @@
 <p>A tactics engine transforms a program sketch like the above into an actual program. Tactics free us from the tyranny of text editing and pedantic details, allowing us to work at a higher semantic level of programming.</p>
 <p>Tactics correspond to semantic operations over our program. Much like how the primitive commands in text editors (delete to end of line, insert parentheses, etc) can be composed to refine the textual representation of one program into the textual representation of another, we can compose small tactics in order to build larger ideas.</p>
 <p>As an example, consider how we can fill in the following hole:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Id</span> a <span class="ot">=</span> <span class="dt">Id</span> a</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Id</span> <span class="kw">where</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">  fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="fu">fmap</span> <span class="ot">=</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Id</span> a <span class="ot">=</span> <span class="dt">Id</span> a</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Id</span> <span class="kw">where</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> <span class="ot">=</span> _</span></code></pre></div>
 <p>Rather than writing this function all at once, we can instead build it, one idea at a time. The first step is obviously to bind function arguments (the <code>intros</code> tactic), which results in the refined expression:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> _</span></code></pre></div>
 <p>We’re left with a new hole, but this one is “smaller” than the old one; we’ve refined the previous hole, filling in some of its structure. As a result, the type of our new hole is <code>Id b</code>, and we now have both <code>fab :: a -&gt; b</code> and <code>ida :: Id a</code> in scope. We can simplify the hole further by now pattern matching on <code>ida</code> (the <code>destruct ida</code> tactic):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> _</span></code></pre></div>
 <p>The resulting hole still has type <code>Id b</code>, but we’ve now introduced <code>a :: a</code> in scope. Our next step is to build an <code>Id</code> value, which we can do by producing its data constructor (the <code>split</code> tactic):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> _</span></code></pre></div>
 <p>Again we’ve shrunk the problem — now our hole has type <code>b</code>. At this point we can call the <code>fab</code> function to produce a <code>b</code> (via the <code>apply fab</code> tactic):</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> (fab _)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> (fab _)</span></code></pre></div>
 <p>All that’s left is a hole with type <code>a</code>. Fortunately, we have <code>a :: a</code> in scope, so we can just plop that in to the hole via the <code>assumption</code> tactic:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> (fab a)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> b</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ida <span class="ot">-&gt;</span> <span class="kw">case</span> ida <span class="kw">of</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Id</span> a <span class="ot">-&gt;</span> <span class="dt">Id</span> (fab a)</span></code></pre></div>
 <p>And just like that, we’ve produced an implementation of our desired function! By thinking in terms of the semantic operations we’d like to perform at each hole (instead of how to manipulate the bytes of text), we’ve changed the level of abstraction at which we think about editing. The implications of this might not be immediately obvious, so let’s explore them together.</p>
 <p>Let’s list the tactic steps we took to derive <code>fmap</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>intros</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>destruct ida</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>split</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>apply fab</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>assumption</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>intros</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>destruct ida</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>split</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>apply fab</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>assumption</span></code></pre></div>
 <p>Up to alpha renaming, this composition of tactics is sufficient to derive <code>fmap</code> for any sum or product type that doesn’t do anything “exciting” with its type variable. By running the same steps, we can implement <code>fmap</code> for any of the following types:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>(a, b)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="dt">Either</span> a b</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="dt">Maybe</span> a</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="dt">Const</span> a b</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>(a, b)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Either</span> a b</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Maybe</span> a</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="dt">Const</span> a b</span></code></pre></div>
 <p>Let’s convince ourselves of this by quickly running through the derivation for <code>Maybe a</code>. We start again with <code>fmap</code> and its type:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> _</span></code></pre></div>
 <p>After running <code>intros</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> _</span></code></pre></div>
 <p>and then <code>destruct ma</code></p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> _</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> _</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> _</span></code></pre></div>
 <p>Applying <code>split</code> here is a little tricky; technically it will force us to try both <code>Nothing</code> and <code>Just _</code> at each hole in a weird sort of quantum superposition. Let’s ignore this detail for right now, and come back to it immediately after finishing the derivation. Assuming we pick the right data cons, after <code>split</code> our program looks like this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span></code></pre></div>
 <p>Now we run <code>apply fab</code>. Because <code>Nothing</code> doesn’t take any arguments, it didn’t produce any holes, so we need look only at the <code>Just</code> case:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab _)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab _)</span></code></pre></div>
 <p>and finally we run <code>assumption</code> to fill in the hole:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
 <p>Look at that! Even though it would require significantly different editing commands to write the syntax of these two functor instances, they are both descried by the same composition of tactics. This is what I mean by “semantic editing,” we’re moving the algorithm for producing functor instances out of our heads and reifying it into something the computer understands. In essence, by writing <code>fmap</code> once, we can teach the computer how to write it for us in the future.</p>
 <p>I mentioned earlier that <code>split</code> gives us some issues here. Reading closely, you’ll notice that there is nothing in our tactics that say we need to <code>split</code> the same data constructor that we just <code>destruct</code>ed. In actuality there are four different, valid programs that can be produced by the above set of tactics:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true"></a></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> ma <span class="kw">of</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> _</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="dt">Just</span> (fab a)</span></code></pre></div>
 <p>Choosing the “best” implementation of these possibilities is largely a matter of heuristics, which I plan to describe in a later post. For now, let’s just assume our tactics engine is smart enough to come up with the one you had in mind.</p>
 <p>Of course, the real issue here is that nothing forces our <code>destruct</code> and <code>split</code> tactics to use the same data constructor. We can eliminate this ambiguity by noticing that in <code>fmap</code>, we’re not actually trying to destruct and then split, but instead we’re trying to implement a homomorphism (a structure-preserving function.) In order to preserve structure, we’d better map a data constructor to itself. So instead, let’s use the <code>homo</code> tactic instead of <code>destruct</code> and <code>split</code>. Our new tactics metaprogram for writing functor instances is thus:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>intros</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>homo ida</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>apply fab</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>assumption</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>intros</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>homo ida</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>apply fab</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>assumption</span></code></pre></div>
 <p>This new version now can no longer generate any of the pathological <code>fmap</code> implementations for <code>Maybe</code>, as they are not structure preserving. We’re left only with the good implementation. Let’s do one more derivation, this time for <code>Either c a</code>. After <code>intros</code> and <code>homo eca</code>, we’re left with:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> _</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> _</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> _</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> _</span></code></pre></div>
 <p>For the first time, we’re now left with <em>two</em> holes. The default behavior is for a tactic to apply to all holes (although there are combinators for “zipping” holes), meaning that the <code>apply fab</code> tactic will be run on both holes. For the <code>Left</code> case, our hole has type <code>c</code>, but <code>fab _</code> has type <code>b</code>, so this tactic <em>fails to apply here.</em> Tactic failure is per-hole, so we can still apply it to the other hole, resulting in:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> _</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> (fab _)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> _</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> (fab _)</span></code></pre></div>
 <p>And finally, <code>assumption</code> fills the hole with whatever would typecheck. In the first hole that’s <code>c</code>, and in the second it’s <code>a</code> as before.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> c</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> (fab a)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Either</span> c a <span class="ot">-&gt;</span> <span class="dt">Either</span> c b</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span> <span class="ot">=</span> \fab ma <span class="ot">-&gt;</span> <span class="kw">case</span> eca <span class="kw">of</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Left</span>  c <span class="ot">-&gt;</span> <span class="dt">Left</span> c</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Right</span> a <span class="ot">-&gt;</span> <span class="dt">Right</span> (fab a)</span></code></pre></div>
 <p>Amazing! Three different functor implementations, with different numbers of data constructors, type variables, and cardinalities. By programming at the level of tactics rather than bytes, we can ignore the superficial differences between these implementations, focusing instead on the fact that they’re all derived the same way.</p>
 <p>Hopefully this post has given you some insight into what tactics are and why they’re valuable. In the next post we’ll look at how this stuff is implemented behind the scenes, and the difficulties we’ve had integrating it into the language server. Stay tuned!</p>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/algebra-driven-design">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/separate-your-views-reify-your-reasoning">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -222,23 +200,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

@@ -1,61 +1,50 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Dragging Haskell Kicking and Screaming into the Century of the Fruitbat :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/century-of-the-fruitbat">Dragging Haskell Kicking and Screaming into the Century of the Fruitbat</a></h1>
+  <h1><a href="/blog/century-of-the-fruitbat/index.html#">Dragging Haskell Kicking and Screaming into the Century of the Fruitbat</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/proving-commutativity">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/comby">&rarr;</a>
-    </span>
-    <time>November 12, 2021</time>
+    <time>2021-11-12</time>
 
     <span class="tags">
-        <a href="/tags/eq.html">eq</a>, <a href="/tags/non-technical.html">non-technical</a>, <a href="/tags/haskell.html">haskell</a>
+        
     </span>
 </p>
 <div class="content">
-    <p>Yesterday, the new Haskell CLC <a href="https://github.com/haskell/core-libraries-committee/issues/3">decided</a> to remove <code>(/=)</code> from the <code>Eq</code> typeclass. As expected, the community has <a href="https://twitter.com/Augustsson/status/1458963074556256257">embraced</a> this change <a href="https://twitter.com/snoyberg/status/1459118062674890752">with</a> <a href="https://twitter.com/haskellhutt/status/1459147447863816200?s=20">characteristic</a> <a href="https://twitter.com/ChShersh/status/1458935578137931780">grace</a>. The usual state of affairs is that people who like the changes are silent, while people who don’t are exceptionally vocal. The result: people working hard to improve things only ever get yelled at, and nobody says “hey, you’re doing a great job. Thank you!”</p>
+    <p>Yesterday, the new Haskell CLC <a href="https://github.com/haskell/core-libraries-committee/issues/3">decided</a> to remove <code>(/=)</code> from the <code>Eq</code> typeclass. As expected, the community has <a href="https://twitter.com/Augustsson/status/1458963074556256257">embraced</a> this change <a href="https://twitter.com/snoyberg/status/1459118062674890752">with</a> <a href="https://twitter.com/haskellhutt/status/1459147447863816200#s=20">characteristic</a> <a href="https://twitter.com/ChShersh/status/1458935578137931780">grace</a>. The usual state of affairs is that people who like the changes are silent, while people who don’t are exceptionally vocal. The result: people working hard to improve things only ever get yelled at, and nobody says “hey, you’re doing a great job. Thank you!”</p>
 <p>To the new Haskell CLC, with my deepest sincerity:</p>
 <p><strong>You’re doing a great job! Thank you.</strong></p>
 <p>Today I’d like to talk a little about the problems I see in the Haskell ecosystem. These are by no means insurmountable problems. They’re not even technical problems. They’re <em>social</em> problems, which suck, because those are the sort that are hard to solve.</p>
@@ -80,45 +69,34 @@
 </blockquote>
 <p>My personal rebuttal against this attitude is that it gets us stuck in extremely suboptimal equilibria. If we can never break anything, then every mistake must exist <em>for perpetuity.</em> By virtue of being human, we’re unfortunately fallible, and thus are going to make mistakes.</p>
 <p>However, I can definitely sympathize here. If every week you are called on to fix a tiny, breaking change, sooner than later you’re going to quit. We should not encourage any behavior that leads to burnout in our best players. That’s a bad long term plan.</p>
-<p>But in my experience, it’s not breaking changes that are the problem. It’s <em>lots</em> of breaking changes that are the problem. Breaking changes are annoying, sure, but what’s worse is the <em>context shifting</em> necessary to fix a breaking change. Doing the work is <span class="math inline">\(O(n)\)</span> with respect to the breakages, but there is an extremely high constant factor. With this in mind, one big breakage is significantly better than lots of tiny breakages.</p>
+<p>But in my experience, it’s not breaking changes that are the problem. It’s <em>lots</em> of breaking changes that are the problem. Breaking changes are annoying, sure, but what’s worse is the <em>context shifting</em> necessary to fix a breaking change. Doing the work is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> with respect to the breakages, but there is an extremely high constant factor. With this in mind, one big breakage is significantly better than lots of tiny breakages.</p>
 <p>Since we’re just about to break things, might I again suggest we add <code>Foldable1</code>, and clean up <code>Prelude</code>? If breakage is breakage (it is), we might as well take advantage of it and do as much cleanup as possible. This is an excellent opportunity. The status-quo is for all of us to argue about it every week, with half the people saying “these are bad circumstances and we should fix them,” with the other half saying “yes, they are bad circumstances, but breakage is worse.”</p>
 <p>But given that <em>we now have breakage,</em> let’s make the most of it.</p>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/proving-commutativity">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/comby">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -129,23 +107,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

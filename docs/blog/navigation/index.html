@@ -1,57 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Devlog: Navigation :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/navigation">Devlog: Navigation</a></h1>
+  <h1><a href="/blog/navigation/index.html#">Devlog: Navigation</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/action-menus">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/higher-kinded-data">&rarr;</a>
-    </span>
-    <time>February  8, 2018</time>
+    <time>2018-02-08</time>
 
     <span class="tags">
-        <a href="/tags/devlog.html">devlog</a>, <a href="/tags/neptune.html">neptune</a>
+        
     </span>
 </p>
 <div class="content">
@@ -59,117 +48,117 @@
 <p>The first thing we need to do is indicate to the game which parts of the background should be walkable. Like we did for <a href="/blog/action-menus">marking hotspots</a>, we’ll use an image mask. Since we have way more density in an image than we’ll need for this, we’ll overlay it on the hotspot mask.</p>
 <p>Again, if the room looks like this:</p>
 <figure>
-<img src="/images/bg.png" alt="" /><figcaption>room background</figcaption>
+<img src="/images/bg.png" alt="room background" /><figcaption aria-hidden="true">room background</figcaption>
 </figure>
 <p>Our mask image would look like this:</p>
 <figure>
-<img src="/images/mask.png" alt="" /><figcaption>room mask</figcaption>
+<img src="/images/mask.png" alt="room mask" /><figcaption aria-hidden="true">room mask</figcaption>
 </figure>
 <p>Here, the walkable section of the image is colored in blue. You’ll notice there’s a hole in the walk mask corresponding to the table in the room; we wouldn’t want our avatar to find a path that causes him to walk through the table.</p>
 <p>However there is something important to pay attention to here; namely that we’re making an adventure game. Which is to say that our navigation system doesn’t need to be all that good; progress in the game is blocked more by storytelling and puzzles than it is by the physical location of the player (unlike, for example, in a platformer game.) If the avatar does some unnatural movement as he navigates, it might be <em>immersion-breaking</em>, but it’s not going to be <em>game-breaking</em>.</p>
 <p>Which means we can half ass it, if we need to. But I’m getting ahead of myself.</p>
 <p>The first thing we’re going to need is a function which samples our image mask and determines if a given position is walkable.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">canWalkOn ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>canWalkOn img (<span class="dt">V2</span> x y)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="ot">=</span> <span class="fu">flip</span> testBit walkableBit</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="op">.</span> getWalkableByte</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    <span class="op">$</span> pixelAt img x y</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    getWalkableByte (<span class="dt">PixelRGBA8</span> _ _ b _) <span class="ot">=</span> b</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    walkableBit <span class="ot">=</span> <span class="dv">7</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">canWalkOn ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>canWalkOn img (<span class="dt">V2</span> x y)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=</span> <span class="fu">flip</span> testBit walkableBit</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span> getWalkableByte</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> pixelAt img x y</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    getWalkableByte (<span class="dt">PixelRGBA8</span> _ _ b _) <span class="ot">=</span> b</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    walkableBit <span class="ot">=</span> <span class="dv">7</span></span></code></pre></div>
 <p>Currying this function against our image mask gives us a plain ol’ function which we can use to query walk-space.</p>
 <p>In a 3D game, you’d use an actual mesh to mark the walkable regions, rather than using this mask thing. For that purpose, from here on out we’ll call this thing a navmesh, even though it isn’t strictly an appropriate name in our case.</p>
-<p>Because pathfinding algorithms are defined in terms of graphs, the next step is to convert our navmesh into a graph. There are lots of clever ways to do this, but remember, we’re half-assing it. So instead we’re going to do something stupid and construct a square graph by sampling every <span class="math inline">\(n\)</span> pixels, and connecting it to its orthogonal neighbors if both the sample point and its neighbor are walkable.</p>
+<p>Because pathfinding algorithms are defined in terms of graphs, the next step is to convert our navmesh into a graph. There are lots of clever ways to do this, but remember, we’re half-assing it. So instead we’re going to do something stupid and construct a square graph by sampling every <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> pixels, and connecting it to its orthogonal neighbors if both the sample point and its neighbor are walkable.</p>
 <p>It looks like this:</p>
 <figure>
-<img src="/images/graph.gif" alt="" /><figcaption>graph building</figcaption>
+<img src="/images/graph.gif" alt="graph building" /><figcaption aria-hidden="true">graph building</figcaption>
 </figure>
-<p>Given the navmesh, we sample every <span class="math inline">\(n\)</span> points, and determine whether or not to put a graph vertex there (white squares are vertices, the black squares are just places we sampled.) Then, we put an edge between every neighboring vertex (the white lines.)</p>
+<p>Given the navmesh, we sample every <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> points, and determine whether or not to put a graph vertex there (white squares are vertices, the black squares are just places we sampled.) Then, we put an edge between every neighboring vertex (the white lines.)</p>
 <p>We’re going to want to run <a href="https://en.wikipedia.org/wiki/A*_search_algorithm">A*</a> over this graph eventually, which is implemented in Haskell via <a href="https://hackage.haskell.org/package/astar-0.3.0.0/docs/Data-Graph-AStar.html#v:aStar"><code>Data.Graph.AStar.aStar</code></a>. This package uses an implicit representation of this graph rather than taking in a graph data structure, so we’ll construct our graph in a manner suitable for <code>aStar</code>.</p>
 <p>But first, let’s write some helper functions to ensure we don’t get confused about whether we’re in world space or navigation space.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="co">-- | Sample every n pixels in on the navmesh.</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ot">sampleRate ::</span> <span class="dt">Float</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>sampleRate <span class="ot">=</span> <span class="dv">4</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="co">-- | Newtype to differentiate nav node coordinates from world coordinates.</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Nav</span> <span class="ot">=</span> <span class="dt">Nav</span> {<span class="ot"> unNav ::</span> <span class="dt">Int</span> }</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Num</span>, <span class="dt">Integral</span>, <span class="dt">Real</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="ot">toNav ::</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>toNav <span class="ot">=</span> <span class="fu">fmap</span> <span class="fu">round</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>      <span class="op">.</span> <span class="fu">fmap</span> (<span class="op">/</span> sampleRate)</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="ot">fromNav ::</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>fromNav <span class="ot">=</span> <span class="fu">fmap</span> (<span class="op">*</span> sampleRate)</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>        <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">fromIntegral</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Sample every n pixels in on the navmesh.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ot">sampleRate ::</span> <span class="dt">Float</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sampleRate <span class="ot">=</span> <span class="dv">4</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Newtype to differentiate nav node coordinates from world coordinates.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Nav</span> <span class="ot">=</span> <span class="dt">Nav</span> {<span class="ot"> unNav ::</span> <span class="dt">Int</span> }</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Num</span>, <span class="dt">Integral</span>, <span class="dt">Real</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ot">toNav ::</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>toNav <span class="ot">=</span> <span class="fu">fmap</span> <span class="fu">round</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span> <span class="fu">fmap</span> (<span class="op">/</span> sampleRate)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="ot">fromNav ::</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>fromNav <span class="ot">=</span> <span class="fu">fmap</span> (<span class="op">*</span> sampleRate)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">fromIntegral</span></span></code></pre></div>
 <p><code>toNav</code> and <code>fromNav</code> are roughly inverses of one another – good enough for half-assing it at least. We’ll do all of our graph traversal stuff in nav-space, and use world-space only at the boundaries.</p>
 <p>We start with some helper functions:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">navBounds ::</span> <span class="dt">Image</span> a <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>navBounds <span class="ot">=</span> <span class="fu">subtract</span> <span class="dv">1</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>          <span class="op">.</span> toNav</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>          <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">fromIntegral</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>          <span class="op">.</span> imageSize</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">navBounds ::</span> <span class="dt">Image</span> a <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>navBounds <span class="ot">=</span> <span class="fu">subtract</span> <span class="dv">1</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>          <span class="op">.</span> toNav</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>          <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">fromIntegral</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>          <span class="op">.</span> imageSize</span></code></pre></div>
 <p><code>navBound</code> gives us the largest valid navigation point from an image – this will be useful later when we want to build a graph and <em>don’t</em> want to sample points that are not on it.</p>
 <p>The next step is our <code>neighbors</code> function, which should compute the edges for a given node on the navigation step.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">neighbors ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">HashSet</span> (<span class="dt">V2</span> <span class="dt">Nav</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>neighbors img v2 <span class="ot">=</span> HS.fromList <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="kw">let</span> canWalkOn&#39; <span class="ot">=</span> canWalkOn img</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>                 <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">floor</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>                 <span class="op">.</span> <span class="fu">fmap</span> fromNav</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>  <span class="dt">V2</span> x y <span class="ot">&lt;-</span> <span class="fu">fmap</span> (v2 <span class="op">&amp;</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>            [ _x <span class="op">-~</span> <span class="dv">1</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>            , _x <span class="op">+~</span> <span class="dv">1</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>            , _y <span class="op">-~</span> <span class="dv">1</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>            , _y <span class="op">+~</span> <span class="dv">1</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>            ]</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>  guard <span class="op">$</span> canWalkOn&#39; v2</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>  guard <span class="op">$</span> x <span class="op">&gt;=</span> <span class="dv">0</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>  guard <span class="op">$</span> x <span class="op">&lt;=</span> w</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>  guard <span class="op">$</span> y <span class="op">&gt;=</span> <span class="dv">0</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>  guard <span class="op">$</span> y <span class="op">&lt;=</span> h</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a>  guard <span class="op">.</span> canWalkOn&#39; <span class="op">$</span> <span class="dt">V2</span> x y</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="dt">V2</span> x y</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">neighbors ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">HashSet</span> (<span class="dt">V2</span> <span class="dt">Nav</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>neighbors img v2 <span class="ot">=</span> HS.fromList <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> canWalkOn&#39; <span class="ot">=</span> canWalkOn img</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                 <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">floor</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                 <span class="op">.</span> <span class="fu">fmap</span> fromNav</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">V2</span> x y <span class="ot">&lt;-</span> <span class="fu">fmap</span> (v2 <span class="op">&amp;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            [ _x <span class="op">-~</span> <span class="dv">1</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            , _x <span class="op">+~</span> <span class="dv">1</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>            , _y <span class="op">-~</span> <span class="dv">1</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            , _y <span class="op">+~</span> <span class="dv">1</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">$</span> canWalkOn&#39; v2</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">$</span> x <span class="op">&gt;=</span> <span class="dv">0</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">$</span> x <span class="op">&lt;=</span> w</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">$</span> y <span class="op">&gt;=</span> <span class="dv">0</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">$</span> y <span class="op">&lt;=</span> h</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">.</span> canWalkOn&#39; <span class="op">$</span> <span class="dt">V2</span> x y</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="dt">V2</span> x y</span></code></pre></div>
 <p>We use the list monad here to construct all of the possible neighbors – those which are left, right, above and below our current location, respectively. We then guard on each, ensure our current nav point is walkable, that our candidate neighbor is within nav bounds, and finally that the candidate itself is walkable. We need to do this walkable check last, since everything will explode if we try to sample a pixel that is not in the image.</p>
 <p>Aside: if you actually have a mesh (or correspondingly a polygon in 2D), you can bypass all of this sampling nonsense by tessellating the mesh into triangles, and using the results as your graph. In my case I didn’t have a polygon, and I didn’t want to write a tessellating algorithm, so I went with this route instead.</p>
 <p>Finally we need a distance function, which we will use both for our astar heuristic as well as our actual distance. The actual distance metric we use doesn’t matter, so long as it corresponds monotonically with the actual distance. We’ll use distance squared, because it has this monotonic property we want, and saves us from having to pay the cost of computing square roots.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">distSqr ::</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">Float</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>distSqr x y <span class="ot">=</span> qd (<span class="fu">fmap</span> <span class="fu">fromIntegral</span> x) (<span class="fu">fmap</span> <span class="fu">fromIntegral</span> y)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">distSqr ::</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Nav</span> <span class="ot">-&gt;</span> <span class="dt">Float</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>distSqr x y <span class="ot">=</span> qd (<span class="fu">fmap</span> <span class="fu">fromIntegral</span> x) (<span class="fu">fmap</span> <span class="fu">fromIntegral</span> y)</span></code></pre></div>
 <p>And with that, we’re all set! We can implement our pathfinding by filling in all of the parameters to <code>aStar</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="ot">pathfind ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">V2</span> <span class="dt">Float</span>]</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>pathfind img <span class="ot">=</span> \src dst <span class="ot">-&gt;</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    <span class="fu">fmap</span> fromNav <span class="op">&lt;$&gt;</span> aStar neighbors distSqr (distSqr navDst) navSrc</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    navSrc <span class="ot">=</span> toNav src</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>    navDst <span class="ot">=</span> toNav dst</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">pathfind ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">V2</span> <span class="dt">Float</span>]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>pathfind img <span class="ot">=</span> \src dst <span class="ot">-&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fmap</span> fromNav <span class="op">&lt;$&gt;</span> aStar neighbors distSqr (distSqr navDst) navSrc</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    navSrc <span class="ot">=</span> toNav src</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    navDst <span class="ot">=</span> toNav dst</span></code></pre></div>
 <p>Sweet. We can run it, and we’ll get a path that looks like this:</p>
 <p>Technically correct, in that it does in fact get from our source location to our destination. But it’s obviously half-assed. This isn’t the path that a living entity would take; as a general principle we try not to move in rectangles if we can help it.</p>
 <p>We can improve on this path by attempting to shorten it. In general this is a hard problem, but we can solve that by giving it the old college try.</p>
 <p>Our algorithm to attempt to shorten will be a classic <a href="https://en.wikipedia.org/wiki/Divide_and_conquer_algorithm">divide and conquer</a> approach – pick the two endpoints of your current path, and see if there is a straight line between the two that is walkable throughout its length. If so, replace the path with the line you just constructed. If not, subdivide your path in two, and attempt to shorten each half of it.</p>
 <p>Before we actually get into the nuts and bolts of it, here’s a quick animation of how it works. The yellow circles are the current endpoints of the path being considered, and the yellow lines are the potential shortened routes. Whenever we can construct a yellow line that doesn’t leave the walkable region, we replace the path between the yellow circles with the line.</p>
 <figure>
-<img src="/images/shorten.gif" alt="" /><figcaption>path shortening</figcaption>
+<img src="/images/shorten.gif" alt="path shortening" /><figcaption aria-hidden="true">path shortening</figcaption>
 </figure>
 <p>The “divide and conquer” bit of our algorithm is easy to write. We turn our path list into a <code>Vector</code> so we can randomly access it, and then call out to a helper function <code>sweepWalkable</code> to do the nitty gritty stuff. We append the <code>src</code> and <code>dst</code> to the extrema of the constructed vector because <code>aStar</code> won’t return our starting point in its found path, and because we quantized the <code>dst</code> when we did the pathfinding, so the last node on the path is the closest navpoint, rather than being where we asked the character to move to.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">shorten ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> [<span class="dt">V2</span> <span class="dt">Float</span>] <span class="ot">-&gt;</span> [<span class="dt">V2</span> <span class="dt">Float</span>]</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>shorten img src dst path <span class="ot">=</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    <span class="kw">let</span> v <span class="ot">=</span> V.fromList <span class="op">$</span> (src <span class="op">:</span> path) <span class="op">++</span> [dst]</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>     <span class="kw">in</span> go <span class="dv">0</span> (V.length v <span class="op">-</span> <span class="dv">1</span>) v</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>    go l u v <span class="ot">=</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>      <span class="kw">if</span> sweepWalkable img (v <span class="op">V.!</span> l) (v <span class="op">V.!</span> u)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>         <span class="kw">then</span> [v <span class="op">V.!</span> u]</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>         <span class="kw">else</span> <span class="kw">let</span> mid <span class="ot">=</span> ((u <span class="op">-</span> l) <span class="ot">`div`</span> <span class="dv">2</span>) <span class="op">+</span> l</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>               <span class="kw">in</span> go l mid v <span class="op">++</span> go mid u v</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">shorten ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> [<span class="dt">V2</span> <span class="dt">Float</span>] <span class="ot">-&gt;</span> [<span class="dt">V2</span> <span class="dt">Float</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>shorten img src dst path <span class="ot">=</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> v <span class="ot">=</span> V.fromList <span class="op">$</span> (src <span class="op">:</span> path) <span class="op">++</span> [dst]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>     <span class="kw">in</span> go <span class="dv">0</span> (V.length v <span class="op">-</span> <span class="dv">1</span>) v</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    go l u v <span class="ot">=</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> sweepWalkable img (v <span class="op">V.!</span> l) (v <span class="op">V.!</span> u)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>         <span class="kw">then</span> [v <span class="op">V.!</span> u]</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> <span class="kw">let</span> mid <span class="ot">=</span> ((u <span class="op">-</span> l) <span class="ot">`div`</span> <span class="dv">2</span>) <span class="op">+</span> l</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>               <span class="kw">in</span> go l mid v <span class="op">++</span> go mid u v</span></code></pre></div>
 <p>The final step, then, is to figure out what this <code>sweepWalkable</code> thing is. Obviously it wants to construct a potential line between its endpoints, but we don’t want to have to sample every damn pixel. Remember, we’re half-assing it. Instead, we can construct a line, but actually only sample the nav points that are closest to it.</p>
 <p>In effect this is “rasterizing” our line from its vector representation into its pixel representation.</p>
 <p>Using the Pythagorean theorem in navigation space will give us the “length” of our line in navigation space, which corresponds to the number of navpoints we’ll need to sample.</p>
 <p>For example, if our line looks like this:</p>
 <figure>
-<img src="/images/pythagorus.png" alt="" /><figcaption>pythagorean theorem</figcaption>
+<img src="/images/pythagorus.png" alt="pythagorean theorem" /><figcaption aria-hidden="true">pythagorean theorem</figcaption>
 </figure>
-<p>Then the number <span class="math inline">\(n\)</span> of nav points we need to sample is:</p>
-<p><span class="math display">\[
+<p>Then the number <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> of nav points we need to sample is:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mi>n</mi></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">⌊</mo><msqrt><mrow><msup><mn>4</mn><mn>2</mn></msup><mo>+</mo><msup><mn>5</mn><mn>2</mn></msup></mrow></msqrt><mo stretchy="false">⌋</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow></mrow></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">⌊</mo><msqrt><mrow><mn>16</mn><mo>+</mo><mn>25</mn></mrow></msqrt><mo stretchy="false">⌋</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow></mrow></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">⌊</mo><msqrt><mn>41</mn></msqrt><mo stretchy="false">⌋</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow></mrow></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">⌊</mo><mn>6.4</mn><mo stretchy="false">⌋</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow></mrow></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mn>6</mn></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{align*}
   n &amp;= \lfloor \sqrt{4^2 + 5^2} \rfloor \\
     &amp;= \lfloor \sqrt{16 + 25} \rfloor \\
@@ -177,63 +166,84 @@
     &amp;= \lfloor 6.4 \rfloor \\
     &amp;= 6
 \end{align*}
-\]</span></p>
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:7.9128em;vertical-align:-3.7064em;"></span><span class="mord"><span class="mtable"><span class="col-align-r"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:4.2064em;"><span style="top:-6.2064em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"><span class="mord mathnormal">n</span></span></span><span style="top:-4.632em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"></span></span><span style="top:-3.0159em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"></span></span><span style="top:-1.5159em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"></span></span><span style="top:-0.0159em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:3.7064em;"><span></span></span></span></span></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:4.2064em;"><span style="top:-6.2064em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⌊</span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0623em;"><span class="svg-align" style="top:-3.2em;"><span class="pstrut" style="height:3.2em;"></span><span class="mord" style="padding-left:1em;"><span class="mord"><span class="mord">4</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7401em;"><span style="top:-2.989em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord">5</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7401em;"><span style="top:-2.989em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span><span style="top:-3.0223em;"><span class="pstrut" style="height:3.2em;"></span><span class="hide-tail" style="min-width:1.02em;height:1.28em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.28em" viewBox="0 0 400000 1296" preserveAspectRatio="xMinYMin slice"><path d="M263,681c0.7,0,18,39.7,52,119
+c34,79.3,68.167,158.7,102.5,238c34.3,79.3,51.8,119.3,52.5,120
+c340,-704.7,510.7,-1060.3,512,-1067
+l0 -0
+c4.7,-7.3,11,-11,19,-11
+H40000v40H1012.3
+s-271.3,567,-271.3,567c-38.7,80.7,-84,175,-136,283c-52,108,-89.167,185.3,-111.5,232
+c-22.3,46.7,-33.8,70.3,-34.5,71c-4.7,4.7,-12.3,7,-23,7s-12,-1,-12,-1
+s-109,-253,-109,-253c-72.7,-168,-109.3,-252,-110,-252c-10.7,8,-22,16.7,-34,26
+c-22,17.3,-33.3,26,-34,26s-26,-26,-26,-26s76,-59,76,-59s76,-60,76,-60z
+M1001 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1777em;"><span></span></span></span></span></span><span class="mclose">⌋</span></span></span><span style="top:-4.632em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⌊</span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9144em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord">16</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">25</span></span></span><span style="top:-2.8744em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1256em;"><span></span></span></span></span></span><span class="mclose">⌋</span></span></span><span style="top:-3.0159em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⌊</span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9561em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord">41</span></span></span><span style="top:-2.9161em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.0839em;"><span></span></span></span></span></span><span class="mclose">⌋</span></span></span><span style="top:-1.5159em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⌊</span><span class="mord">6.4</span><span class="mclose">⌋</span></span></span><span style="top:-0.0159em;"><span class="pstrut" style="height:3.0623em;"></span><span class="mord"><span class="mord"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">6</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:3.7064em;"><span></span></span></span></span></span></span></span></span></span></span></span></p>
 <p>We can then subdivide our line into 6 segments, and find the point on the grid that is closest to the end of each. These points correspond with the nodes that need to be walkable individually in order for our line itself to be walkable. This approach will fail for tiny strands of unwalkable terrain that slices through otherwise walkable regions, but maybe just don’t do that? Remember, all we want is for it to be good enough – half-assing it and all.</p>
 <figure>
-<img src="/images/raster.gif" alt="" /><figcaption>rasterizing</figcaption>
+<img src="/images/raster.gif" alt="rasterizing" /><figcaption aria-hidden="true">rasterizing</figcaption>
 </figure>
 <p>So, how do we do it?</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">sweepWalkable ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>sweepWalkable img src dst <span class="ot">=</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  <span class="kw">let</span> dir   <span class="ot">=</span> normalize <span class="op">$</span> dst <span class="op">-</span> src</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>      distInNavUnits <span class="ot">=</span> <span class="fu">round</span> <span class="op">$</span> distance src dst</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>      bounds <span class="ot">=</span> navBounds img</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>    <span class="kw">in</span> getAll <span class="op">.</span> <span class="fu">flip</span> <span class="fu">foldMap</span> [<span class="dv">0</span> <span class="op">..</span> distInNavUnits] <span class="op">$</span> \n <span class="ot">-&gt;</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>        <span class="kw">let</span> me <span class="ot">=</span> src <span class="op">+</span> dir <span class="op">^*</span> (<span class="fu">fromIntegral</span> <span class="op">@</span><span class="dt">Int</span> n)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>          <span class="kw">in</span> <span class="dt">All</span> <span class="op">.</span> canWalkOn&#39; img</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>                 <span class="op">.</span> clamp (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">0</span>) bounds</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>                 <span class="op">$</span> toNav me</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">sweepWalkable ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>sweepWalkable img src dst <span class="ot">=</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> dir   <span class="ot">=</span> normalize <span class="op">$</span> dst <span class="op">-</span> src</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      distInNavUnits <span class="ot">=</span> <span class="fu">round</span> <span class="op">$</span> distance src dst</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      bounds <span class="ot">=</span> navBounds img</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">in</span> getAll <span class="op">.</span> <span class="fu">flip</span> <span class="fu">foldMap</span> [<span class="dv">0</span> <span class="op">..</span> distInNavUnits] <span class="op">$</span> \n <span class="ot">-&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> me <span class="ot">=</span> src <span class="op">+</span> dir <span class="op">^*</span> (<span class="fu">fromIntegral</span> <span class="op">@</span><span class="dt">Int</span> n)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>          <span class="kw">in</span> <span class="dt">All</span> <span class="op">.</span> canWalkOn&#39; img</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                 <span class="op">.</span> clamp (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">0</span>) bounds</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                 <span class="op">$</span> toNav me</span></code></pre></div>
 <p>Sweet! Works great! Our final pathfinding function is thus:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">navigate ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">V2</span> <span class="dt">Float</span>]</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>navigate img src dst <span class="ot">=</span> <span class="fu">fmap</span> (shorten img src dst) <span class="op">$</span> pathfind src dst</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">navigate ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">V2</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">V2</span> <span class="dt">Float</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>navigate img src dst <span class="ot">=</span> <span class="fu">fmap</span> (shorten img src dst) <span class="op">$</span> pathfind src dst</span></code></pre></div>
 <p>Golden, baby.</p>
 <p>Next time we’ll talk about embedding a scripting language into our game so we don’t need to wait an eternity for GHC to recompile everything whenever we want to change a line of dialog. Until then!</p>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/action-menus">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/higher-kinded-data">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -244,23 +254,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

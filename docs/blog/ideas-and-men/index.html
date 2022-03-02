@@ -1,129 +1,118 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Of Ideas and Men :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/ideas-and-men">Of Ideas and Men</a></h1>
+  <h1><a href="/blog/ideas-and-men/index.html#">Of Ideas and Men</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/love-types">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/elm-is-wrong">&rarr;</a>
-    </span>
-    <time>July  7, 2015</time>
+    <time>2015-07-07</time>
 
     <span class="tags">
-        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/technical.html">technical</a>
+        
     </span>
 </p>
 <div class="content">
-    <h2 id="i">I</h2>
+    <h2 id="i"><a href="#i" class="header-link">I<span class="header-link-emoji">🔗</span></a></h2>
 <p>You know when you’re writing imperative code, and you start swearing because you just realized you need a variable that you haven’t had in scope for like ten frames on the call-stack? We’ve all been there, and we’ve all come up with some expressions worthy of a sailor.</p>
 <p>Let’s say maybe you’re writing the drawing code for a game, and have lots of methods like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="dt">void</span> Scene::draw(RenderTarget&amp; target) <span class="at">const</span> {</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="cf">for</span> (Drawable &amp;child : <span class="va">children_</span>) {</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>        child.draw(target);</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    }</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>}</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="dt">void</span> Character::draw(RenderTarget&amp; target) <span class="at">const</span> {</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    <span class="va">head_</span>.draw(target);</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    <span class="va">torso_</span>.draw(target);</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    <span class="va">feet_</span>.draw(target);</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    <span class="va">fancyParticleSystem_</span>.draw(target);</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> Scene<span class="op">::</span>draw<span class="op">(</span>RenderTarget<span class="op">&amp;</span> target<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>Drawable <span class="op">&amp;</span>child <span class="op">:</span> <span class="va">children_</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        child<span class="op">.</span>draw<span class="op">(</span>target<span class="op">);</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> Character<span class="op">::</span>draw<span class="op">(</span>RenderTarget<span class="op">&amp;</span> target<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">head_</span><span class="op">.</span>draw<span class="op">(</span>target<span class="op">);</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">torso_</span><span class="op">.</span>draw<span class="op">(</span>target<span class="op">);</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">feet_</span><span class="op">.</span>draw<span class="op">(</span>target<span class="op">);</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">fancyParticleSystem_</span><span class="op">.</span>draw<span class="op">(</span>target<span class="op">);</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>And everything is going fine and dandy, until you realize that your fancy particle system needs the time elapsed since the last frame in order to do fancy particle things.</p>
 <p>I’m speaking from experience, here. This exact situation has happened to me, at least twice; you’d think I’d learn.</p>
 <p>You stop for a second to think about how you’re going to fix this. Continuing to curse isn’t going to help anything, so otherwise you have two options going forwards: you can either change every call-site of <code>draw</code> to ensure that you can get the elapsed time to the particle system, or you can phone it in and make the damn thing global.</p>
 <p>You feel drawn towards the making-it-global solution, but you’d feel bad about it the next day, and besides, we both know it wouldn’t pass code review. With a sigh, you resign yourself to updating the method signature:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="dt">void</span> Drawable::draw(RenderTarget&amp; target, <span class="dt">float</span> delta) <span class="at">const</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> Drawable<span class="op">::</span>draw<span class="op">(</span>RenderTarget<span class="op">&amp;</span> target<span class="op">,</span> <span class="dt">float</span> delta<span class="op">)</span> <span class="at">const</span><span class="op">;</span></span></code></pre></div>
 <p>In our small example here, there are <em>seven</em> lines you need to change in order to make it happen. Just imagine how much refactoring would be necessary in a <em>real</em> codebase!</p>
 <p>Two hours later, you realize you need another parameter. You go through everything again, plumbing it through. It’s tedious, and you can’t help but feel like maybe there’s a better way of doing this.</p>
 <!--more-->
 <hr />
 <p>Or perhaps you’re writing some Javascript, and the seemingly innocuous line</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">var</span> cash <span class="op">=</span> bank<span class="op">.</span><span class="at">currentUser</span><span class="op">.</span><span class="at">account</span><span class="op">.</span><span class="fu">getValue</span>()<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> cash <span class="op">=</span> bank<span class="op">.</span><span class="at">currentUser</span><span class="op">.</span><span class="at">account</span><span class="op">.</span><span class="fu">getValue</span>()<span class="op">;</span></span></code></pre></div>
 <p>crashes in a firey wreck with the demonstrably-evil error <strong>undefined is not a function</strong>. Apparently <em>one</em> of those properties doesn’t exist, but you’re not sure which. Because you are a seasoned veteran, you know what the fix is; you need to make sure that each of those properties exists before indexing into it. With celerity (and some indignation that the API guys don’t seem to be able to do their job properly), you hammer out the solution:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">var</span> cash<span class="op">;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="cf">if</span> (bank <span class="op">&amp;&amp;</span> bank<span class="op">.</span><span class="at">currentUser</span> <span class="op">&amp;&amp;</span> bank<span class="op">.</span><span class="at">currentUser</span><span class="op">.</span><span class="at">account</span>) {</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    cash <span class="op">=</span> bank<span class="op">.</span><span class="at">currentUser</span><span class="op">.</span><span class="at">account</span><span class="op">.</span><span class="fu">getValue</span>()<span class="op">;</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>} <span class="cf">else</span> {</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> cash<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (bank <span class="op">&amp;&amp;</span> bank<span class="op">.</span><span class="at">currentUser</span> <span class="op">&amp;&amp;</span> bank<span class="op">.</span><span class="at">currentUser</span><span class="op">.</span><span class="at">account</span>) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    cash <span class="op">=</span> bank<span class="op">.</span><span class="at">currentUser</span><span class="op">.</span><span class="at">account</span><span class="op">.</span><span class="fu">getValue</span>()<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Great. You’ve gone from one line to five, but hey, at least it will work. So you hit F5 in your browser, and your heart sinks. Now the <em>call-site</em> is missing a null check, so you go to fix that too, this time carefully crawling upwards making sure nothing else will explode.</p>
 <p>You find yourself writing dozens of snippets along the lines of “check if it’s null, if it is, return null, otherwise do what you were doing anyway”. It’s not a fun experience, and somewhere deep down you feel like this should be the kind of problem the runtime should be able to solve for you; after all, it’s a purely mechanical change requiring no thought whatsoever.</p>
 <p>Isn’t that the kind of thing computers are <em>really good at</em>?</p>
 <hr />
 <p>Maybe instead of being a hip Javascript developer, you’re a crusty, suit-wearing and fun-hating programmer who works for a bank. The Man has gotten on your case because sometimes the code that is supposed to transfer money from one bank account to another crashes half way through, and one account ends up not being credited. The bank is losing money, and it’s your ass on the line.</p>
 <p>After some inspired grepping, you track down the offending function:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="dt">void</span> transfer(<span class="dt">int</span> amount, <span class="dt">int</span> src, <span class="dt">int</span> dst) {</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    getAccount(dst).addFunds(amount);</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    getAccount(src).addFunds(-amount);</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> transfer<span class="op">(</span><span class="dt">int</span> amount<span class="op">,</span> <span class="dt">int</span> src<span class="op">,</span> <span class="dt">int</span> dst<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    getAccount<span class="op">(</span>dst<span class="op">).</span>addFunds<span class="op">(</span>amount<span class="op">);</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    getAccount<span class="op">(</span>src<span class="op">).</span>addFunds<span class="op">(-</span>amount<span class="op">);</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>The code itself was written years ago, and nobody has really looked at it since. Since you’re on a deadline (and a maintenance programmer at a bank), you don’t have the time or patience to familiarize yourself with every last detail. You decide to just throw everything into a transaction and be done with it.</p>
 <p>Unfortunately, your code-base is in C++<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, which means you don’t <em>have</em> any transaction primitives. You slap together some <a href="https://en.wikipedia.org/wiki/Resource_Acquisition_Is_Initialization">RAII</a> voodoo that will reset a variable back to its old value unless the <code>commit</code> method is called on it before the end of scope. It’s a good enough solution, and you’re happy with it.</p>
 <p>And then you go to actually use your new voodoo scope guard, and realize that it’s going to take a lot of refactoring to get it to do what you want. You need to add two lines for every variable that could change. It’s going to be a maintenance nightmare, but hey, that’s what the other guys are for.</p>
 <p>Your code ends up looking like this:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="dt">void</span> transfer(<span class="dt">int</span> amount, <span class="dt">int</span> src, <span class="dt">int</span> dst) {</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>    Account &amp;debit = getAccount(src);</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    Account &amp;credit = getAccount(dst);</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    {</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>        Transaction _debit(debit, &amp;debit);</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>        Transaction _credit(credit, &amp;credit);</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>        credit.addFunds(amount);</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>        debit.addFunds(-amount);</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>        _debit.commit();</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>        _credit.commit();</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>    }</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> transfer<span class="op">(</span><span class="dt">int</span> amount<span class="op">,</span> <span class="dt">int</span> src<span class="op">,</span> <span class="dt">int</span> dst<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    Account <span class="op">&amp;</span>debit <span class="op">=</span> getAccount<span class="op">(</span>src<span class="op">);</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    Account <span class="op">&amp;</span>credit <span class="op">=</span> getAccount<span class="op">(</span>dst<span class="op">);</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        Transaction _debit<span class="op">(</span>debit<span class="op">,</span> <span class="op">&amp;</span>debit<span class="op">);</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        Transaction _credit<span class="op">(</span>credit<span class="op">,</span> <span class="op">&amp;</span>credit<span class="op">);</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        credit<span class="op">.</span>addFunds<span class="op">(</span>amount<span class="op">);</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        debit<span class="op">.</span>addFunds<span class="op">(-</span>amount<span class="op">);</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        _debit<span class="op">.</span>commit<span class="op">();</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        _credit<span class="op">.</span>commit<span class="op">();</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>The two lines of actual code have ballooned into eight, and six of them do nothing but book-keeping for the logic you actually want. That’s a lot of boilerplate that had to be written, and it’s going to be hard to maintain if anyone ever wants to expand the function.</p>
 <p>Despite being a dull corporate drone, you can’t help but wonder, since the compiler is keeping track of which variables are changing anyway, why it can’t also automatically generate these scope guards for you?</p>
 <hr />
 <p>Are you noticing a trend yet? There’s a common theme to these examples: you find yourself writing lots of boilerplate that is mindless and seems like the compiler should be able to do for you. In every case it’s a solved problem – there’s some particular functionality you’re trying to plug in that <em>doesn’t really depend on the existing code</em> (accessing the environment, doing error handling, performing transactions).</p>
 <p>Like, in principle you could write code that would make these changes for you, but where would you put it? The language doesn’t support it, and everyone is going to hate you if you go mucking with the build system trying to inject it yourself. For all intents and purposes, you seem to be SOL.</p>
 <p>And so you find yourself in a pickle. Here you are, a programmer – someone who gets <em>paid</em> to automate tedious things – and you can’t figure out a means of automating the most tedious part of your day-to-day programming. There is something <em>very</em> wrong here.</p>
-<h2 id="ii">II</h2>
+<h2 id="ii"><a href="#ii" class="header-link">II<span class="header-link-emoji">🔗</span></a></h2>
 <p>It’s probably not going to surprise you when I say that there is an abstraction that fixes all of these issues for us. Sadly, it’s widely misunderstood and mostly feared by any who are (un)lucky enough to hear its name spoken aloud.</p>
 <p>If you’ve <a href="/blog/love-types">been paying attention</a>, you might have noticed I’ve been talking about Haskell lately, and you’ve probably guessed what abstraction I’m alluding to.</p>
 <p>That’s right.</p>
@@ -134,68 +123,68 @@
 <p><strong>Monads are reusable, modular pieces which provide invisible plumbing for you.</strong> After a monad has been written once, it can be used as library-code to provide drop-in support for idioms.</p>
 <p>Need error handling? There’s a monad for that. Non-determinism? There’s a monad for that too! Don’t want to write your own undo/redo system? You guessed it – there’s a monad for that.</p>
 <p><a href="https://wiki.haskell.org/Monad#Interesting_monads">I could keep going</a> for a while, but I’m sure you get the picture.</p>
-<h2 id="iii">III</h2>
+<h2 id="iii"><a href="#iii" class="header-link">III<span class="header-link-emoji">🔗</span></a></h2>
 <p>Let’s go through an example, shall we? The <code>Maybe</code> monad has traditionally been the “hello world” of monads, so we’ll start there, because who am I to break tradition? The <code>Maybe</code> monad provides drop-in support for <code>null</code> checks and propagation (ie. error handling). Consider the following Haskell function, which performs division:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">divide ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>divide x y <span class="ot">=</span> x <span class="ot">`div`</span> y</span></code></pre></div>
-<p>In the unfortunate case of <span class="math inline">\(y = 0\)</span>, this seemingly innocuous function will crash your Haskell program with a <strong>Exception: divide by zero</strong>. That’s to be expected, but it would be nice if the whole thing wouldn’t explode. Let’s change our function to be a little safer:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">safeDivide ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>safeDivide _ <span class="dv">0</span> <span class="ot">=</span> <span class="dt">Nothing</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>safeDivide x y <span class="ot">=</span> <span class="dt">Just</span> (x <span class="ot">`div`</span> y)</span></code></pre></div>
-<p><em>Aside:</em> You’ll notice we have two definitions for <code>safeDivide</code>, here. The first one is specialized (think template specialization in C++) for the case of <span class="math inline">\(y = 0\)</span>, and the second is the general case. In Haskell, this is known as <em>pattern matching</em>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">divide ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>divide x y <span class="ot">=</span> x <span class="ot">`div`</span> y</span></code></pre></div>
+<p>In the unfortunate case of <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">y = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>,</span> this seemingly innocuous function will crash your Haskell program with a <strong>Exception: divide by zero</strong>. That’s to be expected, but it would be nice if the whole thing wouldn’t explode. Let’s change our function to be a little safer:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">safeDivide ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>safeDivide _ <span class="dv">0</span> <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>safeDivide x y <span class="ot">=</span> <span class="dt">Just</span> (x <span class="ot">`div`</span> y)</span></code></pre></div>
+<p><em>Aside:</em> You’ll notice we have two definitions for <code>safeDivide</code>, here. The first one is specialized (think template specialization in C++) for the case of <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">y = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>,</span> and the second is the general case. In Haskell, this is known as <em>pattern matching</em>.</p>
 <p>Anyway, the most salient change here is the new return type: <code>Maybe Int</code>. Though it’s not technically true, we can think of this type as meaning “we have a computation of type <code>Int</code> that we want to use in the <code>Maybe</code> monad”. In general, we will use <code>(Monad m) =&gt; m a</code> to describe a computation of an <code>a</code> with associated monadic functionality <code>m</code>.</p>
 <p>And so if the return type of <code>safeDivide</code> is <code>Maybe Int</code>, it logically follows that <code>Maybe Int</code> must be a type, which implies it has values. But what are these values? They can’t be integers (1, 5, -64), since those are of type <code>Int</code>, and remember, Haskell is <em>very picky</em> about its types.</p>
 <p>Instead, values of <code>Maybe Int</code> are either something (<code>Just 1</code>, <code>Just 5</code>, <code>Just -64</code>), or <code>Nothing</code>. You can think of <code>Nothing</code> as being essentially a <code>null</code>, except that it is not a <a href="https://en.wikipedia.org/wiki/Bottom_type">bottom value</a> (it <em>only</em> exists in the context of <code>Maybe a</code>; it can’t be assigned to arbitrary reference-types).</p>
-<p>Our <code>safeDivide</code> function can now be understood thusly: if <span class="math inline">\(y = 0\)</span>, the result of our division is <code>Nothing</code> (a failed computation), otherwise the result is <code>Just z</code>, where <span class="math inline">\(z = x \div y\)</span>. Remember, the <code>Just</code> bit is there to specify we have a value of type <code>Maybe Int</code> (which can be <code>Nothing</code>), and not an <code>Int</code> (which can’t).</p>
-<p>Another way to think of this is that we’ve transformed <code>divide</code> which isn’t a total function (it’s undefined for <span class="math inline">\(y=0\)</span>), into a total function (defined everywhere).</p>
+<p>Our <code>safeDivide</code> function can now be understood thusly: if <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">y = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>,</span> the result of our division is <code>Nothing</code> (a failed computation), otherwise the result is <code>Just z</code>, where <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>z</mi><mo>=</mo><mi>x</mi><mo>÷</mo><mi>y</mi></mrow><annotation encoding="application/x-tex">z = x \div y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">÷</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>.</span> Remember, the <code>Just</code> bit is there to specify we have a value of type <code>Maybe Int</code> (which can be <code>Nothing</code>), and not an <code>Int</code> (which can’t).</p>
+<p>Another way to think of this is that we’ve transformed <code>divide</code> which isn’t a total function (it’s undefined for <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">y=0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>),</span> into a total function (defined everywhere).</p>
 <p>At first it doesn’t seem like we’ve really gained much, besides annotating that our <code>safeDivide</code> function can fail. But let’s see what happens when we use our new function:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">divPlusFive ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>divPlusFive x y <span class="ot">=</span> <span class="kw">do</span> divided <span class="ot">&lt;-</span> safeDivide x y</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>                     <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">divPlusFive ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>divPlusFive x y <span class="ot">=</span> <span class="kw">do</span> divided <span class="ot">&lt;-</span> safeDivide x y</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>)</span></code></pre></div>
 <p>If you squint and look at <code>&lt;-</code> as an <code>=</code>, this looks a lot like imperative code. We first compute the result of <code>safeDivide x y</code>, and then “return”<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> that plus five. There is seemingly nothing of interest here, until you look at the type of <code>divePlusFive</code>: it <em>also</em> returns a <code>Maybe Int</code>, but we didn’t have to write any code to explicitly make that happen – it looks like we’re just dealing with <code>Int</code>s, since we can explicitly add an <code>Int</code> to it! But indeed, the result of <code>divPlusFive 5 0</code> is actually <code>Nothing</code>. What gives?</p>
 <p>Here’s the idea: when you’re working inside a <code>(Monad m) =&gt; m a</code>, the code <em>you</em> write deals only with the <code>a</code> bit, and Haskell silently transforms it into a monadic context (read: provides plumbing) for you. In the case of <code>Maybe a</code>, Haskell generates a dependency graph for every expression you write. If the result of any subexpression is <code>Nothing</code>, that will propagate downstream throughout the graph (and can explicitly be handled, if you want to provide sensible defaults, or something).</p>
 <p><code>divePlusFive 5 0</code> first computes <code>safeDivide 5 0</code>, which is <code>Nothing</code>, and since <code>divided + 5</code> depends on this, it too becomes <code>Nothing</code>. What we’ve done here is captured the semantics of</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">var</span> divided <span class="op">=</span> safeDivide(x<span class="op">,</span> y)<span class="op">;</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="cf">if</span> (divided <span class="op">==</span> <span class="kw">null</span>) <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a><span class="cf">return</span> divided <span class="op">+</span> <span class="dv">5</span><span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> divided <span class="op">=</span> <span class="fu">safeDivide</span>(x<span class="op">,</span> y)<span class="op">;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (divided <span class="op">==</span> <span class="kw">null</span>) <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> divided <span class="op">+</span> <span class="dv">5</span><span class="op">;</span></span></code></pre></div>
 <p>except that we don’t need to explicitly write that <code>null</code> check anywhere. The <code>Maybe</code> monad handles all of that plumbing for us (including upwards in the call-stack, if that too is in the <code>Maybe</code> monad)!</p>
 <p>And just like that, we never need to write another <code>null</code> check ever again.</p>
-<h2 id="iv">IV</h2>
+<h2 id="iv"><a href="#iv" class="header-link">IV<span class="header-link-emoji">🔗</span></a></h2>
 <p>The obvious question to be asked here is “how the hell did it do that?”, and that’s a fantastic question. I’m glad you asked. The secret is in that little <code>do</code> keyword, which looks like it drops you into imperative mode.</p>
 <p>But it doesn’t.</p>
 <p>The <code>do</code> block in Haskell is actually just syntactic sugar for an environment which transforms your implicit semicolons into a user-defined operator called <code>&gt;&gt;=</code> (pronounced “bind”). This transformation turns</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>divPlusFive x y <span class="ot">=</span> <span class="kw">do</span> divided <span class="ot">&lt;-</span> safeDivide x y</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>                     <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>divPlusFive x y <span class="ot">=</span> <span class="kw">do</span> divided <span class="ot">&lt;-</span> safeDivide x y</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>)</span></code></pre></div>
 <p>into</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>divPlusFive x y <span class="ot">=</span> (safeDivide x y) <span class="op">&gt;&gt;=</span> (\divided <span class="ot">-&gt;</span> <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>divPlusFive x y <span class="ot">=</span> (safeDivide x y) <span class="op">&gt;&gt;=</span> (\divided <span class="ot">-&gt;</span> <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>))</span></code></pre></div>
 <p>where <code>\x -&gt; y</code> is an anonymous function taking <code>x</code> and returning <code>y</code>. The magic, it would seem, is all in this <code>&gt;&gt;=</code> operator, but what <em>is</em> it? As usual, we will begin with looking at its type (specialized on the <code>Maybe</code> monad), and seeing what we can deduce from it.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="ot">(&gt;&gt;=) ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">(&gt;&gt;=) ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span></code></pre></div>
 <p>So, <code>&gt;&gt;=</code> takes two parameters, a <code>Maybe a</code> (type <code>a</code> wrapped in the <code>Maybe</code> monad), and a function <code>a -&gt; Maybe b</code>. From <a href="/blog/love-types">last time</a>, we know that since there are no constraints on <code>a</code>, we can’t construct one out of thin air, so <code>&gt;&gt;=</code> must be somehow feeding the <code>a</code> from <code>Maybe a</code> into this function.</p>
 <p>In effect, this is why we were able to pretend we were computing an <code>Int</code> in our function that was supposed to return a <code>Maybe Int</code>. Here, <code>&gt;&gt;=</code> has been silently composing together our functions which might individually fail (<code>safeDivide</code>), into a single function (<code>divPlusFive</code>) that might fail.</p>
 <p>Perhaps you are beginning to see why monads are an abstraction capable of solving all of our original problems: they are silently adding the notion of a particular context to computations that didn’t originally care.</p>
 <p>Let’s look at the implementation for <code>&gt;&gt;=</code>, which turns out to be surprisingly simple for <code>Maybe</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">(&gt;&gt;=) ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>(<span class="op">&gt;&gt;=</span>) <span class="dt">Nothing</span>  _ <span class="ot">=</span> <span class="dt">Nothing</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>(<span class="op">&gt;&gt;=</span>) (<span class="dt">Just</span> x) f <span class="ot">=</span> f x</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">(&gt;&gt;=) ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>(<span class="op">&gt;&gt;=</span>) <span class="dt">Nothing</span>  _ <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>(<span class="op">&gt;&gt;=</span>) (<span class="dt">Just</span> x) f <span class="ot">=</span> f x</span></code></pre></div>
 <p>Again, this is function is pattern-matched, first for the case of trying to bind <code>Nothing</code> with any function (it doesn’t matter what the function is; our computation has already failed). The other option for a <code>Maybe a</code> is to be <code>Just x</code>, the result of which is applying <code>x</code> to the function <code>f</code> .</p>
 <p>Because Haskell has lazy evaluation, this operator definition is semantically equivalent to the short-circuiting <code>&amp;&amp;</code> operator in C++: as soon as you get a <code>Nothing</code>, it will stop processing and give you back a <code>Nothing</code>. Cool!</p>
 <p>To reiterate: after a monad has been written once (essentially, given a suitable implementation of <code>&gt;&gt;=</code>), it becomes library-code. If you annotate your return type as <code>(Monad m) =&gt; m a</code>, anything inside of a <code>do</code> block will be transformed to use the monad you asked for. <strong>Haskell essentially begins injecting user-defined code for you after each semicolon.</strong></p>
-<h2 id="v">V</h2>
+<h2 id="v"><a href="#v" class="header-link">V<span class="header-link-emoji">🔗</span></a></h2>
 <p>OK, this is all really cool stuff. But what <em>is a monad, actually</em>?</p>
-<p>Well, just like a right-angled triangle is any object <span class="math inline">\((a, b, c)\)</span> that satisfies the constraint <span class="math inline">\(a^2 + b^2 = c^2\)</span>, a monad is any object <span class="math inline">\((m, \text{return}, \gg\!\!=)\)</span> subject to <a href="https://wiki.haskell.org/Monad_laws">some constraints</a> (essentially some rules about what cancels out) that ensure it behaves sensibly in monadic contexts.</p>
+<p>Well, just like a right-angled triangle is any object <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>a</mi><mo separator="true">,</mo><mi>b</mi><mo separator="true">,</mo><mi>c</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a, b, c)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">a</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">b</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">c</span><span class="mclose">)</span></span></span></span> that satisfies the constraint <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">a^2 + b^2 = c^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span>,</span> a monad is any object <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>m</mi><mo separator="true">,</mo><mtext>return</mtext><mo separator="true">,</mo><mo>≫</mo><mtext> ⁣</mtext><mtext> ⁣</mtext><mo>=</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(m, \text{return}, \gg\!\!=)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">m</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord">return</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≫</span><span class="mspace" style="margin-right:-0.1667em;"></span><span class="mspace" style="margin-right:-0.1667em;"></span></span><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">=</span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mclose">)</span></span></span></span> subject to <a href="https://wiki.haskell.org/Monad_laws">some constraints</a> (essentially some rules about what cancels out) that ensure it behaves sensibly in monadic contexts.</p>
 <p><code>m</code> is the monadic type itself, with <code>return</code> being a primitive to “get into”<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> the monad<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. Together, these things formally define a monad.</p>
-<p>It’s important to note that <em>anything</em> which has this signature <span class="math inline">\((m, \text{return}, \gg\!\!=)\)</span> that follows <a href="https://wiki.haskell.org/Monad_laws">the laws</a> is a monad, regardless of whether it appeals to our (naive) intuitions about “programmable semicolons”. In fact, in a few posts we will discuss the “free monad” which is a monad that does absolutely nothing of the sort.</p>
+<p>It’s important to note that <em>anything</em> which has this signature <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>m</mi><mo separator="true">,</mo><mtext>return</mtext><mo separator="true">,</mo><mo>≫</mo><mtext> ⁣</mtext><mtext> ⁣</mtext><mo>=</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(m, \text{return}, \gg\!\!=)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">m</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord">return</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≫</span><span class="mspace" style="margin-right:-0.1667em;"></span><span class="mspace" style="margin-right:-0.1667em;"></span></span><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">=</span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mclose">)</span></span></span></span> that follows <a href="https://wiki.haskell.org/Monad_laws">the laws</a> is a monad, regardless of whether it appeals to our (naive) intuitions about “programmable semicolons”. In fact, in a few posts we will discuss the “free monad” which is a monad that does absolutely nothing of the sort.</p>
 <p>However, as a first look at monads, our thusly developed intuition will be good enough for the time being: monads provide invisible plumbing in a modular and reusable fashion.</p>
 <p>But getting back to the definition, what is this <code>return</code>, thing? We haven’t talked about that yet. As usual, we’ll look at its type to see what we can suss out.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="fu">return</span><span class="ot"> ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> m a</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span><span class="ot"> ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> m a</span></code></pre></div>
 <p>Well, that’s actually really easy; it just takes an <code>a</code> and puts it into a monad. For <code>Maybe</code>, this is defined as:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="fu">return</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a><span class="fu">return</span> x <span class="ot">=</span> <span class="dt">Just</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span> x <span class="ot">=</span> <span class="dt">Just</span> x</span></code></pre></div>
 <p>Pretty basic, huh? All this does is, given an <code>a</code>, transforms it into a <code>Maybe a</code> by saying it’s not <code>Nothing</code>, but is in fact <code>Just</code> the value that it is.</p>
 <p>Earlier, when squinting at <code>divPlusFive</code> as imperative code, I put “return” in scare quotes. You can see why, now – it’s not doing at all what we thought it was! To refresh your memory, here’s the function again:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="ot">divPlusFive ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>divPlusFive x y <span class="ot">=</span> <span class="kw">do</span> divided <span class="ot">&lt;-</span> safeDivide x y</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>                     <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">divPlusFive ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>divPlusFive x y <span class="ot">=</span> <span class="kw">do</span> divided <span class="ot">&lt;-</span> safeDivide x y</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">return</span> (divided <span class="op">+</span> <span class="dv">5</span>)</span></code></pre></div>
 <p>Here, <code>return</code> isn’t the thing you’re used to in imperative code; it’s actually just this function that’s part of the monad. Let’s go through why it’s necessary really quickly.</p>
 <p>Notice that <code>divided + 5</code> <em>must</em> be of type <code>Int</code>, since addition is over two parameters of the same type, and 5 is most definitely an <code>Int</code>. But <code>divPlusFive</code> is supposed to result in a value of type <code>Maybe Int</code>! In order to clear up this discrepancy, we just <code>return</code> it, the types work out, and Haskell doesn’t yell at us. Awesome!</p>
 <p>We should probably go through a few more examples of monads and their implementations in order to get a solid conceptual grasp of what’s going on, but this post is already long enough. We’ll save a few for next time to ensure we don’t get burned out.</p>
@@ -212,40 +201,29 @@
 </section>
 
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/love-types">&larr;</a>
-    </span>
-    <span class="next">
-        <a href="/blog/elm-is-wrong">&rarr;</a>
-    </span>
 </p>
 
 </div>
 
 <div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
   </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -256,23 +234,25 @@
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 

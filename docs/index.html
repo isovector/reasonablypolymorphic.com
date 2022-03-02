@@ -1,504 +1,137 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
+        <base href="/"></base>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Home :: Reasonably Polymorphic</title>
+        <title> :: Reasonably Polymorphic</title>
         <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
         <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
         <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
 
-        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
-        <link href="/css/style.css" type="text/css" rel="stylesheet" />
-        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
 
-        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script type="text/x-mathjax-config">
-            MathJax.Hub.Config({
-                    "HTML-CSS": {
-                        scale: 100
-                    },
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      processEscapes: true
-    },
-  TeX: {extensions: [ "AMSmath.js"
-                    , "AMSsymbols.js"
-                    , "color.js"
-                    , "cancel.js"
-                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
-                    ]}
-            });
-        </script>
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
         </head>
         <body>
 <div class="main">
 
 <article>
 <header>
-  <h1><a href="/blog/review-sheafs">Review: A Very Elementary Introduction to Sheaves</a></h1>
+  <h1><a href>Archives</a></h1>
 </header>
 <p class="meta">
-    <span class="prev">
-        <a href="/blog/ring-solving">&larr;</a>
-    </span>
-    <time>February 27, 2022</time>
-
-    <span class="tags">
-        <a href="/tags/agrios.html">agrios</a>, <a href="/tags/sheaves.html">sheaves</a>, <a href="/tags/math.html">math</a>, <a href="/tags/reverse engineering.html">reverse engineering</a>, <a href="/tags/agda.html">agda</a>
-    </span>
 </p>
 <div class="content">
-    <pre><code>{-# OPTIONS --type-in-type #-}
+      <ul>
+      <li><a href="/blog/sheafs/index.html">2022-02-27 - Review: A Very Elementary Introduction to Sheaves</a></li>
+      <li><a href="/blog/ring-solving/index.html">2022-02-16 - Automatic Ring Solving</a></li>
+      <li><a href="/blog/review-codata/index.html">2022-02-10 - Review: Codata in Action</a></li>
+      <li><a href="/blog/bialgebra-followup/index.html">2022-02-08 - Followup to Sorting with Bialgebras</a></li>
+      <li><a href="/blog/bialgebras/index.html">2022-02-05 - Review: Sorting with Bialgebras and Distributive Laws</a></li>
+      <li><a href="/blog/underline-bugs/index.html">2022-01-31 - Underlining the Bugs</a></li>
+      <li><a href="/blog/review-copatterns/index.html">2022-01-29 - Review: Copatterns</a></li>
+      <li><a href="/blog/clowns-jokers/index.html">2022-01-23 - Review: Clowns to the Left of Me, Jokers to the Right</a></li>
+      <li><a href="/blog/wordle/index.html">2022-01-20 - Automating Wordle</a></li>
+      <li><a href="/blog/review-futarchy/index.html">2022-01-14 - Review: Shall We Vote on Values, But Bet on Beliefs?</a></li>
+      <li><a href="/blog/adders-and-arrows/index.html">2022-01-07 - Review: Adders and Arrows</a></li>
+      <li><a href="/blog/comby/index.html">2021-11-21 - Automatically Migrating Eq of No (/=)</a></li>
+      <li><a href="/blog/century-of-the-fruitbat/index.html">2021-11-12 - Dragging Haskell Kicking and Screaming into the Century of the Fruitbat</a></li>
+      <li><a href="/blog/proving-commutativity/index.html">2021-10-21 - Proving Commutativity of Polysemy Interpreters</a></li>
+      <li><a href="/blog/proving-equivalence/index.html">2021-10-16 - Proving Equivalence of Polysemy Interpreters</a></li>
+      <li><a href="/blog/polysemy-check/index.html">2021-10-09 - Testing Polysemy With polysemy-check</a></li>
+      <li><a href="/blog/porting-to-polysemy/index.html">2021-10-02 - Porting to Polysemy</a></li>
+      <li><a href="/blog/exploring-case-law/index.html">2021-02-08 - Exploring Case Law</a></li>
+      <li><a href="/blog/roomba/index.html">2021-01-23 - I Built a Terrible Roomba</a></li>
+      <li><a href="/blog/3d-printing/index.html">2020-11-25 - Haskell in the Real World</a></li>
+      <li><a href="/blog/separate-your-views-reify-your-reasoning/index.html">2020-11-09 - Separate Your Views; Reify Your Reasoning</a></li>
+      <li><a href="/blog/towards-tactics/index.html">2020-10-12 - Towards Tactic Metaprogramming in Haskell</a></li>
+      <li><a href="/blog/algebra-driven-design/index.html">2020-09-10 - Algebra-Driven Design</a></li>
+      <li><a href="/blog/mea-culpa/index.html">2020-06-14 - Polysemy: Mea Culpa</a></li>
+      <li><a href="/blog/linux-daw/index.html">2020-02-13 - A Working Linux DAW</a></li>
+      <li><a href="/blog/extension-patterns/index.html">2019-11-27 - Low-Tech AST Extensibility with Extension Patterns</a></li>
+      <li><a href="/blog/haskell202x/index.html">2019-11-01 - Haskell2020 Is Dead, but All Hope Is Not Lost</a></li>
+      <li><a href="/blog/design-and-interpretation/index.html">2019-10-13 - New Book: Design and Interpretation of Haskell Programs</a></li>
+      <li><a href="/blog/nimic/index.html">2019-07-15 - Nimic: A language about nothing</a></li>
+      <li><a href="/blog/steering/index.html">2019-07-11 - How I Intend to Help Steer GHC</a></li>
+      <li><a href="/blog/tactics/index.html">2019-06-26 - Polysemy Internals: The Effect-Interpreter Effect</a></li>
+      <li><a href="/blog/typeholes/index.html">2019-06-25 - Implement With Types, Not Your Brain!</a></li>
+      <li><a href="/blog/freer-higher-order-effects/index.html">2019-05-31 - Polysemy Internals: Freer Interpretations of Higher-Order Effects</a></li>
+      <li><a href="/blog/faking-fundeps/index.html">2019-05-25 - Faking Fundeps with Typechecker Plugins</a></li>
+      <li><a href="/blog/writing-custom-optimizations/index.html">2019-05-22 - Writing Custom Optimization Passes</a></li>
+      <li><a href="/blog/specialization/index.html">2019-05-18 - GHC’s Specializer: Much More Than You Wanted to Know</a></li>
+      <li><a href="/blog/polysemy/index.html">2019-04-10 - Announcing Polysemy</a></li>
+      <li><a href="/blog/freer-yet-too-costly/index.html">2019-03-12 - Freer, yet Too Costly Higher-order Effects</a></li>
+      <li><a href="/blog/too-fast-too-free/index.html">2019-02-18 - Freer Monads: Too Fast, Too Free</a></li>
+      <li><a href="/blog/freer-monads/index.html">2019-02-13 - Freer Monads, More Better Programs</a></li>
+      <li><a href="/blog/writing-technical-posts/index.html">2019-02-07 - How to Write Technical Posts (so people will read them)</a></li>
+      <li><a href="/blog/thinking-with-types/index.html">2018-11-14 - Thinking with Types</a></li>
+      <li><a href="/blog/protos-are-wrong/index.html">2018-10-10 - Protobuffers Are Wrong</a></li>
+      <li><a href="/blog/book-of-types/index.html">2018-07-08 - Gauging Interest in a Type-Level Programming Book</a></li>
+      <li><a href="/blog/prospecting-free-monads/index.html">2018-07-07 - Static Analysis of Free Monads</a></li>
+      <li><a href="/blog/roles/index.html">2018-06-26 - Coercions and Roles for Dummies</a></li>
+      <li><a href="/blog/ecstasy-case-study/index.html">2018-05-18 - Performance and Feature Case Studies in Ecstasy</a></li>
+      <li><a href="/blog/follow-the-denotation/index.html">2018-05-03 - Follow the Denotation</a></li>
+      <li><a href="/blog/algorithmic-sytc/index.html">2018-04-16 - Algorithmically Scrapping Your Typeclasses</a></li>
+      <li><a href="/blog/hkd-not-terrible/index.html">2018-04-04 - HKD: Less Terrible than You Might Expect</a></li>
+      <li><a href="/blog/free-lenses/index.html">2018-03-31 - Free Lenses for Higher-Kinded Data</a></li>
+      <li><a href="/blog/higher-kinded-data/index.html">2018-03-29 - Higher-Kinded Data</a></li>
+      <li><a href="/blog/navigation/index.html">2018-02-08 - Devlog: Navigation</a></li>
+      <li><a href="/blog/action-menus/index.html">2018-02-01 - Devlog: Action Menus, Timers and Hit Detection</a></li>
+      <li><a href="/blog/why-take-ecstasy/index.html">2018-01-28 - Why Take Ecstasy</a></li>
+      <li><a href="/blog/starting-a-game-engine/index.html">2018-01-27 - Devlog: Starting a Game Engine</a></li>
+      <li><a href="/blog/difference-of-squares/index.html">2017-11-24 - Gentle Theorems: Difference of Squares</a></li>
+      <li><a href="/blog/type-directed-code-generation/index.html">2017-11-18 - Type-Directed Code Generation</a></li>
+      <li><a href="/blog/recursion-schemes/index.html">2017-10-06 - Review: Bananas, Lenses, Envelopes and Barbed Wire</a></li>
+      <li><a href="/blog/modeling-music/index.html">2017-09-06 - Modeling Music</a></li>
+      <li><a href="/blog/information-effects/index.html">2017-08-20 - Review: Information Effects</a></li>
+      <li><a href="/blog/theorems-for-free/index.html">2017-07-29 - Review: Theorems for Free</a></li>
+      <li><a href="/blog/dont-eff-it-up/index.html">2017-04-09 - Don’t Eff It Up</a></li>
+      <li><a href="/blog/comonadic-physics/index.html">2017-01-01 - Comonadic Collision Resolution</a></li>
+      <li><a href="/blog/book-announcement/index.html">2016-11-09 - Book Announcement</a></li>
+      <li><a href="/blog/better-data-types-a-la-carte/index.html">2016-09-13 - Better Data Types a la Carte</a></li>
+      <li><a href="/blog/existentials/index.html">2016-07-15 - An Existential Crisis</a></li>
+      <li><a href="/blog/coiter/index.html">2016-06-26 - Constructing a Comonad</a></li>
+      <li><a href="/blog/zap/index.html">2016-06-19 - Zap as the Machinery of Program Reduction</a></li>
+      <li><a href="/blog/cofree-comonads/index.html">2016-06-05 - Wake Up and Smell the Cofree Comonads</a></li>
+      <li><a href="/blog/free-stories/index.html">2016-06-02 - Towards Procedurally Generated Stories via Free Monads</a></li>
+      <li><a href="/blog/elm-is-wrong/index.html">2016-04-12 - Elm Is Wrong</a></li>
+      <li><a href="/blog/ideas-and-men/index.html">2015-07-07 - Of Ideas and Men</a></li>
+      <li><a href="/blog/love-types/index.html">2015-07-02 - How I Learned to Stop Worrying and Love the Type System</a></li>
+      </ul>
 
-module Blog.sheafs where
-
-open import Data.Integer hiding (_&lt;_)
-open import Data.Integer.Properties using (*-zeroˡ; ≤-reflexive; ≤-trans)
-open import Data.Vec hiding (restrict; reverse)
-open import Categories
-open import Category.LIN
-open import Category.SET
-open import Category.AGRP
-open import Category.MyFunctor
-import Relation.Binary.PropositionalEquality as Eq
-
-open Eq using (_≡_; cong; sym; refl)
-open LinMap</code></pre>
-<p>A while back I reviewed some paper (maybe codata? — too lazy to check) and came away thinking “I should learn more about presheaves.” The first paper I found is <a href="https://arxiv.org/pdf/2202.01379.pdf">A Very Elementary Introduction to Sheaves</a> by Mark Agrios, and mildly interestingly, was published less than three weeks ago.</p>
-<p>The paper is called “very elementary,” and in the first sentence states it “is a very non-rigorous, loose, and extremely basic introduction to sheaves,” and it delivers on these promises. There is a section on metaphorically what a sheaf is, and then two somewhat-worked examples.</p>
-<p>After reading through the paper, I feel like I have a very rough idea of what a sheaf is, and thought that this would be an excellent opportunity to flex my category theory muscles. That is, can I correctly generalize from these two examples to a solid category theoretical definition of a sheaf? I’m not sure, but this is a unique opportunity, so it’s worth a shot.</p>
-<h2 id="the-metaphor">The Metaphor</h2>
-<p>The central metaphor of the paper is that a sheaf enriches some mathematical structure, much like a garden enriches a plot of dirt. There are lots of gardens you could make on a plot of dirt, and then you can harvest things from them. I guess this makes sense to the author, but it doesn’t particularly help me. I suspect this is an example of the monad tutorial fallacy in the wild: after thinking really hard about an idea for a while, the author came up with a metaphor that really works for them. But, this metaphor is more an artifact of their thinking process than it is descriptive of the idea itself. Anyway, either way, I wasn’t able to extract much meaning here.</p>
-<h2 id="example-graphs">Example: Graphs</h2>
-<p>We can build a (pre-?)sheaf over a graph. By playing fast and loose with our types like mathematicians are so wont to do, we can model the edge <span class="math inline">\(e_{ij} : V_i \to V_j\)</span> in a graph as an “intersection of the nodes it connects.” The paper writes <span class="math inline">\(e_{ij} &lt; v_i, v_j\)</span>. I’m not super sure what that means, but I think it’s saying that given some graph <span class="math inline">\(G = (V, E)\)</span>, we can say <span class="math inline">\(e_{ij} \subseteq v_i \cup v_j\)</span>? Except that this doesn’t typecheck, since <code>v_i</code> is an element of a set, not a set itself. I don’t know.</p>
-<p>Anyway, the important thing here seems to be that there is a preorder between edges and vertices. So let’s quickly define a <code>Preorder</code>:</p>
-<pre><code>record Preorder : Set where
-  field
-    Carrier : Set
-    _&lt;_ : Carrier → Carrier → Set
-    &lt;-refl : (a : Carrier) → a &lt; a
-    &lt;-trans : {a b c : Carrier} → a &lt; b → b &lt; c → a &lt; c</code></pre>
-<p>and then just forget about the whole graph thing, because I am not convinced it is a meaningful presentation. Instead, we’ll cheat, and just build exactly the object we want to discuss.</p>
-<pre><code>data Ex : Set where
-  v1  : Ex
-  v2  : Ex
-  e12 : Ex</code></pre>
-<p>corresponding to this rather boring graph:</p>
-<pre class="quiver"><code>\[\begin{tikzcd}
-  v1 &amp;&amp; {} &amp;&amp; v2
-  \arrow[&quot;e12&quot;&#39;, from=1-1, to=1-5]
-\end{tikzcd}\]</code></pre>
-<p>We can then build a <code class="sourceCode agda">Preorder</code> on <code class="sourceCode agda">Ex</code> with explicit cases for <code class="sourceCode agda">e12</code> being less than its vertices:</p>
-<pre><code>data Ex&lt; : Ex → Ex → Set where
-  e12&lt;v1 : Ex&lt; e12 v1
-  e12&lt;v2 : Ex&lt; e12 v2</code></pre>
-<p>and two cases to satisfy the preorder laws:</p>
-<pre><code>  ex&lt;-refl : (x : Ex) → Ex&lt; x x</code></pre>
-<p>and then mechanically hook everything up:</p>
-<pre><code>module _ where
-  open Preorder
-  ex-preorder : Preorder
-  ex-preorder .Carrier = Ex
-  ex-preorder ._&lt;_ = Ex&lt;
-  ex-preorder .&lt;-refl = ex&lt;-refl
-  ex-preorder .&lt;-trans e12&lt;v1 (ex&lt;-refl .v1) = e12&lt;v1
-  ex-preorder .&lt;-trans e12&lt;v2 (ex&lt;-refl .v2) = e12&lt;v2
-  ex-preorder .&lt;-trans (ex&lt;-refl _) e12&lt;v1 = e12&lt;v1
-  ex-preorder .&lt;-trans (ex&lt;-refl _) e12&lt;v2 = e12&lt;v2
-  ex-preorder .&lt;-trans (ex&lt;-refl x) (ex&lt;-refl _) = ex&lt;-refl x</code></pre>
-<p>The paper goes on to say we have some sheaf <code>F</code>, which maps <code class="sourceCode agda">Ex</code>s to “just about anything,” this codomain being called the <em>stalk.</em> For now, let’s assume it’s to <code class="sourceCode agda"><span class="dt">Set</span></code>.</p>
-<p>Furthermore, the sheaf <code>F</code> also has a “second mechanism,” which in our example maps an edge <span class="math inline">\(e_{ij} : v_i \to v_j\)</span> to two functions:</p>
-<p><span class="math display">\[
-F_{v_i;e_{ij}} : F(v_i) \to F(e_{ij}) \\
-F_{v_j;e_{ij}} : F(v_j) \to F(e_{ij})
-\]</span></p>
-<p>This is where some of the frustration in only being given examples comes in. Why are these in the definition of a sheaf? The only thing that could possibly make any sense to me is that this comes from a more general construction:</p>
-<pre class="text"><code>restrict : (x y : Ex) → x &lt; y → Stalk y → Stalk x</code></pre>
-<p>which states we have a mapping from <span class="math inline">\(F(y)\)</span> to <span class="math inline">\(F(x)\)</span> if and only if we have <span class="math inline">\(x &lt; y\)</span>. These <code>restrict</code> things are called <em>restriction maps</em>.</p>
-<p>What’s further confusing is the following point:</p>
-<blockquote>
-<p>Since each stalk is a vector space, it is natural to have our restriction maps be linear transformations described by matrices.</p>
-</blockquote>
-<p>Why linear transformations, and not just arbitrary functions? When I hear “linear transformation” I think homomorphism, or more probably, morphism in some category. Which then probably means the <code>Stalk</code> isn’t a function to <code class="sourceCode agda"><span class="dt">Set</span></code>, it’s a mapping into a category.</p>
-<p>OK, so that all seems straightforward enough. Let’s try to formalize it.</p>
-<pre><code>module Sheaf (pre : Preorder) (C : Category) where
-  open Preorder pre
-  open Category C
-
-  record Sheaf : Set where
-    field
-      Stalk : Carrier → Obj
-      restrict : {x y : Carrier} → x &lt; y → Stalk y ~&gt; Stalk x</code></pre>
-<p>which seems reasonable. The paper now gives us a specific sheaf, with <code class="sourceCode agda">restrict</code> <code class="sourceCode agda">e12&lt;v1</code> being the linear map encoded by the matrix:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-1 &amp; -1 \\
-0 &amp; 2
-\end{bmatrix}
-\]</span></p>
-<p>which we can write as a morphism in <code class="sourceCode agda">LIN</code> (the category of linear algebra, with objects as vector spaces, and morphisms as linear maps):</p>
-<!--
-```
-module _ where
-  open Category LIN
-  open Sheaf ex-preorder LIN
-  open Sheaf.Sheaf
-
-  postulate
-    trustMe : ∀ {A : Set} {a b : A} → a ≡ b
-    sorry : ∀ {A : Set} → A
-```
--->
-<pre><code>  e12~&gt;v1 : 2 ~&gt; 2
-  e12~&gt;v1 .linmap (x ∷ y ∷ []) =
-    (x - y)   ∷
-    (+ 2 * y) ∷
-             []
-  e12~&gt;v1 .preserves-+ u v = trustMe
-  e12~&gt;v1 .preserves-* a v = trustMe</code></pre>
-<p>and <code class="sourceCode agda">restrict</code> <code class="sourceCode agda">e12&lt;v2</code> being the linear map encoded by the matrix:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-3 &amp; 1 &amp; -1 \\
-2 &amp; 0 &amp; 2
-\end{bmatrix}
-\]</span></p>
-<p>written as:</p>
-<pre><code>  e12~&gt;v2 : 3 ~&gt; 2
-  e12~&gt;v2 .linmap (x ∷ y ∷ z ∷ []) =
-    (+ 3 * x + y - z)   ∷
-    (+ 2 * x + + 2 * z) ∷
-                       []
-  e12~&gt;v2 .preserves-+ u v = trustMe
-  e12~&gt;v2 .preserves-* a v = trustMe</code></pre>
-<p>Thus, we can finally build the example <code>Sheaf</code>:</p>
-<pre><code>  ex : Sheaf
-  ex .Stalk v1  = 2
-  ex .Stalk v2  = 3
-  ex .Stalk e12 = 2
-  ex .restrict e12&lt;v1 = e12~&gt;v1
-  ex .restrict e12&lt;v2 = e12~&gt;v2
-  ex .restrict (ex&lt;-refl z) = id</code></pre>
-<p>What’s with the <code class="sourceCode agda">Stalk</code> of <code class="sourceCode agda">v1</code> being 2, you might ask? Remember, the stalk is an object in some category, in this case <code class="sourceCode agda">LIN</code>. Objects in <code class="sourceCode agda">LIN</code> are natural numbers, corresponding to the length of vectors.</p>
-<h3 id="sections-and-global-sections">Sections and Global Sections</h3>
-<p>Here’s where our categorical generalization of the paper goes a bit haywire. The paper defines a <em>section</em> as picking an element from each <code class="sourceCode agda">Stalk</code> of the sheaf. He picks, for example:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-2 \\ 1
-\end{bmatrix}
-\in \text{Stalk } v1
-\]</span></p>
-<p><span class="math display">\[
-\begin{bmatrix}
-3 \\ -1 \\ 0
-\end{bmatrix}
-\in \text{Stalk } v2
-\]</span></p>
-<p>and</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-1 \\ -1
-\end{bmatrix}
-\in \text{Stalk } e12
-\]</span></p>
-<p>which is all fine and dandy, except that when we categorize, our objects no longer have internal structure. Fortunately, we can use “generalized elements,” a.k.a., morphisms out of the <code class="sourceCode agda">terminal</code> object.</p>
-<!--
-```
-module BadSections
-         {pre : Preorder}
-         {C : Category}
-         (term : HasTerminal C)
-         (sheaf : Sheaf.Sheaf pre C) where
-  open HasTerminal term
-  open Preorder pre
-  open Sheaf.Sheaf sheaf
-  open Category C
-```
--->
-<pre><code>  Section : Carrier → Set
-  Section c = terminal ~&gt; Stalk c</code></pre>
-<p>That is, a <code class="sourceCode agda">Section</code> is a mapping from every element in the <code class="sourceCode agda">Preorder</code> to a generalized element of its <code class="sourceCode agda">Stalk</code>. We can evaluate a <code class="sourceCode agda">Section</code> by checking the commutativity of all <code class="sourceCode agda">restrict</code>s. That is, we’d like the following diagram to commute:</p>
-<pre class="quiver"><code>\[\begin{tikzcd}
-  &amp;&amp; {0} \\
-  \\
-  {\text{Stalk } v_1} &amp;&amp;&amp;&amp; {\text{Stalk } e_{12}}
-  \arrow[&quot;{\text{Section }v_1}&quot;&#39;, from=1-3, to=3-1]
-  \arrow[&quot;{\text{Section } e_{12}}&quot;, from=1-3, to=3-5]
-  \arrow[&quot;{\text{restrict } e_{12}&lt;v_1}&quot;&#39;, from=3-1, to=3-5]
-\end{tikzcd}\]</code></pre>
-<p>Doing this in Agda is hard because it wants lots of dumb arithmetic proofs, so instead we’ll make ourselves content with some by-hand math:</p>
-<p><span class="math display">\[
-r \circ S v1
-=  \begin{bmatrix}
-      1 &amp; -1 \\
-      0 &amp; 2
-    \end{bmatrix}
-    \begin{bmatrix}
-      2 \\ 1
-    \end{bmatrix}
-=  \begin{bmatrix}
-      1 \\
-      2
-    \end{bmatrix}
-\neq
-    \begin{bmatrix}
-    1 \\ -1
-    \end{bmatrix}
-\]</span></p>
-<p>So, our chosen <code class="sourceCode agda">Section</code> doesn’t commute. That is, it doesn’t respect the global equalities, thus it is not a <em>global section.</em> Sounds like something worth formalizing:</p>
-<pre><code>  record GlobalSection : Set where
-    field
-      section : forall (c : Carrier) → Section c
-      commutes
-        : {x y : Carrier}
-        → (x&lt;y : x &lt; y)
-        → restrict x&lt;y ∘ section y ≈ section x</code></pre>
-<p>All that’s left is to find a <code class="sourceCode agda">GlobalSection</code> of our weird graph category:</p>
-<!--
-```
-module BadEx where
-  open Preorder
-  open Category LIN
-  open Sheaf ex-preorder LIN
-  open Sheaf.Sheaf
-```
--->
-<p>– TODO(sandy): make this cleaner</p>
-<p>Unfortunately, this formalization doesn’t quite work out; there are no arrows out of <code class="sourceCode agda">terminal</code>:</p>
-<pre><code>  boring-arrows
-      : (f : 0 ~&gt; 1)
-      → (x : Vec ℤ 0)
-      → f .linmap x ≡ + 0 ∷ []
-  boring-arrows f [] with f .linmap [] in eq
-  ... | x ∷ [] rewrite sym eq =
-    begin
-      f .linmap []                 ≡⟨⟩
-      f .linmap (map (+ 0 *_) [])  ≡⟨ f .preserves-* (+ 0) _ ⟩
-      map (+ 0 *_) (f .linmap [])  ≡⟨ cong (map (+ 0 *_)) eq ⟩
-      map (+ 0 *_) (x ∷ [])        ≡⟨⟩
-      (+ 0 * x) ∷ []               ≡⟨ cong (_∷ []) (*-zeroˡ +0) ⟩
-      +0 ∷ []
-    ∎
-    where open Eq.≡-Reasoning</code></pre>
-<p>So, that’s no good. We’ve modeled <code class="sourceCode agda">Section</code> incorrectly, as the generalized element approach doesn’t work, since we are unable to follow the example.</p>
-<p>What are some other ways to go from an <code class="sourceCode agda">Obj</code> to a <code class="sourceCode agda"><span class="dt">Set</span></code>? Maybe we could try modeling this as a functor to <code class="sourceCode agda">SET</code> instead:</p>
-<!--
-```
-module _ where
-  open _=>_
-  open import Relation.Binary.PropositionalEquality using (refl)
-```
--->
-<pre><code>  ex-func : LIN =&gt; SET
-  ex-func .F-Obj x = Vec ℤ x
-  ex-func .F-map f = f .linmap
-  ex-func .F-map-id _ _ = refl
-  ex-func .F-map-∘ g f a = refl</code></pre>
-<p>And we can try again with <code>Section</code>s:</p>
-<p>and then we can say a <code>Section</code> is an element of the action of <code class="sourceCode agda">Func</code>:</p>
-<!--
-```
-import Category.MyFunctor
-module Sections
-         {pre : Preorder}
-         {C : Category}
-         (Func : C Category.MyFunctor.=> SET)
-         (sheaf : Sheaf.Sheaf pre C) where
-  open Preorder pre
-  open Sheaf.Sheaf sheaf
-  open Category.MyFunctor._=>_ Func
-  open Category SET
-  open import Relation.Binary.PropositionalEquality using (_≡_)
-```
--->
-<pre><code>  Section : Carrier → Set
-  Section c = F-Obj (Stalk c)</code></pre>
-<p>and a <code>GlobalSection</code>, which recall, is a globally-coherent assignment of sections:</p>
-<pre><code>  record GlobalSection : Set where
-    field
-      section : forall (c : Carrier) → Section c
-      commutes
-        : {x y : Carrier}
-        → (x&lt;y : x &lt; y)
-        → F-map (restrict x&lt;y) (section y) ≡ section x</code></pre>
-<!--
-```
-module GoodEx where
-  open Sheaf ex-preorder LIN
-  open Sheaf.Sheaf ex
-  open Sections ex-func ex
-  open GlobalSection
-  open Category.MyFunctor._=>_ ex-func
-```
--->
-<pre><code>  soln : GlobalSection
-  soln .section v1 = + 2 ∷ + 1 ∷ []
-  soln .section v2 = -[1+ 1 ] ∷ + 10 ∷ + 3 ∷ []
-  soln .section e12 = + 1 ∷ + 2 ∷ []
-  soln .commutes e12&lt;v1 = refl
-  soln .commutes e12&lt;v2 = refl
-  soln .commutes (ex&lt;-refl _) = refl</code></pre>
-<p>Sure enough, this was a global section:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-2 \\ 1
-\end{bmatrix}
-\in \text{Stalk } v1
-\]</span></p>
-<p><span class="math display">\[
-\begin{bmatrix}
--2 \\ 10 \\ 3
-\end{bmatrix}
-\in \text{Stalk } v2
-\]</span></p>
-<p>and</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-1 \\ 2
-\end{bmatrix}
-\in \text{Stalk } e12
-\]</span></p>
-<h2 id="example-continuous-intervals">Example: Continuous Intervals</h2>
-<p>The paper presents a second example as well. Maybe it’s just that I’m less well-versed in the subject matter, but this example feels significantly more incoherent than the first. I tried to work through it, and the formalization above was sufficiently powerful to do what I needed, but I didn’t understand the example or what it was trying to accomplish. There was some Abelian group stuff that never actually got used.</p>
-<p>Rather than clean this section up, I’m instead going to spend the time before my publication deadline writing about what I learned about pre-sheafs after hitting the wall, and asking for help.</p>
-<h2 id="extracuricular-presheafs">Extracuricular Presheafs</h2>
-<p>So let’s talk about what all of this sheaf business above is trying to do. The ever helpful Reed Mullanix came to my rescue with a few helpful intuitions. To paraphrase him (if there are any mistakes in the following, they are my mistakes, not his):</p>
-<blockquote>
-<p>Think about a sensor network. You have some physical space, with a series of sensors attached in specific places. Maybe you have a microphone in the hallway, and a camera at the front door, and a thermometer in the bedroom. Each of these sensors is <em>locally correct</em>, that is, we can be reasonably sure that if the thermometer says 37C, it is in fact 37C.</p>
-<p>A presheaf is a mapping from this collection of sensors to a world in which we can reason about the total space. For example, we might want to get an idea of what’s going on in the basement, where we have no sensors, but which is part of our house nevertheless.</p>
-<p>And a global section over that presheaf is a globally consistent take on the system. It’s some mapping into the hypothesis space that <em>agrees with all of the measurements.</em> If we know it’s 37C in the bedroom, we’re probably not going to see snow in the front-door camera.</p>
-</blockquote>
-<p>Okay, so what’s all this preorder stuff about? I think it’s actually just a poor man’s category. We can lift any preorder into a category by considering the <code>&lt;</code> relationship to be a morphism:</p>
-<pre><code>module PreorderToCategory (P : Preorder) where
-  open Preorder P
-  open Category
-
-  open import Data.Unit using (⊤; tt)
-
-  cat : Category
-  cat .Obj = Carrier
-  cat ._~&gt;_ = _&lt;_
-  cat ._≈_ f g = ⊤
-  cat .≈-equiv = sorry
-  cat .id {A = A} = &lt;-refl A
-  cat ._∘_ g f = &lt;-trans f g
-  cat .∘-cong = λ _ _ → tt
-  cat .id-r f = tt
-  cat .id-l f = tt
-  cat .∘-assoc h g f = tt</code></pre>
-<p>and now that we have a <code class="sourceCode agda">Category</code>, we can avoid the whole <code class="sourceCode agda">Sheaf</code> / <code class="sourceCode agda">GlobalSection</code> by giving a functor into <code class="sourceCode agda">SET</code>. Well, almost, because <code class="sourceCode agda">restrict</code> goes the opposite direction. So instead, we can build an opposite category:</p>
-<pre><code>module Op (C : Category) where
-  open Category
-
-  data OpArr : Obj C → Obj C → Set where
-    reverse : {X Y : Obj C} → C [ X , Y ] → OpArr Y X
-
-  op : Category
-  op .Obj = C .Obj
-  op ._~&gt;_ = OpArr
-  op ._≈_ (reverse f) (reverse g) = C ._≈_ f g
-  op .≈-equiv {A} {B} = sorry
-  op .id = reverse (C .id)
-  op ._∘_ (reverse g) (reverse f) = reverse (C ._∘_ f g)
-  op .∘-cong = sorry
-  op .id-r (reverse f) = C .id-l f
-  op .id-l (reverse f) = C .id-r f
-  op .∘-assoc (reverse h) (reverse g) (reverse f) =
-    setoid C .isEquivalence .S.IsEquivalence.sym (C .∘-assoc f g h)
-    where
-      open import Relation.Binary.Bundles using (Setoid)
-      open Setoid using (isEquivalence)
-      import Relation.Binary.Structures as S</code></pre>
-<p>Now, we can express a presheaf as a functor:</p>
-<pre><code>module _ where
-  open import Category.MyFunctor
-  open Op
-
-  Presheaf : Category → Set
-  Presheaf C = op C =&gt; SET</code></pre>
-<p>or our specific example from earlier:</p>
-<pre><code>module _ where
-  open PreorderToCategory ex-preorder
-  open _=&gt;_
-  open import Data.Nat using (ℕ)
-  open Op
-
-  Z : ℕ → Set
-  Z = Vec ℤ
-
-  ex&#39; : Presheaf cat
-  ex&#39; .F-Obj v1 = Z 2
-  ex&#39; .F-Obj v2 = Z 3
-  ex&#39; .F-Obj e12 = Z 2
-  ex&#39; .F-map (reverse e12&lt;v1) = e12~&gt;v1 .linmap
-  ex&#39; .F-map (reverse e12&lt;v2) = e12~&gt;v2 .linmap
-  ex&#39; .F-map (reverse (ex&lt;-refl _)) a = a
-  ex&#39; .F-map-id A a = refl
-  ex&#39; .F-map-∘ (reverse e12&lt;v1) (reverse (ex&lt;-refl _)) a = refl
-  ex&#39; .F-map-∘ (reverse e12&lt;v2) (reverse (ex&lt;-refl _)) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse e12&lt;v1) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse e12&lt;v2) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse (ex&lt;-refl _)) a = refl</code></pre>
-<p>which leaves only the question of what a <code>GlobalSection</code> is under this representation.</p>
-<p>I got stumped on this one for a while too, but again, Reed to the rescue, who points out that in our preorder, <code>&lt;</code> corresponds to a “smaller” space. Thus, we want to find a mapping out of the biggest space, which corresponds to a top element in the order, or a terminal object in the category. The terminal object is going to be the “total space” in consideration (in our sensor example, eg.) and the functor laws will ensure consistency.</p>
-<pre><code>GlobalSection
-    : {C : Category}
-    → (pre : Presheaf C)
-    → (t : HasTerminal C)
-    → Set
-GlobalSection pre t =
-  pre ._=&gt;_.F-Obj (t .HasTerminal.terminal)</code></pre>
-<p>Unfortunately, this is a problem for our worked example — we don’t <em>have</em> a terminal object! But that’s OK, it’s easy to trivially construct one by just adding a top:</p>
-<pre class="quiver"><code>\[\begin{tikzcd}
-  &amp; terminal \\
-  v1 &amp;&amp; v2 \\
-  &amp; e12
-  \arrow[from=3-2, to=2-1]
-  \arrow[from=3-2, to=2-3]
-  \arrow[from=2-3, to=1-2]
-  \arrow[from=2-1, to=1-2]
-\end{tikzcd}\]</code></pre>
-<p>and by picking an object in <code class="sourceCode agda">SET</code> to map it to for our presheaf. There are some interesting choices here; we could just pick <code class="sourceCode agda">⊤</code>, which is interesting in how boring a choice it is. Such a thing trivially satisfies all of the requirements, but it doesn’t tell us much about the world. This is the metaphorical equivalent of explaining our sensors’ readings as “anything is possible!”</p>
-<p>More interestingly, we could pick <code>F-Obj terminal</code> to be <code>ℤ2 × ℤ3 × ℤ2</code>, corresponding to the product of <code>F-Obj v1</code>, <code>F-Obj v2</code> and <code>F-Obj e12</code>. We can satisfy the functor laws by projecting from the <code>F-Obj term</code> down to one of its components. And, best of all, it gives us a place to stick the values from our worked example.</p>
-<p>I’d love to code this up in more detail, but unfortunately I’m out of time. That’s the flaw of trying to get through one paper a week, the deadline is strict whether you’re ready for it or not.</p>
-<p>This whole post is a literate Agda file. I’m currently in the process of writing an Agda blogging backend for the site, so hopefully if you come back in a week or so, everything here should be hyperlinked and interactive.</p>
-
-<p class="meta">
-    <span class="prev">
-        <a href="/blog/ring-solving">&larr;</a>
-    </span>
-</p>
-
-</div>
-
-<div class="comments">
-  <script src="https://utteranc.es/client.js"
-        repo="isovector/reasonablypolymorphic.com"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
-  </script>
 </div>
 </article>
 
 </div>
     <nav>
-        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
     
-        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
         making cool things.</p>
     
-        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
         email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
     
         <h2>SITE LINKS</h2>
         <ul>
-            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/">Archives</a></li>
             <li><a href="/talks">Talks</a></li>
         </ul>
     
@@ -509,23 +142,25 @@ GlobalSection pre t =
             <li>My other <a href="http://sandymaguire.me">blog</a></li>
         </ul>
     
-        <h2>WHAT I'M DOING</h2>
+        <h2>WHAT I&#39;M DOING</h2>
         <ul>
-            <li><a href="/erdos">Erdos Project</a></li>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
             <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
             <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
-            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        © 2015-2022 Sandy Maguire
         </p>
     </nav>
 
+    <!--
     <div id="smallnav">
       <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
       <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
     </div>
+    -->
 </body>
 </html>
 
