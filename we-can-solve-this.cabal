@@ -14,8 +14,9 @@ category:           Web
 executable poly
   main-is:          Main.hs
   build-depends:    base
-                  , sitepipe
                   , datetime
+                  , lens-aeson
+                  , shake
                   , parsec
                   , pandoc
                   , pandoc-types
@@ -38,6 +39,10 @@ executable poly
                   , text
                   , aeson
                   , regex-tdfa
+                  , blagda
+                  , mtl
+                  , directory
+                  , tagsoup
   other-modules: Utils, Erdos
   ghc-options:      -threaded -Wall
   hs-source-dirs:   src

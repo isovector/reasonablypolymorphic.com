@@ -1,0 +1,31 @@
+{{> templates/header.html}}
+
+<article>
+<header>
+  <h1><a href="{{url}}">Archives</a></h1>
+</header>
+<p class="meta">
+</p>
+<div class="content">
+      <ul>
+      {{#meta}}
+      {{#meta}}
+      <li><a href="/{{path}}">{{#meta}}{{a_datetime}} - {{a_title}}{{/meta}}</a></li>
+      {{/meta}}
+      {{/meta}}
+      </ul>
+
+  {{#years}}
+    <h2>{{year}}</h2>
+    <ul>
+  {{#posts}}
+    <li>
+      <a href="/{{canonical_url}}">{{title}}</a> <span class="date">{{date_no_year}}</span>
+    </li>
+  {{/posts}}
+    </ul>
+  {{/years}}
+</div>
+</article>
+
+{{> templates/footer.html}}

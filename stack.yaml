@@ -4,7 +4,9 @@ packages:
 
 extra-deps:
 - datetime-0.3.1
-- sitepipe-0.4.0.1
 - strptime-1.0.10
+- blagda-0.1.0.1
+- Agda-2.6.2.1
+- MissingH-1.5.0.0@sha256:34df0817c543894b53942852109da1ba7f3f615ca0aded9b9c58bf52d33017e8,4740
 
-resolver: lts-16.0
+resolver: lts-18.18

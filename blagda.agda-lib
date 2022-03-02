@@ -1,0 +1,12 @@
+name: blagda
+include:
+  site
+  wip
+  _build
+  .
+flags:
+  --postfix-projections
+  --rewriting
+  --guardedness
+depend:
+  standard-library

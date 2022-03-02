@@ -1,0 +1,183 @@
+@import "vars.scss";
+
+div.diagram-container {
+  width: 100%;
+  overflow-x: auto;
+
+  margin-top: 1em;
+  margin-bottom: 1em;
+
+  img.diagram {
+    height: 200px;
+    margin: auto;
+    display: block;
+
+    overflow-x: auto;
+
+    &.short-05 {
+      height: 150px;
+    }
+
+    &.short-1 {
+      height: 105px;
+    }
+
+    &.short-15 {
+      height: 80px;
+    }
+
+    &.short-2 {
+      height: 55px;
+    }
+    
+    &.tall-1 {
+      height: 250px;
+    }
+
+    &.tall-2 {
+      height: 350px;
+    }
+  }
+}
+
+article a[href], div#return > a[href], div#top > a[href], aside#toc > div#toc-container ul a[href] {
+  color: $code-blue;
+  text-decoration: none;
+  &:hover {
+    text-decoration: 2px currentColor underline !important;
+  }
+  &:visited {
+    color: $code-purple;
+  }
+}
+
+div#return {
+  text-align: center;
+}
+
+article {
+  padding-top: 2em;
+  padding-bottom: 2em;
+  margin-top: 0 !important;
+  width: 85ch;
+
+  > :nth-child(1), > pre.Agda:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  #article-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  > p {
+    width: 100%;
+  }
+
+  > figure > figcaption {
+    text-align: center;
+    font-style: italic;
+  }
+}
+
+hr {
+  color: #ABB2BF;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+pre.Agda {
+  border-radius: 0;
+  box-shadow: none;
+  overflow-y: clip;
+
+  margin:           0;
+  padding:          1em;
+  padding-top:      0.25em;
+  padding-bottom:   0.25em;
+
+  background-color: $code-bg;
+  color:            $code-fg;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: #F5DEB3;
+  }
+  100% {
+    background-color: $code-bg;
+  }
+}
+
+a[href].hover-highlight {
+  background-color: #F5DEB3;
+}
+
+/* Aspects. */
+.Agda {
+  .Comment       { color: $code-fg; font-style: italic; }
+  .Background    { background-color: $code-bg; }
+  .Markup        { color: $code-fg; }
+  .Keyword       { color: $code-orange; }
+  .String        { color: $code-red; }
+  .Number        { color: $code-pink; }
+  .Symbol        { color: $code-fg; }
+  .PrimitiveType { color: $code-blue; }
+  .Pragma        { color: $code-fg; }
+
+/* NameKinds. */
+  .Bound                  { color: $code-fg !important;      }
+  .Generalizable          { color: $code-fg !important;      }
+  .InductiveConstructor   { color: $code-green !important;   }
+  .CoinductiveConstructor { color: $code-green !important;   }
+  .Datatype               { color: $code-blue !important;    }
+  .Field                  { color: $code-purple !important;  }
+  .Function               { color: $code-blue !important;    }
+  .Module                 { color: $code-pink !important;    }
+  .Postulate              { color: $code-blue !important;    }
+  .Primitive              { color: $code-blue !important;    }
+  .Record                 { color: $code-blue !important;    }
+
+/* OtherAspects. */
+  .UnsolvedMeta         { color: $code-fg; background: yellow         }
+  .UnsolvedConstraint   { color: $code-fg; background: yellow         }
+  .TerminationProblem   { color: $code-fg; background: #FFA07A        }
+  .IncompletePattern    { color: $code-fg; background: #F5DEB3        }
+  .Error                { color: red;   text-decoration: underline }
+  .TypeChecks           { color: $code-fg; background: #ADD8E6        }
+  .ShadowingInTelescope { color: $code-fg; background: #808080        }
+  .Deadcode             {
+    color: $code-orange;
+    font-weight: bold;
+  }
+
+  /* Standard attributes. */
+  a { text-decoration: none }
+  a[href]:hover {
+    text-decoration: 2px $link-ul underline;
+  }
+  a[href]:target {
+    animation: highlight 2.5s;
+  }
+
+
+  // background-color: $code-bg;
+  font-family: 'iosevka', 'Iosevka', 'Fantasque Sans Mono', 'Roboto Mono', monospace;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'iosevka';
+  font-display: swap;
+  font-weight: 400;
+  font-stretch: normal;
+  font-style: normal;
+  src: url('/static/woff2/iosevk-abbie-regular.woff2') format('woff2'), url('/static/ttf/iosevk-abbie-regular.ttf') format('truetype');
+}
+
+span.qed {
+  float: right;
+}
