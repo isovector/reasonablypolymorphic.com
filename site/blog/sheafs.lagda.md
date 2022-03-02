@@ -9,7 +9,7 @@ tags: agrios, sheaves, math, reverse engineering, agda
 ```
 {-# OPTIONS --type-in-type #-}
 
-module posts.sheafs where
+module blog.sheafs where
 
 open import Data.Integer hiding (_<_)
 open import Data.Integer.Properties using (*-zeroˡ; ≤-reflexive; ≤-trans)
