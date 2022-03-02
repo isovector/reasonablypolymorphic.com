@@ -45,6 +45,11 @@ body .footnote-back {
   padding-left: 0.5em;
 }
 
+article {
+  text-align: justify;
+  margin: 0 auto;
+}
+
 .main {
   max-width: 100ch;
   width: 100%;

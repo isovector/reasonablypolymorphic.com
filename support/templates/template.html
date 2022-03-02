@@ -2,7 +2,7 @@
 
 <article>
 <header>
-  <h1><a href="/{{canonical_url}}">{{title}}</a></h1>
+  <h1><a href="/{{path}}#">{{#meta}}{{a_title}}{{/meta}}</a></h1>
 </header>
 <p class="meta">
     {{#has_prev}}
@@ -15,7 +15,7 @@
         <a href="/blog/{{next}}">&rarr;</a>
     </span>
     {{/has_next}}
-    <time>{{date}}</time>
+    <time>{{#meta}}{{a_date}}{{/meta}}</time>
 
     <span class="tags">
         {{{html_tags}}}

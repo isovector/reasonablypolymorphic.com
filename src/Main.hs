@@ -30,6 +30,7 @@ import qualified System.Directory as Dir
 import           Text.HTML.TagSoup
 import           Text.Pandoc (Meta (Meta))
 import           Utils
+import Data.Char (isUpper)
 
 parseHeader :: Meta -> Maybe Article
 parseHeader (Meta m) =
@@ -60,6 +61,7 @@ main =
 
   liftIO $ Dir.createDirectoryIfMissing True "_build/html"
   liftIO $ Dir.createDirectoryIfMissing True "_build/html1"
+  liftIO $ Dir.createDirectoryIfMissing True "_build/html1/agda"
 
   agda_files <- agdaHTML "site"
   fileIdents <- liftIO $ newCacheIO parseFileIdents
@@ -73,9 +75,6 @@ main =
   md0   <- sort . fmap ("_build/html0" </>) <$> getDirectoryFiles "_build/html0" ["*.md"]
   html0 <- sort . fmap ("_build/html0" </>) <$> getDirectoryFiles "_build/html0" ["*.html"]
 
-  let getHtml1Path = getBuildPath "html1" "html"
-
-
   raw_articles <-
     forP (fmap ("site" </>) md_files) $ \input ->
       loadMarkdown parseHeader commit input
@@ -83,7 +82,7 @@ main =
     forP md0 $ fmap (\s -> s { p_path = dropDirectory1 $ p_path s } ) . loadMarkdown parseHeader commit
 
   void $ forP html0 $ \html ->
-    liftIO $ Dir.copyFile html $ getHtml1Path html
+    liftIO $ Dir.copyFile html $ getBuildPath "html1/agda" "html" html
 
   let renamed_articles = rename doMyRename $ raw_articles <> raw_md
   articles <- forP renamed_articles $ renderPost fileIdents defaultWriterOptions
@@ -110,8 +109,10 @@ main =
 
 doMyRename :: FilePath -> FilePath
 doMyRename s
-  | isPrefixOf "Blog/20" s = dropExtension ("blog" </> drop (length @[] "Blog/2000-00-00-") s) </> "index.html"
-  | isPrefixOf "Blog" s = dropExtension ("blog" </> drop 5 s) </> "index.html"
+  | isPrefixOf "blog/20" s = dropExtension ("blog" </> drop (length @[] "Blog/2000-00-00-") s) </> "index.html"
+  | isPrefixOf "blog" s = dropExtension ("blog" </> drop 5 s) </> "index.html"
+  | Just (c, _) <- uncons s
+  , isUpper c = "agda" </> s
   | otherwise = s
 
 
