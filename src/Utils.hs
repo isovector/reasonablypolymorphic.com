@@ -3,15 +3,14 @@
 module Utils where
 
 import           Control.Arrow ((&&&))
-import           Control.Lens (view, review)
-import           Data.Aeson (Value, (.=))
+import           Control.Lens hiding ((.=))
+import           Data.Aeson
+import           Data.Aeson.Lens
 import           Data.List (intercalate, isPrefixOf)
 import qualified Data.Map as M
 import           Data.Maybe (listToMaybe, fromJust)
-import           Data.Monoid ((<>))
 import           Data.Text (split, Text)
 import           Data.Text.Lens (_Text, unpacked)
-import           SitePipe
 import           Text.Regex.TDFA ((=~~))
 
 

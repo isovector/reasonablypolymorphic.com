@@ -12,22 +12,36 @@ packages:
   original:
     hackage: datetime-0.3.1
 - completed:
-    hackage: sitepipe-0.4.0.1@sha256:5fc6cda5c34b68900d4dcbc4c69a812419d33aefe89705918f048ae16823afad,1470
-    pantry-tree:
-      size: 702
-      sha256: b96e437558da5a86e03650a434e4d516fbf8f1345b5a59655b7fa80c4f07222f
-  original:
-    hackage: sitepipe-0.4.0.1
-- completed:
     hackage: strptime-1.0.10@sha256:f7f0c3ffedbedbfebc4ce77e0015b4ad879d79dffe11a747da7a304900b09d13,1156
     pantry-tree:
       size: 331
       sha256: fb752cf40a8ac7ac9f6590b93d37b9ad9f3b4252d04f237b9e9f201226c8004b
   original:
     hackage: strptime-1.0.10
+- completed:
+    hackage: blagda-0.1.0.1@sha256:5ed1b3928fa7452356b032fcac6f21e448133f3c2df47e19a387ddffaafc02f0,1946
+    pantry-tree:
+      size: 923
+      sha256: f396c0d7758c098adf183285e941b3b8468c8b36dc269c05bfb6b5937fc7c975
+  original:
+    hackage: blagda-0.1.0.1
+- completed:
+    hackage: Agda-2.6.2.1@sha256:8d75dd8d30c0527f2a8b3c1e4295474fc1e2a20d6d1860b6de8e22312d92fa6a,36785
+    pantry-tree:
+      size: 39733
+      sha256: af917c87859e104a86a79533929f671251237a0a91e28a7e699358adb326246c
+  original:
+    hackage: Agda-2.6.2.1
+- completed:
+    hackage: MissingH-1.5.0.0@sha256:34df0817c543894b53942852109da1ba7f3f615ca0aded9b9c58bf52d33017e8,4740
+    pantry-tree:
+      size: 5272
+      sha256: e651ec6ac04238ae27e645f5c8316459999bed57c388c459a44c21c58525fba7
+  original:
+    hackage: MissingH-1.5.0.0@sha256:34df0817c543894b53942852109da1ba7f3f615ca0aded9b9c58bf52d33017e8,4740
 snapshots:
 - completed:
-    size: 531237
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/0.yaml
-    sha256: 210e15b7043e2783115afe16b0d54914b1611cdaa73f3ca3ca7f8e0847ff54e5
-  original: lts-16.0
+    size: 586296
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
+    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
+  original: lts-18.18
