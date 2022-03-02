@@ -4,6 +4,5 @@
 *.hi
 /dist
 *.swo
-_build/
+/_build
 *.agdai
-docs/
