@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Freer Monads: Too Fast, Too Free :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/too-fast-too-free/index.html#">Freer Monads: Too Fast, Too Free</a></h1>
+</header>
+<p class="meta">
+    <time>2019-02-18</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>The venerable <a href="https://poisson.chat/">Lyxia</a> had this to say about my <a href="https://reasonablypolymorphic.com/blog/freer-monads/">last post on freer monads</a>:</p>
+<blockquote>
+<p>I agree the performance argument is way less important than the frequency at which it’s thrown around makes it seem. The reason freer performance sucks is that you’re repeatedly constructing and deconstructing trees at runtime. However, that is only a consequence of the implementation of freer as a GADT (initial encoding). I bet the final encoding can do wonders:</p>
+<p><code>newtype Freer f a = Freer (forall m. Monad m =&gt; (forall t. f t -&gt; m t) -&gt; m a)</code></p>
+</blockquote>
+<p>I spent a few days working through the implications of this, and it turns out to be a particularly compelling insight. Behold the microbenchmarks between <code>freer-simple</code> and an equivalent program written against <code>mtl</code>:</p>
+<pre><code>benchmarking freer-simple
+time                 745.6 μs   (741.9 μs .. 749.4 μs)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 745.1 μs   (742.2 μs .. 748.5 μs)
+std dev              10.68 μs   (8.167 μs .. 14.23 μs)
+
+benchmarking mtl
+time                 10.96 μs   (10.93 μs .. 10.98 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 10.95 μs   (10.92 μs .. 10.99 μs)
+std dev              119.3 ns   (93.42 ns .. 153.7 ns)</code></pre>
+<p>Not so good; <code>freer-simple</code> is like 75x worse in this case! But the same program again when written in this final encoding is pretty damn fast:</p>
+<pre><code>benchmarking too-fast-too-free
+time                 24.23 μs   (24.10 μs .. 24.37 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 24.27 μs   (24.15 μs .. 24.40 μs)
+std dev              448.8 ns   (355.8 ns .. 586.1 ns)</code></pre>
+<p>It’s roughly 2x slower than <code>mtl</code>, which is AKA 35x faster than <code>freer-simple</code>. This is pretty sweet, and it comes with the benefit of getting to keep the underlying semantics of <code>freer-simple</code>.</p>
+<p>So without further ado, I’d like to share my work-in-progress with you, tentatively named <a href="https://github.com/isovector/too-fast-too-free"><code>too-fast-too-free</code></a>. This is ready for prime-time, but I’d prefer to merge it to someone upstream rather than pollute hackage with yet another free(r) monad extensible effects package.</p>
+<p>I’ll do it if I have to, but the performance is fair game for anyone who wants it. If I don’t hear from anyone by next week, I’ll publish a new package to hackage and begin the freer monad revolution we’ve all been waiting for.</p>
+<h2 id="what-the-heck-is-any-of-this-stuff-anyway"><a href="#what-the-heck-is-any-of-this-stuff-anyway" class="header-link">What the Heck Is Any of this Stuff Anyway?<span class="header-link-emoji">🔗</span></a></h2>
+<p>Let’s investigate this finally-encoded type and see where this performance comes from:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Freer</span> f a <span class="ot">=</span> <span class="dt">Freer</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> runFreer ::</span> <span class="kw">forall</span> m<span class="op">.</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="kw">forall</span> t<span class="op">.</span> f t <span class="ot">-&gt;</span> m t) <span class="ot">-&gt;</span> m a</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>The type of <code>runFreer</code> is saying “if you give me a <code>Freer f a</code> and a natural transformation from <code>f</code> to some monad <code>m</code>, then I can give you back an <code>m a</code>.” Sounds promising, right?</p>
+<p><code>Freer</code>’s instance for <code>Monad</code> is written in terms of this final <code>m</code>, and so short of shunting around some functions, we’re not really paying any cost for binds compared to just writing in terms of <code>m</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Freer</span> f) <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Freer</span> ma <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="dt">Freer</span> <span class="op">$</span> \k <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    a <span class="ot">&lt;-</span> ma k</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    runFreer (f a) k</span></code></pre></div>
+<p>Compare this to the approach used by <code>freer-simple</code> which needs to allocate leafs in a tree for every bind (and for every <code>fmap</code> and <code>ap</code>!) That’s a huge win already.</p>
+<p>Turning <code>Freer</code> into <code>Eff</code> uses the same trick as <code>freer-simple</code>—let <code>Eff r</code> be <code>Freer (Union r)</code>, where <code>Union r</code> is a value that can be any effect in <code>r</code>. A natural transformation <code>forall m. Monad m =&gt; (forall t. Union r t -&gt; m t)</code> must therefore handle every possible effect in <code>r</code>, and so we haven’t lost any capabilities with our new encoding.</p>
+<p>The challenging part was figuring out how to plumb state through the encoding of <code>Freer f a</code>—after all, many interesting interpreters are necessarily stateful.</p>
+<p>Fortunately there’s a trick. Because <code>Eff (e &#39;: r) a</code> can be interpreted in terms of <em>any</em> <code>Monad</code> <code>m</code>, we can choose <code>m ~ StateT s (Eff r)</code>, and get our statefulness from <code>StateT</code> directly. Because <code>StateT</code>’s bind is written in terms of its underlying monad, this trick doesn’t cost us anything more than shunting another few functions around.</p>
+<p>We can achieve short-circuiting interpreters similarly by evaluating them via <code>ExceptT (Eff r)</code>. In fact, this pattern turns out to be pretty common—and it generalizes thusly:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>transform</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> ( <span class="dt">MonadTrans</span> t</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>       , <span class="dt">MFunctor</span> t</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>       , <span class="kw">forall</span> m<span class="op">.</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Monad</span> (t m)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>       )</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> m<span class="op">.</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> t m a <span class="ot">-&gt;</span> m b)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>       <span class="co">-- ^ The strategy for getting out of the monad transformer.</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (eff <span class="op">~&gt;</span> t (<span class="dt">Eff</span> r))</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Eff</span> (eff &#39;<span class="op">:</span> r) a</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Eff</span> r b</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>transform lower f (<span class="dt">Freer</span> m) <span class="ot">=</span> <span class="dt">Freer</span> <span class="op">$</span> \k <span class="ot">-&gt;</span> lower <span class="op">$</span> m <span class="op">$</span> \u <span class="ot">-&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> decomp u <span class="kw">of</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Left</span>  x <span class="ot">-&gt;</span> lift <span class="op">$</span> k x</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Right</span> y <span class="ot">-&gt;</span> hoist (usingFreer k) <span class="op">$</span> f y</span></code></pre></div>
+<p>Admittedly the type is a little terrifying, but library code can <a href="https://github.com/isovector/too-fast-too-free/blob/91aad992db3b35401acf7335ef24dad39d481648/src/Eff/Interpretation.hs#L36-L43">specialize it</a> down to <a href="https://github.com/isovector/too-fast-too-free/blob/91aad992db3b35401acf7335ef24dad39d481648/src/Eff/Interpretation.hs#L76-L83">less offensive</a> combinators.</p>
+<p>At the end of the day, this final encoding means that <code>Freer</code> code specializes down to its eventual result anyway, giving us the “fusion” of <a href="https://github.com/robrix/fused-effects"><code>fused-effects</code></a> without the boilerplate.</p>
+<p>Hopefully these results are enough to finally put the “free monads have bad performance” argument to rest. I’ll have some promising results on the <code>bracket</code> front as well that require some refinement, but hopefully those will come sooner than later.</p>
+<p>¡Viva la freer monad revolucion!</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

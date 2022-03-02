@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>An Existential Crisis :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/existentials/index.html#">An Existential Crisis</a></h1>
+</header>
+<p class="meta">
+    <time>2016-07-15</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>We’re slowly making progress towards being able to procedurally generate stories. <a href="http://reasonablypolymorphic.com/blog/coiter">Last time</a> around we built our first comonad, and could thus provide our first interpretation of a <code>Story</code>. Success!</p>
+<h2 id="weeds-in-the-abstraction-garden"><a href="#weeds-in-the-abstraction-garden" class="header-link">Weeds in the Abstraction Garden<span class="header-link-emoji">🔗</span></a></h2>
+<p>Unfortunately, not all is blissful in this glorious garden of abstraction we’ve cultivated for ourselves. Something rotten is afoot. Brace yourself for the horror: our semantics are bad.</p>
+<p>Recall the definition of our command functor:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span> (<span class="dt">ChangeResult</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Interrupt</span> (<span class="dt">Story</span> ()) (<span class="dt">Story</span> ()) a</span></code></pre></div>
+<p>So what’s the problem? Well, if you think about how we’ll use <code>Interrupt</code>, we’ve broken an important principle: everything is an expression. The semantics we had for <code>Interrupt</code> was that the first <code>Story ()</code> was interrupted at some point with the second <code>Story ()</code>, and once that was finished, the <code>a</code> would continue.</p>
+<p>Given these semantics, the second <code>Story ()</code> runs in the same “line of reality” as <code>a</code>. However, the fact that our interrupting story returns <code>()</code> means it can never pass any information along to the continued computation. We’ve accidentally implemented a black hole of knowledge in our story system.</p>
+<p>How? Let’s see:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">story ::</span> <span class="dt">Story</span> ()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>story <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    interrupt (leave charlie) <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        deathOfCharlie <span class="ot">&lt;-</span> die charlie</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span> () <span class="co">-- mandated by our `Story ()` type</span></span></code></pre></div>
+<p>This is a sad story, about how while attempting to leave, Charlie dies. However, nobody can ever learn about this, and it can never affect the rest of the story, since the value <code>deathOfCharlie</code> can never escape the scope of the <code>interrupt</code> block.</p>
+<p>While it’s certainly <em>different</em> storytelling, it’s not very <em>good</em> storytelling. A story about random things happening which don’t affect the rest of the plot is kind of what we’d expect a procedurally generated story to look like, but I think we can do better. <a href="https://en.wikipedia.org/wiki/The_Room_(film)">Sometimes this kind of storytelling can be successful</a>, but it’s usually not.</p>
+<h2 id="that-which-exists-without-my-knowledge"><a href="#that-which-exists-without-my-knowledge" class="header-link">That Which Exists Without My Knowledge<span class="header-link-emoji">🔗</span></a></h2>
+<p>So what’s the solution? Well, in the same way that the <code>Change</code> constructor creates a <code>ChangeResult</code> and passes it to the remainder of the computation, our <code>Interrupt</code> should create a <code>y</code> (the result of the interrupting story), and pass <em>it</em> on to the remainder of the computation.</p>
+<p>But <code>x</code> can vary! And <code>StoryF</code> is recursive! But <code>x</code> can vary between layers of <code>StoryF</code>s. Clearly<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> <code>x</code> is unreasonably polymorphic for us to be able to pin down as a type parameter to <code>StoryF</code>. So what ever can we do?</p>
+<p>Existential quantification to the rescue! If you’re unfamiliar with this, it’s essentially having an instance of an interface in more traditional OOP languages. We have some type <code>x</code>, but we don’t know anything about it, and the only thing we can do with it is shuffle it around, desperately hoping someone down the line has a function that works over <em>any</em> type.</p>
+<p>Let’s make it happen:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ExistentialQuantification #-}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span> (<span class="dt">ChangeResult</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="kw">forall</span> x y<span class="op">.</span> <span class="dt">Interrupt</span> (<span class="dt">Story</span> x) (<span class="dt">Story</span> y) (y <span class="ot">-&gt;</span> a)</span></code></pre></div>
+<p>The <code>forall x y</code> syntax introduces two type variables <code>x</code> and <code>y</code> which are existential – they’re in scope but we can never know what they are. Our two stories can now vary over any types, and the continuation of our program takes the result of the latter story.</p>
+<p>This gives us our desired semantics; all that’s left is to make it typecheck. There’s a fair amount of plumbing to do, but slow and steady wins the race.</p>
+<h2 id="mechanical-exist-fixing"><a href="#mechanical-exist-fixing" class="header-link">Mechanical Exist-fixing<span class="header-link-emoji">🔗</span></a></h2>
+<p>We update our <code>CoStoryF</code> to also handle existentials:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">CoStoryF</span> b <span class="ot">=</span> <span class="dt">CoStoryF</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                {<span class="ot"> changeH    ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">ChangeType</span> <span class="ot">-&gt;</span> (<span class="dt">ChangeResult</span>, b)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                ,<span class="ot"> interruptH ::</span> <span class="kw">forall</span> x y<span class="op">.</span> <span class="dt">Story</span> x <span class="ot">-&gt;</span> <span class="dt">Story</span> y <span class="ot">-&gt;</span> (y, b)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                }</span></code></pre></div>
+<p>And we need to pin an additional <code>fmap</code> into our iniquitous mess of <code>CoStoryF</code>’s <code>Functor</code> instance:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">CoStoryF</span> <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fmap</span> f (<span class="dt">CoStoryF</span> c i) <span class="ot">=</span> <span class="dt">CoStoryF</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        ((<span class="fu">fmap</span> <span class="op">.</span> <span class="fu">fmap</span> <span class="op">.</span> <span class="fu">fmap</span>) f c)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        ((<span class="fu">fmap</span> <span class="op">.</span> <span class="fu">fmap</span> <span class="op">.</span> <span class="fu">fmap</span>) f i)</span></code></pre></div>
+<p>along with the <code>Zap</code> instance to <code>zap</code> the our resulting <code>y</code> into our <code>StoryF</code>’s <code>y -&gt; a</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Zap</span> <span class="dt">StoryF</span> <span class="dt">CoStoryF</span> <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Change</span>    c ct k) (<span class="dt">CoStoryF</span> h _) <span class="ot">=</span> zap f k (h c ct)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Interrupt</span> x y  k) (<span class="dt">CoStoryF</span> _ h) <span class="ot">=</span> zap f k (h x y)</span></code></pre></div>
+<p>Success! Everything compiles! So it must work, right? This suspicious rhetorical question turns out to actually be misleading – everything actually <em>does</em> work. This is Haskell, after all.</p>
+<h2 id="a-good-story-is-always-rankedn"><a href="#a-good-story-is-always-rankedn" class="header-link">A Good Story Is Always Ranked(N)<span class="header-link-emoji">🔗</span></a></h2>
+<p>However, it’s now significantly harder to construct <code>CoStory b</code>s. Before, our interrupted stories couldn’t actually ever change anything, so we didn’t need to interpret them. That approach no longer holds water, so we need to find a way of letting a <code>CoStory</code> be implemented in terms of itself.</p>
+<p>Recall that we previously constructed our <code>CoStory b</code> out of a few values:</p>
+<ul>
+<li><code>start :: b</code></li>
+<li><code>handleChange :: b -&gt; Character -&gt; ChangeType -&gt; (ChangeResult, b)</code></li>
+<li><code>handleInterrupt :: b -&gt; Story () -&gt; Story () -&gt; b</code></li>
+</ul>
+<p>That <code>handleInterrupt</code> is no longer going to fly. Let’s update it to our new semantics and try again:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">handleInterrupt ::</span> b <span class="ot">-&gt;</span> <span class="dt">Story</span> x <span class="ot">-&gt;</span> <span class="dt">Story</span> y <span class="ot">-&gt;</span> (y, b)</span></code></pre></div>
+<p>Good! But we have no means of interpreting <code>Story y</code> in order to get the <code>y</code> of our resulting pair. Fortunately, we do have a means of interpreting <code>Story</code>s: <code>interpret :: Story a -&gt; CoStory b -&gt; (a, b)</code>. We’ll want to fix the <code>CoStory b</code> to be the one we’re currently defining, so that you can’t accidentally change your interpretation strategy half way through.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE RankNTypes #-}</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">handleInterrupt ::</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Story</span> a <span class="ot">-&gt;</span> (a, b))</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> b</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> <span class="dt">Story</span> x</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> <span class="dt">Story</span> y</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> (y, b)</span></code></pre></div>
+<p>What’s this <code>forall a.</code> stuff? Well, without it, our type variable <code>a</code> will get bound the first time we interpreted a story, which would be to either <code>x</code> or to <code>y</code>. Once this is the case, we’d be unable to interpret the <em>other</em> story. Annotating our interpretation function parameter here forces Haskell to hold off binding that type variable: instead of working <em>on some</em> type <code>a</code>, it must work <code>forall a</code>. Get it?</p>
+<p>With all the pieces in place, we’re ready to write our helper function. Prepare yourself for the most horrifying type signature I’ve ever written:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mkCoStory ::</span> b</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">ChangeType</span> <span class="ot">-&gt;</span> (<span class="dt">ChangeResult</span>, b))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> (<span class="kw">forall</span> x y <span class="op">.</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Story</span> a <span class="ot">-&gt;</span> (a, b))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                        <span class="ot">-&gt;</span> b</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                        <span class="ot">-&gt;</span> <span class="dt">Story</span> x</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                        <span class="ot">-&gt;</span> <span class="dt">Story</span> y</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                        <span class="ot">-&gt;</span> (y, b))</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">CoStory</span> b</span></code></pre></div>
+<p>Don’t panic! In a second, you’ll recognize this is just the combination of <code>start</code>, <code>handleChange</code> and <code>handleInterrupt</code> mashed into a single function. You’ll notice we also had to mark our <code>x</code> and <code>y</code> type variables as being <code>forall</code>, since our <code>handleInterrupt</code> function mustn’t be bound to the first <code>x</code> and <code>y</code>s it finds.</p>
+<p>The implementation is worth working your way through to see how it works:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mkCoStory start changeH interruptH <span class="ot">=</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    fix <span class="op">$</span> \self <span class="ot">-&gt;</span> coiter (next (<span class="fu">flip</span> interpret self)) start</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    next run b <span class="ot">=</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">CoStoryF</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>            (changeH b)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>            (interruptH (unsafeCoerce run) b)</span></code></pre></div>
+<p>It’s not as lovely as I’d like. In particular, there’s that <code>unsafeCoerce</code> in there which tricks the compiler into forgetting that our “never can be known” type <code>y</code> is exiting the <code>forall y</code> scope that defines it. This is safe because we’re only forgetting that it’s existential for a second – immediately after we feed it back into an existential of the same type (we’ve just moved between the <code>Story y</code> and the <code>y -&gt; a</code> in <code>forall x y. Interrupt (Story x) (Story y) (y -&gt; a)</code>). That’s all true, but it still makes me nervous.</p>
+<p>I’d love to know if you can come up with a better solution, but in the meantime, this works well enough.</p>
+<h2 id="roll-call"><a href="#roll-call" class="header-link">Roll Call!<span class="header-link-emoji">🔗</span></a></h2>
+<p>With the help of <code>mkCoStory</code>, we’re now able to write a <code>CoStory</code> which computes all of the characters referenced in a <code>Story</code> – even if they’re only hypothetical:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">getCharacters ::</span> <span class="dt">CoStory</span> (<span class="dt">Set</span> <span class="dt">Character</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>getCharacters <span class="ot">=</span> mkCoStory S.empty changeH interruptH</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    changeH b c ct <span class="ot">=</span> (<span class="dt">ChangeResult</span> c ct, S.insert c b)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    interruptH</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        (<span class="ot">run ::</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Story</span> a <span class="ot">-&gt;</span> (a, <span class="dt">Set</span> <span class="dt">Character</span>))</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        b x y <span class="ot">=</span> ( <span class="fu">fst</span> (run y)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                , <span class="fu">mconcat</span> [b, <span class="fu">snd</span> (run x), <span class="fu">snd</span> (run y)]</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                )</span></code></pre></div>
+<p><code>getCharacters</code> collects referenced characters by keeping track of who changes, and recursing into interrupted branches.</p>
+<p>The explicit type signature of <code>run</code> is unfortunate but necessary – <code>RankNTypes</code> breaks Hindley-Milner type inference, so we need to tell Haskell what we’re doing.</p>
+<p>So we’ve successfully cleaned up our semantics, and enforced that our interpretation of a <code>Story</code> is internally consistent. However, there’s still room for error – we haven’t enforced that all interpretations of a <code>Story</code> produce the same <code>ChangeResult</code> tokens. Since subsequent code can branch on their contents, this is a problem just waiting to happen, and we’ll fix it next time.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>To be honest, I’m not certain of this, but I’ve spent some time thinking about it and haven’t yet come up with a way of doing it.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Coercions and Roles for Dummies :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/roles/index.html#">Coercions and Roles for Dummies</a></h1>
+</header>
+<p class="meta">
+    <time>2018-06-26</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>A discussion about roles broke out yesterday on <a href="https://functionalprogramming.slack.com/">fpchat</a> which is a great place to hang out and talk about nerdy functional programming stuff if you don’t already know about it. Go sign up! Anyway, people suggested I clean up my little soliloquy about roles and turn it into a blog post, so here we are.</p>
+<p>You’ve heard of the type system, which makes sure your terms are sane. Maybe you’re also aware of the kind system, whose job it is to make sure your types are reasonable! But did you know Haskell has an even more obscure system than these? It’s called the role system, and its purpose in life is to prevent you from shooting yourself in the foot when dealing with <em>coercions.</em></p>
+<p>Coercions and roles have been around since 2014, but there’s been surprisingly little discussion about them in the blogosphere. In short, if two types have the same representation at runtime, then it should be safe to coerce a value of one into a value of the other. The role system is used to describe under what circumstances such a coercion is legal.</p>
+<p>To illustrate the point, let’s talk about newtypes. Consider the following:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">AnInt</span> <span class="ot">=</span> <span class="dt">AnInt</span> <span class="dt">Int</span></span></code></pre></div>
+<p>The promise of a newtype in Haskell is that it is zero-overhead; at runtime, <code>AnInt</code> is exactly identical to <code>Int</code>. Newtypes are often used for adding type-safety; it’s nice if you have a <code>newtype Temperature = Temperature Int</code> and a <code>newtype Money = Money Int</code> because the extra type wrappers ensure you can’t accidentally add the weather to your bank account, even if at the end of the day they <em>are</em> both just integers.</p>
+<p><code>AnInt</code> and <code>Int</code> are not <em>literally</em> the same type, but they don’t actually differ at runtime. This property is known as being <em>representationally equal.</em> If two types are representationally equal, we should be able to do the equivalent of C++’s <code>reinterpret_cast</code> and just pretend like a value of one is in fact a value of the other. Since these types correspond exactly at runtime, this is usually a safe thing to do.</p>
+<p>If <code>AnInt</code> and <code>Int</code> are the same type at runtime, it means we should be able to <code>coerce :: AnInt -&gt; Int</code> (and backwards) freely between the two types without any problems. Morally, this <code>coerce</code> function is just <code>id</code>, because we’re not actually doing any work to the value.</p>
+<p>Consider now the slightly more interesting type:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Identity</span> a <span class="ot">=</span> <span class="dt">Identity</span> a</span></code></pre></div>
+<p>Again, because <code>Identity</code> is a newtype, we should expect <code>Identity a</code> to be <em>representationally equal</em> to <code>a</code>. Since this is true, we expect that <code>Identity AnInt</code> also be representationally equal to <code>Identity Int</code>, via <code>Identity AnInt --&gt; AnInt --&gt; Int --&gt; Identity Int</code>. And thus, we should be able to <code>coerce :: Identity AnInt -&gt; Identity Int</code>. We can see that <code>Identity a</code> preserves the coercion relationship of its type parameter <code>a</code>, and this property is known as the <code>a</code> having role <code>representational</code>.</p>
+<p>More generally, if the type parameter <code>a</code> in <code>F a</code> has role <code>representational</code>, then <code>F X</code> is representationally equal to <code>F Y</code> whenever <code>X</code> is representationally equal to <code>Y</code>. This works whether <code>F</code> be a <code>data</code> or a <code>newtype</code>.</p>
+<p>However, not all type parameters have role <code>representational</code>! Consider <code>Data.Map.Map k v</code> which has keys <code>k</code> and values <code>v</code>. Because <code>Map</code> is implemented as a balanced tree, it uses the <code>Ord k</code> instance to figure out where to store a kv-pair.</p>
+<p>One of the reasons we write newtypes is to give a different typeclass instance than the underlying type has. For example, <code>newtype ZipList a = ZipList [a]</code> has a different <code>Applicative</code> instance than <code>[]</code> does. In general, we have no reason to expect that a newtype and its underlying type have instances that agree with one another.</p>
+<p>Which leads us to a problem. Because a value of <code>Map k v</code> is a balanced tree which depends on the <code>Ord k</code> instance, we can’t simply swap in <code>SomeOtherK</code> and expect everything to work hunky-dory. They have different <code>Ord</code> instances, and things would go screwy at runtime. All of this is to say that we <strong>do not</strong> want to be able to <code>coerce :: Map AnInt v -&gt; Map Int v</code> because it’s likely to crash at runtime.</p>
+<p>However, it is still fine to <code>coerce :: Map k AnInt -&gt; Map k Int</code>, because the values don’t have this implicit dependency on any typeclass instances. There are no invariants to maintain on the <code>v</code> parameter, and so we are free to <code>coerce</code> to our hearts’ content.</p>
+<p>The role system is what describes this difference between the <code>k</code> and <code>v</code> type parameters of <code>Data.Map.Map</code>. While <code>v</code> is still role <code>representational</code>, <code>k</code> has role <code>nominal</code>.</p>
+<p><code>nominal</code> coercions of the form <code>coerce :: a -&gt; b</code> are allowed iff you already have a proof that <code>a ~ b</code>, which is to say that <code>a</code> and <code>b</code> are literally the same type.</p>
+<p>There’s also a third role, <code>phantom</code>, which, you guessed it, is given to phantom type parameters (eg. the <code>a</code> in <code>data Const x a = Const x</code>.) Because phantom types are by-definition not referenced in the data definition of a type, we are always free to coerce a <code>phantom</code> type to any other type.</p>
+<p>All of this cashes out in the form of <code>Data.Coerce</code>’s <code>coerce :: Coercible a b =&gt; a -&gt; b</code>. GHC will automatically provide instances of <code>Coercible a b</code> whenever <code>a</code> and <code>b</code> are representationally coercible. That means you get these instances (and all of their symmetries):</p>
+<ul>
+<li>Given <code>a ~ b</code>, <code>Coercible a b</code></li>
+<li>If <code>NT</code> is a newtype over <code>T</code>, <code>Coercible NT T</code></li>
+<li>If <code>p</code> in <code>F p</code> has role <code>phantom</code>, <code>Coercible (F a) (F b)</code></li>
+<li>If <code>r</code> in <code>F r</code> has role <code>representational</code>, <code>Coercible a b =&gt; Coercible (F a) (F b)</code></li>
+<li>If <code>n</code> in <code>F n</code> has role <code>nominal</code>, <code>(a ~ b) =&gt; Coercible (F a) (F b)</code></li>
+</ul>
+<p>GHC is pretty clever, and has a role-inference mechanism. It works by knowing that <code>(-&gt;)</code> has two <code>representational</code> roles, that <code>(~)</code> has two <code>nominal</code> roles, and propagates from there. Every type parameter is assumed to have role <code>phantom</code> until it is used, whence it gets upgraded to the more restrictive role corresponding to the position it was used in. For example, if <code>a</code> is used in <code>a ~ Bool</code>, <code>a</code> gets role <code>nominal</code> since both of <code>(~)</code>’s parameters have <code>nominal</code> roles.</p>
+<p>GADTs are syntactic sugar on top of <code>(~)</code> so expect GADTs to have <code>nominal</code> role type parameters. Furthermore, any parameters of a <code>type family</code> that are scrutinized will also have role <code>nominal</code> (the motivated reader will be able to find an interesting implementation of <code>unsafeCoerce :: forall a b. a -&gt; b</code> if this were not the case.)</p>
+<p>This inference mechanism will give you the most permissible roles that don’t <em>obviously</em> destroy the type system, but sometimes it’s necessary to explicitly give a role annotation, like in the <code>Data.Map.Map</code> example. Role annotations can be given by eg. <code>type role Map nominal representational</code> after turning on <code>{-# LANGUAGE RoleAnnotations #-}</code>. It’s worth pointing out that you can only give <em>less</em> permissive roles than GHC has inferred; there’s no fighting with it on this one.</p>
+<hr />
+<p>At the end of the day, why is any of this stuff useful? Besides being nice to know, custom role annotations can provide type-safety ala <code>Data.Map.Map</code>. But we can also get asymptotic performance gains out of <code>coerce</code>:</p>
+<p>If <code>f :: Coercible a b =&gt; a -&gt; b</code> (common if <code>f</code> is a newtype un/wrapper, or composition of such), then <code>fmap f</code> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span> is equivalent to <code>coerce</code> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span> in most cases<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. In fact, <a href="https://github.com/mpickering">mpickering</a> has written a GHC source plugin that will <a href="https://github.com/mpickering/hashtag-coerce">tell you if you can apply this transformation</a>. Cool!</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Assuming <code>f</code>’s type parameter <code>a</code> is not <code>nominal</code> role.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

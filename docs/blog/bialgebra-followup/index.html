@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Followup to Sorting with Bialgebras :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/bialgebra-followup/index.html#">Followup to Sorting with Bialgebras</a></h1>
+</header>
+<p class="meta">
+    <time>2022-02-08</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>Last week I was pretty down on the results of my <a href="/blog/bialgebras/">exploration into Sorting with Bialgebras</a>. I didn’t want to get into the habit of slamming through a paper just to not understand it, so I figured I’d take a hit on my yearly goal and spend this week getting the results up to snuff.</p>
+<p>I started by really trying to wrap my head around how exactly the <code>ana . cata</code> pattern works. So I wrote out a truly massive number of trace statements, and stared at them until they made some amount of sense. Here’s what’s going on:</p>
+<p><code>ana</code> takes an <code>a</code> and unfolds it into an <code>F a</code>, recursively repeating until it terminates by producing a non-inductive <code>F</code>-term. So here <code>F</code> is a <code>Sorted</code>. And then we need to give a folding function for <code>cata</code>. This fold happens in <code>Unsorted</code>, and thus has type <code>Unsorted (Sorted (Mu Unsorted)) -&gt; Sorted (Mu Unsorted)</code>. The idea here is that the <code>cata</code> uses its resulting <code>Sorted</code> to pull forward the smallest element it’s seen so far. Once the <code>cata</code> is finished, the <code>ana</code> gets a term <code>Sorted (Mu Unsorted)</code>, where the <code>Sorted</code> term is the head of the synthesized list, and the <code>Mu Unsorted</code> is the next “seed” to recurse on. This <code>Mu Unsorted</code> is one element smaller than it was last time around, so the recursion eventually terminates.</p>
+<p>OK, so that’s all well and good. But what does <code>ana . para</code> do here? Same idea, except that the fold also gets a <code>Mu Unsorted</code> term, corresponding to the unsorted tail of the list — aka, before it’s been folded by <code>para</code>.</p>
+<p>The paper doesn’t have much to say about <code>para</code>:</p>
+<blockquote>
+<p>in a paramorphism, the algebra also gets the remainder of the list. This extra parameter can be seen as a form of an as-pattern and is typically used to match on more than one element at a time or to detect that we have reached the final element.</p>
+</blockquote>
+<p>That’s all well and good, but it’s unclear how this can help us. The difference between <code>naiveIns</code> and <code>ins</code> is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>naiveIns</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a x)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a x)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>naiveIns <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>naiveIns (a <span class="op">:&gt;</span> <span class="dt">SNil</span>) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">UNil</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>naiveIns (a <span class="op">:&gt;</span> b <span class="op">:!</span> x)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> b <span class="op">:&gt;</span> x</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> a <span class="op">:&gt;</span> x</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>ins</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (c, <span class="dt">Sorted</span> a x)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> c (<span class="dt">Unsorted</span> a x))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>ins <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>ins (a <span class="op">:&gt;</span> (x, <span class="dt">SNil</span>)) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>ins (a <span class="op">:&gt;</span> (x, b <span class="op">:!</span> x&#39;))</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> <span class="dt">Right</span> (a <span class="op">:&gt;</span> x&#39;)</span></code></pre></div>
+<p>Ignore the <code>Left/Right</code> stuff. The only difference here is whether we use <code>x</code> or <code>x&#39;</code> in the last clause, where <code>x</code> is the original, unsorted tail, and <code>x&#39;</code> is the somewhat-sorted tail. It’s unclear to me how this can possibly help improve performance; we still need to have traversed the entire tail in order to find the smallest element. Maybe there’s something about laziness here, in that we shouldn’t need to rebuild the tail, but we’re going to be sharing the tail-of-tail regardless, so I don’t think this buys us anything.</p>
+<p>And this squares with my confusion last week; this “caching” just doesn’t seem to do anything. In fact, the paper doesn’t even say it’s caching. All it has to say about our original <code>naiveIns</code>:</p>
+<blockquote>
+<p>Why have we labelled our insertion sort as naïve? This is because we are not making use of the fact that the incoming list is ordered— compare the types of <code>bub</code> and <code>naiveIns</code>. We will see how to capitalise on the type of <code>naiveIns</code> in Section 5.</p>
+</blockquote>
+<p>and then in section 5:</p>
+<blockquote>
+<p>The sole difference between sel and bub (Section 3) is in the case where a 6 b: <code>sel</code> uses the remainder of the list, supplied by the paramorphism, rather than the result computed so far. This is why <code>para sel</code> is the true selection function, and fold bub is the naïve variant, if you will.</p>
+</blockquote>
+<p>OK, fair, that checks out with what came out of my analysis. The <code>ana . para</code> version does use the tail of the original list, while <code>ana . cata</code> uses the version that might have already done some shuffling. But this is work we needed to do anyway, and moves us closer to a sorted list, so it seems insane to throw it away!</p>
+<p>The best argument I can come up with here is that the <code>ana . para</code> version is dual to <code>cata . apo</code>, which signals whether the recursion should stop early. That one sounds genuinely useful to me, so maybe the paper does the <code>ana . para</code> thing just out of elegance.</p>
+<p>Unfortunately, <code>cata . apo</code> doesn’t seem to be a performance boost in practice. In fact, both <code>cata . ana</code> and <code>ana . cata</code> perform significantly better than <code>cata . apo</code> and <code>ana . para</code>. Even more dammingly, the latter two perform better when they ignore the unique abilities that <code>apo</code> and <code>para</code> provide.</p>
+<p>Some graphs are worth a million words:</p>
+<center>
+<img src="/images/bialgebra/o0-by-size.png">
+</center>
+<center>
+<img src="/images/bialgebra/o0-by-algo.png">
+</center>
+<p>These are performance benchmarks for <code>-00</code>, using <code>Data.List.sort</code> as a control (“sort”). The big numbers on the left are the size of the input. “bubble” is the naive version of “selection.” Additionally, the graphs show the given implementations of <code>quickSort</code> and <code>treeSort</code>, as well as the two variations I was wondering about in the last post (here called <code>quickTree</code> and <code>treeQuick</code>.)</p>
+<p>The results are pretty damming. In <em>all</em> cases, bubble-sort is the fastest of the algorithms presented in the paper. That’s, uh, not a good sign.</p>
+<p>Furthermore, the “no caching” versions of “insertion” and “selection” both perform better than their caching variants. They are implemented by just ignoring the arguments that we get from <code>apo</code> and <code>para</code>, and simulating being <code>ana</code> and <code>cata</code> respectively. That means: whatever it is that <code>apo</code> and <code>para</code> are doing is <em>strictly worse</em> than not doing it.</p>
+<p>Not a good sign.</p>
+<p>But maybe this is all just a result of being run on <code>-O0</code>. Let’s try turning on optimizations and seeing what happens:</p>
+<center>
+<img src="/images/bialgebra/o2-by-size.png">
+</center>
+<center>
+<img src="/images/bialgebra/o2-by-algo.png">
+</center>
+<p>About the same. Uh oh.</p>
+<p>I don’t know what to blame this on. Maybe the constant factors are bad, or it’s a runtime thing, or I fucked up something in the implementation, or maybe the paper just doesn’t do what it claims. It’s unclear. But <a href="https://github.com/isovector/reviews/blob/d4dfc42aa2b993a6b0d536a6d96bef4e86f30f65/app/Main.hs#L19-L30">here’s my code</a>, in case you want to take a look and tell me if I screwed something up. The criterion reports are available for <a href="/graphs/bialgebra-o0.html"><code>-O0</code></a> and <a href="/graphs/bialgebra-o2.html"><code>-O2</code></a> (slightly different than in the above photos, since I had to rerun them.)</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

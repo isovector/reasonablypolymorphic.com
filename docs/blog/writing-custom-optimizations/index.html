@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Writing Custom Optimization Passes :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/writing-custom-optimizations/index.html#">Writing Custom Optimization Passes</a></h1>
+</header>
+<p class="meta">
+    <time>2019-05-22</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>I’ve been paying a lot of attention to performance in <a href="https://github.com/isovector/polysemy/"><code>polysemy</code></a>. Getting it to be fast <a href="/blog/freer-yet-too-costly/">has been really hard</a>. It’s clearly possible, but for the longest time I was afraid I’d need to fork the compiler. And that didn’t seem like a thing that would attract a large-user base.</p>
+<p>For example, <code>polysemy</code> benefits greatly from a <a href="/blog/specialization/">late specialization pass</a>, and would benefit further from aggressive inlining <em>after</em> the late specialization pass. Unfortunately, <a href="https://github.com/ghc/ghc/blob/master/compiler/simplCore/SimplCore.hs#L320-L345">GHC doesn’t do any inlining passes after <code>-flate-specialise</code></a>, so it feels like we’re stuck on this front.</p>
+<p>Thankfully, the eternally helpful <a href="https://mpickering.github.io/">mpickering</a> pointed me at the <a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#writing-compiler-plugins">GHC plugin interface</a>, which has support for directing the optimizer to do things it wouldn’t usually.</p>
+<p>Today, I want to talk about how I made the <a href="https://github.com/isovector/polysemy/tree/master/polysemy-plugin"><code>polysemy-plugin</code></a> run two optimizations that greatly benefit code written with <code>polysemy</code>.</p>
+<p>The gist of writing a GHC plugin is to import <code>ghc:Plugins</code>, and to create an exported top-level bind <code>plugin :: Plugin</code>. Other code can use this plugin by specifying the <code>-fplugin=</code> option to point at this module.</p>
+<h2 id="installing-core-todos"><a href="#installing-core-todos" class="header-link">Installing Core ToDos<span class="header-link-emoji">🔗</span></a></h2>
+<p><code>Plugin</code>s have a field called <code>installCoreToDos</code> with type <code>[CommandLineOption] -&gt; [CoreToDo] -&gt; CoreM [CoreToDo]</code>. A <code>CoreToDo</code> is GHC’s oddly-named concept of a compiler pass over Core. This function receives the list of <code>CoreToDo</code>s it was planning to do, and you can change that list if you want.</p>
+<p>By default there’s a big flowchart of <code>CoreToDo</code>s that the compiler will run through in order to compile a module. The optimization level (<code>-O</code>) effects which passes get run, as do many of the <a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/using-optimisation.html#f-platform-independent-flags">individual optimization flags</a>.</p>
+<p>By attaching our extra optimization passes to the end of this list, we can make GHC optimize harder than it usually would. But because most code <em>won’t</em> benefit from this extra work, we guard the new optimization passes behind two conditions. The user must be compiling with optimizations turned on, and the module being compiled must import <code>Polysemy</code>.</p>
+<p>Checking for the optimization level is simple enough, we can pull it out of the <code>DynFlags</code> (GHC’s datatype that stores all of the crazy flags you might have set):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>  dflags <span class="ot">&lt;-</span> getDynFlags</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> optLevel dflags <span class="kw">of</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="co">-- corresponds to -O0</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> <span class="ot">-&gt;</span> <span class="co">-- corresponds to -O</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span> <span class="ot">-&gt;</span> <span class="co">-- corresponds to -O2</span></span></code></pre></div>
+<p>Checking, however, for presence of the <code>Polysemy</code> module is less straightforward. Honestly I’m not sure what the “correct” solution to this problem is, but I’m pretty happy with the disgusting hack I came up with.</p>
+<p>The <code>CoreM</code> monad (which is what you’re running in when you install <code>CoreToDo</code>s) doesn’t exactly have <a href="https://www.stackage.org/haddock/lts-13.21/ghc-8.6.5/CoreMonad.html#t:CoreM">stellar documentation</a>. It has access to the <code>HscEnv</code>, which in turn has a <code>hsc_mod_graph :: ModuleGraph</code> — which sounds like the sort of thing that might contain the modules currently in scope. Unfortunately this is not so; <code>hsc_mod_graph</code> contains the modules defined in the <em>package</em> being defined.</p>
+<p>If we could get our hands on the <code>ModGuts</code> (GHC’s representation of a Haskell module), we could inspect its <code>mg_deps :: Dependencies</code> field, which would surely have what we need. Unfortunately, I couldn’t find any easy way to get access to the <code>ModGuts</code> in a <code>CoreM</code> without jumping through several hoops.</p>
+<p>But one thing caught my eye! There is an operation <code>getVisibleOrphanMods :: CoreM ModuleSet</code>, which after some investigation, turns out to contain any module in scope (directly or otherwise) that defines an orphan instance.</p>
+<p>It’s disgusting, but I made an internal module in <code>polysemy</code> that contains the following definitions:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Polysemy.Internal.PluginLookup</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">PluginLookup</span> t</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Plugin</span></span></code></pre></div>
+<p>and the corresponding orphan instance in the module I wanted to track in my plugin:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# OPTIONS_GHC -fno-warn-orphans #-}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Polysemy.Internal.PluginLookup</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">PluginLookup</span> <span class="dt">Plugin</span></span></code></pre></div>
+<p>I know, I know. But because the module that defines these things is internal, there’s no way for anyone else to define instances of this thing. So at least it’s a safe use of orphans.</p>
+<p>Sure enough, this little gem is enough to get my module noticed by <code>getVisibleOrphanMods</code>, and so I can check for the presence of my module via:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>  mods <span class="ot">&lt;-</span> moduleSetElts <span class="op">&lt;$&gt;</span> getVisibleOrphanMods</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> <span class="fu">any</span> ((<span class="op">==</span> mkModuleName <span class="st">&quot;Polysemy.Internal&quot;</span>) <span class="op">.</span> moduleName) mods</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>     <span class="kw">then</span> <span class="op">...</span></span></code></pre></div>
+<p>And voila, we’re now ready to install our extra <code>CoreToDo</code>s. In this case, I just cargo-culted a few from GHC’s existing passes list. Namely I added a <code>CoreDoSpecialising</code>, a <code>CoreDoStaticArgs</code>, yet another <code>CoreDoSpecialising</code>, and a bevvy of simplification passes. The result might be overkill, but it’s sufficient to massage <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#file-t16473-dump-simpl">this scary core</a> into <a href="https://gist.github.com/isovector/e4832512ec9c73bff94432a7a58470f9#gistcomment-2883147">this</a> — and get roughly a 1000x runtime performance improvement in the process.</p>
+<h2 id="inlining-recursive-calls"><a href="#inlining-recursive-calls" class="header-link">Inlining Recursive Calls<span class="header-link-emoji">🔗</span></a></h2>
+<p>But this lack of optimization passes wasn’t the only thing slowly <code>polysemy</code> down. The library depends on several library- and user-written functions that are complicated and necessarily self-recursive.</p>
+<p>GHC is understandably hesitant to inline recursive functions — the result would diverge — but as a side-effect, it seems to refuse to optimize big recursive functions whatsoever. For my purposes, this meant that most of the crucial machinery in the library was being completely ignored by GHC’s best optimization pass.</p>
+<p>I accidentally stumbled upon a fix. To illustrate, let’s pretend like the <code>factorial</code> function is my complicated self-recursive function. The optimizer would refuse to fire when the function was written like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# INLINE factorial #-}</span></span></code></pre></div>
+<p>But, a minor syntactic tweak was enough to trick the compiler into optimizing it:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial&#39; (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# INLINE factorial #-}</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>factorial&#39; <span class="ot">=</span> factorial</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# NOINLINE factorial&#39; #-}</span></span></code></pre></div>
+<p>Now <code>factorial</code> is no longer self-recursive. It’s mutually recursive, and for some reason, the <code>NO/INLINE</code> pragmas are enough to keep GHC off our back. This is an easy fix, but it’s annoying boilerplate. And I <em>hate</em> annoying boilerplate.</p>
+<p>Early versions of <code>polysemy</code> shipped with a function <code>inlineRecursiveCalls :: Q [Dec] -&gt; Q [Dec]</code> which would use Template Haskell to transform our slow, self-recursive <code>factorial</code> above into the fast, mutually-exclusive version below. While this worked, it was unsatisfactory; TH splices don’t play nicely with haddock or with text editors.</p>
+<p>But this isn’t something that regular users should need to care about! Optimization concerns should lie solely in the responsibility of library-writers — not in their users. It seemed like a good opportunity to write a custom optimization pass, and like any curious boy, I took it.</p>
+<p>We can use the <code>CoreDoPluginPass :: String -&gt; (ModGuts -&gt; CoreM ModGuts) -&gt; CoreToDo</code> constructor to inject our own <code>ModGuts</code> transformation as an optimization pass. Recall that <code>ModGuts</code> is GHC’s definition of a module. For our purposes, we’re interested in its <code>mg_binds</code> field, which contains all of the value-level things in the module.</p>
+<p>A <code>mg_binds</code> is a <code>[Bind CoreBndr]</code>, and a <code>Bind CoreBndr</code> is a pair of a name and its corresponding expression definition. More specifically, the definition for <code>Bind</code> is:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Bind</span> b <span class="ot">=</span> <span class="dt">NonRec</span> b (<span class="dt">Expr</span> b)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>            <span class="op">|</span> <span class="dt">Rec</span> [(b, (<span class="dt">Expr</span> b))]</span></code></pre></div>
+<p>A non-recursive binding is something like <code>x = 5</code>, while a recursive binding is anything that is self- or mutually-recursive.</p>
+<p>So, if we want to transform self-recursive calls into mutually-recursive calls, we first need to identify if a definition is self-recursive. Fortunately, the incredible <code>syb</code> library comes in handy here, as it lets us write small queries that get lifted over the entire datatype.</p>
+<p>We can write <code>containsName</code> using <a href="https://www.stackage.org/haddock/lts-13.22/syb-0.7/Data-Generics-Schemes.html#v:everywhere"><code>everywhere</code></a>, <a href="https://www.stackage.org/haddock/lts-13.22/syb-0.7/Data-Generics-Aliases.html#v:mkQ"><code>mkQ</code></a> and the <a href="https://www.stackage.org/haddock/lts-13.22/base-4.12.0.0/Data-Monoid.html#t:Any"><code>Any</code></a> monoid to determine if the <code>CoreBndr</code> name is used anywhere in the <code>CoreExpr</code><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">containsName ::</span> <span class="dt">CoreBndr</span> <span class="ot">-&gt;</span> <span class="dt">CoreExpr</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>containsName n <span class="ot">=</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    getAny <span class="op">.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      everything</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        (<span class="op">&lt;&gt;</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        (mkQ (<span class="dt">Any</span> <span class="dt">False</span>) matches)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ot">    matches ::</span> <span class="dt">CoreExpr</span> <span class="ot">-&gt;</span> <span class="dt">Any</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    matches (<span class="dt">Var</span> n&#39;) <span class="op">|</span> n <span class="op">==</span> n&#39; <span class="ot">=</span> <span class="dt">Any</span> <span class="dt">True</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    matches _ <span class="ot">=</span> <span class="dt">Any</span> <span class="dt">False</span></span></code></pre></div>
+<p>If <code>containsName b e</code> is <code>True</code> for any <code>(b, e)</code> in the <code>mg_binds</code>, then that function is self-recursive. As such, we’d like to generate a new <code>NOINLINE</code> bind for it, and then replace the original self-call to be to this new bind.</p>
+<p>Replacing a call is just as easy as finding the recursion:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">replace ::</span> <span class="dt">CoreBndr</span> <span class="ot">-&gt;</span> <span class="dt">CoreBndr</span> <span class="ot">-&gt;</span> <span class="dt">CoreExpr</span> <span class="ot">-&gt;</span> <span class="dt">CoreExpr</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>replace n n&#39; <span class="ot">=</span> everywhere <span class="op">$</span> mkT go</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    go ::</span> <span class="dt">CoreExpr</span> <span class="ot">-&gt;</span> <span class="dt">CoreExpr</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    go v<span class="op">@</span>(<span class="dt">Var</span> nn)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> nn <span class="op">==</span> n   <span class="ot">=</span> <span class="dt">Var</span> n&#39;</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> v</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    go x <span class="ot">=</span> x</span></code></pre></div>
+<p>But creating the new binding is rather more work; we need to construct a new name for it, and then fiddle with its <code>IdInfo</code> in order to set the inlining information we’d like.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">loopbreaker ::</span> <span class="dt">Uniq</span> <span class="ot">-&gt;</span> <span class="dt">CoreBndr</span> <span class="ot">-&gt;</span> <span class="dt">CoreExpr</span> <span class="ot">-&gt;</span> [(<span class="dt">Var</span>, <span class="dt">CoreExpr</span>)]</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>loopbreaker newUniq n e <span class="ot">=</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> <span class="dt">Just</span> info <span class="ot">=</span> zapUsageInfo <span class="op">$</span> idInfo n</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      info&#39; <span class="ot">=</span> setInlinePragInfo info alwaysInlinePragma</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      n&#39; <span class="ot">=</span> mkLocalVar</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>             (idDetails n)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>             (mkInternalName newUniq (occName n) noSrcSpan)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>             (idType n)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>         <span class="op">$</span> setInlinePragInfo vanillaIdInfo neverInlinePragma</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> [ (lazySetIdInfo n info&#39;, replace n n&#39; e)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>      , (n&#39;, <span class="dt">Var</span> n)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>      ]</span></code></pre></div>
+<p>First we use <code>zapUsageInfo</code> to make GHC forget that this binding is self-recursive<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, and then use <code>setInlinePragInfo</code> to spiritually inject a <code>{-# INLINE n #-}</code> pragma onto it. We then construct a new name (a nontrivial affair; <code>loopbreaker</code> above is simplified in order to get the new <code>Uniq</code> to ensure our variable is hygienic), and replace the self-recursive call with a call to the new name. Finally, we need to spit out the two resulting binds.</p>
+<p>There’s a little machinery to call <code>loopbreaker</code> on the <code>mg_guts</code>, but it’s uninteresting and this post is already long enough. If you’re interested, the <a href="https://github.com/isovector/polysemy/blob/f84dc2577524e8ba25c35b9b7479c63edd220a6e/polysemy-plugin/src/Polysemy/Plugin/InlineRecursiveCalls.hs">full code is available on Github</a>. In total, it’s a little less than 100 lines long; pretty good for adding a completely new optimization pass!</p>
+<p>That’s enough about writing plugins for improving performance; in the next post we’ll discuss typechecker plugins, and how they can be used to extend GHC’s constraint-solving machinery. Stay tuned!</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>GHC has a bad habit of using type synonyms. A <code>CoreExpr</code> is just a <code>Expr CoreBndr</code>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>I’m not sure this part is necessary, but it doesn’t seem to hurt.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

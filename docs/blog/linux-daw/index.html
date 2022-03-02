@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>A Working Linux DAW :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/linux-daw/index.html#">A Working Linux DAW</a></h1>
+</header>
+<p class="meta">
+    <time>2020-02-13</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>I’ve recently been watching <a href="https://www.youtube.com/channel/UCMHG0rJtVF1LohiP63FJakw">Guy Michelmore’s youtube videos on composing music</a>. “That looks pretty easy” I thought to myself, which led to accidentally buying a <a href="https://www.native-instruments.com/en/products/komplete/keyboards/komplete-kontrol-m32/">Native Instruments M32</a> and attempting to compose music for myself.</p>
+<p>As it happens, writing music is much harder than I gave it credit for. But an overwhelming amount of that difficulty is for bullshit reasons. You see, for whatever reason, the world of digital music production is a world awash in stupid <a href="https://i0.wp.com/www.macosaudio.com/wp-content/uploads/2018/06/Klevgrand-DAW-LP.jpg#resize=700%2C349&amp;ssl=1">dial UIs</a> and proprietary software.</p>
+<p>When I say proprietary software, I don’t just mean the mixing software itself. I also mean all of the drivers for the peripherals. I also also mean all of the digital instruments. Extremely frustratingly, I also also <em>also</em> mean even the software to <em>download this stuff.</em> EVEN THOUGH IT’S ALL JUST OVER HTTP ANYWAY!</p>
+<p>Anyway, I thought I should probably write down the things I’ve learned to hopefully help keep future linux musicians sane.</p>
+<h2 id="digital-audio-workstation-daw"><a href="#digital-audio-workstation-daw" class="header-link">Digital Audio Workstation (DAW)<span class="header-link-emoji">🔗</span></a></h2>
+<p><strong>Go with <a href>REAPER DAW</a>.</strong></p>
+<p>I started with LMMS because a quick search for “linux daw” suggested I use it. After a few days of learning it, this turned out to be a bad idea. The UI is frustrating, and instrument plugins don’t work very well.</p>
+<p>REAPER, on the other hand, feels really good. Once you get it working. I had a few issues getting sound working. I had to choose the “ALSA” backend, and turn off the “auto-disable PulseAudio” setting. Unfortunately the PulseAudio backend was introducing ~200ms of latency between hitting notes and hearing them. <strong>Try using the ALSA backend if you are experiencing sound latency.</strong></p>
+<p>You can use the <code>ReaSynth</code> virtual instrument to try testing your audio.</p>
+<h2 id="audio-plugins-vsts"><a href="#audio-plugins-vsts" class="header-link">Audio Plugins (VSTs)<span class="header-link-emoji">🔗</span></a></h2>
+<p>Out of the box, REAPER is pretty shit. It doesn’t come with anything good, and so we’ll need to add some before we can get to making music. There are lots of great VSTs out there, but almost all of them are Windows-only. But fear not!</p>
+<p>If you install <a href="https://wiki.winehq.org/Wine-Staging">wine-staging</a>, you can use it to download some good, free instruments from <a href="https://www.spitfireaudio.com/labs/">Spitfire LABS</a>. You’ll need to sign up for an account, install the (ahem) propriety software, and then press the “GET” button on the LABS website. That… somehow authorizes your account, and then the proprietary software will let you download your files.</p>
+<p>Particularly resourceful readers can also probably find copies of <a href="https://www.native-instruments.com/en/products/komplete/synths/massive/">Massive</a> and <a href="https://www.native-instruments.com/en/products/komplete/samplers/kontakt-6/">Kontakt</a> too.</p>
+<p><strong>Make sure you get the 32bit Windows editions of any VSTs you find.</strong></p>
+<p>Now, none of these VSTs actually work in REAPER, but thankfully, <strong>there’s a program called <a href="https://github.com/psycha0s/airwave">Airwave</a> that can convert Windows VSTs into Linux ones.</strong> Move your 32bit VST .dlls into <code>~/.wine/drive_c</code>, then ask Airwave to install them into <code>~/.vst</code> for you. Make sure this is the VST path for REAPER.</p>
+<p>Back in REAPER, press <code>CTRL+P</code> and then <code>Plugins &gt; VST</code>. Make sure the VST plugin path says <code>~/.vst</code>, and then hit the <strong>Re-scan</strong> button. If you’re lucky, you should now be able to right-click in the main window and click “Insert virtual instrument on new track” and find your new VSTs under <code>All Plugins &gt; New</code>.</p>
+<h2 id="midi-controller"><a href="#midi-controller" class="header-link">MIDI Controller<span class="header-link-emoji">🔗</span></a></h2>
+<p>My M32 keyboard worked out of the box, sorta. The keys play keys in REAPER, and the dials are successfully recognized as inputs. But none of the useful “DAW control” buttons work. More proprietary software, hidden behind enough bullshit that I couldn’t even find it to test if it worked under wine.</p>
+<p><strong>I would not recommend the NI M32 due to the amount of bullshit their lack of Linux support put me through.</strong></p>
+<p>But if you’re stuck with one… I decided to <a href="https://github.com/isovector/free-m32">reverse engineer the protocol and write a little driver</a>. This program requires <code>xdotool</code>, and maps button presses on the M32 into keypresses. At time of writing, it just types regular English characters — unfortunate because they’re likely to conflict with other bindings, but REAPER doesn’t recognize most linux keysyms. Also, it only intermittently recognizes high-ASCII characters. What a piece of shit. I spent four hours today fighting with this.</p>
+<hr />
+<p>This is the critical path I took from not knowing anything about music production to having a mostly-working setup. Knowing what I do now, it would only take 30 minutes to setup, but this blog post is the culmination of about a week of pain! Not all of it was bad though — I got to learn a lot about reverse engineering, and expect a blog post on that in the near future!</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Algorithmically Scrapping Your Typeclasses :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/algorithmic-sytc/index.html#">Algorithmically Scrapping Your Typeclasses</a></h1>
+</header>
+<p class="meta">
+    <time>2018-04-16</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>I’ve been working on a simple Haskell98 compiler over the last few days, partly as an excuse to learn how it works, and partly to have a test-bed for trying out some potential language extensions. More on that in a future blog post.</p>
+<p>As of yesterday, I have typeclass resolution working. The algorithm to desugar constraints into dictionaries hasn’t been discussed much. Since it’s rather involved, and quite interesting, I thought it might make a good topic for a blog post.</p>
+<p>Our journey begins having just implemented <a href="http://web.cecs.pdx.edu/~mpj/thih/thih.pdf">Algorithm W</a> aka <a href="https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system">Hindley-Milner</a>. This is pretty well described in the literature, and there exist several implementations of it in Haskell, so we will not dally here. Algorithm W cashes out in a function of the type:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">infer ::</span> <span class="dt">SymTable</span> <span class="dt">VName</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span> <span class="ot">-&gt;</span> <span class="dt">TI</span> <span class="dt">Type</span></span></code></pre></div>
+<p>where <code>SymTable VName</code> is a mapping from identifiers in scope to their types, <code>Exp VName</code> is an expression we want to infer, and <code>TI</code> is our type-inference monad. As a monad, <code>TI</code> gives us the ability to generate fresh type variables, and to unify types as we go. <code>Type</code> represents an unqualified type, which is to say it can be used to describe the types <code>a</code>, and <code>Int</code>, but not <code>Eq a =&gt; a</code>. We will be implementing qualified types in this blog post.</p>
+<p><code>infer</code> is implemented as a <a href="/blog/recursion-schemes">catamorphism</a>, which generates a fresh type variable for every node in the expression tree, looks up free variables in the <code>SymTable</code> and attempts to unify as it goes.</p>
+<p>The most obvious thing we need to do in order to introduce constraints to our typechecker is to be able to represent them, so we two types:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">infixr</span> <span class="dv">0</span> <span class="op">:=&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Qual</span> t <span class="ot">=</span> (<span class="op">:=&gt;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> qualPreds  ::</span> [<span class="dt">Pred</span>]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> unqualType ::</span> t</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Functor</span>, <span class="dt">Traversable</span>, <span class="dt">Foldable</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Pred</span> <span class="ot">=</span> <span class="dt">IsInst</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> predCName ::</span> <span class="dt">TName</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> predInst  ::</span> <span class="dt">Type</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</span></code></pre></div>
+<p>Cool. A <code>Qual Type</code> is now a qualified type, and we can represent <code>Eq a =&gt; a</code> via <code>[IsInst &quot;Eq&quot; &quot;a&quot;] :=&gt; &quot;a&quot;</code> (assuming <code>OverloadedStrings</code> is turned on.) With this out of the way, we’ll update the type of <code>infer</code> so its symbol table is over <code>Qual Types</code>, and make it return a list of <code>Pred</code>s:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">infer ::</span> <span class="dt">SymTable</span> <span class="dt">VName</span> (<span class="dt">Qual</span> <span class="dt">Type</span>) <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span> <span class="ot">-&gt;</span> <span class="dt">TI</span> ([<span class="dt">Pred</span>], <span class="dt">Type</span>)</span></code></pre></div>
+<p>We update the algebra behind our <code>infer</code> catamorphism so that adds any <code>Pred</code>s necessary when instantiating types:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>infer sym (<span class="dt">V</span> a) <span class="ot">=</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> lookupSym a sym <span class="kw">of</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> throwE <span class="op">$</span> <span class="st">&quot;unbound variable: &#39;&quot;</span> <span class="op">&lt;&gt;</span> <span class="fu">show</span> a <span class="op">&lt;&gt;</span> <span class="st">&quot;&#39;&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> sigma <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>      (ps <span class="op">:=&gt;</span> t) <span class="ot">&lt;-</span> instantiate a sigma</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> (ps, t)</span></code></pre></div>
+<p>and can patch any other cases which might generate <code>Pred</code>s. At the end of our cata, we’ll have a big list of constraints necessary for the expression to typecheck.</p>
+<p>As a first step, we’ll just write the type-checking part necessary to implement this feature. Which is to say, we’ll need a system for discharging constraints at the type-level, without necessarily doing any work towards code generation.</p>
+<p>Without the discharging step, for example, our algorithm will typecheck <code>(==) (1 :: Int)</code> as <code>Eq Int =&gt; Int -&gt; Bool</code>, rather than <code>Int -&gt; Bool</code> (since it knows <code>Eq Int</code>.)</p>
+<p>Discharging is a pretty easy algorithm. For each <code>Pred</code>, see if it matches the instance head of any instances you have in scope; if so, recursively discharge all of the instance’s context. If you are unable to find any matching instances, just keep the <code>Pred</code>. For example, given the instances:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> <span class="dt">Int</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Eq</span> a, <span class="dt">Eq</span> b) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (a, b)</span></code></pre></div>
+<p>and a <code>IsInst &quot;Eq&quot; (&quot;Int&quot;, &quot;c&quot;)</code>, our discharge algorithm will look like this:</p>
+<pre><code>discharging: Eq (Int, c)
+  try: Eq Int    --&gt; does not match
+  try: Eq (a, b) --&gt; matches
+    remove `Eq (Int, c)` pred
+    match types:
+      a ~ c
+      b ~ Int
+    discharge: Eq Int
+    discharge: Eq c
+
+discharging: Eq Int
+  try: Eq Int  --&gt; matches
+  remove `Eq Int` pred
+
+discharging: Eq c
+  try: Eq Int    --&gt; does not match
+  try: Eq (a, b) --&gt; does not match
+  keep `Eq c` pred</code></pre>
+<p>We can implement this in Haskell as:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">match    ::</span> <span class="dt">Pred</span> <span class="ot">-&gt;</span> <span class="dt">Pred</span> <span class="ot">-&gt;</span> <span class="dt">TI</span> (<span class="dt">Maybe</span> <span class="dt">Subst</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">getInsts ::</span> <span class="dt">ClassEnv</span> <span class="ot">-&gt;</span> [<span class="dt">Qual</span> <span class="dt">Pred</span>]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">discharge ::</span> <span class="dt">ClassEnv</span> <span class="ot">-&gt;</span> <span class="dt">Pred</span> <span class="ot">-&gt;</span> <span class="dt">TI</span> (<span class="dt">Subst</span>, [<span class="dt">Pred</span>])</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>discharge cenv p <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- find matching instances and return their contexts</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  matchingInstances <span class="ot">&lt;-</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    for (getInsts cenv) <span class="op">$</span> \(qs <span class="op">:=&gt;</span> t) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- the alternative here is to prevent emitting kind</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- errors if we compare this &#39;Pred&#39; against a</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- differently-kinded instance.</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>      res <span class="ot">&lt;-</span> (<span class="fu">fmap</span> (qs,) <span class="op">&lt;$&gt;</span> match t p) <span class="op">&lt;|&gt;</span> <span class="fu">pure</span> <span class="dt">Nothing</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> <span class="op">$</span> <span class="dt">First</span> res</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> getFirst <span class="op">$</span> <span class="fu">mconcat</span> matchingInstances <span class="kw">of</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> (qs, subst) <span class="ot">-&gt;</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- match types in context</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> qs&#39; <span class="ot">=</span> sub subst qs</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- discharge context</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">fmap</span> <span class="fu">mconcat</span> <span class="op">$</span> <span class="fu">traverse</span> (discharge cenv) qs&#39;</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- unable to discharge</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> (<span class="fu">mempty</span>, <span class="fu">pure</span> p)</span></code></pre></div>
+<p>Great! This works as expected, and if we want to only write a type-checker, this is sufficient. However, we don’t want to only write a type-checker, we also want to generate code capable of using these instances too!</p>
+<p>We can start by walking through the transformation in Haskell, and then generalizing from there into an actual algorithm. Starting from a class definition:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Functor</span> f <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</span></code></pre></div>
+<p>we will generate a dictionary type for this class:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="op">@</span><span class="dt">Functor</span> f <span class="ot">=</span> <span class="op">@</span><span class="dt">Functor</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  { <span class="op">@</span><span class="ot">fmap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>(I’m using the <code>@</code> signs here because these things are essentially type applications. That being said, there will be no type applications in this post, so the <code>@</code> should always be understood to be machinery generated by the compiler for dictionary support.)</p>
+<p>Such a definition will give us the following terms:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">@</span><span class="dt">Functor</span><span class="ot"> ::</span> ((a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b) <span class="ot">-&gt;</span> <span class="op">@</span><span class="dt">Functor</span> f</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">@</span><span class="ot">fmap    ::</span> <span class="op">@</span><span class="dt">Functor</span> f <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</span></code></pre></div>
+<p>Notice that <code>@fmap</code> is just <code>fmap</code> but with an explicit dictionary (<code>@Functor f</code>) being passed in place of the <code>Functor f</code> constraint.</p>
+<p>From here, in order to actually construct one of these dictionaries, we can simply inline an instances method:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Maybe</span> <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> <span class="ot">=</span> \f m <span class="ot">-&gt;</span> <span class="kw">case</span> m <span class="kw">of</span> { <span class="dt">Just</span> x <span class="ot">-&gt;</span> <span class="dt">Just</span> (f x); <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span> }</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- becomes</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="op">@</span><span class="dt">Functor</span><span class="op">@</span><span class="dt">Maybe</span><span class="ot"> ::</span> <span class="op">@</span><span class="dt">Functor</span> <span class="dt">Maybe</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="op">@</span><span class="dt">Functor</span><span class="op">@</span><span class="dt">Maybe</span> <span class="ot">=</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">@</span><span class="dt">Functor</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  { <span class="op">@</span>fmap <span class="ot">=</span> \f m <span class="ot">-&gt;</span> <span class="kw">case</span> m <span class="kw">of</span> { <span class="dt">Just</span> x <span class="ot">-&gt;</span> <span class="dt">Just</span> (f x); <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span> }</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>Now we need to look at how these dictionaries actually get used. It’s clear that every <code>fmap</code> in our expression tree should be replaced with <code>@fmap d</code> for some <code>d</code>. If the type of <code>d</code> is monomorphic, we can simply substitute the dictionary we have:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">x ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">=</span> <span class="fu">fmap</span> (<span class="op">+</span><span class="dv">5</span>) (<span class="dt">Just</span> <span class="dv">10</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- becomes</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">x ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>x <span class="ot">=</span> <span class="op">@</span>fmap <span class="op">@</span><span class="dt">Functor</span><span class="op">@</span><span class="dt">Maybe</span> (<span class="op">+</span><span class="dv">5</span>) (<span class="dt">Just</span> <span class="dv">10</span>)</span></code></pre></div>
+<p>but what happens if the type <code>f</code> is polymorphic? There’s no dictionary we can reference statically, so we’ll need to take it as a parameter:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">y ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> f <span class="dt">Int</span> <span class="ot">-&gt;</span> f <span class="dt">Int</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> \z <span class="ot">-&gt;</span> <span class="fu">fmap</span> (<span class="op">+</span><span class="dv">5</span>) z</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- becomes</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="ot">y ::</span> <span class="op">@</span><span class="dt">Functor</span> f <span class="ot">-&gt;</span> f <span class="dt">Int</span> <span class="ot">-&gt;</span> f <span class="dt">Int</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> \d <span class="ot">-&gt;</span> \z <span class="ot">-&gt;</span> <span class="op">@</span>fmap d (<span class="op">+</span><span class="dv">5</span>) z</span></code></pre></div>
+<p>A reasonable question is when should we insert these lambdas to bind the dictionaries? This stumped me for a while, but the answer is whenever you get to a binding group; which is to say whenever your expression is bound by a <code>let</code>, or whenever you finish processing a top-level definition.</p>
+<p>One potential gotcha is what should happen in the case of instances with their own contexts? For example, <code>instance (Eq a, Eq b) =&gt; Eq (a, b)</code>? Well, the same rules apply; since <code>a</code> and <code>b</code> are polymorphic constraints, we’ll need to parameterize our <code>@Eq@(,)</code> dictionary by the dictionaries witnessing <code>Eq a</code> and <code>Eq b</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Eq</span> a, <span class="dt">Eq</span> b) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (a, b) <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  (<span class="op">==</span>) <span class="ot">=</span> \ab1 ab2 <span class="ot">-&gt;</span> (<span class="op">==</span>) (<span class="fu">fst</span> ab1) (<span class="fu">fst</span> ab2)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>                  <span class="op">&amp;&amp;</span> (<span class="op">==</span>) (<span class="fu">snd</span> ab1) (<span class="fu">snd</span> ab2)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- becomes</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="op">@</span><span class="dt">Eq</span><span class="op">@</span>(,)<span class="ot"> ::</span> <span class="op">@</span><span class="dt">Eq</span> a <span class="ot">-&gt;</span> <span class="op">@</span><span class="dt">Eq</span> b <span class="ot">-&gt;</span> <span class="op">@</span><span class="dt">Eq</span> (a, b)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="op">@</span><span class="dt">Eq</span><span class="op">@</span>(,) <span class="ot">=</span> \d1 <span class="ot">-&gt;</span> \d2 <span class="ot">-&gt;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">@</span><span class="dt">Eq</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  { (<span class="op">@==</span>) <span class="ot">=</span> \ab1 ab2 <span class="ot">-&gt;</span> (<span class="op">@==</span>) d1 (<span class="fu">fst</span> ab1) (<span class="fu">fst</span> ab2)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                     <span class="op">&amp;&amp;</span> (<span class="op">@==</span>) d2 (<span class="fu">snd</span> ab1) (<span class="fu">snd</span> ab2)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>Super-class constraints behave similarly.</p>
+<p>So with all of the theory under our belts, how do we actually go about implementing this? The path forward isn’t as straight-forward as we might like; while we’re type-checking we need to desugar terms with constraints on them, but the result of that desugaring depends on the eventual type these terms receive.</p>
+<p>For example, if we see <code>(==)</code> in our expression tree, we want to replace it with <code>(@==) d</code> where <code>d</code> might be <code>@Eq@Int</code>, or it might be <code>@Eq@(,) d1 d2</code>, or it might just stay as <code>d</code>! And the only way we’ll know what’s what is <em>after</em> we’ve performed the dischargement of our constraints.</p>
+<p>As usual, the solution is to slap more monads into the mix:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>infer</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">SymTable</span> <span class="dt">VName</span> (<span class="dt">Qual</span> <span class="dt">Type</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">TI</span> ( [<span class="dt">Pred</span>]</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>          , <span class="dt">Type</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>          , <span class="dt">Reader</span> (<span class="dt">Pred</span> <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                   (<span class="dt">Exp</span> <span class="dt">VName</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>          )</span></code></pre></div>
+<p>Our <code>infer</code> catamorphism now returns an additional <code>Reader (Pred -&gt; Exp VName) (Exp VName)</code>, which is to say an expression that has access to which expressions it should substitute for each of its <code>Pred</code>s. We will use this mapping to assign dictionaries to <code>Pred</code>s, allowing us to fill in the dictionary terms once we’ve figured them out.</p>
+<p>We’re in the home stretch; now all we need to do is to have <code>discharge</code> build that map from <code>Pred</code>s into their dictionaries and we’re good to go.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">getDictTerm        ::</span> <span class="dt">Pred</span> <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ot">getDictTypeForPred ::</span> <span class="dt">Pred</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- DSL-level function application</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ot">(:@) ::</span> <span class="dt">Exp</span> <span class="dt">VName</span> <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span> <span class="ot">-&gt;</span> <span class="dt">Exp</span> <span class="dt">VName</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>discharge</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ClassEnv</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Pred</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">TI</span> ( <span class="dt">Subst</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>          , [<span class="dt">Pred</span>]</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>          , <span class="dt">Map</span> <span class="dt">Pred</span> (<span class="dt">Exp</span> <span class="dt">VName</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>          , [<span class="dt">Assump</span> <span class="dt">Type</span>]</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>          , [<span class="dt">Exp</span> <span class="dt">VName</span>]</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>          )</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>discharge cenv p <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>  matchingInstances <span class="ot">&lt;-</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    for (getInsts cenv) <span class="op">$</span> \(qs <span class="op">:=&gt;</span> t) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>      res <span class="ot">&lt;-</span> (<span class="fu">fmap</span> (qs, t, ) <span class="op">&lt;$&gt;</span> match t p) <span class="op">&lt;|&gt;</span> <span class="fu">pure</span> <span class="dt">Nothing</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> <span class="op">$</span> <span class="dt">First</span> res</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> getFirst <span class="op">$</span> <span class="fu">mconcat</span> matchingInstances <span class="kw">of</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> (qs, t, subst) <span class="ot">-&gt;</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- discharge all constraints on this instance</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>      (subst&#39;, qs&#39;, mapPreds, assumps, subDicts)</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>        <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">mconcat</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">traverse</span> (discharge cenv)</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>         <span class="op">$</span> sub subst qs</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> dictTerm <span class="ot">=</span> getDictTerm t</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>          myDict <span class="ot">=</span> <span class="fu">foldl</span> (<span class="op">:@</span>) dictTerm subDicts</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> ( subst&#39;</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>           , qs&#39;</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>           , mapPreds <span class="op">&lt;&gt;</span> M.singleton p myDict</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>           , assumps</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>           <span class="co">-- this is just in a list so we can use &#39;mconcat&#39; to</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>           <span class="co">-- collapse our traversal</span></span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>           , [myDict]</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>           )</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- unable to discharge, so assume the existence of a new</span></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- variable with the correct type</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>      param <span class="ot">&lt;-</span> newVName <span class="st">&quot;d&quot;</span></span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> ( <span class="fu">mempty</span></span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a>           , [p]</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>           , M.singleton p param</span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>           , [<span class="dt">MkAssump</span> param <span class="op">$</span> getDictTypeForPred p]</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>           , [param]</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>           )</span></code></pre></div>
+<p>The logic of <code>discharge</code> is largely the same, except we have a little more logic being driven by its new type. We now, in addition to our previous substitution and new predicates, also return a map expanding dictionaries, a list of <code>Assump</code>s (more on this in a second), and the resulting dictionary witnessing this discharged <code>Pred</code>.</p>
+<p>If we were successful in finding a matching instance, we discharge each of its constraints, and fold the resulting dictionaries into ours. The more interesting logic is what happens if we are unable to discharge a constraint. In that case, we create a new variable of the necessary type, give that as our resulting dictionary, and emit it as an <code>Assump</code>. <code>Assump</code>s are used to denote the creation of a new variable in scope (they are also used for binding pattern matches).</p>
+<p>The result of our new <code>discharge</code> function is that we have a map from every <code>Pred</code> we saw to the resulting dictionary for that instance, along with a list of generated variables. We can build our final expression tree via running the <code>Reader (Pred -&gt; Exp VName)</code> by looking up the <code>Pred</code>s in our dictionary map. Finally, for every assumption we were left with, we fold our resulting term in a lambda which binds that assumption.</p>
+<p>Very cool! If you’re interested in more of the nitty-gritty details behind compiling Haskell98, feel free to <a href="https://github.com/isovector/cccc">SMASH THAT STAR BUTTON on Github.</a></p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

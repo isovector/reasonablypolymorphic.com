@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Faking Fundeps with Typechecker Plugins :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/faking-fundeps/index.html#">Faking Fundeps with Typechecker Plugins</a></h1>
+</header>
+<p class="meta">
+    <time>2019-05-25</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <blockquote>
+<p>The approach here, and my original implementation are both lifted almost entirely from <a href="https://github.com/LukaHorvat">Luka Horvat</a>’s <a href="https://gitlab.com/LukaHorvat/simple-effects/commit/966ce80b8b5777a4bd8f87ffd443f5fa80cc8845#f51c1641c95dfaa4827f641013f8017e8cd02aab">plugin for <code>simple-effects</code></a>. All praise should be directed to him.</p>
+</blockquote>
+<hr />
+<p><a href="/blog/writing-custom-optimizations/">Last time</a> we chatted about using a GHC plugin to run custom Core-to-Core transformations on the programs that GHC is compiling. Doing so allows us to add custom optimization passes, and even other, more <em>exotic</em> things like <a href="https://github.com/conal/concat">rewriting lambda expression as categorical operations</a>.</p>
+<p>Today I want to talk about another sort of GHC plugin: <em>type-checker plugins!</em> TC plugins let you hook into GHC’s constraint machinery and help it solve domain-specific problems that it wouldn’t be able to otherwise. One of the more interesting examples of a TC plugin is <a href="https://www.joachim-breitner.de/blog">nomeata’s</a> <a href="http://hackage.haskell.org/package/ghc-justdoit">ghc-justdoit</a> — which will automatically generate a value of the correct type, essentially letting you leave implementations as “exercises for the compiler.”</p>
+<p><a href="https://github.com/isovector/polysemy/">Polysemy</a> uses a TC plugin in order to improve type-inference. The result is that it can provide type-inference that is as good as <code>mtl</code>’s, without succumbing to the pitfalls that accompany <code>mtl</code>’s approach.</p>
+<h2 id="the-problem"><a href="#the-problem" class="header-link">The Problem<span class="header-link-emoji">🔗</span></a></h2>
+<p>Consider the following program:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foo ::</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">=&gt;</span> m ()</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>foo <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
+<p>Such a thing compiles and runs no problem. There are no surprises here for any Haskell programmers who have ever run into <code>mtl</code>. But the reason it works is actually quite subtle. If we look at the type of <code>modify</code> we see:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">modify ::</span> <span class="dt">MonadState</span> s m <span class="ot">=&gt;</span> (s <span class="ot">-&gt;</span> s) <span class="ot">-&gt;</span> m ()</span></code></pre></div>
+<p>which suggests that the <code>s -&gt; s</code> function we pass to it should determine the <code>s</code> parameter. But our function <code>(+ 1)</code> has type <code>Num a =&gt; a -&gt; a</code>, therefore the type of <code>modify (+1)</code> should be this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>modify (<span class="op">+</span> <span class="dv">1</span>)<span class="ot"> ::</span> (<span class="dt">MonadState</span> s m, <span class="dt">Num</span> s) <span class="ot">=&gt;</span> m ()</span></code></pre></div>
+<p>So the question is, why the heck is GHC willing to use a <code>MonadState Int m</code> constraint to solve the wanted <code>(MonadState s m, Num s)</code> constraint arising from a use of <code>modify (+1)</code>? The problem feels analogous to this one, which <em>doesn’t work:</em></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">bar ::</span> <span class="dt">Show</span> <span class="dt">Bool</span> <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>bar b <span class="ot">=</span> <span class="fu">show</span> b  <span class="co">-- doesn&#39;t work</span></span></code></pre></div>
+<p>Just because we have a <code>Show Bool</code> constraint in scope <em>doesn’t mean that <code>a</code> is a <code>Bool</code>!</em> So how come we’re allowed to use our <code>MonadState Int m</code> constraint, to solve a <code>(MonadState s m, Num s)</code>? Completely analogously, <em>we don’t know that <code>s</code> is an <code>Int</code>!</em></p>
+<p>The solution to this puzzler is in the definition of <code>MondState</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadState</span> s (<span class="ot">m ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="op">|</span> m <span class="ot">-&gt;</span> s <span class="kw">where</span></span></code></pre></div>
+<p>Notice this <code>| m -&gt; s</code> bit, which is known as a <em>functional dependency</em> or a <em>fundep</em> for short. The fundep says “if you know <code>m</code>, you also know <code>s</code>,” or equivalently, “<code>s</code> is completely determined by <code>m</code>.” And so, when typechecking <code>foo</code>, GHC is asked to solve both <code>MonadState Int m</code> and <code>(Num s, MonadState s m)</code>. But since there can only be a <em>single instance</em> of <code>MonadState</code> for m, this means that <code>MonadState Int m</code> and <code>MonadState s m</code> <em>must be the same</em>. Therefore <code>s ~ Int</code>.</p>
+<p>This is an elegant solution, but it comes at a cost — namely that we’re only allowed to use a single <code>MonadState</code> at a time! If you’re a longtime Haskell programmer, this probably doesn’t feel like a limitation to you; just stick all the pieces of state you want into a single type, and then use some classy fields to access them, right? <a href="https://www.parsonsmatt.org/">Matt Parsons</a> has <a href="https://www.parsonsmatt.org/2018/11/03/trouble_with_typed_errors.html">a blog post</a> on the pain points, and some bandages, for doing this with typed errors. At the end of the day, the real problem is that we’re only allowed a single <code>MonadError</code> constraint.</p>
+<p>Polysemy “fixes the glitch” by just not using fundeps. This means you’re completely free to use as many state, error, and whatever effects you want all at the same time. The downside? Type-inference sucks again. Indeed, the equivalent program to <code>foo</code> in <code>polysemy</code> doesn’t compile by default:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foo&#39; ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">Int</span>) r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>foo&#39; <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
+<pre><code>• Ambiguous use of effect &#39;State&#39;
+  Possible fix:
+    add (Member (State s0) r) to the context of
+      the type signature
+  If you already have the constraint you want, instead
+    add a type application to specify
+      &#39;s0&#39; directly, or activate polysemy-plugin which
+        can usually infer the type correctly.
+• In the expression: modify (+ 1)
+  In an equation for ‘foo&#39;’: foo&#39; = modify (+ 1)</code></pre>
+<p>This situation blows chunks. It’s obvious what this program should do, so let’s just fix it.</p>
+<h2 id="the-solution"><a href="#the-solution" class="header-link">The Solution<span class="header-link-emoji">🔗</span></a></h2>
+<p>Let’s forget about the compiler for a second and ask ourselves how the Human Brain Typechecker(TM) would type-check this problem. Given the program:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foo&#39; ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">Int</span>) r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>foo&#39; <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
+<p>A human would look at the <code>modify</code> here, and probably run an algorithm similar to this:</p>
+<ul>
+<li>Okay, what <code>State</code> is <code>modify</code> running over here?</li>
+<li>Well, it’s some sort of <code>Num</code>.</li>
+<li>Oh, look, there’s a <code>Member (State Int) r</code> constraint in scope.</li>
+<li>That thing wouldn’t be there if it wasn’t necessary.</li>
+<li>I guess <code>modify</code> is running over <code>State Int</code>.</li>
+</ul>
+<p>Pretty great algorithm! Instead, here’s what GHC does:</p>
+<ul>
+<li>Okay, what <code>State</code> is <code>modify</code> running over here?</li>
+<li>Well, it’s some sort of <code>Num</code>.</li>
+<li>But that thing is polymorphic.</li>
+<li>Guess I’ll emit a <code>(Num n, Member (State n) r)</code> constraint.</li>
+<li>Why did the stupid human put an unnecessary <code>Member (State Int) r</code> constraint here?</li>
+<li>What an idiot!</li>
+</ul>
+<p>And then worse, it won’t compile because the generated <code>n</code> type is now ambiguous and not mentioned anywhere in the type signature!</p>
+<p>Instead, let’s use a TC plugin to make GHC reason more like a human when it comes to <code>Member</code> constraints. In particular, we’re going to mock the fundep lookup algorithm:</p>
+<ul>
+<li>Whenever GHC is trying to solve a <code>Member (effect a) r</code> constraint</li>
+<li>And there is <em>exactly one</em> constraint in scope of the form <code>Member (effect b) r</code></li>
+<li>Then emit a <code>a ~ b</code> constraint, allowing GHC to use the given <code>Member (effect b) r</code> constraint to solve the wanted <code>Member (effect a) r</code></li>
+</ul>
+<h2 id="tc-plugins"><a href="#tc-plugins" class="header-link">TC Plugins<span class="header-link-emoji">🔗</span></a></h2>
+<p>At its heart, a TC plugin is a value of type <code>TcPlugin</code>, a record of three methods:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TcPlugin</span> <span class="ot">=</span> <span class="kw">forall</span> s<span class="op">.</span> <span class="dt">TcPlugin</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> tcPluginInit  ::</span> <span class="dt">TcPluginM</span> s</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> tcPluginSolve ::</span> s <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> <span class="dt">TcPluginResult</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> tcPluginStop  ::</span> s <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> ()</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>The <code>tcPluginInit</code> field can be used to allocate a piece of state that is passed to the other two records, and <code>tcPluginStop</code> finalizes that state. Most plugins I’ve seen use the <code>s</code> parameter to lookup the GHC representation of classes that they want to help solve. However, the most interesting bit is the <code>tcPluginSolve</code> function.</p>
+<p><code>tcPluginSolve</code> takes three lists of <code>Ct</code>s, which are different varieties of constraints relevant to the problem.</p>
+<ol type="1">
+<li>The first list is the <em>given</em> constraints — the ones a user has explicitly written out in a type signature.</li>
+<li>The second list is the <em>derived</em> constraints — things GHC has inferred from context.</li>
+<li>The third list is the <em>wanted</em> constraints — the ones that GHC can’t solve on its own.</li>
+</ol>
+<p>From these three lists, we are expected to provide a <code>TcPluginResult</code>, which for our purposes is a pair of new <code>Ct</code>s we’d like GHC to solve; and a list of the <code>Ct</code>s we solved, along with the corresponding dictionaries. Returning two empty lists here signals to GHC “I can’t do any more work!”</p>
+<p>So let’s get to work. The first thing we need to do is get our hands on the <code>Member</code> class we want to solve. In <code>polysemy</code>, <code>Member</code> is actually just a type synonym for a few other typeclasses; so the real typeclass we’d like to solve for is called <code>Find</code>.</p>
+<p>As a brief aside on the <code>Find</code> class, its definition is this:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Find</span> (<span class="ot">r ::</span> [k]) (<span class="ot">t ::</span> k) <span class="kw">where</span></span></code></pre></div>
+<p>and it means “lookup the index of <code>t</code> inside <code>r</code>”. In Polysemy, <code>r</code> is usually left polymorphic, for the same reasons that we leave the <code>m</code> polymorphic in <code>MonadState s m</code>.</p>
+<p>Anyway, we want to find the <code>Find</code> class. We can do this by writing a function for our <code>tcPluginInit</code> function:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">findFindClass ::</span> <span class="dt">TcPlugin</span> <span class="dt">Class</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>findFindClass <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  md <span class="ot">&lt;-</span> lookupModule</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>          (mkModuleName <span class="st">&quot;Polysemy.Internal.Union&quot;</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>          (fsLit <span class="st">&quot;polysemy&quot;</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  find_tc <span class="ot">&lt;-</span> lookupName md <span class="op">$</span> mkTcOcc <span class="st">&quot;Find&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  tcLookupClass find_tc</span></code></pre></div>
+<p>We first lookup the defining module, here <code>Polysemy.Internal.Union</code> in package <code>polysemy</code>. We then lookup the <code>Find</code> name in that module, and then lookup the class with that name. By setting <code>findFindClass</code> as our <code>tcPluginInit</code>, our <code>tcPluginSolve</code> function will receive the <code>Find</code> class as a parameter.</p>
+<p>Before diving into <code>tcPluginSolve</code>, we’re going to need some helper functions.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">allFindCts ::</span> <span class="dt">Class</span> <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [(<span class="dt">CtLoc</span>, (<span class="dt">Type</span>, <span class="dt">Type</span>, <span class="dt">Type</span>))]</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>allFindCts cls cts <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  ct <span class="ot">&lt;-</span> cts</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">CDictCan</span> { cc_tyargs <span class="ot">=</span> [ _, r, eff ] } <span class="ot">&lt;-</span> <span class="fu">pure</span> ct</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  guard <span class="op">$</span> cls <span class="op">==</span> cc_class cd</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> eff_name <span class="ot">=</span> getEffName eff</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> (ctLoc ct, (eff_name, eff, r))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="ot">getEffName ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>getEffName t <span class="ot">=</span> <span class="fu">fst</span> <span class="op">$</span> splitAppTys t</span></code></pre></div>
+<p>The <code>allFindCts</code> function searches through the <code>Ct</code>s for <code>Find</code> constraints, and unpacks the pieces we’re going to need. We first pattern match on whether the <code>Ct</code> is a <code>CDictCan</code>, which corresponds to everyday typeclass-y constraints. We ensure it has exactly three type args (<code>Find</code> takes a kind, and then the two parameters we care about), and ensure that this class is the <code>cls</code> we’re looking for.</p>
+<p>We return four things for each matching <code>Ct</code>:</p>
+<ol type="1">
+<li>We need to keep track of its <code>CtLoc</code> — corresponding to where the constraint came from. This is necessary to keep around so GHC can give good error messages if things go wrong.</li>
+<li>The effect “name”. This is just the head of the effect, in our ongoing example, it’s <code>State</code>.</li>
+<li>The actual effect we’re looking for. This corresponds to the <code>t</code> parameter in a <code>Find</code> constraint. In the ongoing example, <code>State s</code>.</li>
+<li>The effect stack we’re searching in (<code>r</code> in the <code>Find</code> constraint).</li>
+</ol>
+<p>So remember, our idea is “see if there is exactly one matching given <code>Find</code> constraint for any wanted <code>Find</code> constraint — and if so, unify the two.”</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>findMatchingEffect</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (<span class="dt">Type</span>, <span class="dt">Type</span>, <span class="dt">Type</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> [(<span class="dt">Type</span>, <span class="dt">Type</span>, <span class="dt">Type</span>)]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Type</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>findMatchingEffect (eff_name, _, r) ts <span class="ot">=</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  singleListToJust <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    (eff_name&#39;, eff&#39;, r&#39;) <span class="ot">&lt;-</span> ts</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    guard <span class="op">$</span> eqType eff_name eff_name&#39;</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    guard <span class="op">$</span> eqType r r&#39;</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> eff</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="ot">singleListToJust ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>singleListToJust [a] <span class="ot">=</span> <span class="dt">Just</span> a</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>singleListToJust _ <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p><code>findMatchingEffect</code> takes the output of <code>allFindCts</code> for a <em>single wanted constraint</em>, and <em>all of the given</em> constraints, and sees if there’s a single match between the two. If so, it returns the matching effect.</p>
+<p>We need one last helper before we’re ready to put everything together. We wanted to be able to generate new wanted constraints of the form <code>a ~ b</code>. Emitting such a thing as a new wanted constraint will cause GHC to unify <code>a</code> and <code>b</code>; which is exactly what we’d like in order to convince it to use one given constraint in place of another.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mkWanted ::</span> <span class="dt">CtLoc</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> (<span class="dt">Maybe</span> <span class="dt">Ct</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mkWanted loc eff eff&#39; <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> eqType (getEffName eff) (getEffName eff&#39;)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>     <span class="kw">then</span> <span class="kw">do</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>       (ev, _) <span class="ot">&lt;-</span> unsafeTcPluginTcM</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>                <span class="op">.</span> runTcSDeriveds</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>                <span class="op">$</span> newWantedEq loc <span class="dt">Nominal</span> eff eff&#39;</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>       <span class="fu">pure</span> <span class="op">.</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">CNonCanonical</span> ev</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>       <span class="fu">pure</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p>What’s going on here? Well we check if the two effects we want to unify have the same effect name. Then if so, we use the wanted’s <code>CtLoc</code> to generate a new, derived wanted constraint of the form <code>eff ~ eff&#39;</code>. In essence, we’re promising the compiler that it can solve the wanted if it can solve <code>eff ~ eff&#39;</code>.</p>
+<p>And finally we’re ready to roll.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">solveFundep ::</span> <span class="dt">Class</span> <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> [<span class="dt">Ct</span>] <span class="ot">-&gt;</span> <span class="dt">TcPluginM</span> <span class="dt">TcPluginResult</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>solveFundep find_cls giv _ want <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> wanted_effs <span class="ot">=</span> allFindCts find_cls want</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        given_effs  <span class="ot">=</span> <span class="fu">fmap</span> <span class="fu">snd</span> <span class="op">$</span> allFindCts find_cls giv</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    eqs <span class="ot">&lt;-</span> forM wanted_effs <span class="op">$</span> \(loc, e<span class="op">@</span>(_, eff, r)) <span class="ot">-&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> findMatchingEffect e given_effs <span class="kw">of</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> eff&#39; <span class="ot">-&gt;</span> mkWanted loc eff eff&#39;</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>          <span class="kw">case</span> splitAppTys r <span class="kw">of</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>            (_, [_, eff&#39;, _]) <span class="ot">-&gt;</span> mkWanted loc eff eff&#39;</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>            _                 <span class="ot">-&gt;</span> <span class="fu">pure</span> <span class="dt">Nothing</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> <span class="op">.</span> <span class="dt">TcPluginOk</span> [] <span class="op">$</span> catMaybes eqs</span></code></pre></div>
+<p>We get all of the <code>Find</code> constraints in the givens and the wanteds. Then, for each wanted, we see if there is a singularly matching given, and if so, generate a wanted constraint unifying the two.</p>
+<p>However, if we <em>don’t</em> find a singularly matching effect, we’re not necessarily in hot water. We attempt to decompose <code>r</code> into a type constructor and its arguments. Since <code>r</code> has kind <code>[k]</code>, there are three possibilities here:</p>
+<ol type="1">
+<li><code>r</code> is a polymorphic type variable, in which case we can do nothing.</li>
+<li><code>r</code> is <code>&#39;[]</code>, so we have no effects to possibly unify, and so we can do nothing.</li>
+<li><code>r</code> has form <code>e &#39;: es</code>, in which case we attempt to unify <code>e</code> with the wanted.</li>
+</ol>
+<p>What’s going on with this? Why is this bit necessary? Well, consider the case where we want to <em>run</em> our effect stack. Let’s say we have this program:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foo&#39; ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">Int</span>) r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>foo&#39; <span class="ot">=</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> runM <span class="op">.</span> runState <span class="dv">5</span> <span class="op">$</span> foo&#39;</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> result</span></code></pre></div>
+<p>The type of <code>runM . runState 5</code> is <code>Num a =&gt; Sem &#39;[State a, Lift IO] x -&gt; IO x</code>. But <code>foo&#39;</code> still wants a <code>State Int</code> constraint, however, <code>main</code> <em>doesn’t have any givens!</em> Instead, the wanted we see is of the form <code>Find &#39;[State a, Lift IO] (State Int)</code>, and so we’re justified in our logic above to unify <code>State Int</code> with the head of the list.</p>
+<p>Finally we can bundle everything up:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">plugin ::</span> <span class="dt">Plugin</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>plugin <span class="ot">=</span> defaultPlugin</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    { tcPlugin <span class="ot">=</span> <span class="fu">const</span> <span class="op">$</span> <span class="dt">Just</span> fundepPlugin</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="ot">fundepPlugin ::</span> <span class="dt">TcPlugin</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>fundepPlugin <span class="ot">=</span> <span class="dt">TcPlugin</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    { tcPluginInit <span class="ot">=</span> findFindClass</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    , tcPluginSolve <span class="ot">=</span> solveFundep</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    , tcPluginStop <span class="ot">=</span> <span class="fu">const</span> <span class="op">$</span> <span class="fu">pure</span> ()</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    }</span></code></pre></div>
+<p>and voila, upon loading our module via the <code>-fplugin</code> flag, GHC will automatically start solving <code>Member</code> constraints as though they were fundeps!</p>
+<p>This isn’t the whole story; there are still a few kinks in the implementation for when your given is more polymorphic than your wanted (in which case they shouldn’t unify), but this is enough to get a feeling for the idea. As always, the <a href="https://github.com/isovector/polysemy/blob/master/polysemy-plugin/src/Polysemy/Plugin/Fundep.hs">full source code is on Github</a>.</p>
+<p>As we’ve seen, TC plugins are extraordinarily powerful for helping GHC solve domain-specific problems, and simultaneously quite easy to write. They’re not often the right solution, but they’re a great thing to keep in your tool belt!</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2022 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+
