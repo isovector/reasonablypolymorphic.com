@@ -64,7 +64,7 @@ main =
       { shakeFiles="_build"
       , shakeLintInside=["site"]
       , shakeChange=ChangeDigest
-      , shakeVersion = "15"
+      , shakeVersion = "0"
       }) $ do
 
   liftIO $ Dir.createDirectoryIfMissing True "_build/html"

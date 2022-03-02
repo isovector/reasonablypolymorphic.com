@@ -7,7 +7,7 @@ stack build
 stack exec poly
 rm -rf docs/
 mkdir docs
-mv _build/html/* docs/
+cp -r _build/html/* docs/
 git checkout docs/CNAME
 git add docs
 git commit -m "Deploy site"
