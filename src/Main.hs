@@ -30,7 +30,6 @@ import qualified System.Directory as Dir
 import           Text.HTML.TagSoup
 import           Text.Pandoc (Meta (Meta))
 import           Utils
-import Data.Char (isUpper)
 
 parseHeader :: Meta -> Maybe Article
 parseHeader (Meta m) =
@@ -82,7 +81,8 @@ main =
     forP md0 $ fmap (\s -> s { p_path = dropDirectory1 $ p_path s } ) . loadMarkdown parseHeader commit
 
   void $ forP html0 $ \html ->
-    liftIO $ Dir.copyFile html $ getBuildPath "html1/agda" "html" html
+    -- liftIO $ Dir.copyFile html $ getBuildPath "html1/agda" "html" html
+    liftIO $ Dir.copyFile html $ getBuildPath "html1" "html" html
 
   let renamed_articles = rename doMyRename $ raw_articles <> raw_md
   articles <- forP renamed_articles $ renderPost fileIdents defaultWriterOptions
@@ -111,8 +111,8 @@ doMyRename :: FilePath -> FilePath
 doMyRename s
   | isPrefixOf "blog/20" s = dropExtension ("blog" </> drop (length @[] "Blog/2000-00-00-") s) </> "index.html"
   | isPrefixOf "blog" s = dropExtension ("blog" </> drop 5 s) </> "index.html"
-  | Just (c, _) <- uncons s
-  , isUpper c = "agda" </> s
+  -- | Just (c, _) <- uncons s
+  -- , isUpper c = "agda" </> s
   | otherwise = s
 
 

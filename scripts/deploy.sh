@@ -3,13 +3,13 @@
 set +xe
 
 echo "deploying on server..."
-stack build
+stack run
 stack exec poly
 rm -rf docs/
 mkdir docs
-mv dist/* docs/
+mv _build/html/* docs/
 git checkout docs/CNAME
 git add docs
-git commit -m "i am excellent at programming"
+git commit -m "Deploy site"
 git push
 
