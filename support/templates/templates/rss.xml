@@ -2,29 +2,31 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
 <channel>
   <title>Reasonably Polymorphic</title>
-  <link>{{domain}}</link>
-  <atom:link href="{{domain}}/{{url}}" rel="self" type="application/rss+xml" />
-  <description>There will be math and Haskell and it will be in ya face.</description>
-  <category>Life</category>
-  <copyright>2018 Sandy Maguire</copyright>
+  <link>https://reasonablypolymorphic.com</link>
+  <atom:link href="https://reasonablypolymorphic.com/{{path}}" rel="self" type="application/rss+xml" />
+  <description>Sandy Maguire's technical blog</description>
+  <category>Programming</category>
+  <copyright>2022 Sandy Maguire</copyright>
   <pubDate>{{last_updated}}</pubDate>
   <language>en-us</language>
   <image>
-      <url>{{domain}}/images/favicon.png</url>
+      <url>https://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
-    <link>{{domain}}</link>
+    <link>https://reasonablypolymorphic.com</link>
   </image>
+  {{#meta}}
   {{#posts}}
   <item>
-      <title>{{title}}</title>
+      <title>{{#meta}}{{a_title}}{{/meta}}</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>{{domain}}/{{url}}</link>
-      <guid>{{domain}}/{{url}}</guid>
-      <pubDate>{{zulu}}</pubDate>
+      <link>https://reasonablypolymorphic.com/{{path}}</link>
+      <guid>https://reasonablypolymorphic.com/{{path}}</guid>
+      <pubDate>{{#meta}}{{a_datetime}}{{/meta}}</pubDate>
       <content:encoded><![CDATA[
-        {{{content}}}
+        {{{contents}}}
       ]]></content:encoded>
   </item>
   {{/posts}}
+  {{/meta}}
 </channel>
 </rss>

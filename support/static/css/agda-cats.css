@@ -1,0 +1,167 @@
+div.diagram-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 1em;
+  margin-bottom: 1em; }
+  div.diagram-container img.diagram {
+    height: 200px;
+    margin: auto;
+    display: block;
+    overflow-x: auto; }
+    div.diagram-container img.diagram.short-05 {
+      height: 150px; }
+    div.diagram-container img.diagram.short-1 {
+      height: 105px; }
+    div.diagram-container img.diagram.short-15 {
+      height: 80px; }
+    div.diagram-container img.diagram.short-2 {
+      height: 55px; }
+    div.diagram-container img.diagram.tall-1 {
+      height: 250px; }
+    div.diagram-container img.diagram.tall-2 {
+      height: 350px; }
+
+article a[href], div#return > a[href], div#top > a[href], aside#toc > div#toc-container ul a[href] {
+  color: #0054F4;
+  text-decoration: none; }
+  article a[href]:hover, div#return > a[href]:hover, div#top > a[href]:hover, aside#toc > div#toc-container ul a[href]:hover {
+    text-decoration: 2px currentColor underline !important; }
+  article a[href]:visited, div#return > a[href]:visited, div#top > a[href]:visited, aside#toc > div#toc-container ul a[href]:visited {
+    color: #9C1BD6; }
+
+div#return {
+  text-align: center; }
+
+article {
+  padding-top: 2em;
+  padding-bottom: 2em;
+  margin-top: 0 !important;
+  width: 72ch; }
+  article > :nth-child(1), article > pre.Agda:first-of-type {
+    margin-top: 0;
+    padding-top: 0; }
+  article #article-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center; }
+  article > p {
+    width: 100%; }
+  article > figure > figcaption {
+    text-align: center;
+    font-style: italic; }
+
+hr {
+  color: #ABB2BF;
+  margin-top: 1em;
+  margin-bottom: 1em; }
+
+pre.Agda {
+  border-radius: 0;
+  box-shadow: none;
+  overflow-y: clip;
+  margin: 0;
+  padding: 1em;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  background-color: #fff;
+  color: #222; }
+
+@keyframes highlight {
+  0% {
+    background-color: #F5DEB3; }
+  100% {
+    background-color: #fff; } }
+
+a[href].hover-highlight {
+  background-color: #F5DEB3; }
+
+/* Aspects. */
+.Agda {
+  /* NameKinds. */
+  /* OtherAspects. */
+  /* Standard attributes. */
+  font-family: 'iosevka', 'Iosevka', 'Fantasque Sans Mono', 'Roboto Mono', monospace;
+  font-weight: 400; }
+  .Agda .Comment {
+    color: #222;
+    font-style: italic; }
+  .Agda .Background {
+    background-color: #fff; }
+  .Agda .Markup {
+    color: #222; }
+  .Agda .Keyword {
+    color: #BB3B13; }
+  .Agda .String {
+    color: #d52753; }
+  .Agda .Number {
+    color: #8A1060; }
+  .Agda .Symbol {
+    color: #222; }
+  .Agda .PrimitiveType {
+    color: #0054F4; }
+  .Agda .Pragma {
+    color: #222; }
+  .Agda .Bound {
+    color: #222 !important; }
+  .Agda .Generalizable {
+    color: #222 !important; }
+  .Agda .InductiveConstructor {
+    color: #207B1D !important; }
+  .Agda .CoinductiveConstructor {
+    color: #207B1D !important; }
+  .Agda .Datatype {
+    color: #0054F4 !important; }
+  .Agda .Field {
+    color: #9C1BD6 !important; }
+  .Agda .Function {
+    color: #0054F4 !important; }
+  .Agda .Module {
+    color: #8A1060 !important; }
+  .Agda .Postulate {
+    color: #0054F4 !important; }
+  .Agda .Primitive {
+    color: #0054F4 !important; }
+  .Agda .Record {
+    color: #0054F4 !important; }
+  .Agda .UnsolvedMeta {
+    color: #222;
+    background: yellow; }
+  .Agda .UnsolvedConstraint {
+    color: #222;
+    background: yellow; }
+  .Agda .TerminationProblem {
+    color: #222;
+    background: #FFA07A; }
+  .Agda .IncompletePattern {
+    color: #222;
+    background: #F5DEB3; }
+  .Agda .Error {
+    color: red;
+    text-decoration: underline; }
+  .Agda .TypeChecks {
+    color: #222;
+    background: #ADD8E6; }
+  .Agda .ShadowingInTelescope {
+    color: #222;
+    background: #808080; }
+  .Agda .Deadcode {
+    color: #BB3B13;
+    font-weight: bold; }
+  .Agda a {
+    text-decoration: none; }
+  .Agda a[href]:hover {
+    text-decoration: 2px #0054F4 underline; }
+  .Agda a[href]:target {
+    animation: highlight 2.5s; }
+
+@font-face {
+  font-family: 'iosevka';
+  font-display: swap;
+  font-weight: 400;
+  font-stretch: normal;
+  font-style: normal;
+  src: url("/static/woff2/iosevk-abbie-regular.woff2") format("woff2"), url("/static/ttf/iosevk-abbie-regular.ttf") format("truetype"); }
+
+span.qed {
+  float: right; }

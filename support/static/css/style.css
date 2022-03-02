@@ -651,6 +651,7 @@ nav {
 
 nav a {
     color: #d0d;
+    text-decoration: none;
 }
 
 nav h1 {
