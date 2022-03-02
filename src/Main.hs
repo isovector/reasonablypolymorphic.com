@@ -22,6 +22,7 @@ import qualified Data.Text as T
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import           Data.Time (UTCTime, defaultTimeLocale, parseTimeM)
+import           Data.Time.Format (formatTime)
 import           Development.Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Forward (shakeArgsForward, forwardOptions)
@@ -45,7 +46,15 @@ data Article = Article
   , a_datetime :: UTCTime
   , a_tags     :: [String]
   }
-  deriving (Eq, Ord, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic)
+
+instance ToJSON Article where
+  toJSON (Article txt ut tags) =
+    object
+      [ "a_title" .= txt
+      , "a_datetime" .= formatTime defaultTimeLocale "%Y-%m-%d" ut
+      , "a_tags" .= tags
+      ]
 
 
 main :: IO ()
@@ -92,15 +101,28 @@ main =
   let posts = reverse $ sortOn (a_datetime . p_meta) $ catMaybes $ fmap sequenceA articles
   writeTemplate "index.html" $ pure $ Post "index.html" mempty $ toJSON posts
 
+  let feed = object
+        [ "last_updated" .= maximum (fmap (fmap a_datetime . p_meta) articles)
+        , "posts" .= take 10 posts
+        ]
+  writeTemplate "templates/atom.xml" $ pure $ Post "atom.xml" mempty feed
+  writeTemplate "templates/rss.xml" $ pure $ Post "feed.rss" mempty feed
+
   buildDiagrams
 
   html1 <- getDirectoryFiles "_build/html1" ["**/*.html"]
-
   void $ forP html1 $ \input -> do
     let out = "_build/html" </> input
     text <- liftIO $ Text.readFile $ "_build/html1" </> input
     tags <- traverse (addLinkType fileIdents fileTypes) $ parseTags text
     writeFile' out $ Text.unpack $ renderHTML5 tags
+
+  xml1 <- getDirectoryFiles "_build/html1" ["*.xml"]
+  void $ forP (fmap ("_build/html1" </>) xml1) $ \input ->
+    liftIO $ Dir.copyFile input $ getBuildPath "html" "xml" input
+  rss1 <- getDirectoryFiles "_build/html1" ["*.rss"]
+  void $ forP (fmap ("_build/html1" </>) rss1) $ \input ->
+    liftIO $ Dir.copyFile input $ getBuildPath "html" "rss" input
 
   statics <- getDirectoryFiles "support/static" ["**/*"]
   void $ forP statics $ \filepath ->
@@ -111,6 +133,7 @@ doMyRename :: FilePath -> FilePath
 doMyRename s
   | isPrefixOf "blog/20" s = dropExtension ("blog" </> drop (length @[] "Blog/2000-00-00-") s) </> "index.html"
   | isPrefixOf "blog" s = dropExtension ("blog" </> drop 5 s) </> "index.html"
+  | isPrefixOf "misc/" s = dropExtension (drop 5 s) </> "index.html"
   -- | Just (c, _) <- uncons s
   -- , isUpper c = "agda" </> s
   | otherwise = s
