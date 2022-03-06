@@ -1,9 +1,9 @@
 ---
 layout: post
 title: "Review: Lightweight Semiformal Time Complexity Analysis for Purely Functional Data Structures"
-date: 2022-03-03 11:49
+date: 2022-03-06 15:37
 comments: true
-tags: danielsson, asymptotics, agda
+tags: danielsson, asymptotics, complexity, agda
 ---
 
 What a mouthful of a title! [LWTCAfPFDS][paper] is our paper for the week,
@@ -146,8 +146,8 @@ of steps:
 
 ```
 abstract
-  wait : (n : ℕ) → Thunk m a → Thunk (n + m) a
-  wait _ m = m
+  wait : {n : ℕ} → Thunk m a → Thunk (n + m) a
+  wait m = m
 ```
 
 (the paper follows its own rules and ensures that we call `!_`{.Agda} every
@@ -178,7 +178,7 @@ fmap
   → (a → Thunk fc b)
   → VecL a c n
   → Thunk (2 + fc) (VecL b (2 + fc + c) n)
-fmap f [] = wait _ (pure [])
+fmap f [] = wait (pure [])
 fmap {c = c} f (x ∷ xs)
           = ! f x
   >>= \x' → ! pure (x' ∷ cast (+-comm c _) (xs >>= fmap f))
@@ -213,11 +213,11 @@ every tail:
 
 ```
 waitL
-    : {c' : ℕ} (c : ℕ)
+    : {c' : ℕ} {c : ℕ}
     → VecL a c' n
     → Thunk 1 (VecL a (2 + c + c') n)
-waitL _ [] = ! pure []
-waitL _ (x ∷ xs) = ! pure (x ∷ wait _ (waitL _ =<< xs))
+waitL [] = ! pure []
+waitL (x ∷ xs) = ! pure (x ∷ wait (waitL =<< xs))
 ```
 
 and a helper version of `if_then_else_`{.Agda} which accounts in `Thunk`{.Agda}:
@@ -237,10 +237,10 @@ insert
     → a
     → VecL a c n
     → Thunk 4 (VecL a (4 + c) (suc n))
-insert x [] = wait _ (pure (x ∷ wait _ (pure [])))
+insert x [] = wait (pure (x ∷ wait (pure [])))
 insert x (y ∷ ys)
          = ! x <= y
-  >>= \b → ! if b then x ∷ wait _ (waitL _ (y ∷ ys))
+  >>= \b → ! if b then x ∷ wait (waitL (y ∷ ys))
                   else y ∷ (insert x =<< ys)
 ```
 
@@ -294,10 +294,12 @@ maximum : Vec a (suc n) → Thunk (13 + 14 * n + 4 * n ^ 2) a
 maximum xs = ! last =<< sort xs
 ```
 
-TODO(sandy): incomplete
+The paper goes on to say some thinks about partially evaluating thunks, and then
+shows its use to measure some popular libraries. But I'm more interested in
+making the experience better.
 
 
-## Big O
+## Extra-curricular Big O
 
 Clearly this is all too much work. When we do complexity analysis by hand, we
 are primarily concerned with *complexity classes,* not exact numbers of steps.
@@ -354,7 +356,28 @@ O' : (ℕ → ℕ) → Set
 O' f = O (hoist f)
 ```
 
+We can trivially lift any function `f` into `O`{.Agda} `f`:
 
+```
+O-build : {vars : ℕ} → (f : Vec ℕ vars → ℕ) → O f
+O-build f .O.f = f
+O-build f .O.C = 1
+O-build f .O.k = 0
+O-build f .O.def n x = ≤-refl
+```
+
+and also trivially weaken an `O`{.Agda} into using more variables:
+
+```
+O-weaken : ∀ {vars} {f : Vec ℕ vars → ℕ} → O f → O (f ∘ tail)
+O-weaken o .O.f = o .O.f ∘ tail
+O-weaken o .O.C = o .O.C
+O-weaken o .O.k = o .O.k
+O-weaken o .O.def (_ ∷ x) (_ ∷ eq) = o .O.def x eq
+```
+
+More interestingly, we can lift a given `O'`{.Agda} into a higher power,
+witnessing the fact that eg, something of $O(n^2)$ is also $O(n^3)$:
 
 ```
 O-^-suc : {n : ℕ} → O' (_^ n) → O' (_^ suc n)
@@ -371,20 +394,109 @@ O-^-suc {n} o .O.def xs@(x ∷ []) ps@(s≤s px ∷ []) =
   where
     open O o
     open ≤-Reasoning
-
-O-weaken : ∀ {vars} {f : Vec ℕ vars → ℕ} → O f → O (f ∘ tail)
-O-weaken o .O.f = o .O.f ∘ tail
-O-weaken o .O.C = o .O.C
-O-weaken o .O.k = o .O.k
-O-weaken o .O.def (_ ∷ x) (_ ∷ eq) = o .O.def x eq
-
-x2 : O' (_^ 3)
-x2 .O.f = hoist (_^ 2)
-x2 .O.C = 1
-x2 .O.k = 1
-x2 .O.def (zero ∷ []) (() ∷ x)
-x2 .O.def (suc zero ∷ []) x = s≤s z≤n
-x2 .O.def (suc n ∷ []) x rewrite *-identityʳ n =
-  s≤s (m≤m+n _ (n * suc (n + n * suc n)))
 ```
+
+However, the challenge is and has always been to simplify the construction of
+`Thunk`{.Agda} bounds. Thus, we'd like the ability to remove low-order terms
+from `O`{.Agda}s. We can do this by eliminating $n^k$ whenever there is a
+$n^{k'}$ term around with $k \leq k'$:
+
+```
+postulate
+  O-drop-low
+    : {z x y k k' : ℕ}
+    → k ≤ k'
+    → O' (\n → z + x * n ^ k + y * n ^ k')
+    → O' (\n → z + n ^ k')
+```
+
+The `z` variable here lets us compose `O-drop-low`{.Agda} terms, by subsequently
+instantiating
+
+As a special case, we can eliminate constant terms via `O-drop-low`{.Agda} by
+first expanding constant terms to be coefficients of $n^0$:
+
+```
+O-drop-1
+  : {x y k : ℕ}
+  → O' (\n → x + y * n ^ k)
+  → O' (\n → n ^ k)
+O-drop-1 {x} {y} {k} o rewrite sym (*-identityʳ x) =
+  O-drop-low {0} {x} {y} {k = 0} {k} z≤n o
+```
+
+With these functions, we can now easily construct `O'`{.Agda} values for
+arbitrary one-variable functions:
+
+```
+_ : O' (_^ 1)
+_ = O-drop-1 {4} {5} {1} $ O-build $ hoist \n → 4 + 5 * n ^ 1
+
+_ : O' (_^ 2)
+_ = O-drop-1 {4} {1} {2}
+  $ O-drop-low {4} {5} {3} {1} {2} (s≤s z≤n)
+  $ O-build $ hoist \n → 4 + 5 * n ^ 1 + 3 * n ^ 2
+```
+
+Finally, we just need to build a version of `Thunk`{.Agda} that is adequately
+lifted over the same functions we use for `O`{.Agda}:
+
+```
+abstract
+  OThunk : {vars : ℕ} → (Vec ℕ vars → ℕ) → Set → Set
+  OThunk _ a = a
+
+  OThunk' : (ℕ → ℕ) → Set → Set
+  OThunk' f = OThunk (hoist f)
+```
+
+The `limit`{.Agda} function can be used to lift a `Thunk`{.Agda} into an
+`OThunk`{.Agda}:
+
+```
+  limit
+    : {vars : ℕ} {f : Vec ℕ vars → ℕ} {a : Set}
+    → (v : Vec ℕ vars)
+    → (o : O f)
+    → Thunk (o .O.f v) a → OThunk f a
+  limit _ _ x = x
+```
+
+and we can now give an asymptotic bound over `sort`{.Agda}:
+
+```haskell
+o2 : O' (_^ 1)
+o2 = O-drop-1 {1} {5} {1} $ O-build $ hoist \n -> 1 + 5 * n
+
+linearHeadSort : Vec a n → OThunk' (_^ 1) (VecL a (4 * n) n)
+linearHeadSort {n = n} v = limit (n ∷ []) o2 $ sort v
+```
+
+
+## Conclusions
+
+I'm traveling right now, and ran out of internet on publication day, which means
+I don't have a copy of the paper in front of me as I write this (foolish!)
+Overall, the paper is slightly interesting, though I don't think there's
+anything especially novel here. Sticking the runtime behavior into the type is
+pretty much babby's first example of graded monads, and we don't even get
+asymptotics out of it! Instead we need to push big polynomials around, and
+explicitly call `wait`{.Agda} to make different branches work out.
+
+The `O`{.Agda} stuff I've presented here alleviates a few of those problems; as
+it allows us to relatively-easily throw away the polynomials and just work with
+the highest order terms. A probably better approach would be to throw away the
+functions, and use a canonical normalizing-form to express the asymptotes. Then
+we could define a $\lub$ operator over `OThunk`{.Agda}s, and define:
+
+```haskell
+_>>=_ : OThunk f a → (a → OThunk g b) → OThunk (f ⊔ g) b
+```
+
+to let us work compositionally in the land of big O.
+
+My biggest takeaway here is that the techniques described in this paper are
+probably not powerful enough to be used in anger. Or, at least, not if you
+actually want to get any work done. Between the monads, polynomials, and
+waiting, the experience could use a lot of TLC.
 
