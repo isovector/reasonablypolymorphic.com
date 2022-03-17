@@ -5,8 +5,6 @@ include:
   _build
   .
 flags:
-  --postfix-projections
   --rewriting
-  --guardedness
 depend:
   standard-library

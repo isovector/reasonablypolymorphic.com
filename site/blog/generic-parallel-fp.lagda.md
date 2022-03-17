@@ -101,12 +101,12 @@ In fact, as he goes on to state, this is the whole idea of denotational design.
 Figure out the extensional behavior first, and then figure out how to implement
 it.
 
-This all harkens back to my review of another of Elliott's papers, [Arrows and
-Adders][arrows], which starts from the extensional behavior of natural addition
+This all harkens back to my review of another of Elliott's papers, [Adders and
+Arrows][arrows], which starts from the extensional behavior of natural addition
 (encoded as the Peano naturals), and then derives a chain of proofs showing that
 our everyday binary adders preserve this behavior.
 
-[arrows]: /blog/arrows-and-adders
+[arrows]: /blog/adders-and-arrows
 
 Anyway, let's switch topics and consider a weird fact of the world. Why do so
 many parallel algorithms require gnarly array indexing? Here's an example I
@@ -445,10 +445,11 @@ instance
 
   d* : ⦃ ArrayIso F ⦄ → ⦃ ArrayIso G ⦄ → ArrayIso (\a → F a × G a)
   d* ⦃ d-f ⦄ ⦃ d-g ⦄ .Size = Size ⦃ d-f ⦄ + Size ⦃ d-g ⦄
-  d* ⦃ d-f ⦄ .deserialize x =
-    deserialize (take (Size ⦃ d-f ⦄) x) ,
-    deserialize (drop (Size ⦃ d-f ⦄) x)
-  d* ⦃ d-f ⦄ .serialize (f , g) = serialize f ++ serialize g
+  d* ⦃ d-f ⦄ ⦃ d-g ⦄ .deserialize x =
+    deserialize ⦃ d-f ⦄ (take (Size ⦃ d-f ⦄) {Size ⦃ d-g ⦄} x) ,
+    deserialize ⦃ d-g ⦄ (drop (Size ⦃ d-f ⦄) {Size ⦃ d-g ⦄} x)
+  d* ⦃ d-f ⦄ ⦃ d-g ⦄ .serialize (f , g) =
+    serialize ⦃ d-f ⦄ f ++ serialize ⦃ d-g ⦄ g
 
   dP : ArrayIso (\a → a)
   dP .Size = 1
@@ -461,7 +462,7 @@ instance
     let y , _ = group (Size ⦃ d-f ⦄) _ x
      in compose (deserialize (Data.Vec.map (deserialize ⦃ d-g ⦄) y))
   d∘ ⦃ d-f ⦄ ⦃ d-g ⦄ .serialize (compose x) =
-    concat (Data.Vec.map serialize (serialize x))
+    concat (Data.Vec.map (serialize ⦃ d-g ⦄) (serialize ⦃ d-f ⦄ x))
 ```
 -->
 
