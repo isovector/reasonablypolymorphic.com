@@ -308,13 +308,14 @@ until it runs out of gas or gets the right answer:
 ```
   solve
       : ℕ
-      → Maybe (Σ[ lang ∈ Lang ] ((i : I) → spec (compile lang) i))
+      → Maybe (Σ[ exp ∈ Lang ] ((i : I) → spec (compile exp) i))
   solve = go start
     where
       go
           : SearchState
           → ℕ
-          → Maybe (Σ Lang (λ lang → (i : I) → spec (compile lang) i))
+          → Maybe
+              (Σ Lang (λ exp → (i : I) → spec (compile exp) i))
       go ss zero = nothing
       go ss (suc n) with check ss
       ... | inj₁ x = go ss n
