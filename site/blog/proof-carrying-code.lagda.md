@@ -168,5 +168,5 @@ whether we can prove weakening lemmas there.
 
 [adders]: /blog/adders-and-arrows
 
-But PCC isn't entirely a loss; I learned about `@empty` in Agda.
+But PCC isn't entirely a loss; I learned about `@erased` in Agda.
 
