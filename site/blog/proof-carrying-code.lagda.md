@@ -146,7 +146,7 @@ typed? Well consider one of the rules from the paper:
 
 $$
 \frac{m \vdash e : \tau \text{list} \quad \quad e \neq 0}
-     {m \vdash e : \text{addr} ...}
+     {m \vdash e : \text{addr} \wedge \ldots}
 $$
 
 Here we have that from `e : List τ` (and that `e` isn't 0) we can derive `e :
