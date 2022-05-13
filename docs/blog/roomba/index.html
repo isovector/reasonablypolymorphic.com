@@ -45,7 +45,7 @@
 </p>
 <div class="content">
     <p>I spent the last few months making a roomba. I mean, sorta. I made a robot that wanders around and ostensibly vacuums as it goes. But it gets stuck on things all the time, and the floor isn’t particularly clean by the time it runs out of batteries. Nevertheless, it was an experience<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> and I learned a lot, so I though it would be a good idea to document. Consider the following a devlog, one that might be interesting for the historical record — but which I don’t suggest following to build your own roomba.</p>
-<p>This all started when I googled for “fun robot projects,” and came across this <a href="https://www.youtube.com/watch#v=FUUPcwtkDQw">terrible video</a>. It goes through building a little roomba life-hack-style, which is to say, in absolutely no detail but vaguely making the whole procedure look simple. They use some cardboard and a cup-noodle container, so I thought “how hard could this be?” What I didn’t notice at the time was how the thing they build is not the thing they demo, nor how there are crucial components that are completely disconnected. As it happens, this video is completely smoke and mirrors.</p>
+<p>This all started when I googled for “fun robot projects,” and came across this <a href="https://www.youtube.com/watch?v=FUUPcwtkDQw">terrible video</a>. It goes through building a little roomba life-hack-style, which is to say, in absolutely no detail but vaguely making the whole procedure look simple. They use some cardboard and a cup-noodle container, so I thought “how hard could this be?” What I didn’t notice at the time was how the thing they build is not the thing they demo, nor how there are crucial components that are completely disconnected. As it happens, this video is completely smoke and mirrors.</p>
 <p>I’d picked up some motors and a motor controller for a previous, <a href="https://sandymaguire.me/blog/mastery-skateboard/">ill-fated project</a>. And I had an old sonar module lying around in order to do the range finding. So I figured all that was left was a cup-noodles container and a fan, and I’d be on my merry way.</p>
 <p>Stupidly, I decided I wasn’t going to make this thing out of cardboard. I was going to design and 3D print the chassis and all of the fiddly little bits it would require. My 3D printer’s bed is 22cm square, which meant anything I wanted to make was going to need to be smaller than that. My first prototype was shaped like a flying disc, with a hole in the middle to put the noodles container, but I learned the hard way that there simply wasn’t enough floor-space on the disc to fit all of the necessary electronics. Back to the drawing board.</p>
 <p>I farted around with the base plate design for like a month, trying things. In the meantime, I picked up some CPU fans, assuming that all fans are made equally. This is not true — CPU fans are good at moving air, but not good at, uh… pressurizing air? or something? The idea is that a CPU fan won’t force air somewhere it doesn’t want to go, for example, into a vacuum bag. For that you want a blower fan, but I spent $50 buying the wrong sorts of fans on amazon before I figured this out.</p>
@@ -66,19 +66,19 @@
 <p>Don’t. But if you do, you’ll need these parts:</p>
 <h3 id="bill-of-materials"><a href="#bill-of-materials" class="header-link">Bill of Materials<span class="header-link-emoji">🔗</span></a></h3>
 <ul>
-<li><a href="https://www.amazon.ca/gp/product/B07DQGX369/ref=ppx_yo_dt_b_asin_title_o00_s00#ie=UTF8&amp;psc=1">Motor wheels</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B07D1HP3SJ/ref=ppx_yo_dt_b_asin_title_o05_s00#ie=UTF8&amp;psc=1">L298N</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B07DQGX369/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&amp;psc=1">Motor wheels</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B07D1HP3SJ/ref=ppx_yo_dt_b_asin_title_o05_s00?ie=UTF8&amp;psc=1">L298N</a></li>
 <li><a href="https://www.amazon.com/SainSmart-HC-SR04-Ranging-Detector-Distance/dp/B004U8TOE6">HC-SR04</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B07RM573HD/ref=ppx_yo_dt_b_asin_title_o03_s00#ie=UTF8&amp;psc=1">4S BMS Board</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B08CMNTBB2/ref=ppx_yo_dt_b_asin_title_o00_s00#ie=UTF8&amp;psc=1">12V, 1A, 36.2CFM Blower fan</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B07KC9C6H5/ref=ppx_yo_dt_b_asin_title_o08_s00#ie=UTF8&amp;psc=1">Arduino Nano</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B07JNQFV7F/ref=ppx_yo_dt_b_asin_title_o09_s00#ie=UTF8&amp;psc=1">2x LM2596 DC to DC buck converter</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B072M9S2CQ/ref=ppx_yo_dt_b_asin_title_o04_s01#ie=UTF8&amp;psc=1">Ball bearing</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B0784BB8F5/ref=ppx_yo_dt_b_asin_title_o04_s02#ie=UTF8&amp;psc=1">14.8V RC LiPo battery</a></li>
-<li><a href="https://www.amazon.ca/Gikfun-1N4007-Plastic-Rectifier-Arduino/dp/B01K77YVUA/ref=sr_1_1#dchild=1&amp;keywords=diode&amp;qid=1611443750&amp;s=electronics&amp;sr=1-1">Diode</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B01N2U8PK0/ref=ppx_yo_dt_b_asin_title_o09_s00#ie=UTF8&amp;psc=1">Flip switch</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B01N8VV78D/ref=ppx_yo_dt_b_asin_title_o01_s00#ie=UTF8&amp;psc=1">5.5mm DC jack female</a></li>
-<li><a href="https://www.amazon.ca/gp/product/B07DHMGWVG/ref=ppx_yo_dt_b_asin_title_o01_s00#ie=UTF8&amp;psc=1">15V DC power supply</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B07RM573HD/ref=ppx_yo_dt_b_asin_title_o03_s00?ie=UTF8&amp;psc=1">4S BMS Board</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B08CMNTBB2/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&amp;psc=1">12V, 1A, 36.2CFM Blower fan</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B07KC9C6H5/ref=ppx_yo_dt_b_asin_title_o08_s00?ie=UTF8&amp;psc=1">Arduino Nano</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B07JNQFV7F/ref=ppx_yo_dt_b_asin_title_o09_s00?ie=UTF8&amp;psc=1">2x LM2596 DC to DC buck converter</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B072M9S2CQ/ref=ppx_yo_dt_b_asin_title_o04_s01?ie=UTF8&amp;psc=1">Ball bearing</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B0784BB8F5/ref=ppx_yo_dt_b_asin_title_o04_s02?ie=UTF8&amp;psc=1">14.8V RC LiPo battery</a></li>
+<li><a href="https://www.amazon.ca/Gikfun-1N4007-Plastic-Rectifier-Arduino/dp/B01K77YVUA/ref=sr_1_1?dchild=1&amp;keywords=diode&amp;qid=1611443750&amp;s=electronics&amp;sr=1-1">Diode</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B01N2U8PK0/ref=ppx_yo_dt_b_asin_title_o09_s00?ie=UTF8&amp;psc=1">Flip switch</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B01N8VV78D/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&amp;psc=1">5.5mm DC jack female</a></li>
+<li><a href="https://www.amazon.ca/gp/product/B07DHMGWVG/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&amp;psc=1">15V DC power supply</a></li>
 </ul>
 <h3 id="d-printed-parts"><a href="#d-printed-parts" class="header-link">3D Printed Parts<span class="header-link-emoji">🔗</span></a></h3>
 <p>The whole thing is written in a Haskell DSL for 3D printing called <a href="http://www.implicitcad.org/">ImplicitCAD</a>, because of course it is. Have you met me? The source code is available <a href="https://github.com/isovector/cad-models/blob/9a4eb494690293ee5c42859da1ae96d2b99b6840/src/Roomba3.hs">here</a>, where everything definition prefixed with <code>final_</code> needs to be printed.</p>

@@ -45,7 +45,7 @@
 </p>
 <div class="content">
     <h2 id="motivation"><a href="#motivation" class="header-link">Motivation<span class="header-link-emoji">🔗</span></a></h2>
-<p>A <a href="https://markkarpov.com/post/free-monad-considered-harmful.html">common</a> <a href="/blog/free-stories/">misperception</a> of free monads is that they allow for analysis of an program expressed with them. This is not true, and in fact, monads are <a href="https://www.youtube.com/watch#v=GqmsQeSzMdw">too liberal</a> of an abstraction to allow for inspection in general.</p>
+<p>A <a href="https://markkarpov.com/post/free-monad-considered-harmful.html">common</a> <a href="/blog/free-stories/">misperception</a> of free monads is that they allow for analysis of an program expressed with them. This is not true, and in fact, monads are <a href="https://www.youtube.com/watch?v=GqmsQeSzMdw">too liberal</a> of an abstraction to allow for inspection in general.</p>
 <p>In order to see why, consider the following monadic expression:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>      <span class="fu">getLine</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;&gt;=</span> \str <span class="ot">-&gt;</span> <span class="kw">if</span> str <span class="op">==</span> <span class="st">&quot;backdoor&quot;</span></span>

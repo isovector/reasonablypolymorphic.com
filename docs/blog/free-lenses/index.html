@@ -138,7 +138,7 @@
 lName :: Lens&#39; (Person&#39; Identity) String</code></pre>
 <p>Pretty sweet, ne? Now that <code>getLenses</code> has been implemented generically, it can become library code that will work for any product-type we can throw at it. Which means free lenses without TemplateHaskell for any types we define in the HKD form.</p>
 <p>This HKD pattern is useful enough that I’ve begun implement literally all of my “data” (as opposed to “control”) types as higher-kinded data. With an extra type synonym <code>type X = X&#39; Identity</code>, and <code>{-# LANGUAGE TypeSynonymInstances #-}</code>, nobody will ever know the difference, except that it affords me the ability to use all of this stuff in the future should I want to.</p>
-<p>As <a href="https://www.youtube.com/watch#v=bmKYiUOEo2A">Conal</a> says, all of this stuff might not necessarily be “for free” but at the very least, it’s “already paid for.”</p>
+<p>As <a href="https://www.youtube.com/watch?v=bmKYiUOEo2A">Conal</a> says, all of this stuff might not necessarily be “for free” but at the very least, it’s “already paid for.”</p>
 <hr />
 <p>More shoutouts to <a href="http://travis.athougies.net/">Travis Athougies</a>, whose sweet library <a href="http://travis.athougies.net/projects/beam.html">beam</a> uses this approach to generate lenses for working with SQL tables. I consulted the <a href="https://github.com/tathougies/beam">beam source</a> more than a couple times in writing this post. Thanks again, Travis!</p>
 
