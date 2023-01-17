@@ -8,11 +8,12 @@ tags: haskell
 
 ## Constraints
 
-At work I was recently tasked with figuring out what API calls our program
-makes, and more interestingly, which code-paths lead to those API calls.
-Determining this by hand is tedious and error-prone, and worse, doesn't stay up
-to date with code changes. Instead, let's see how we can use the type system to
-eliminate the pain.
+[At work I was recently tasked with figuring out what API calls our program
+makes](https://github.com/wireapp/wire-server/pull/2950), and more
+interestingly, which code-paths lead to those API calls. Determining this by
+hand is tedious and error-prone, and worse, doesn't stay up to date with code
+changes. Instead, let's see how we can use the type system to eliminate the
+pain.
 
 The existing code was organized around a class `HasAPI` that looks something
 like this:

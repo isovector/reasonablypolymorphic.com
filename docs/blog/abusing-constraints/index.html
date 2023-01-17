@@ -45,7 +45,7 @@
 </p>
 <div class="content">
     <h2 id="constraints"><a href="#constraints" class="header-link">Constraints<span class="header-link-emoji">🔗</span></a></h2>
-<p>At work I was recently tasked with figuring out what API calls our program makes, and more interestingly, which code-paths lead to those API calls. Determining this by hand is tedious and error-prone, and worse, doesn’t stay up to date with code changes. Instead, let’s see how we can use the type system to eliminate the pain.</p>
+<p><a href="https://github.com/wireapp/wire-server/pull/2950">At work I was recently tasked with figuring out what API calls our program makes</a>, and more interestingly, which code-paths lead to those API calls. Determining this by hand is tedious and error-prone, and worse, doesn’t stay up to date with code changes. Instead, let’s see how we can use the type system to eliminate the pain.</p>
 <p>The existing code was organized around a class <code>HasAPI</code> that looks something like this:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span>  <span class="dt">HasAPI</span><span class="ot"> ::</span> <span class="dt">Service</span> <span class="ot">-&gt;</span> <span class="dt">Symbol</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">HasAPI</span> srv name <span class="kw">where</span></span>
