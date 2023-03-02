@@ -16,6 +16,6 @@ Sometimes I give talks. You can find them here.
 * Polysemy - [Video](https://www.youtube.com/watch?v=-dHFOjcK6pA) / [Slides](https://reasonablypolymorphic.com/polysemy-talk)
 * Interview with Sessions by SE - [Audio](https://www.listennotes.com/podcasts/sessions-by-se/from-silicon-valley-to-js_OlKGApLP/)
 * Interview with Haskell Weekly - [Audio](https://haskellweekly.news/episode/39.html)
-
 * A New Kind of Programming - [Video](https://www.youtube.com/watch?v=S0HvfXq3454)
+* Just Because It Works Doesn't Mean It's Right - [Video](https://www.youtube.com/watch?v=is9ppI50Ak4)
 

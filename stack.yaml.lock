@@ -19,13 +19,6 @@ packages:
   original:
     hackage: strptime-1.0.10
 - completed:
-    hackage: blagda-0.1.0.1@sha256:5ed1b3928fa7452356b032fcac6f21e448133f3c2df47e19a387ddffaafc02f0,1946
-    pantry-tree:
-      size: 923
-      sha256: f396c0d7758c098adf183285e941b3b8468c8b36dc269c05bfb6b5937fc7c975
-  original:
-    hackage: blagda-0.1.0.1
-- completed:
     hackage: Agda-2.6.2.1@sha256:8d75dd8d30c0527f2a8b3c1e4295474fc1e2a20d6d1860b6de8e22312d92fa6a,36785
     pantry-tree:
       size: 39733

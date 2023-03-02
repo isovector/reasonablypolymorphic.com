@@ -3,7 +3,7 @@
 set +xe
 
 echo "deploying on server..."
-stack build
+stack build --fast
 stack exec poly
 rm -rf docs/
 mkdir docs
