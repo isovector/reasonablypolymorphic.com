@@ -1,11 +1,45 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2023-01-03T00:26:00Z</updated>
+  <updated>2023-03-24T13:26:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>https://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com/atom.xml'/>
 
+    <entry>
+      <title>The Co-Blub Paradox</title>
+      <id>blog/coblub/index.html</id>
+      <link href='https://reasonablypolymorphic.com/blog/coblub/index.html'/>
+      <published>2023-03-24</published>
+      <updated>2023-03-24</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p>The following is an excerpt from <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
+<hr />
+<p>It is widely acknowledged that the languages you speak shape the thoughts you can think; while this is true for natural language, it is doubly so in the case of programming languages. And it’s not hard to see why; while humans have dedicated neural circuitry for natural language, it would be absurd to suggest there is dedicated neural circuitry for fiddling around with the semantics of pushing around arcane symbol abstractly encoded as electrical potentials over a conductive metal.</p>
+<p>Because programming—and mathematics more generally—does not come easily to us humans, it can be hard to see the forest for the trees. We have no built-in intuition as to what should be possible, and thus, this intuition is built by observing the artifacts created by more established practitioners. In these more “artificial” of human endeavors, newcomers to the field are truly constructivists—their methods for practicing the art are shaped only by their previously-observed patterns. Because different programming languages support different features and idioms, the imaginable shape of what programming <em>is</em> must be shaped by the languages we understand.</p>
+<p>In a famous essay, “<a href="http://www.paulgraham.com/avg.html">Beating the Averages</a>,” Paul Graham points out the so-called <em>Blub paradox.</em> This, Graham says, is the ordering of programming languages by powerfulness; a programmer who thinks in a middle-of-the-road language along this ordering (call it Blub) can identify less powerful languages, but not those which are more powerful. The idea rings true; one can arrange languages in power by the features they support, and subsequently check to see if a language supports all the features felt to be important. If it doesn’t, it must be less powerful. However, this technique doesn’t work to identify more powerful languages—at best, you will see that the compared language supports all the features you’re looking for, but you don’t know enough to ask for more.</p>
+<p>More formally, we can describe the Blub paradox as a semi-decision procedure. That is, given an ordering over programming languages (here, by “power”,) we can determine whether a language is less than our comparison language, but not whether it is more than. We can determine when the answer is definitely “yes,” but, not when it is “no!”</p>
+<p>Over two decades of climbing this lattice of powerful languages, I have come to understand a lesser-known corollary of the Blub paradox, coining it the <em>Co-Blub paradox</em><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. This is the observation that knowledge of lesser languages is <em>actively harmful</em> in the context of a more powerful language. The hoops you unwittingly jumped through in Blub due to lacking feature X are <em>anti-patterns</em> in the presence of feature X. This is obviously true when stated abstractly, but insidious when one is in the middle of it.</p>
+<p>Let’s look at a few examples over the ages, to help motivate the problem before we get into our introspection proper. In the beginning, people programmed directly in machine code. Not assembly, mind you, but in raw binary-encoded op-codes. They had a book somewhere showing them what bits needed to be set in order to cajole the machine into performing any given instruction. Presumably if this were your job, you’d come to memorize the bit patterns for common operations, and it wouldn’t be nearly as tedious as it seems today.</p>
+<p>Then came assembly languages, which provided human-meaningful mnemonics to the computer’s opcodes. No longer did we need to encode a jump as <code>11111000110000001100</code> — now it was <code>jl 16</code>. Still mysterious, to be sure, but significant gains are realized in legibility. When encoded directly in machine code, programs were, for the most part, write-only. But assembly languages don’t come for free; first you need to write an assembler: a program that reads the mnemonics and outputs the raw machine code. If you were already proficient writing machine code directly, you can imagine the task of implementing an assembler to feel like make work—a tool to automate a problem you don’t have. In the context of the Co-Blub paradox, knowing the direct encodings of your opcodes is an anti-pattern when you have an assembly language, as it makes your contributes inscrutable among your peers.</p>
+<p>Programming directly in assembly eventually hit its limits. Every computer had a different assembly language, which meant if you wanted to run the same program on a different computer you’d have to completely rewrite the whole thing; often needing to translate between extremely different concepts and limitations. Ignoring a lot of history, C came around with the big innovation that software should be portable between different computers: the same C program should work regardless of the underlying machine architecture. If you were an assembly programmer, you ran into the anti-pattern that while you could squeeze more performance and perform clever optimizations if you were aware of the underlying architecture, this fundamentally limited you <em>to that platform.</em></p>
+<p>By virtue of being, in many ways, a unifying assembly language, C runs very close to what we think of as “the metal.” Although different computer architectures have minor differences in registers and ways of doing things, they are all extremely similar variations on a theme. They all expose storable memory indexed by a number, operations for performing basic logic and arithmetic tasks, and means of jumping around to what the computer should consider to be the next instruction. As a result, C exposes this abstraction of what a computer <em>is</em> to its programmers, who are thus required to think about mutable memory and about how to encode complicated objects as sequences of bytes in that memory. But then came Java, whose contribution to mainstream programming was to popularize the idea that memory is cheap and abundant, and thus OK to waste some in order to alleviate the headache of needing to track it all yourself. As a C programmer coming to Java, you must unlearn the idea that memory is sacred and scarce, that you can do a better job of keeping track of it than the compiler can, and, hardest of all, that it is an important thing to track in the first place.</p>
+<p>There is a clear line of progression here; as we move up the lattice of powerful languages, we notice that more and more details of what we thought were integral parts of programming turn out to be not particularly relevant to the actual task at hand. However, the examples thus discussed are already known to the modern programmer. Let’s take a few steps further, into languages deemed esoteric in the present day. It’s easy to see and internalize examples from the past, but those staring us in the face are much more difficult to spot.</p>
+<p>Compare Java then to Lisp, which—among many things—makes the argument that functions, and even <em>programs themselves,</em> are just as meaningful objects as are numbers and records. Where Java requires the executable pieces to be packaged up and moved around with explicit dependencies on the data it requires, Lisp just lets you write and pass around functions, which automatically carry around all the data they reference. Java has a <em>design pattern</em> for this called the “command pattern,” which requires much ado and ink to be spilled, while in Lisp it just works in a way that is hard to understand if you are used to thinking about computer programs as static sequences of instructions. Indeed, the command pattern is bloated and ultimately unnecessary in Lisp, and practitioners must first unlearn it before they can begin to see the beauty of Lisp.</p>
+<p>Haskell takes a step further than Lisp, in that it restricts when and where side-effects are allowed to occur in a program. This sounds like heresy (and feels like it for the first six months of programming in Haskell) until you come to appreciate that <em>almost none</em> of a program needs to perform side-effects. As it happens, side-effects are the only salient observation of the computer’s execution model, and by restricting their use, Haskell frees its programmers from needing to think about how the computer will execute their code—promising only that it will. As a result, Haskell code looks much more like mathematics than it looks like a traditional computer program. Furthermore, by abstracting away the execution model, the runtime is free to parallelize and reorder code, often even eliding unnecessary execution altogether. The programmer who refuses to acknowledge this reality and insists on coding with side-effects pays a great price, both on the amount of code they need to write, in its long-term reusability, and, most importantly, in the correctness of their computations.</p>
+<p>All of this brings us to Agda, which is as far as I’ve gotten along the power lattice of programming languages. While Agda looks a great deal like Haskell, its powerful typesystem allows us to articulate many invariants that are impossible to write down in other languages. It’s tempting to think about Agda as Haskell-but-with-better-types, but this is missing the point. Agda’s type system is so precise we can <em>prove</em> that our solutions are correct, which alleviates the need to actually <em>run</em> the subsequent programs. In essence, programming in Agda abstracts away the notion of execution entirely. Following our argument about co-Blub programmers, they will come to Agda with the anti-pattern that thinking their hard-earned, battle-proven programming techniques for wrangling runtime performance will come in handy. But this is not the case; most of the techniques we have learned and consider “computer science” are in fact <em>implementation ideas:</em> that is, specific realizations from infinite classes of solutions, chosen not for their simplicity or clarity, but for their <em>efficiency.</em></p>
+<p>Thus, the process of learning Agda, in many ways, is learning to separate the beautiful aspects of problem solving from the multitude of clever hacks we have accumulated over the years. Much like the fish who is unable to recognize the ubiquitous water around him, as classically-trained programmers, it is nigh-impossible to differentiate the salient points from the implementation details until we find ourselves in a domain where they do not overlap. Indeed, in Agda, you will often feel the pain of having accidentally conflated the two, when your proofs end up being much more difficult than you feel they deserve. Despite the pain and the frustration, this is in fact a feature, and not a bug. It is a necessary struggle, akin to the type-checker informing you that your program is wrong. While it can be tempting to blame the tool, the real fault is in the workmanship.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Although precisely speaking, the name should be the co-(Blub paradox), as the corollary applies to the paradox as a whole, not only the Blub piece. Alas, such is an awkward construction in English, and thus we will not use it.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Abusing Constraints for Automatic Documentation</title>
       <id>blog/abusing-constraints/index.html</id>
@@ -1981,78 +2015,6 @@ r \circ S v1
 <h2 id="conclusions"><a href="#conclusions" class="header-link">Conclusions<span class="header-link-emoji">🔗</span></a></h2>
 <p>This was a helpful paper to to wrap my head around all this codata stuff that smart people in my circles keep talking about. None of it is <em>new,</em> but as a concept it helps solidify a lot of disparate facts I had rattling around in my brain. Doing this final tagless encoding of data types gives us a fast CPS thing that is quick as hell to run because it gets tail-optimized and doesn’t need to build any intermediary data structures, and gets driven by its consumer. The trade-off is that CPS stuff is a damn mind-melter.</p>
 <p>At Zurihac 2018, I met some guy (whose name I can’t remember, sorry!) who was working on a new language that supported this automatic transformation between data and codata. I don’t remember anything about it, except he would just casually convert between data and codata whenever was convenient, and the compiler would do the heavy lifting of making everything work out. It was cool. I wish I knew what I was talking about.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Followup to Sorting with Bialgebras</title>
-      <id>blog/bialgebra-followup/index.html</id>
-      <link href='https://reasonablypolymorphic.com/blog/bialgebra-followup/index.html'/>
-      <published>2022-02-08</published>
-      <updated>2022-02-08</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p>Last week I was pretty down on the results of my <a href="/blog/bialgebras/">exploration into Sorting with Bialgebras</a>. I didn’t want to get into the habit of slamming through a paper just to not understand it, so I figured I’d take a hit on my yearly goal and spend this week getting the results up to snuff.</p>
-<p>I started by really trying to wrap my head around how exactly the <code>ana . cata</code> pattern works. So I wrote out a truly massive number of trace statements, and stared at them until they made some amount of sense. Here’s what’s going on:</p>
-<p><code>ana</code> takes an <code>a</code> and unfolds it into an <code>F a</code>, recursively repeating until it terminates by producing a non-inductive <code>F</code>-term. So here <code>F</code> is a <code>Sorted</code>. And then we need to give a folding function for <code>cata</code>. This fold happens in <code>Unsorted</code>, and thus has type <code>Unsorted (Sorted (Mu Unsorted)) -&gt; Sorted (Mu Unsorted)</code>. The idea here is that the <code>cata</code> uses its resulting <code>Sorted</code> to pull forward the smallest element it’s seen so far. Once the <code>cata</code> is finished, the <code>ana</code> gets a term <code>Sorted (Mu Unsorted)</code>, where the <code>Sorted</code> term is the head of the synthesized list, and the <code>Mu Unsorted</code> is the next “seed” to recurse on. This <code>Mu Unsorted</code> is one element smaller than it was last time around, so the recursion eventually terminates.</p>
-<p>OK, so that’s all well and good. But what does <code>ana . para</code> do here? Same idea, except that the fold also gets a <code>Mu Unsorted</code> term, corresponding to the unsorted tail of the list — aka, before it’s been folded by <code>para</code>.</p>
-<p>The paper doesn’t have much to say about <code>para</code>:</p>
-<blockquote>
-<p>in a paramorphism, the algebra also gets the remainder of the list. This extra parameter can be seen as a form of an as-pattern and is typically used to match on more than one element at a time or to detect that we have reached the final element.</p>
-</blockquote>
-<p>That’s all well and good, but it’s unclear how this can help us. The difference between <code>naiveIns</code> and <code>ins</code> is:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>naiveIns</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a x)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a x)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>naiveIns <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>naiveIns (a <span class="op">:&gt;</span> <span class="dt">SNil</span>) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">UNil</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>naiveIns (a <span class="op">:&gt;</span> b <span class="op">:!</span> x)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> b <span class="op">:&gt;</span> x</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> a <span class="op">:&gt;</span> x</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>ins</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (c, <span class="dt">Sorted</span> a x)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> c (<span class="dt">Unsorted</span> a x))</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>ins <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>ins (a <span class="op">:&gt;</span> (x, <span class="dt">SNil</span>)) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>ins (a <span class="op">:&gt;</span> (x, b <span class="op">:!</span> x&#39;))</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> <span class="dt">Right</span> (a <span class="op">:&gt;</span> x&#39;)</span></code></pre></div>
-<p>Ignore the <code>Left/Right</code> stuff. The only difference here is whether we use <code>x</code> or <code>x&#39;</code> in the last clause, where <code>x</code> is the original, unsorted tail, and <code>x&#39;</code> is the somewhat-sorted tail. It’s unclear to me how this can possibly help improve performance; we still need to have traversed the entire tail in order to find the smallest element. Maybe there’s something about laziness here, in that we shouldn’t need to rebuild the tail, but we’re going to be sharing the tail-of-tail regardless, so I don’t think this buys us anything.</p>
-<p>And this squares with my confusion last week; this “caching” just doesn’t seem to do anything. In fact, the paper doesn’t even say it’s caching. All it has to say about our original <code>naiveIns</code>:</p>
-<blockquote>
-<p>Why have we labelled our insertion sort as naïve? This is because we are not making use of the fact that the incoming list is ordered— compare the types of <code>bub</code> and <code>naiveIns</code>. We will see how to capitalise on the type of <code>naiveIns</code> in Section 5.</p>
-</blockquote>
-<p>and then in section 5:</p>
-<blockquote>
-<p>The sole difference between sel and bub (Section 3) is in the case where a 6 b: <code>sel</code> uses the remainder of the list, supplied by the paramorphism, rather than the result computed so far. This is why <code>para sel</code> is the true selection function, and fold bub is the naïve variant, if you will.</p>
-</blockquote>
-<p>OK, fair, that checks out with what came out of my analysis. The <code>ana . para</code> version does use the tail of the original list, while <code>ana . cata</code> uses the version that might have already done some shuffling. But this is work we needed to do anyway, and moves us closer to a sorted list, so it seems insane to throw it away!</p>
-<p>The best argument I can come up with here is that the <code>ana . para</code> version is dual to <code>cata . apo</code>, which signals whether the recursion should stop early. That one sounds genuinely useful to me, so maybe the paper does the <code>ana . para</code> thing just out of elegance.</p>
-<p>Unfortunately, <code>cata . apo</code> doesn’t seem to be a performance boost in practice. In fact, both <code>cata . ana</code> and <code>ana . cata</code> perform significantly better than <code>cata . apo</code> and <code>ana . para</code>. Even more dammingly, the latter two perform better when they ignore the unique abilities that <code>apo</code> and <code>para</code> provide.</p>
-<p>Some graphs are worth a million words:</p>
-<center>
-<img src="/images/bialgebra/o0-by-size.png">
-</center>
-<center>
-<img src="/images/bialgebra/o0-by-algo.png">
-</center>
-<p>These are performance benchmarks for <code>-00</code>, using <code>Data.List.sort</code> as a control (“sort”). The big numbers on the left are the size of the input. “bubble” is the naive version of “selection.” Additionally, the graphs show the given implementations of <code>quickSort</code> and <code>treeSort</code>, as well as the two variations I was wondering about in the last post (here called <code>quickTree</code> and <code>treeQuick</code>.)</p>
-<p>The results are pretty damming. In <em>all</em> cases, bubble-sort is the fastest of the algorithms presented in the paper. That’s, uh, not a good sign.</p>
-<p>Furthermore, the “no caching” versions of “insertion” and “selection” both perform better than their caching variants. They are implemented by just ignoring the arguments that we get from <code>apo</code> and <code>para</code>, and simulating being <code>ana</code> and <code>cata</code> respectively. That means: whatever it is that <code>apo</code> and <code>para</code> are doing is <em>strictly worse</em> than not doing it.</p>
-<p>Not a good sign.</p>
-<p>But maybe this is all just a result of being run on <code>-O0</code>. Let’s try turning on optimizations and seeing what happens:</p>
-<center>
-<img src="/images/bialgebra/o2-by-size.png">
-</center>
-<center>
-<img src="/images/bialgebra/o2-by-algo.png">
-</center>
-<p>About the same. Uh oh.</p>
-<p>I don’t know what to blame this on. Maybe the constant factors are bad, or it’s a runtime thing, or I fucked up something in the implementation, or maybe the paper just doesn’t do what it claims. It’s unclear. But <a href="https://github.com/isovector/reviews/blob/d4dfc42aa2b993a6b0d536a6d96bef4e86f30f65/app/Main.hs#L19-L30">here’s my code</a>, in case you want to take a look and tell me if I screwed something up. The criterion reports are available for <a href="/graphs/bialgebra-o0.html"><code>-O0</code></a> and <a href="/graphs/bialgebra-o2.html"><code>-O2</code></a> (slightly different than in the above photos, since I had to rerun them.)</p>
         ]]>
       </content>
     </entry>
