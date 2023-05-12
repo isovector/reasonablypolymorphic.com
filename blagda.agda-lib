@@ -6,5 +6,6 @@ include:
   .
 flags:
   --rewriting
+  --warning=noUnsupportedIndexedMatch
 depend:
   standard-library

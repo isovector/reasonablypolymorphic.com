@@ -7,34 +7,41 @@ packages:
 - completed:
     hackage: datetime-0.3.1@sha256:7e275bd0ce7a2f66445bedfa0006abaf4d41af4c2204c3f8004c17eab5480e74,1534
     pantry-tree:
-      size: 334
       sha256: d41d182c143676464cb1774f0b7777e870ddeaf8b6cd5fee6ff0114997a1f504
+      size: 334
   original:
     hackage: datetime-0.3.1
 - completed:
     hackage: strptime-1.0.10@sha256:f7f0c3ffedbedbfebc4ce77e0015b4ad879d79dffe11a747da7a304900b09d13,1156
     pantry-tree:
-      size: 331
       sha256: fb752cf40a8ac7ac9f6590b93d37b9ad9f3b4252d04f237b9e9f201226c8004b
+      size: 331
   original:
     hackage: strptime-1.0.10
 - completed:
-    hackage: Agda-2.6.2.1@sha256:8d75dd8d30c0527f2a8b3c1e4295474fc1e2a20d6d1860b6de8e22312d92fa6a,36785
+    hackage: Agda-2.6.3@sha256:c2838623f97935099a46eec0d6e192d6c5b856fe521105de505b4210d48c7600,36861
     pantry-tree:
-      size: 39733
-      sha256: af917c87859e104a86a79533929f671251237a0a91e28a7e699358adb326246c
+      sha256: adf356ee016b2551e79e9c14b4128c42ed5dcff148619fd5db8ba18a7f21585e
+      size: 41559
   original:
-    hackage: Agda-2.6.2.1
+    hackage: Agda-2.6.3
 - completed:
     hackage: MissingH-1.5.0.0@sha256:34df0817c543894b53942852109da1ba7f3f615ca0aded9b9c58bf52d33017e8,4740
     pantry-tree:
-      size: 5272
       sha256: e651ec6ac04238ae27e645f5c8316459999bed57c388c459a44c21c58525fba7
+      size: 5272
   original:
     hackage: MissingH-1.5.0.0@sha256:34df0817c543894b53942852109da1ba7f3f615ca0aded9b9c58bf52d33017e8,4740
+- completed:
+    hackage: vector-hashtables-0.1.1.2@sha256:db5354c0589cae0a4a52478fc866cdf92ea731a25f1b6ae4387dc9d79a694ec6,2755
+    pantry-tree:
+      sha256: 18a6b5bf6ee775f5584f352263833f25a1d7b013aa0649a3a27f19627c16be8e
+      size: 848
+  original:
+    hackage: vector-hashtables-0.1.1.2
 snapshots:
 - completed:
+    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
     size: 586296
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
-    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
   original: lts-18.18

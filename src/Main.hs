@@ -31,6 +31,7 @@ import qualified System.Directory as Dir
 import           Text.HTML.TagSoup
 import           Text.Pandoc (Meta (Meta))
 import           Utils
+import Debug.Trace (traceShowId)
 
 parseHeader :: Meta -> Maybe Article
 parseHeader (Meta m) =
@@ -99,7 +100,9 @@ main =
   writeTemplate "template.html" articles
 
   let posts = reverse $ sortOn (a_datetime . p_meta) $ catMaybes $ fmap sequenceA articles
-  writeTemplate "index.html" $ pure $ Post "index.html" mempty $ toJSON posts
+  let z = toJSON posts
+  liftIO $ writeFile "/tmp/output" $ show z
+  writeTemplate "index.html" $ pure $ Post "index.html" mempty $ traceShowId $ toJSON posts
 
   let feed = object
         [ "last_updated" .= maximum (fmap (fmap a_datetime . p_meta) articles)

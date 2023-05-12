@@ -6,7 +6,8 @@ extra-deps:
 - datetime-0.3.1
 - strptime-1.0.10
 - ../blagda
-- Agda-2.6.2.1
+- Agda-2.6.3
 - MissingH-1.5.0.0@sha256:34df0817c543894b53942852109da1ba7f3f615ca0aded9b9c58bf52d33017e8,4740
+- vector-hashtables-0.1.1.2
 
 resolver: lts-18.18
