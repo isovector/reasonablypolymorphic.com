@@ -9,9 +9,11 @@
 <div class="content">
       <ul>
       {{#meta}}
+      {{#posts}}
       {{#meta}}
       <li><a href="/{{path}}">{{#meta}}{{a_datetime}} - {{a_title}}{{/meta}}</a></li>
       {{/meta}}
+      {{/posts}}
       {{/meta}}
       </ul>
 
