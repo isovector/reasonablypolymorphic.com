@@ -15,6 +15,30 @@
     <link>https://reasonablypolymorphic.com</link>
   </image>
   <item>
+      <title>Certainty by Construction Progress Report 9</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>https://reasonablypolymorphic.com/blog/cbc-report9/index.html</link>
+      <guid>https://reasonablypolymorphic.com/blog/cbc-report9/index.html</guid>
+      <pubDate>2023-09-02</pubDate>
+      <content:encoded><![CDATA[
+        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
+<hr />
+<p>It is now the wee hours of Sept 2, and it’s safe to say I did not make the deadline. The book is not yet finished come hell or high water. Damn. Here’s the state of the world:</p>
+<ul>
+<li>Everything up to page 203/296 has been aggressively edited, in terms of prose, code, general presentation, and overall topic order. There are still a few TODOs to write chapter summaries, but those aren’t the end of the world if they don’t happen.</li>
+<li>It’s now possible to build semi-readable epubs. Needing to run everything through the Agda compiler makes build pipelines surprisingly hard, but I think this should only require a couple of hours to get it into a good place.</li>
+<li>I have commissioned a contest of potential covers for the book; no results yet, but I expect to to have some things to look at by the end of this week.</li>
+<li>Since my last update, I realized I had accidentally lost the chapter on ring solving when doing my big refactor. I’ve since found it, but it’s no longer particularly motivated and is rather out of place, so I think it’s going to get cut. Kill your darlings and all that.</li>
+</ul>
+<p>All in all, I’m bummed I didn’t make the deadline, but the quality of the book is exponentially better, so I think it’s a worthwhile trade. I’ve got three/four chapters left to edit (depending on if ring solving gets cut), and I need to write a closing chapter to make the end less jarring.</p>
+<p>On a personal note, although the book is much longer in content than my other books, it’s packed much tighter and thus is going to be <em>physically</em> smaller when I get it printed. For some reason that is holding a lot of space in my head right now, and steering me away from cutting too much. I suppose I shouldn’t fret too much; there’s still an index and glossary I need to add which will probably add a bit of length. Also I know this doesn’t matter, but I care about it nevertheless.</p>
+<p>So why didn’t I get this done on time? The reason seems to be just that it was too ambitious a goal. I definitely underestimated the amount of polish required here. This month I put 65 hours of honest-to-goodness <em>work</em> into the book, which if you measure in terms of the 2.9h average hours of work that an officer worker does in a day is more than a full time job. It’s very late and I don’t know if that makes sense but I think it might.</p>
+<p>Anyway, here’s the plan going forwards—I’ve got some of this week to work on the book before getting married and starting grad school. The goal is to just keep on at this pace for as long as I possibly can until I die or real life gets in the way. It sucks and I’m exhausted and would like to be finished with this thing, but it’s not done with <em>me</em> yet. And so we go on.</p>
+<p>But maybe I’ll take tomorrow off because I need to sort out getting married, and I don’t think this kind of extreme focus is good for my mental health. It’s a bit of a balancing act though, because life is only going to get more busy after next week.</p>
+<p>Sorry for the bleak trail off here. I should go to bed.</p>
+      ]]></content:encoded>
+  </item>
+  <item>
       <title>Certainty by Construction Progress Report 8</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
       <link>https://reasonablypolymorphic.com/blog/cbc-report8/index.html</link>
@@ -214,127 +238,6 @@
 <li id="fn1" role="doc-endnote"><p>Although precisely speaking, the name should be the co-(Blub paradox), as the corollary applies to the paradox as a whole, not only the Blub piece. Alas, such is an awkward construction in English, and thus we will not use it.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Abusing Constraints for Automatic Documentation</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>https://reasonablypolymorphic.com/blog/abusing-constraints/index.html</link>
-      <guid>https://reasonablypolymorphic.com/blog/abusing-constraints/index.html</guid>
-      <pubDate>2023-01-03</pubDate>
-      <content:encoded><![CDATA[
-        <h2 id="constraints"><a href="#constraints" class="header-link">Constraints<span class="header-link-emoji">🔗</span></a></h2>
-<p><a href="https://github.com/wireapp/wire-server/pull/2950">At work I was recently tasked with figuring out what API calls our program makes</a>, and more interestingly, which code-paths lead to those API calls. Determining this by hand is tedious and error-prone, and worse, doesn’t stay up to date with code changes. Instead, let’s see how we can use the type system to eliminate the pain.</p>
-<p>The existing code was organized around a class <code>HasAPI</code> that looks something like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span>  <span class="dt">HasAPI</span><span class="ot"> ::</span> <span class="dt">Service</span> <span class="ot">-&gt;</span> <span class="dt">Symbol</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">HasAPI</span> srv name <span class="kw">where</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">APICall</span> srv name</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  callAPI ::</span> <span class="dt">APICall</span> srv name</span></code></pre></div>
-<p>Here, <code>HasAPI</code> is a type class with an associated type family <code>APICall</code> which gives the type for making the call. For example, there might be an instance:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasAPI</span> <span class="dt">ShoutService</span> <span class="st">&quot;shout&quot;</span> <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">APICall</span> <span class="dt">ShoutService</span> <span class="st">&quot;shout&quot;</span> <span class="ot">=</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">String</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  callAPI str <span class="ot">=</span> <span class="fu">pure</span> <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">toUpper</span> str</span></code></pre></div>
-<p>This is a silly example — the real codebase makes actual API calls — but it serves for demonstration.</p>
-<p>Our goal is to document every codepath that makes any use of <code>callAPI</code>, in some sense, “infecting” every path with some marker of that fact. This is a common experience to Haskell programmers; in fact, <code>IO</code> has this same pattern of infectiousness. Whenever you make a function perform IO, every type in the callstack needs to document the fact it performs <code>IO</code>. This is the inspiration we will take, except that changing types is extremely expensive. What if we pushed a constraint around instead?</p>
-<h3 id="propagating-constraints"><a href="#propagating-constraints" class="header-link">Propagating Constraints<span class="header-link-emoji">🔗</span></a></h3>
-<p>The trick is to define a new class, of the same shape as <code>HasAPI</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span>  <span class="dt">CallsAPI</span><span class="ot"> ::</span> <span class="dt">Service</span> <span class="ot">-&gt;</span> <span class="dt">Symbol</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">CallsAPI</span> srv name</span></code></pre></div>
-<p>but crucially, we give <code>CallsAPI</code> <em>no instances.</em> On first blush, this seems insane: why introduce a class with no methods and no instances? Having no methods means it can’t do anything useful. Having no instances means GHC can never eliminate the constraint, and thus must propagate it upwards. This is the infectiousness we want; any function which makes an API call must document that fact in its type — failure to do so will result in GHC failing to compile with the message <code>No instance for (CallsAPI srv name)</code>.</p>
-<p>The trick now is to ensure that <code>callsAPI</code> produces a <code>CallsAPI</code> constraint. The easy way to do this is a little renaming to ensure existing polymorphic code continues work:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span>  <span class="dt">UnsafeHasAPI</span><span class="ot"> ::</span> <span class="dt">Service</span> <span class="ot">-&gt;</span> <span class="dt">Symbol</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">UnsafeHasAPI</span> srv name <span class="kw">where</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">APICall</span> srv name</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  unsafeCallAPI ::</span> <span class="dt">APICall</span> srv name</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">HasAPI</span><span class="ot"> ::</span> <span class="dt">Service</span> <span class="ot">-&gt;</span> <span class="dt">Symbol</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">HasAPI</span> <span class="ot">=</span> (<span class="dt">UnsafeHasAPI</span> srv name, <span class="dt">CallsAPI</span> srv name)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>callAPI</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="kw">forall</span> srv name</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>   <span class="op">.</span> <span class="dt">HasAPI</span> srv name</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=&gt;</span> <span class="dt">APICall</span> srv name</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>callAPI <span class="ot">=</span> unsafeCallAPI</span></code></pre></div>
-<p>Any code written against the old <code>HasAPI</code> constraint will continue to work (modulo the instance definitions,) but concrete calls to <code>callAPI</code> now result in a dangling, unsatisfiable <code>CallsAPI</code> constraint. You’ll need to go through the codebase now, and document every transitive call to the API with matching <code>CallsAPI</code> constraints. Thankfully, HLS can help with this task: it will underline the missing cases, and suggest a code action that will automatically add these constraints to the type. Rinse and repeat, until every code path is documented.</p>
-<p>Great success! We have automatically found every codepath that makes an API call, and forced them to document that fact. Better yet, we have solved the problem once and for all; our coworkers also must document any new API calls they make, lest their code not compile. It seems like we’re done!</p>
-<p>Except for one fact: GHC will rudely refuse to compile our project, even if we correctly track all of our API calls. The problem of course, is that all we have managed to do is force <code>main</code> to collect every <code>CallsAPI</code> constraint. But GHC will still complain <code>No instance for (CallsAPI srv name)</code>. Of course, you could just give an orphan instance in the same module that defines <code>main</code>, which would work, but this doesn’t give you any sort of <em>external documentation.</em> It’s nice when you read the code, but it doesn’t help the business people.</p>
-<h2 id="solving-the-unsolvable"><a href="#solving-the-unsolvable" class="header-link">Solving The Unsolvable<span class="header-link-emoji">🔗</span></a></h2>
-<p>A better approach here is to selectively solve the <code>CallsAPI</code> constraints, which we can do with some Haskell dark magic. The <code>Dict</code> type captures a constraint, giving us a convenient way to manipulate constraints:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Dict</span><span class="ot"> ::</span> <span class="dt">Constraint</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Dict</span> c <span class="kw">where</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Dict</span><span class="ot"> ::</span> c <span class="ot">=&gt;</span> <span class="dt">Dict</span> c</span></code></pre></div>
-<p>We can write an eliminator to bring the <code>c</code> from a <code>Dict c</code> into scope, which, importantly, allows us to solve otherwise-unsolved constraints:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>(\\)<span class="ot"> ::</span> (c <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Dict</span> c <span class="ot">-&gt;</span> r</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>f \\ <span class="dt">Dict</span> <span class="ot">=</span> f</span></code></pre></div>
-<p>If we can get our hands on a <code>Dict (CallsAPI Srv Name)</code>, we can use <code>(\\)</code> to convince GHC to compile our program.</p>
-<p>GHC is happy to give us dictionaries for constraints it knows about:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">showIntDict ::</span> <span class="dt">Dict</span> (<span class="dt">Show</span> <span class="dt">Int</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>showIntDict <span class="ot">=</span> <span class="dt">Dict</span></span></code></pre></div>
-<p>but unfortunately, refuses to give us dictionaries for unsolved constraints:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">callsAPIDict ::</span> <span class="kw">forall</span> srv name<span class="op">.</span> <span class="dt">Dict</span> (<span class="dt">CallsAPI</span> srv name)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>callsAPIDict <span class="ot">=</span> <span class="dt">Dict</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Error: No instance for (CallsAPI srv name)</span></span></code></pre></div>
-<p>It seems like we’re just as stuck, but we have a trick up our sleeve. The first step is to define another class with an instance in scope. GHC will happily give us a dictionary for such a thing:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Trivial</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Trivial</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">trivialDict ::</span> <span class="dt">Dict</span> <span class="dt">Trivial</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>trivialDict <span class="ot">=</span> <span class="dt">Dict</span></span></code></pre></div>
-<p>and now for something naughty:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">callsAPIDict ::</span> <span class="kw">forall</span> srv name<span class="op">.</span> <span class="dt">Dict</span> (<span class="dt">CallsAPI</span> srv name)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>callsAPIDict <span class="ot">=</span> unsafeCoerce trivialDict</span></code></pre></div>
-<p>Behind the scenes, GHC compiles classes into records, instances into values of these records, and replaces wanted constraints with function arguments taking those records. By ensuring that <code>Trivial</code> and <code>CallsAPI</code> are both empty classes, with no methods or super-classes, we can be certain the generated records for these classes will be identical, and thus that it is OK to coerce one into the other.</p>
-<p>Armed with <code>withDict</code> and <code>callsAPIDict</code>, we can play the part of the constraint solver and satisfy constraints ourself. GHC will happily compile the following example:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">ex ::</span> <span class="dt">HasAPI</span> <span class="dt">ShoutService</span> <span class="st">&quot;shout&quot;</span> <span class="ot">=&gt;</span> <span class="dt">IO</span> <span class="dt">String</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ex <span class="ot">=</span> callAPI <span class="op">@</span><span class="dt">ShoutService</span> <span class="op">@</span><span class="st">&quot;shout&quot;</span> <span class="st">&quot;hello world&quot;</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Look ma, no HasAPI constraint!</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ot">test ::</span> <span class="dt">IO</span> <span class="dt">String</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>test <span class="ot">=</span> ex \\ callsAPIDict <span class="op">@</span><span class="dt">ShoutService</span> <span class="op">@</span><span class="st">&quot;shout&quot;</span></span></code></pre></div>
-<p>So that’s the rough technique. But how do we actually use it in anger?</p>
-<h3 id="automatically-documenting-the-server"><a href="#automatically-documenting-the-server" class="header-link">Automatically Documenting the Server<span class="header-link-emoji">🔗</span></a></h3>
-<p>Our actual use case at work is to add these API calls to our swagger documentation. Swagger is this automatically generated manifest of an API surface; we want to document the fact that some API calls might call other ones. Our server is one big servant application, and servant is extensible. So the real technique is to build a servant combinator that eliminates <code>HasAPI</code> constraints when you document them in the API definition.</p>
-<p>Getting into the nitty gritty bits of servant is beyond the scope of this post, but we can sketch the idea. Servant APIs use the type-level <code>(:&gt;)</code> operator to combine information about an endpoint. For example, we might expose another service:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">ServantAPI</span> <span class="ot">=</span> <span class="st">&quot;api&quot;</span> <span class="op">:&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;echo&quot;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>      <span class="op">:&gt;</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>      <span class="op">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></span></code></pre></div>
-<p>This definition states that we have a REST server with a single route, <code>api/echo</code> which responds to <code>POST</code> requests, returning a JSON-encoded string, which takes a JSON-encoded string as the request body.</p>
-<p>A servant server for <code>ServantAPI</code> would have type <code>Server ServantAPI</code>, where <code>Server</code> is a type family given by <code>HasServer</code>. Evaluating the type family results in <code>String -&gt; Handler String</code>, so in order to implement this server, we would need to provide a function of that type.</p>
-<p>Let’s implement our server endpoint:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>echo</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">CallsAPI</span> <span class="dt">ShoutService</span> <span class="st">&quot;shout&quot;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">String</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Handler</span> <span class="dt">String</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>echo str <span class="ot">=</span> liftIO <span class="op">$</span> callAPI <span class="op">@</span><span class="dt">ShoutService</span> <span class="op">@</span><span class="st">&quot;shout&quot;</span> str</span></code></pre></div>
-<p>Unfortunately, due to our earlier work, we can’t eliminate the <code>CallsAPI</code> constraint, and thus we can’t actually use <code>echo</code> as the handler for our endpoint.</p>
-<p>It’s important to note that servant’s DSL is extensible, and we can add our own machinery here. The first step is to build a type that we can use in servant:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">MakesAPICall</span><span class="ot"> ::</span> <span class="dt">Service</span> <span class="ot">-&gt;</span> <span class="dt">Symbol</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">MakesAPICall</span> srv name</span></code></pre></div>
-<p>We can now build a second version of <code>ServantAPI</code>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">ServantAPI</span> <span class="ot">=</span> <span class="st">&quot;api&quot;</span> <span class="op">:&gt;</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;echo&quot;</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>      <span class="op">:&gt;</span> <span class="dt">MakesAPICall</span> <span class="dt">ShoutService</span> <span class="st">&quot;shout&quot;</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>      <span class="op">:&gt;</span> <span class="dt">ReqBody</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">:&gt;</span> <span class="dt">Get</span> &#39;[<span class="dt">JSON</span>] <span class="dt">String</span></span></code></pre></div>
-<p>In order to actually run our endpoint, we need to give an instance of <code>HasServer</code> for our new <code>MakesAPICall</code> combinator:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasServer</span> api ctx</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>      <span class="ot">=&gt;</span> <span class="dt">HasServer</span> (<span class="dt">MakesAPICall</span> srv name <span class="op">:&gt;</span> api) ctx</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">where</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">ServerT</span> (<span class="dt">MakesAPICall</span> srv name <span class="op">:&gt;</span> api) m <span class="ot">=</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Dict</span> (<span class="dt">CallsFed</span> srv name) <span class="ot">-&gt;</span> <span class="dt">ServerT</span> api m</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  route _ ctx f <span class="ot">=</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    route (<span class="dt">Proxy</span> <span class="op">@</span>api) ctx <span class="op">$</span> <span class="fu">fmap</span> (<span class="op">$</span> callsAPIDict <span class="op">@</span>srv <span class="op">@</span>name) f</span></code></pre></div>
-<p>The <code>ServerT</code> instance here adds a <code>Dict (CallsFed srv name)</code> to the type of the handler required to satisfy this endpoint, while <code>route</code> automatically fills in the dictionary whenever the handler needs to be run. In an ideal world, we could give our <code>ServerT</code> instance as:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">ServerT</span> (<span class="dt">MakesAPICall</span> srv name <span class="op">:&gt;</span> api) m <span class="ot">=</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">CallsFed</span> srv name <span class="ot">=&gt;</span> <span class="dt">ServerT</span> api m</span></code></pre></div>
-<p>but GHC doesn’t let us use quantified types on the right-hand sides of type families, so this is unfortunately a no-go. Playing games with <code>Dict</code> instead is the best approach I’ve found here, but I’d love to hear if anyone has a better idea.</p>
-<p>We still can’t use <code>echo</code> as a handler, but we can use <code>makesCall echo</code> as one, where <code>makesCall</code> is given as:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ot">makesCall ::</span> (c <span class="ot">=&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Dict</span> c <span class="ot">-&gt;</span> r</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>makesCall <span class="ot">=</span> (\\)</span></code></pre></div>
-<p>Servers that document their API calls via <code>MakesAPICall</code> and which wrap their handlers with <code>makesCall</code> can now eliminate <code>CallsFed</code> constraints. Since this is the only way of eliminating <code>CallsFed</code> constraints, we can be sure that every API call is correctly documented in the servant DSL!</p>
-<p>The final step here is to add an instance of <code>HasSwagger (MakesAPICall srv name :&gt; api)</code>, but the details are gory and devoid of educational value. Suffice it to say that this instance was written, and now we have automatically generated JSON documentation describing which server endpoints make which other API calls. This documentation is guaranteed to be correct, because updating it is the only way to convince GHC to compile your code.</p>
       ]]></content:encoded>
   </item>
 </channel>
