@@ -15,6 +15,24 @@
     <link>https://reasonablypolymorphic.com</link>
   </image>
   <item>
+      <title>Certainty by Construction: Done!</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>https://reasonablypolymorphic.com/blog/certainty-by-construction/index.html</link>
+      <guid>https://reasonablypolymorphic.com/blog/certainty-by-construction/index.html</guid>
+      <pubDate>2023-10-30</pubDate>
+      <content:encoded><![CDATA[
+        <p>Happy days and happy news: it’s done.</p>
+<center>
+<a href="https://leanpub.com/certainty-by-construction"><img src="/images/cbc.png" alt="Certainty by Construction"></a>
+</center>
+<p>After a year of work, I’m <em>thrilled</em> to announce the completion my new book, <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>.</p>
+<p>Certainty by Construction is a book on doing mathematics and software design in the proof assistant Agda, which is the language Haskell wants to be when it grows up. The book is part Agda primer, introduction to abstract algebra, and algorithm design manual, with a healthy dose of philosophy mixed in to help build intuition.</p>
+<p>If you’re the sort of person who would like to learn more math (including all the proof burden), and see how to apply it to writing real software, I think you’d groove on this book. If it sounds up your alley, I’d highly encourage you to <a href="https://leanpub.com/certainty-by-construction">give it a read</a>.</p>
+<p>I’m not much on social media these days, but if you are, I’d really appreciate a signal boost on this announcement! Thanks to everyone for their support and understanding over the last year. I love you all!</p>
+<p><a href="https://leanpub.com/certainty-by-construction">Go cop Certainty by Construction!</a></p>
+      ]]></content:encoded>
+  </item>
+  <item>
       <title>Certainty by Construction Progress Report 10</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
       <link>https://reasonablypolymorphic.com/blog/cbc-report10/index.html</link>
@@ -178,49 +196,6 @@
 <p>Content-wise, the old chapter on “structured sets” has become “relations”, and it has several new sections fleshing out the idea and giving several more examples. I’m now in the middle of rewriting the setoids chapter, but it too has three new sections, and thus the whole thing is no longer <em>all</em> about modular arithmetic.</p>
 <p>Next week I’m going to continue powering on with the setoids chapter—including a big digression on what congruence entails under a setoid—and then I think I’ll tackle the ring solving chapter.</p>
 <p>For the first time, this book seems like I might not be working on it for the rest of my life. It’s nowhere near done, but the topic and style are finally hashed out, and the content is mostly in an alpha state. From here it’s really just to continue grinding, rewriting all the crap bits over and over again, until they’re no longer crap.</p>
-<hr />
-<p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Certainty by Construction Progress Report 1</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>https://reasonablypolymorphic.com/blog/cbc-report1/index.html</link>
-      <guid>https://reasonablypolymorphic.com/blog/cbc-report1/index.html</guid>
-      <pubDate>2023-05-12</pubDate>
-      <content:encoded><![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>As part of a new ~quarterly goal, I’m going to be publishing updates to Certainty by Construction every Friday. This is for a few reasons: one, things get done much more quickly when you’re not doing them in private; two, relatedly, it’s good to get some exposure here and keep myself accountable.</p>
-<p>Anyway, there are 26 new pages since last week, although a good deal of that is code without any prose around it yet. I’m in the process of cannibalizing the sections on relations and setoids into a single chapter. It’s a discussion of mathematical relations, their properties, an several examples. We explore different pre-orders, partial orders and total orders, and have a length digression about effectively designing indices for <code>data</code> types.</p>
-<p>This last point arose from me spending a few hours trying to work out under which circumstances exactly Agda gets confused about whether or not a computing index will give rise to a constructor. My findings are that it’s not really about computing indices, so much as it is about Agda running out of variables in which it can pack constraints. I suspect this knowledge can be exploited to make more interesting constructors than I thought possible, but I haven’t worked out how to do it yet.</p>
-<p>I’ve also been working on how to simplify some bigger setoid proofs, where you have a bunch of equational reasoning you’d like to do under congruence. The folklore on this is generally to introduce a lemma somewhere else, but this has always struck me as a disappointing solution. Modulo the concrete syntax, this seems to work pretty well:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">_</span>≈nested<span class="ot">_</span>[<span class="ot">_</span>]<span class="ot">_</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="ot">:</span> A</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">→</span> <span class="ot">{</span>f <span class="ot">:</span> A <span class="ot">→</span> A<span class="ot">}</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">→</span> <span class="ot">(</span>cong <span class="ot">:</span> <span class="ot">{</span>x y <span class="ot">:</span> A<span class="ot">}</span> <span class="ot">→</span> x ≈ y <span class="ot">→</span> f x ≈ f y<span class="ot">)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">→</span> <span class="ot">{</span>x y z <span class="ot">:</span> A<span class="ot">}</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">→</span> x IsRelatedTo y</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="ot">→</span> f y IsRelatedTo z</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="ot">→</span> f x IsRelatedTo z</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ot">_</span> ≈nested cong [ relTo x=y ] <span class="ot">(</span>relTo fy=z<span class="ot">)</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=</span> relTo <span class="ot">(</span>trans <span class="ot">(</span>cong x=y<span class="ot">)</span> fy=z<span class="ot">)</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">infixr</span> <span class="dv">2</span> <span class="ot">_</span>≈nested<span class="ot">_</span>[<span class="ot">_</span>]<span class="ot">_</span></span></code></pre></div>
-<p>which lets you focus in on a particular sub-expression, and use a new equational reasoning block to rewrite that, before popping your results back to the full expression. As an example:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode agda"><code class="sourceCode agda"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>  ⌊ <span class="ot">((</span>a *H c<span class="ot">)</span> *x+ 0#<span class="ot">)</span> +H b *S c +H d *S a ⌋ * x + b * d</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>≈nested <span class="ot">(</span>+-congʳ ∘ *-congʳ<span class="ot">)</span> [  <span class="co">-- focus on subexpr</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  ⌊ <span class="ot">((</span>a *H c<span class="ot">)</span> *x+ 0#<span class="ot">)</span> +H b *S c +H d *S a ⌋</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>≈⟨ +H-+-hom <span class="ot">(((</span>a *H c<span class="ot">)</span> *x+ 0#<span class="ot">)</span> +H b *S c<span class="ot">)</span> <span class="ot">(</span>d *S a<span class="ot">)</span> x ⟩</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  ⌊<span class="ot">((</span>a *H c<span class="ot">)</span> *x+ 0#<span class="ot">)</span> +H b *S c ⌋ + ⟦ d *S a ⌋</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>≈⟨ +-congʳ <span class="ot">(</span>+H-+-hom <span class="ot">((</span>a *H c<span class="ot">)</span> *x+ 0#<span class="ot">)</span> <span class="ot">(</span>b *S c<span class="ot">)</span> x<span class="ot">)</span> ⟩</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  ⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>≈⟨ …via… *S-*-hom ⟩</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  ⌊ a *H c ⌋ * x + <span class="ot">(</span>b * ⌊ c ⌋<span class="ot">)</span> + <span class="ot">(</span>d * ⌊ a ⌋<span class="ot">)</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>≈⟨ +-congʳ <span class="ot">(</span>+-congʳ <span class="ot">(</span>*-congʳ <span class="ot">(</span>*H-*-hom a c x<span class="ot">)))</span> ⟩</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  ⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>∎ ]                            <span class="co">-- pop back</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">(</span>⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋<span class="ot">)</span> * x + <span class="ot">(</span>b * d<span class="ot">)</span></span></code></pre></div>
-<p>The attentive reader here will notice that I have also clearly been improving the chapter on ring solving. Maybe I’m just better at proofs these days, but the whole thing feels much less challenging than my first few times looking at it.</p>
 <hr />
 <p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
       ]]></content:encoded>
