@@ -15,6 +15,134 @@
     <link>https://reasonablypolymorphic.com</link>
   </image>
   <item>
+      <title>FRP in Yampa: Part 1</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>https://reasonablypolymorphic.com/blog/yampa-frp/index.html</link>
+      <guid>https://reasonablypolymorphic.com/blog/yampa-frp/index.html</guid>
+      <pubDate>2023-12-21</pubDate>
+      <content:encoded><![CDATA[
+        <p>I’ve been writing some Haskell lately, for the first time in a year, and it’s a total blast! In particular, school is out for the holidays, so I had some spare time, and thought I’d waste it by making a video game. In Haskell.</p>
+<p>It’s always more fun to make video games with other people, but the few people I pitched it to all had the same response—“I don’t know how to do that.” So it seemed like a good opportunity to dust off the old blog and write about how to make a video game in Haskell, using arrowized FRP.</p>
+<p>What the hell does that mean? Get ready to FIND OUT!</p>
+<h2 id="frp"><a href="#frp" class="header-link">FRP?<span class="header-link-emoji">🔗</span></a></h2>
+<p>FRP is short for <em>functional reactive programming,</em> <a href="http://conal.net/papers/frp.html">originally invented by Conal Elliott</a>. The library we’ll be using today is called <a href="https://hackage.haskell.org/package/Yampa">Yampa</a>, which is certainly inspired by Elliott’s work, but my guess is it’s insufficiently true to the core idea for him to be excited about it.</p>
+<p>Nevertheless, even an imperfect implementation of the idea is still orders of magnitude for making real-time applications than doing everything by hand. And to this extent, Yampa is an excellent library.</p>
+<p>So what exactly is FRP? The core idea is that we want to talk about functions that are continuous in time, which give rise to extremely useful combinators-over-time. Real-time programs written as FRP are much easier to reason about, and significantly more expressive than you’d manage otherwise.</p>
+<h2 id="a-point-of-contrast"><a href="#a-point-of-contrast" class="header-link">A Point of Contrast<span class="header-link-emoji">🔗</span></a></h2>
+<p>It’s informative to compare what writing a video game looks like under an imperative style. The idea is that you have your <em>game loop</em> (a fancy name for “infinite loop”) running:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  setup<span class="op">();</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> <span class="op">(</span>true<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> delta_time <span class="op">=</span> waitForNextFrame<span class="op">();</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    updateGame<span class="op">(</span>delta_time<span class="op">);</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    renderFrame<span class="op">();</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>and this is kind of fine and manages to get the job done. But it’s inelegant for a few reasons. The biggest problem is that we are not actually modeling time here; we’re just running the game discretely, and time happens as a side effect of things changing. There’s this <code>delta_time</code> variable which counts how long it’s been since you last updated the game, which is to say it corresponds to “how much work you need to do <em>this</em> frame.”</p>
+<p>What goes wrong is when <code>updateGame</code> or <code>renderFrame</code> takes too long to run; in that case, you might get spikes in how long it’s been since you last updated. Procedurally-written games compensate by interpolating everything a little further on the next frame, which gives the player the perception that they’re actually experiencing time.</p>
+<p>But things can break down. If your last frame took too long, you need to simulate physics a little more this frame. In practice this usually means that you integrate your velocity a little more than usual—which really means your positions will teleport a little further than usual. This is a common bug in games, where it’s often easy to clip through obstacles when the frame-rate is too low.</p>
+<iframe width="600" height="451" src="https://www.youtube.com/embed/7-E5QFtCbtI" title="Lag Through Vertical Walls" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen>
+</iframe>
+<p>The other problem with modeling your time only incidentally is that it makes it really annoying to actually do anything. For example, when you read from the controller you will only get whether the buttons are down or up, but you won’t get whether the button was <em>just pressed this frame.</em> If you want to know that you’ll have to compute it yourself:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> last_a_button <span class="op">=</span> false<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> updateGame<span class="op">(</span><span class="dt">float</span> delta_time<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  controller ctrls <span class="op">=</span> getControllerState<span class="op">();</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>ctrls<span class="op">.</span>a_button <span class="op">&amp;&amp;</span> <span class="op">!</span>last_a_button<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle a press</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  last_a_button <span class="op">=</span> ctrls<span class="op">.</span>a_button<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>It’s tedious, but it gets the job done. Another common pain point is when you want to do something five seconds in the future:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> timer<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> updateGame<span class="op">(</span><span class="dt">float</span> delta_time<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  timer <span class="op">-=</span> delta_time<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>getWantsToStartTimer<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    timer <span class="op">=</span> <span class="fl">5.0</span><span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>timer <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle timer finishing</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Again, nothing you can’t tackle, but in aggregate, this all becomes very weighty. Not being able to model time explicitly is a real pain, and everywhere you go you need to simulate it by diddling state changes.</p>
+<h2 id="signal-functions"><a href="#signal-functions" class="header-link">Signal Functions<span class="header-link-emoji">🔗</span></a></h2>
+<p>If you’ve ever written a video game, it probably looked a lot like the examples from the previous section. That’s the sort of thing we’d like to abstract over, and work at a much higher level of detail than.</p>
+<p>Here comes FRP to the rescue.</p>
+<p>The core building block in Yampa is the “signal function”, written as <code>SF i o</code>. You can think of this as a transformer of signals of <code>i</code> into signals of <code>o</code>, where a signal is a function <code>Time -&gt; a</code>. Unwrapping all of this, an <code>SF i o</code> is a function <code>(Time -&gt; i) -&gt; (Time -&gt; o)</code>.</p>
+<p>That’s everything you need to know about what <code>SF</code>s <em>are</em>. I don’t know how they’re implemented, and I don’t need to, because the abstraction doesn’t leak. Being a haskell programmer, you’re probably looking at <code>SF i o</code> and thinking “that thing is clearly a <code>Functor</code>/<code>Applicative</code>/<code>Monad</code>.” Two out of three—it’s a functor and an applicative, but <em>not</em> a monad. We’ll come back to this momentarily.</p>
+<p>The trick to working in FRP is to think of continuous streams of values over time. Thus, we can think about the player’s controller as an <code>SF</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">controller ::</span> <span class="dt">SF</span> () <span class="dt">Controller</span></span></code></pre></div>
+<p>which is to say, a continuous stream of <code>Controller</code> values. By marking the input side of the <code>SF</code> as a unit, it means we don’t need to provide anything in order to get this value, which makes sense since the controller state is obviously at the very periphery of our program.</p>
+<p>Since <code>SF</code> is a functor, we can get the state of the A button by fmapping it:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">aState ::</span> <span class="dt">SF</span> () <span class="dt">Bool</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>aState <span class="ot">=</span> <span class="fu">fmap</span> a_button controller</span></code></pre></div>
+<p>which isn’t very surprising. But what’s more interesting are the SF-operating primitives that Yampa gives us. For example, there’s <code>delay</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">delay ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> a a</span></code></pre></div>
+<p>which delays a signal by the given time, using the <code>a</code> parameter as the value for the initial value of the stream. Thus, we can get the value of the A button two seconds ago via:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">aStateTwoSecondsAgo ::</span> <span class="dt">SF</span> () <span class="dt">Bool</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>aStateTwoSecondsAgo <span class="ot">=</span> aState <span class="op">&gt;&gt;&gt;</span> delay <span class="dv">2</span> <span class="dt">False</span></span></code></pre></div>
+<p>where <code>(&gt;&gt;&gt;) :: SF a b -&gt; SF b c -&gt; SF a c</code> is composition of <code>SF</code>s, analogous to function composition.</p>
+<p>Already we can see the benefit of this approach. While it’s not clear exactly <em>why</em> we might want to look at the state of the controller two seconds ago, it’s also non-obvious how you’d go about implementing such a thing procedurally with a game loop.</p>
+<p>One last signal function we might be interested for the time being is <code>integral</code>, which allows us to compute the integral of a stream:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">integral ::</span> <span class="dt">Fractional</span> a <span class="ot">=&gt;</span> <span class="dt">SF</span> a a</span></code></pre></div>
+<h2 id="events"><a href="#events" class="header-link">Events<span class="header-link-emoji">🔗</span></a></h2>
+<p><code>SF</code>s are transformers of continuous signals, but often we want to talk about discrete moments in time. For this, we’ve got the <code>Event</code> type, which is isomorphic to <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Event</span> a</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Event</span> a</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">NoEvent</span></span></code></pre></div>
+<p>The interpretation you should have for an <code>Event</code> is that it’s a discrete piece of data arriving at a specific moment in time. In our earlier discussion of things you want to do in games, we’ve already seen two examples of events: when a timer expires, and when the player <em>presses</em> the A button. Under Yampa, the first is particularly easy to code up, by way of the <code>after</code> combinator:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">after ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">SF</span> a (<span class="dt">Event</span> b)</span></code></pre></div>
+<p>If we want to trigger a timer after 5 seconds, it’s just <code>after 5 () :: SF a (Event ())</code>, and we can listen to the output of this stream for an <code>Event ()</code> value in order to know when the timer has elapsed.</p>
+<p>Similarly, when we’re interested in the player pressing a button, what we’re really interested is in the <em>edges</em> of their button signal. We can get this functionality by way of the <code>edge</code> signal function:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">edge ::</span> <span class="dt">SF</span> <span class="dt">Bool</span> (<span class="dt">Event</span> ())</span></code></pre></div>
+<p>which generates an event whenever the input boolean goes from false to true.</p>
+<p>Of course, just being able to generate events isn’t very useful if we don’t have any means of subsequently eliminating them. A simple means of eliminating events is via <code>hold</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">hold ::</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) a</span></code></pre></div>
+<p>The <code>hold</code> function takes a stream of events, and holds onto the most recent value it received.</p>
+<h2 id="making-a-game-of-snake"><a href="#making-a-game-of-snake" class="header-link">Making a Game of Snake<span class="header-link-emoji">🔗</span></a></h2>
+<p>We’ve already seen enough of FRP in order to make most of the old classic, Snake. In Snake, you are a snake who slithers around in a square, with a constant velocity, continuing in the direction you’re going until the player asks you to turn.</p>
+<p>Begin with a <code>Controller</code>, and an <code>SF</code> to read it:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Controller</span> <span class="ot">=</span> <span class="dt">Controller</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> ctrl_up    ::</span> <span class="dt">Bool</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> ctrl_down  ::</span> <span class="dt">Bool</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> ctrl_left  ::</span> <span class="dt">Bool</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> ctrl_right ::</span> <span class="dt">Bool</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ot">controller ::</span> <span class="dt">SF</span> () <span class="dt">Controller</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>controller <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
+<p>We can then write a little helper function to determine when a button has been pressed—tagging it with a particular value of our choice:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">onPress ::</span> (<span class="dt">Controller</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> a)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>onPress field a <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">const</span> a) <span class="op">$</span> <span class="fu">fmap</span> field controller <span class="op">&gt;&gt;&gt;</span> edge</span></code></pre></div>
+<p>Next, we can sum up an <code>onPress</code> for each direction on the controller, mapping them into direction vectors:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">arrowEvents ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> (<span class="dt">V2</span> a))</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>arrowEvents <span class="ot">=</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  (\u d l r <span class="ot">-&gt;</span> asum [u, d, l r])</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;$&gt;</span> onPress ctrl_up    (<span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>))</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_down  (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_left  (<span class="dt">V2</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">0</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_right (<span class="dt">V2</span> <span class="dv">1</span>    <span class="dv">0</span>)</span></code></pre></div>
+<p>Above, the use of <code>asum</code> allows us to combine these four events into one, meaning that if the player presses two directions at exactly the same moment, we will prefer <code>up</code> over <code>down</code>, and <code>down</code> over <code>left</code>, etc.</p>
+<p>By <code>hold</code>ing onto the most recent arrow event, we can get the current direction our snake is facing:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">snakeDirection ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>snakeDirection <span class="ot">=</span> arrowButtons <span class="op">&gt;&gt;&gt;</span> hold (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span></code></pre></div>
+<p>which we can then integrate in order to have the snake move around:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">snakePosition ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>snakePosition <span class="ot">=</span> snakeDirection <span class="op">&gt;&gt;&gt;</span> integral</span></code></pre></div>
+<p>Not too shabby at all! This particular snake will move at a rate of 1 unit per second, but we could make him faster by scaling up <code>snakeDirection</code> before taking its <code>integral</code>.</p>
+<h2 id="wrapping-up"><a href="#wrapping-up" class="header-link">Wrapping Up<span class="header-link-emoji">🔗</span></a></h2>
+<p>Hopefully I’ve given you a taste of how FRP can radically simplify the implementation of real-time applications. Tomorrow we’ll look into arrowized FRP, and get a sense of how to build bigger, more interesting programs.</p>
+      ]]></content:encoded>
+  </item>
+  <item>
       <title>Certainty by Construction: Done!</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
       <link>https://reasonablypolymorphic.com/blog/certainty-by-construction/index.html</link>
@@ -178,24 +306,6 @@
 <p>On the typesetting front, I spent an hour today fighting with Latex trying to ensure that it has glyphs for every unicode character in the book. I’ve got all but one of them sorted out now, and in the process, learned way more about Latex than any human should need to know.</p>
 <p>The plan for next week is to cleanup the extremely WIP backmatter chapters. There’s a bunch of crap in there about me trying to do math math and failing, because math math doesn’t give two sniffs about constructability, and so none of it works out. If I’m feeling particularly plucky, I might try my hand at defining the reals, just because it might be fun.</p>
 <p>As of today’s update, the book is now 360 pages long! I estimate it’ll be about 450 when it’s done, so we’re clearly making progress.</p>
-<hr />
-<p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Certainty by Construction Progress Report 2</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>https://reasonablypolymorphic.com/blog/cbc-report2/index.html</link>
-      <guid>https://reasonablypolymorphic.com/blog/cbc-report2/index.html</guid>
-      <pubDate>2023-05-18</pubDate>
-      <content:encoded><![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>It’s week two of regular updates on Certainty by Construction, baby! This week I made 17 commits to the repository, half of which were towards the goal of improving the book’s typesetting. Spurred on by a bug report asking “what the hell does <code>AgdaCmd:MakeCase</code> mean?” I decided to upgrade the book’s build system. Now you should see explicit keystrokes to press when the book asks you to run a command alongside.</p>
-<p>You’ll also notice intra-prose syntax highlighting, meaning that if the book mentions a type, it will now be presented in a beautiful blue, among other things in other colors. Agda has some janky support for this, but I couldn’t get it working, which means I annotated each and every piece of syntax highlighting by hand. Please file a bug if you notice I’ve missed any.</p>
-<p>Content-wise, the old chapter on “structured sets” has become “relations”, and it has several new sections fleshing out the idea and giving several more examples. I’m now in the middle of rewriting the setoids chapter, but it too has three new sections, and thus the whole thing is no longer <em>all</em> about modular arithmetic.</p>
-<p>Next week I’m going to continue powering on with the setoids chapter—including a big digression on what congruence entails under a setoid—and then I think I’ll tackle the ring solving chapter.</p>
-<p>For the first time, this book seems like I might not be working on it for the rest of my life. It’s nowhere near done, but the topic and style are finally hashed out, and the content is mostly in an alpha state. From here it’s really just to continue grinding, rewriting all the crap bits over and over again, until they’re no longer crap.</p>
 <hr />
 <p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
       ]]></content:encoded>
