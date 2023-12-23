@@ -161,7 +161,7 @@ arrowEvents =
     <*> onPress ctrl_right (V2 1    0)
 
 snakeDirection :: SF () (V2 Float)
-snakeDirection = arrowButtons >>> hold (V2 0 1)
+snakeDirection = arrowEvents >>> hold (V2 0 1)
 
 snakePosition :: SF () (V2 Float)
 snakePosition = snakeDirection >>> integral
