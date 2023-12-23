@@ -1,9 +1,9 @@
 ---
 layout: post
 title: "FRP in Yampa: Part 2: Arrowized FRP"
-date: 2023-12-22 15:16
+date: 2023-12-22 22:56
 comments: true
-tags: FRP, yampa, haskell, technical, programming, gamedev
+tags: FRP, yampa, haskell, technical, programming, gamedev, arrows
 ---
 
 In the last part, we got a feel for how FRP can help us with real-time
@@ -106,6 +106,135 @@ encodings of particular types.
 
 The point I was trying to make earlier about the distinction between `(->)` and
 `Fn` makes much more sense in this context; just replace `Fn` with `Circuit`.
+Here it makes much more sense to think about the identity circuit:
+
+```haskell
+id :: Circuit a a
+```
+
+which is probably just a bundle of wires, and the constant circuit:
+
+```haskell
+const :: o -> Circuit i o
+```
+
+which lets you pick some particular `o` value (at design time), and then make a
+circuit that is disconnected from its input wires and merely holds the chosen
+`o` value over its output wires.
+
+Anyway. The important thing about digital circuits is that you have infinite
+flexibility when you are designing them, but once they're manufactured, they
+stay that way. If you chose to wire the frobulator directly to the
+zanzigurgulator, those two components are, and always will be, wired together.
+In perpetuity.
+
+Of course, you can do some amount of dynamic reconfiguring of a circuit, by
+conditionally choosing which wires you consider to be "relevant" right now, but
+those wires are going to have signals on them whether you're interested in them
+or not.
+
+In other words, there is a strict phase distinction between the components on
+the board and the data they carry at runtime.
+
+And this is what arrows are all about.
+
+Arrows are about computations whose internal structure must remain constant.
+You've got all the flexibility in the world when you're designing them, but you
+can't reconfigure anything at runtime.
 
 
+## Arrow Notation
+
+Yesterday's post ended with the following code, written directly with the arrow
+combinators.
+
+```haskell
+onPress :: (Controller -> Bool) -> a -> SF () (Event a)
+onPress field a = fmap (fmap (const a)) $ fmap field controller >>> edge
+
+arrowEvents :: Num a => SF () (Event (V2 a))
+arrowEvents =
+  (\u d l r -> asum [u, d, l r])
+    <$> onPress ctrl_up    (V2 0 (-1))
+    <*> onPress ctrl_down  (V2 0 1)
+    <*> onPress ctrl_left  (V2 (-1) 0)
+    <*> onPress ctrl_right (V2 1    0)
+
+snakeDirection :: SF () (V2 Float)
+snakeDirection = arrowButtons >>> hold (V2 0 1)
+
+snakePosition :: SF () (V2 Float)
+snakePosition = snakeDirection >>> integral
+```
+
+While technically you can get anything done in this style, it's a lot like
+writing all of your monadic code directly in terms of `(>>=)`. Possible
+certainly, but indisputably clunky.
+
+Instead, let's rewrite it with arrow notation:
+
+```haskell
+{-# LANGUAGE Arrows #-}
+
+snakePosition :: SF () (V2 Float)
+snakePosition = proc i -> do
+  u <- onPress ctrl_up    $ V2 0 (-1) -< i
+  d <- onPress ctrl_down  $ V2 0 1    -< i
+  l <- onPress ctrl_left  $ V2 (-1) 0 -< i
+  r <- onPress ctrl_right $ V2 1    0 -< i
+
+  dir <- hold $ V2 0 1 -< asum [u, d, l r]
+  pos <- integral -< dir
+
+  returnA -< pos
+```
+
+Much tidier, no? Reading arrow notation takes a little getting used to, but
+there are really only two things you need to understand. The first is that
+`proc i -> do` introduces an arrow computation, much like the `do` keyword
+introduces a monadic computation. Here, the input to the entire arrow is bound
+to `i`, but you can put any legal Haskell pattern you want there.
+
+The other thing to know about arrow notation is that `<-` and `-<` are two
+halves of the same syntax. The notation here is:
+
+```haskell
+  output <- arrow -< input
+```
+
+where `arrow` is of type `SF i o`, and `input` is any normal everyday Haskell
+value of type `i`. At the end of the day, you bind the result to `output`, whose
+type is obviously `o`.
+
+The mnemonic for this whole thing is that you're shooting an arrow (of bow and
+arrow fame) from the input to the output. And the name of the arrow is written
+on the shaft. It makes more sense if you play around with the whitespace:
+
+```haskell
+  output   <-arrow-<   input
+```
+
+What's likely to bite you as you get familiar with arrow notation is that the
+computations (the bits between `<-` and `-<`) exist in a completely different
+*phase*/*namespace* than the inputs and outputs. That means the following
+program is illegal:
+
+```haskell
+  proc (i, j) -> do
+    x <- blah  -< i
+    y <- bar x -< j
+    ...
+```
+
+because `x` simply *isn't in scope* in the expression `bar x`. It's the
+equivalent of designing a circuit board with `n` capacitors on it, where `n`
+will be determined by an input voltage supplied by the end-user. Completely
+nonsensical!
+
+
+## Wrapping Up
+
+That's all for today, folks. The day caught me by surprise, so we'll be back
+tomorrow to talk about building state machines in Yampa---something extremely
+important for making real video games.
 
