@@ -15,6 +15,101 @@
     <link>https://reasonablypolymorphic.com</link>
   </image>
   <item>
+      <title>FRP in Yampa: Part 2: Arrowized FRP</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>https://reasonablypolymorphic.com/blog/arrowized-frp/index.html</link>
+      <guid>https://reasonablypolymorphic.com/blog/arrowized-frp/index.html</guid>
+      <pubDate>2023-12-22</pubDate>
+      <content:encoded><![CDATA[
+        <p>In the last part, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
+<p>So today we’ll look at one of Haskell’s lesser-known features—arrow notation—and learn how it can help structure bigger reactive programs.</p>
+<h2 id="arrows"><a href="#arrows" class="header-link">Arrows<span class="header-link-emoji">🔗</span></a></h2>
+<p>What an awful, overloaded word we’ve found ourselves with. Being Haskell programmers, we’re all very familiar with the everyday function arrow <code>(-&gt;)</code>, which you should think of as a special case of a more general notion of <em>arrow.</em></p>
+<p>Notice how both function arrows (<code>i -&gt; o</code>) and signal functions (<code>SF i o</code>) have two type parameters—one for the input side of things, and another for the output side. And indeed, we should think of these as <em>sides</em> of the computation, where we are transforming an <code>i</code> into an <code>o</code>.</p>
+<p>For our purposes today, we’ll want to be very precise when we differentiate between functions-as-data and functions-as-ways-of-building things. In order to do so, we will give give ourselves a little type synonym to help differentiate:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fn</span> i o <span class="ot">=</span> i <span class="ot">-&gt;</span> o</span></code></pre></div>
+<p>And henceforth, we will use the <code>Fn</code> synonym to refer to functions we’re manipulating, reserving <code>(-&gt;)</code> to talk about combinators for <em>building</em> those functions.</p>
+<p>For example, our favorite identity function is a <code>Fn</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span><span class="ot"> ::</span> <span class="dt">Fn</span> a a</span></code></pre></div>
+<p>We usually give the constant function the type <code>a -&gt; b -&gt; a</code>, but my claim is that it ought to be:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">const</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Fn</span> b a</span></code></pre></div>
+<p>The subtle thing I’m trying to point out is that there is a (conceptual) difference between the functions we want to operate on at runtime (called <code>Fn</code>s), and the <em>combinators</em> we use to build those functions (called <code>(-&gt;)</code>.)</p>
+<p>Like I said, it’s a bit hard to point to in Haskell, because one of the great successes of functional programming has been to <em>blur</em> this distinction.</p>
+<p>Anyway, let’s return to our discussion of arrows. Both functions and <code>SF</code>s admit a notion of composition, which allow us to line up the <em>output</em> of one arrow with the <em>input</em> of another, fusing the two into a single computation. The types they have are:</p>
+<ul>
+<li><code>(.)   :: Fn b c -&gt; Fn a b -&gt; Fn a c</code></li>
+<li><code>(&lt;&lt;&lt;) :: SF b c -&gt; SF a b -&gt; SF a c</code></li>
+</ul>
+<p>Despite our intimate familiarity with functions, this pattern of types with both an input and an output is quite uncommon in Haskell. Due to the immense mindshare that the monad meme takes up, we usually think about computation in terms of monads, and it can be hard to remember that not all computation is monadic (nor applicative.)</p>
+<p>Monadic values are of the shape <code>M o</code>, with only a single type parameter that corresponds (roughly) with the <em>output</em> of the computation. That is to say, all of the interesting computational structure of a monad exists only in its output, and <em>never in its input</em>—in fact, we can’t even <em>talk</em> about the input to a monad. What we do instead is cheat; we take the input side of the computation directly from the function arrow.</p>
+<p>If we expand out the types of <code>(&lt;*&gt;)</code> and <code>flip (&gt;&gt;=)</code>, using our <code>Fn</code> notation from above, they get the types:</p>
+<ul>
+<li><code>(&lt;*&gt;)      :: M (Fn i o) -&gt; Fn (M i) (M o)</code></li>
+<li><code>flip (&gt;&gt;=) :: Fn i (M o) -&gt; Fn (M i) (M o)</code></li>
+</ul>
+<p>which makes it much clearer that the relevant interactions here are some sort of distributivity of our monad over the regular, everyday function arrows. In other words, that monads are cheating by getting their “inputs” from functions.</p>
+<h2 id="what-the-hell"><a href="#what-the-hell" class="header-link">What the Hell?<span class="header-link-emoji">🔗</span></a></h2>
+<p>Enough philosophy. What the hell <em>are</em> arrows? The example that really made it stick for me is in the domain of <em>digital circuits.</em> A digital circuit is some piece of silicon with wire glued to it, that moves electrons from one side to the other—with the trick being that the eventual endpoint of the electrons depends on their original positions. With enough squinting, you can see the whole thing as a type <code>Circuit i o</code>, where <code>i</code> corresponds to which wires we chose to put a high voltage on, and <code>o</code> is which wires have a high voltage at the end of the computation. With a little more squinting, it’s not too hard to reconceptualize these wires as bits, which we can again reconceptualize as encodings of particular types.</p>
+<p>The point I was trying to make earlier about the distinction between <code>(-&gt;)</code> and <code>Fn</code> makes much more sense in this context; just replace <code>Fn</code> with <code>Circuit</code>. Here it makes much more sense to think about the identity circuit:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span><span class="ot"> ::</span> <span class="dt">Circuit</span> a a</span></code></pre></div>
+<p>which is probably just a bundle of wires, and the constant circuit:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">const</span><span class="ot"> ::</span> o <span class="ot">-&gt;</span> <span class="dt">Circuit</span> i o</span></code></pre></div>
+<p>which lets you pick some particular <code>o</code> value (at design time), and then make a circuit that is disconnected from its input wires and merely holds the chosen <code>o</code> value over its output wires.</p>
+<p>Anyway. The important thing about digital circuits is that you have infinite flexibility when you are designing them, but once they’re manufactured, they stay that way. If you chose to wire the frobulator directly to the zanzigurgulator, those two components are, and always will be, wired together. In perpetuity.</p>
+<p>Of course, you can do some amount of dynamic reconfiguring of a circuit, by conditionally choosing which wires you consider to be “relevant” right now, but those wires are going to have signals on them whether you’re interested in them or not.</p>
+<p>In other words, there is a strict phase distinction between the components on the board and the data they carry at runtime.</p>
+<p>And this is what arrows are all about.</p>
+<p>Arrows are about computations whose internal structure must remain constant. You’ve got all the flexibility in the world when you’re designing them, but you can’t reconfigure anything at runtime.</p>
+<h2 id="arrow-notation"><a href="#arrow-notation" class="header-link">Arrow Notation<span class="header-link-emoji">🔗</span></a></h2>
+<p>Yesterday’s post ended with the following code, written directly with the arrow combinators.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">onPress ::</span> (<span class="dt">Controller</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> a)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>onPress field a <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">fmap</span> (<span class="fu">const</span> a)) <span class="op">$</span> <span class="fu">fmap</span> field controller <span class="op">&gt;&gt;&gt;</span> edge</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ot">arrowEvents ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> (<span class="dt">V2</span> a))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>arrowEvents <span class="ot">=</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  (\u d l r <span class="ot">-&gt;</span> asum [u, d, l r])</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;$&gt;</span> onPress ctrl_up    (<span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_down  (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_left  (<span class="dt">V2</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">0</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_right (<span class="dt">V2</span> <span class="dv">1</span>    <span class="dv">0</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ot">snakeDirection ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>snakeDirection <span class="ot">=</span> arrowButtons <span class="op">&gt;&gt;&gt;</span> hold (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="ot">snakePosition ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>snakePosition <span class="ot">=</span> snakeDirection <span class="op">&gt;&gt;&gt;</span> integral</span></code></pre></div>
+<p>While technically you can get anything done in this style, it’s a lot like writing all of your monadic code directly in terms of <code>(&gt;&gt;=)</code>. Possible certainly, but indisputably clunky.</p>
+<p>Instead, let’s rewrite it with arrow notation:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE Arrows #-}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ot">snakePosition ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>snakePosition <span class="ot">=</span> proc i <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> onPress ctrl_up    <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>) <span class="op">-&lt;</span> i</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> onPress ctrl_down  <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>    <span class="op">-&lt;</span> i</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  l <span class="ot">&lt;-</span> onPress ctrl_left  <span class="op">$</span> <span class="dt">V2</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">0</span> <span class="op">-&lt;</span> i</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  r <span class="ot">&lt;-</span> onPress ctrl_right <span class="op">$</span> <span class="dt">V2</span> <span class="dv">1</span>    <span class="dv">0</span> <span class="op">-&lt;</span> i</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  dir <span class="ot">&lt;-</span> hold <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span> <span class="op">-&lt;</span> asum [u, d, l r]</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> integral <span class="op">-&lt;</span> dir</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  returnA <span class="op">-&lt;</span> pos</span></code></pre></div>
+<p>Much tidier, no? Reading arrow notation takes a little getting used to, but there are really only two things you need to understand. The first is that <code>proc i -&gt; do</code> introduces an arrow computation, much like the <code>do</code> keyword introduces a monadic computation. Here, the input to the entire arrow is bound to <code>i</code>, but you can put any legal Haskell pattern you want there.</p>
+<p>The other thing to know about arrow notation is that <code>&lt;-</code> and <code>-&lt;</code> are two halves of the same syntax. The notation here is:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  output <span class="ot">&lt;-</span> arrow <span class="op">-&lt;</span> input</span></code></pre></div>
+<p>where <code>arrow</code> is of type <code>SF i o</code>, and <code>input</code> is any normal everyday Haskell value of type <code>i</code>. At the end of the day, you bind the result to <code>output</code>, whose type is obviously <code>o</code>.</p>
+<p>The mnemonic for this whole thing is that you’re shooting an arrow (of bow and arrow fame) from the input to the output. And the name of the arrow is written on the shaft. It makes more sense if you play around with the whitespace:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  output   <span class="ot">&lt;-</span>arrow<span class="op">-&lt;</span>   input</span></code></pre></div>
+<p>What’s likely to bite you as you get familiar with arrow notation is that the computations (the bits between <code>&lt;-</code> and <code>-&lt;</code>) exist in a completely different <em>phase</em>/<em>namespace</em> than the inputs and outputs. That means the following program is illegal:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  proc (i, j) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> blah  <span class="op">-&lt;</span> i</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> bar x <span class="op">-&lt;</span> j</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span></code></pre></div>
+<p>because <code>x</code> simply <em>isn’t in scope</em> in the expression <code>bar x</code>. It’s the equivalent of designing a circuit board with <code>n</code> capacitors on it, where <code>n</code> will be determined by an input voltage supplied by the end-user. Completely nonsensical!</p>
+<h2 id="wrapping-up"><a href="#wrapping-up" class="header-link">Wrapping Up<span class="header-link-emoji">🔗</span></a></h2>
+<p>That’s all for today, folks. The day caught me by surprise, so we’ll be back tomorrow to talk about building state machines in Yampa—something extremely important for making real video games.</p>
+      ]]></content:encoded>
+  </item>
+  <item>
       <title>FRP in Yampa: Part 1</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
       <link>https://reasonablypolymorphic.com/blog/yampa-frp/index.html</link>
@@ -287,25 +382,6 @@
 <p>Also this week I worked on some typesetting things. In particular, you’ll notice a gutter indicator on every code block telling you exactly where the code block should be indented relative to the file. This is a big improvement from before when you just had to guess, but I’m not yet <em>happy</em> with it. Please give it a read and let me know if you like the change, or what might be better.</p>
 <p>Additionally I spent a <em>lot</em> of time making sure every code block had good vertical alignment of its code elements. That means all the equals signs should line up, and that the same argument is always in the same column, no matter how many patterns you’ve already matched. It’s not the sort of thing you’d notice, but it’s certainly the sort of thing whose <em>absence</em> you’d notice.</p>
 <p>I’m committing to a hard deadline for this book of <em>September 1, 2023.</em> The thing is going to be finished and off to the printers by that day, because I want to have it done before I’m married, and that is coming up soon. And also, I work much better with a deadline.</p>
-<hr />
-<p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Certainty by Construction Progress Report 3</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>https://reasonablypolymorphic.com/blog/cbc-report3/index.html</link>
-      <guid>https://reasonablypolymorphic.com/blog/cbc-report3/index.html</guid>
-      <pubDate>2023-05-25</pubDate>
-      <content:encoded><![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>Week three, and this update is coming in hot, a whole day early! This week I worked on the ring solving chapter, realizing that I can make a very much non-toy solver, and pack it into a chapter. We now build a multivariate semiring solver, discuss how and why it works, and then do some dependent-type shenanigans to put a delightful user interface in front of the whole thing.</p>
-<p>In addition, it came with some excellent opportunities to discuss where semantics come from, and let me talk about homomorphisms earlier than I was otherwise hoping to.</p>
-<p>My plan for the week was to tackle the remainder of the setoids chapter, but setoids are awful and it’s hard to motivate myself to do that, since I avoid using them in my day-to-day life whenever I can. Which is always. We’ll see what happens with this chapter, but maybe it’ll get melted down into something else. Nevertheless, understanding setoids <em>is</em> important for actually doing anything with the stdlib, so I dunno.</p>
-<p>On the typesetting front, I spent an hour today fighting with Latex trying to ensure that it has glyphs for every unicode character in the book. I’ve got all but one of them sorted out now, and in the process, learned way more about Latex than any human should need to know.</p>
-<p>The plan for next week is to cleanup the extremely WIP backmatter chapters. There’s a bunch of crap in there about me trying to do math math and failing, because math math doesn’t give two sniffs about constructability, and so none of it works out. If I’m feeling particularly plucky, I might try my hand at defining the reals, just because it might be fun.</p>
-<p>As of today’s update, the book is now 360 pages long! I estimate it’ll be about 450 when it’s done, so we’re clearly making progress.</p>
 <hr />
 <p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
       ]]></content:encoded>
