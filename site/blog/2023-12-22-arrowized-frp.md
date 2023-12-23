@@ -214,6 +214,19 @@ on the shaft. It makes more sense if you play around with the whitespace:
   output   <-arrow-<   input
 ```
 
+More importantly, the name of that arrow can be any valid Haskell expression,
+including one with infix operators. Thus, we should parse:
+
+```haskell
+  u <- onPress ctrl_up $ V2 0 (-1) -< i
+```
+
+as
+
+```haskell
+  u <- (onPress ctrl_up $ V2 0 (-1)) -< i
+```
+
 What's likely to bite you as you get familiar with arrow notation is that the
 computations (the bits between `<-` and `-<`) exist in a completely different
 *phase*/*namespace* than the inputs and outputs. That means the following
