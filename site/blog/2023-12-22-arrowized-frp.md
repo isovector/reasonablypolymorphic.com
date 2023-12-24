@@ -6,11 +6,12 @@ comments: true
 tags: FRP, yampa, haskell, technical, programming, gamedev, arrows
 ---
 
-In the last part, we got a feel for how FRP can help us with real-time
-programming tasks, especially when contrasted against implicit models of time.
-However, the interface we looked at yesterday left much to be
-desired---stringing together long signal functions felt clunky, and since `SF`s
-don't form a monad, we couldn't alleviate the problem with do-notation.
+In the [last part](https://reasonablypolymorphic.com/blog/yampa-frp/index.html),
+we got a feel for how FRP can help us with real-time programming tasks,
+especially when contrasted against implicit models of time. However, the
+interface we looked at yesterday left much to be desired---stringing together
+long signal functions felt clunky, and since `SF`s don't form a monad, we
+couldn't alleviate the problem with do-notation.
 
 So today we'll look at one of Haskell's lesser-known features---arrow
 notation---and learn how it can help structure bigger reactive programs.
