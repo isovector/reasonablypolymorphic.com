@@ -1,11 +1,104 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2023-12-22T22:56:00Z</updated>
+  <updated>2023-12-24T00:12:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>https://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com/atom.xml'/>
 
+    <entry>
+      <title>FRP in Yampa: Part 3: Switching</title>
+      <id>blog/yampa-switching/index.html</id>
+      <link href='https://reasonablypolymorphic.com/blog/yampa-switching/index.html'/>
+      <published>2023-12-24</published>
+      <updated>2023-12-24</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p><a href="https://reasonablypolymorphic.com/blog/arrowized-frp">Yesterday</a> we looked at arrowized FRP in Yampa, and saw how it the <code>proc</code> notation is to arrows as <code>do</code> is for monads. While these syntaxes don’t give you any new power, notation nevertheless matters and helps us better structure our programs.</p>
+<p>So far all of our programs have consisted of a single signal function. We’ve sketched out how to build a lobotomized version of the Snake game, but real games have things like title screens and option menus as well as the actual gameplay component. If you were determined, you could probably figure out how to build these missing components with what we’ve seen so far, but it wouldn’t be fun.</p>
+<p>Instead, we turn our attention to switches.</p>
+<h2 id="switching"><a href="#switching" class="header-link">Switching<span class="header-link-emoji">🔗</span></a></h2>
+<p>Yampa’s <code>SF</code> type isn’t monadic, but the <code>switch</code> combinator gets you surprisingly close:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">switch ::</span> <span class="dt">SF</span> i (o, <span class="dt">Event</span> e) <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> <span class="dt">SF</span> i o) <span class="ot">-&gt;</span> <span class="dt">SF</span> i o</span></code></pre></div>
+<p>The idea is that you run the first <code>SF</code> until the outputted <code>Event</code> produces an event, at which point you take its value and use it to generate a new <code>SF</code>, which you subsequently run.</p>
+<p>As an example, let’s build a little coproduct type for the choices we might make on the menu screen:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">MenuOption</span> <span class="ot">=</span> <span class="dt">Start</span> <span class="op">|</span> <span class="dt">Options</span></span></code></pre></div>
+<p>Our menu screen is now an <code>SF</code> that outputs the things we’d like to draw on the screen (a <code>Render</code>), as well as an <code>Event MenuOption</code> corresponding to an event for when we actually make a selection:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">menuScreen ::</span> <span class="dt">SF</span> () (<span class="dt">Render</span>, <span class="dt">Event</span> <span class="dt">MenuOption</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>menuScreen <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
+<p>As before, we have our main Snake game, and now a new screen for the options:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mainGame ::</span> <span class="dt">SF</span> () <span class="dt">Render</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mainGame <span class="ot">=</span> <span class="op">...</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">optionsScreen ::</span> <span class="dt">SF</span> () <span class="dt">Render</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>optionsScreen <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
+<p>We can tie it all together by <code>switch</code>ing from <code>menuScreen</code> to the appropriate next <code>SF</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">program ::</span> <span class="dt">SF</span> () <span class="dt">Render</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>program <span class="ot">=</span> switch menuScreen <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Start</span>   <span class="ot">-&gt;</span> mainGame</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Options</span> <span class="ot">-&gt;</span> optionsScreen</span></code></pre></div>
+<p>Again, you can kind of squint to get the picture, but things get a little gnarlier when you actually get into the gritty details here. For example, in a real game, you might go back to the menu screen after the game ends, and you’d <em>certainly</em> go back after setting up the appropriate options. If we wanted to encode those rules, we’d need to fiddle with some types.</p>
+<p>Let’s add <code>Event ()</code>s to <code>mainGame</code> and <code>optionScreen</code>, corresponding to when the player has died and when the options have been set, respectively:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mainGame ::</span> <span class="dt">SF</span> () (<span class="dt">Render</span>, <span class="dt">Event</span> ())</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">optionsScreen ::</span> <span class="dt">SF</span> () (<span class="dt">Render</span>, <span class="dt">Event</span> ())</span></code></pre></div>
+<p>With a creative amount of <code>switch</code>ing, it’s possible to encode everything we’d like:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">program ::</span> <span class="dt">SF</span> () <span class="dt">Render</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>program <span class="ot">=</span> switch menuScreen <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Start</span>   <span class="ot">-&gt;</span> switch mainGame      <span class="op">$</span> <span class="fu">const</span> program</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Options</span> <span class="ot">-&gt;</span> switch optionsScreen <span class="op">$</span> <span class="fu">const</span> program</span></code></pre></div>
+<p>Of course, we can use <code>switch</code> for much more than just modeling state machines—the following example uses it as a combinator to do something for a while:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">timed ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">SF</span> i o <span class="ot">-&gt;</span> <span class="dt">SF</span> i o</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>timed dur s1 s2 <span class="ot">=</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  switch</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    (proc i <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      o  <span class="ot">&lt;-</span> s1 <span class="op">-&lt;</span> i</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>      ev <span class="ot">&lt;-</span> after dur () <span class="op">-&lt;</span> ()</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      returnA <span class="op">-&lt;</span> (o, ev)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">$</span> <span class="fu">const</span> s2</span></code></pre></div>
+<p>or, more interestingly, a combinator which interpolates a function:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">interpolate ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">SF</span> (i, a) o <span class="ot">-&gt;</span> <span class="dt">SF</span> i o <span class="ot">-&gt;</span> <span class="dt">SF</span> i o</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>interpolate dur f interp final <span class="ot">=</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  switch</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    (proc i <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      t  <span class="ot">&lt;-</span> time <span class="op">-&lt;</span> ()</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      o  <span class="ot">&lt;-</span> s1 <span class="op">-&lt;</span> (i, t <span class="op">/</span> dur)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      ev <span class="ot">&lt;-</span> after dur () <span class="op">-&lt;</span> ()</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      returnA <span class="op">-&lt;</span> (o, ev)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">$</span> <span class="fu">const</span> final</span></code></pre></div>
+<p>The parameter <code>f</code> here will be called with values of time from <code>0</code> to <code>1</code>, linearly increasing until <code>dur</code>. This is the sort of combinator that is extremely useful for animating objects, where you’d like to tween from a known starting point to a know ending point.</p>
+<h2 id="making-a-real-monad"><a href="#making-a-real-monad" class="header-link">Making a Real Monad<span class="header-link-emoji">🔗</span></a></h2>
+<p>Most of what I know about Yampa I learned by reverse-engineering <a href="https://das.li/index.html">Alex Stuart</a>’s excellent game <a href="https://linearity.itch.io/peoplemon">Peoplemon</a> (<a href="https://hub.darcs.net/linearity/pplmonad">source here</a>). As you might expect, it’s a fun parody on Pokemon.</p>
+<p>One night while desperately trying to work out how he programmed up the menu-based battle system in Peoplemon, I came across the mysteriously named <a href="https://hub.darcs.net/linearity/pplmonad/browse/src/Lightarrow.hs">Lightarrow.hs</a>, which makes the following improvement over the <code>switch</code>ing technique above.</p>
+<p>He sticks the whole thing into the <code>Cont</code> monad:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Cont</span> r a <span class="ot">=</span> <span class="dt">Cont</span> {<span class="ot"> runCont ::</span> (a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r }</span></code></pre></div>
+<p>I think this is the first and only time I’ve seen a use for <code>Cont</code> in the wild, that doesn’t stem <em>directly</em> from trying to CPS everything in order to make your program go faster from fusion. It’s so COOL to see a real world opportunity to throw <code>Cont</code> at a problem!</p>
+<p>Anyway. This type is known as <code>Swont</code>, which I’ve always assumed was something like “signal continuation” but your guess is as good as mine:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Swont</span> i o a <span class="ot">=</span> <span class="dt">Swont</span> {<span class="ot"> unSwont ::</span> <span class="dt">Cont</span> (<span class="dt">SF</span> i o) a }</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>)</span></code></pre></div>
+<p>We can lift any <code>SF i (b, Event c)</code> into a <code>Swont</code> via <code>swont</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">swont ::</span> <span class="dt">SF</span> i (o, <span class="dt">Event</span> e) <span class="ot">-&gt;</span> <span class="dt">Swont</span> i o e</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>swont <span class="ot">=</span> <span class="dt">Swont</span> <span class="op">.</span> cont <span class="op">.</span> switch</span></code></pre></div>
+<p>and we can lower the whole thing again by way of <code>switchSwont</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">switchSwont ::</span> <span class="dt">Swont</span> i o e <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> <span class="dt">SF</span> i o) <span class="ot">-&gt;</span> <span class="dt">SF</span> i o</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>switchSwont sw end <span class="ot">=</span> runCont (unSwont sw) end</span></code></pre></div>
+<p>What’s really nice about <code>Swont</code> is that it is a genuine, bona-fide monad. This gives us a really lovely notation for programming sequential things like state machines or battle animations—stuff that consists of needing to switch between disparate things with discrete reasons to change.</p>
+<p>We can use <code>Swont</code> to encode our above state machine in a much more familiar way:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foreverSwont ::</span> <span class="dt">Swont</span> i o e <span class="ot">-&gt;</span> <span class="dt">SF</span> i o</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>foreverSwont sw <span class="ot">=</span> switchSwont (forever sw) <span class="op">$</span> <span class="fu">error</span> <span class="st">&quot;impossible&quot;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="ot">program ::</span> <span class="dt">SF</span> () <span class="dt">Render</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>program <span class="ot">=</span> foreverSwont <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  menuScreen <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Start</span>   <span class="ot">-&gt;</span> mainGame</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Options</span> <span class="ot">-&gt;</span> optionsScreen</span></code></pre></div>
+<p>Not bad at all!</p>
+<h2 id="wrapping-up"><a href="#wrapping-up" class="header-link">Wrapping Up<span class="header-link-emoji">🔗</span></a></h2>
+<p>Today we looked at Yampa’s <code>switch</code> combinator, seen how it can be used to string disparate signals together, and seen how wrapping the whole thing in a continuation monad can make the whole thing tolerable to work with.</p>
+<p>In tomorrow’s post, we’ll look at writing object routers in Yampa—essentially, the main data structure for tracking lots of game objects, and allowing them to communicate with one another. Until then, I hope you’re having a very special Christmas weekend.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>FRP in Yampa: Part 2: Arrowized FRP</title>
       <id>blog/arrowized-frp/index.html</id>
@@ -15,7 +108,7 @@
 
       <content type="html">
         <![CDATA[
-        <p>In the last part, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
+        <p>In the <a href="https://reasonablypolymorphic.com/blog/yampa-frp/index.html">last part</a>, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
 <p>So today we’ll look at one of Haskell’s lesser-known features—arrow notation—and learn how it can help structure bigger reactive programs.</p>
 <h2 id="arrows"><a href="#arrows" class="header-link">Arrows<span class="header-link-emoji">🔗</span></a></h2>
 <p>What an awful, overloaded word we’ve found ourselves with. Being Haskell programmers, we’re all very familiar with the everyday function arrow <code>(-&gt;)</code>, which you should think of as a special case of a more general notion of <em>arrow.</em></p>
@@ -387,28 +480,6 @@
 <p>Anyway. I’m going to be gone for a few weeks, but I’ll pick right back up when I hit ground again. See you soon.</p>
 <hr />
 <p>That’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Certainty by Construction Progress Report 4</title>
-      <id>blog/cbc-report4/index.html</id>
-      <link href='https://reasonablypolymorphic.com/blog/cbc-report4/index.html'/>
-      <published>2023-06-16</published>
-      <updated>2023-06-16</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>I landed a two-week long gig three weeks ago, and that ate up my time for a little bit. But I’m back in action, significantly richer, and much more inspired to be working on Certainty by Construction again.</p>
-<p>The end is finally in sight. This week I tore apart the modular arithmetic stuff from the material on setoids, realizing that the two were unrelated. I’d been having a lot of trouble getting that chapter sorted out, and it’s because it shouldn’t have been a chapter after all.</p>
-<p>Instead, I’ve been working on merging the stuff about monoids and monoid homomorphisms into the setoid chapter, which is a much better motivation for setoids when you realize you can’t write many of the monoids you’d like to be able to. If I can fit lattices into there as well, I’ll be a very happy man.</p>
-<p>Also this week I worked on some typesetting things. In particular, you’ll notice a gutter indicator on every code block telling you exactly where the code block should be indented relative to the file. This is a big improvement from before when you just had to guess, but I’m not yet <em>happy</em> with it. Please give it a read and let me know if you like the change, or what might be better.</p>
-<p>Additionally I spent a <em>lot</em> of time making sure every code block had good vertical alignment of its code elements. That means all the equals signs should line up, and that the same argument is always in the same column, no matter how many patterns you’ve already matched. It’s not the sort of thing you’d notice, but it’s certainly the sort of thing whose <em>absence</em> you’d notice.</p>
-<p>I’m committing to a hard deadline for this book of <em>September 1, 2023.</em> The thing is going to be finished and off to the printers by that day, because I want to have it done before I’m married, and that is coming up soon. And also, I work much better with a deadline.</p>
-<hr />
-<p>Anyway, that’s all for today. If you’ve already bought the book, you can get the updates for free on <a href="https://leanpub.com/certainty-by-construction">Leanpub</a>. If you haven’t, might I suggest doing so? Your early support and feedback helps inspire me and ensure the book is as good as it can possibly be.</p>
         ]]>
       </content>
     </entry>

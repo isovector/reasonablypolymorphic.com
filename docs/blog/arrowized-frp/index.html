@@ -44,7 +44,7 @@
     </span>
 </p>
 <div class="content">
-    <p>In the last part, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
+    <p>In the <a href="https://reasonablypolymorphic.com/blog/yampa-frp/index.html">last part</a>, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
 <p>So today we’ll look at one of Haskell’s lesser-known features—arrow notation—and learn how it can help structure bigger reactive programs.</p>
 <h2 id="arrows"><a href="#arrows" class="header-link">Arrows<span class="header-link-emoji">🔗</span></a></h2>
 <p>What an awful, overloaded word we’ve found ourselves with. Being Haskell programmers, we’re all very familiar with the everyday function arrow <code>(-&gt;)</code>, which you should think of as a special case of a more general notion of <em>arrow.</em></p>
