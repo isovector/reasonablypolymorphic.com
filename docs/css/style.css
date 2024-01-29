@@ -50,6 +50,10 @@ article {
   margin: 0 auto;
 }
 
+.column > article {
+  padding: calc(4px + 3vw);
+}
+
 .main {
   max-width: 100ch;
   width: 100%;
