@@ -19,7 +19,7 @@
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
       <link>https://reasonablypolymorphic.com/blog/jj-strategy/index.html</link>
       <guid>https://reasonablypolymorphic.com/blog/jj-strategy/index.html</guid>
-      <pubDate>2248-05-18</pubDate>
+      <pubDate>2024-05-18</pubDate>
       <content:encoded><![CDATA[
         <p>Today I want to talk about <a href="https://github.com/martinvonz/jj">jujutsu</a>, aka <code>jj</code>, which describes itself as being “a Git-compatible VCS that is both simple and powerful”. This is selling itself short. Picking up <code>jj</code> has been the best change I’ve made to my developer workflow in over a decade.</p>
 <p>Before <code>jj</code>, I was your ordinary git user. I did things on Github and knew a handful of git commands. Sometimes I did cherry picks. <em>Very</em> occasionally I’d do a non-trivial rebase, but I had learned to stay away from that unless necessary, because rebasing things was a perfect way of fucking up the git repo. And then, God forbid, I’d have to re-learn about the reflog and try to unhose myself.</p>

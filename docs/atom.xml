@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2248-05-18T18:03:00Z</updated>
+  <updated>2024-05-18T18:03:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>https://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com/atom.xml'/>
@@ -10,8 +10,8 @@
       <title>Jujutsu Strategies</title>
       <id>blog/jj-strategy/index.html</id>
       <link href='https://reasonablypolymorphic.com/blog/jj-strategy/index.html'/>
-      <published>2248-05-18</published>
-      <updated>2248-05-18</updated>
+      <published>2024-05-18</published>
+      <updated>2024-05-18</updated>
 
       <content type="html">
         <![CDATA[

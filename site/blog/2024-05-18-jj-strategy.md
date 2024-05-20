@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Jujutsu Strategies
-date: 2248-05-18 18:03
+date: 2024-05-18 18:03
 comments: true
 tags: jj, version control, git
 ---
