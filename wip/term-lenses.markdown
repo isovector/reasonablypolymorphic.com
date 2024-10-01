@@ -19,7 +19,7 @@ like a serious drug collection, the tendency is to push it as far as you can.
 Thus, my response has usually been one of pushback and moderation. I don't
 avoid lenses at all costs, but I do try to limit myself to the prime types
 (`Lens'`, `Prism'`, `Iso'`), and to the boring combinators (`view`, `set`,
-`modify`). I feel like these give me most of the benefits of lenses, without
+`over`). I feel like these give me most of the benefits of lenses, without
 sending me tumbling down the rabbit hole.
 
 All of this is to say that my grokkage of lenses has always been one of
@@ -136,9 +136,129 @@ decoderState = ???
 ```
 
 In a world where `Code` is a functor, this is implemented trivially as `fmap
-state`. *But `Code` is not a functor!* Alas! Woe!
+state`. *But `Code` is not a functor!* Alas! Woe! What ever can we do?
 
 
+## The Solution
+
+Lenses, my guy!
+
+Recall that `Code` is phantom in its argument, even if we use roles to restrict
+that fact. This means we can implement a safe-ish version of `unsafeCoerce`,
+that only fiddles with the paramater of our phantom type:
+
+```haskell
+unsafeCoerceCode :: Code a -> Code b
+unsafeCoerceCode (Code ops) = Code ops
+```
+
+Judicious use of `unsafeCoerceCode` allows us to switch between a value's type
+and its in-memory representation. For example, given a type:
+
+```haskell
+type Bytes :: Nat -> Type
+data Bytes n
+```
+
+we can reinterpret a `Decode` as a sequence of bytes:
+
+```haskell
+decoderRep :: Iso' (Code Decoder) (Code (Bytes (32 + 4 + 1)))
+decoderRep = iso unsafeCoerceCode unsafeCoerceCode
+
+stateRep :: Iso' (Code ParserState) (Code (Bytes 1))
+stateRep = iso unsafeCoerceCode unsafeCoerceCode
+```
+
+which says we are considering our `Decoder` to be laid out in memory like:
+
+```c
+struct Decoder {
+  char format[32];
+  int32_t seekPos;
+  char state;
+};
+```
+
+Of course, this is a completely unsafe transformation, as far as the Haskell
+type system is aware. We're in the wild west out here, well past any type
+theoretical life buoys. We'd better be right that this coercion is sound. But
+assuming this *is* in fact the in-memory representation of a `Decoder`, we are
+well justified in this transformation.
+
+Notice the phrasing of our `Iso'` above. It is not an iso between `Decoder` and
+`Bytes 37`, but between *`Code`s* of such things. This witnesses the fact that
+it is not true in the Haskell embedding, merely in our `Code` domain. Of
+course, isos are like the least exciting optics, so let's see what other neat
+things we can do.
+
+Imagine we have some primitives:
+
+```haskell
+slice
+    :: n <= m
+    => Int     -- ^ offset
+    -> Proxy n -- ^ size
+    -> Code (Bytes m)
+    -> Code (Bytes n)
+
+overwrite
+    :: n <= m
+    => Int  -- ^ offset
+    -> Bytes n
+    -> Bytes m
+    -> Bytes m
+```
+
+which we can envision as Haskell bindings to the pseudo-C functions:
+
+```c
+const char[n] slice(size_t offset, char[m] bytes) {
+  return &bytes[offset];
+}
+
+char[m] overwrite(size_t offset, char[n] value, char[m] bytes) {
+  char[m] new_bytes = malloc(m);
+  memcpy(new_bytes, bytes, m);
+  memcpy(&new_bytes[offset], value, n);
+  return new_bytes;
+}
+```
+
+We can use `slice` and `overwrite` to give a `Lens'` into `Bytes`:
+
+```haskell
+slicing :: n <= m => Int -> Code (Bytes m) -> Code (Bytes n)
+slicing offset =
+  lens
+    (slice offset Proxy)
+    (\orig new -> overwrite offset new orig)
+```
+
+and finally, we can give an implementation of the desired `decoderState` above:
+
+```haskell
+decoderState :: Lens' (Code Decoder) (Code ParserState)
+decoderState = decoderRep . slicing 36 . from stateRep
+```
+
+Such a lens acts exactly as a record selector would, in that it allows us to
+`view`, `set`, and `over` a `ParserState` inside of a `Decoder`. But recall
+that `Code` is just a list of instructions we eventually want the machine to
+run. We're using the shared vocabulary of lenses to *emit machine code!* What
+looks like using a data structure to us when viewed through the Haskell
+perspective, is instead invoking an assembler.
 
 
+## Reflections
+
+Once the idea sinks in, you'll start seeing all sorts of cool things you can do
+with optics to generate code. `Prism`s generalize running initializer code.
+A `Traversal` over `Code` can be implemented as a loop. And since all the sizes
+are known statically, if you're feeling plucky, you can decide to unroll the
+loop right there in the lens.
+
+Outside of the context of `Code`, the realization that optics are *this
+general* is still doing my head in. Something I love about working in Haskell
+is that I'm still regularly having my mind blown, even after a decade.
 
