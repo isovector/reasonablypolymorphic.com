@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set +xe
+set -xe
 
 echo "deploying on server..."
 stack build --fast
