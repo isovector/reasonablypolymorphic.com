@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>HKD: Less Terrible than You Might Expect :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/hkd-not-terrible/index.html#">HKD: Less Terrible than You Might Expect</a></h1>
+</header>
+<p class="meta">
+    <time>2018-04-04</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>I thought I’d take some time to respond to some of the concerns raised about my recent <a href="/blog/higher-kinded-data">Higher-Kinded Data</a> and <a href="/blog/free-lenses">Free Lenses for Higher-Kinded Data</a> posts.</p>
+<h2 id="deriving-instances-for-hkd"><a href="#deriving-instances-for-hkd" class="header-link">Deriving Instances for HKD<span class="header-link-emoji">🔗</span></a></h2>
+<p>One of the biggest concerns over the HKD technique was that it breaks automated deriving of instances. This is not entirely true, it just requires turning on <code>{-# LANGUAGE StandaloneDeriving #-}</code> and then using one of two approaches.</p>
+<p>The simplest method is that we can simply derive all of our instances only for the types we expect to use:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Eq</span> (<span class="dt">Person&#39;</span> <span class="dt">Identity</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Eq</span> (<span class="dt">Person&#39;</span> <span class="dt">Maybe</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Ord</span> (<span class="dt">Person&#39;</span> <span class="dt">Identity</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Ord</span> (<span class="dt">Person&#39;</span> <span class="dt">Maybe</span>)</span></code></pre></div>
+<p>Admittedly it’s kind of a shit solution, but technically it does work.</p>
+<p>An alternative approach is to automatically lift these instances from <code>f a</code> over the <code>HKD f a</code> type family. The construction is a <a href="https://stackoverflow.com/a/49620701/4793220">little more involved</a> than I want to get into today, but thankfully it’s available as <a href="https://hackage.haskell.org/package/one-liner-1.0/docs/Generics-OneLiner.html#t:Constraints">library code</a> from the spiffy <a href="https://hackage.haskell.org/package/one-liner/"><code>one-liner</code></a> package.</p>
+<p>After adding <code>one-liner</code> as a dependency, we can lift our instances over a polymorphic <code>f</code> using the <code>Constraints</code> type-synonym:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> (<span class="dt">Constraints</span> (<span class="dt">Person&#39;</span> f) <span class="dt">Eq</span>) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (<span class="dt">Person&#39;</span> f)</span></code></pre></div>
+<p>Easy!</p>
+<h2 id="runtime-performance"><a href="#runtime-performance" class="header-link">Runtime Performance<span class="header-link-emoji">🔗</span></a></h2>
+<p>The other big concern was over whether we pay performance costs for getting so many cool things for free.</p>
+<p>For the most part, if you mark all of your generic type-class methods as <code>INLINE</code> and turn on <code>-O2</code>, most of the time you’re not going to pay any runtime cost for using the HKD technique.</p>
+<p>Don’t believe me? I can prove it, at least for our free lenses.</p>
+<p>Let’s fire up the <a href="https://github.com/nomeata/inspection-testing"><code>inspection-testing</code></a> package, which allows us to write core-level equalities that we’d like the compiler to prove for us. The equality we want to show is that the core generated for using our free lenses is exactly what would be generated by using hand-written lenses.</p>
+<p>We can do this by adding some front-matter to our module:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# OPTIONS_GHC -O -fplugin Test.Inspection.Plugin #-}</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Test.Inspection</span></span></code></pre></div>
+<p>This installs the <code>inspection-testing</code> compiler plugin, which is responsible for doing the work for us. Next, we’ll define our lenses:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">freeName ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Person&#39;</span> <span class="dt">Identity</span>) <span class="dt">String</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Person</span> (<span class="dt">LensFor</span> freeName) _ <span class="ot">=</span> getLenses</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">handName ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Person&#39;</span> <span class="dt">Identity</span>) <span class="dt">String</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>handName a2fb s <span class="ot">=</span> a2fb (pName s) <span class="op">&lt;&amp;&gt;</span> \b <span class="ot">-&gt;</span> s { pName <span class="ot">=</span> b }</span></code></pre></div>
+<p>and finally, we can write the equalities we’d like GHC to prove for us. This is done in two steps – writing top-level left- and right- handed sides of the equality, and then writing a TemplateHaskell splice to generate the proof.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>viewLhs,<span class="ot"> viewRhs ::</span> <span class="dt">Person&#39;</span> <span class="dt">Identity</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>viewLhs <span class="ot">=</span> view freeName</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>viewRhs <span class="ot">=</span> view handName</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>inspect <span class="op">$</span> &#39;viewLhs <span class="op">===</span> &#39;viewRhs</span></code></pre></div>
+<p>Compiling this dumps some new information into our terminal:</p>
+<pre><code>src/Main.hs:34:1: viewLhs === viewRhs passed.
+inspection testing successful
+      expected successes: 1</code></pre>
+<p>We can write an analogy equality to ensure that the generated setter code is equivalent:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>setLhs,<span class="ot"> setRhs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Person&#39;</span> <span class="dt">Identity</span> <span class="ot">-&gt;</span> <span class="dt">Person&#39;</span> <span class="dt">Identity</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>setLhs y <span class="ot">=</span> freeName <span class="op">.~</span> y</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>setRhs y <span class="ot">=</span> handName <span class="op">.~</span> y</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>inspect <span class="op">$</span> &#39;setLhs <span class="op">===</span> &#39;setRhs</span></code></pre></div>
+<p>And upon compiling this:</p>
+<pre><code>src/Main.hs:34:1: viewLhs === viewRhs passed.
+src/Main.hs:35:1: setLhs === setRhs passed.
+inspection testing successful
+      expected successes: 2</code></pre>
+<p>Cool! Just to satisfy your curiosity, the actual lenses themselves aren’t equivalent:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>inspect <span class="op">$</span> &#39;freeName <span class="op">===</span> &#39;handName</span></code></pre></div>
+<p>results in a big core dump showing that <code>freeName</code> is a gross disgusting chain of <code>fmap</code>s and that <code>handName</code> is pretty and elegant. And the module fails to compile, which is neat – it means we can write these proofs inline and the compiler will keep us honest if we ever break them.</p>
+<p>But what’s cool here is that even though our lenses do <em>not</em> result in equivalent code, actually using them does – which means that under most circumstances, we won’t be paying to use them.</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2023 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

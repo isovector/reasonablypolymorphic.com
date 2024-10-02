@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Zap as the Machinery of Program Reduction :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/zap/index.html#">Zap as the Machinery of Program Reduction</a></h1>
+</header>
+<p class="meta">
+    <time>2016-06-19</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>Last time around, we discussed <a href="/blog/cofree-comonads">duality and cofree comonads</a> towards our quest in generating rich stories. I promised that comonads were the abstraction and machinery behind interpreters, but I have yet to prove that. Let’s do it today.</p>
+<h2 id="my-kingdom-for-a-functor"><a href="#my-kingdom-for-a-functor" class="header-link">My Kingdom for a Functor<span class="header-link-emoji">🔗</span></a></h2>
+<p><a href="/blog/free-stories">Two posts ago</a>, we created a “command functor” whose job it was to specify the specific commands possible in our DSL:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span> (<span class="dt">ChangeResult</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Interrupt</span> (<span class="dt">Story</span> ()) (<span class="dt">Story</span> ()) a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Story</span> a <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">StoryF</span> a</span></code></pre></div>
+<p>Recall, this should be understood as “a story is built out of primitives where characters can change, or where one story interrupted by another.” The polymorphic <code>a</code> is “the type of the next piece of the computation,” and so the conspicuous <code>(ChangeResult -&gt; a)</code> argument to the <code>Change</code> data constructor is “the remainder of the computation will be given a <code>ChangeResult</code>” or perhaps more naturally, “the <code>Change</code> command returns a <code>ChangeResult</code>.”</p>
+<p>So that’s one half of the puzzle. We can create programs in our DSL, but we can’t yet interpret them. We’ve derived <code>Cofree</code> from first principles, and I’ve promised you that once we have an appropriate cofree comonad, we can use it as an interpreter for our DSL. In the same way that we created <code>StoryF</code> to exist as a <code>Functor</code> over which <code>Free</code> would give us a <code>Monad</code>, we’re going to need to find a meaningful <code>CoStoryF</code> to act as a carrier over <code>Cofree</code> to give us a <code>Comonad</code>.</p>
+<p>It’s tempting to dive right in and try our same old tried-and-true approach: dualize everything and go from there. Unfortunately, that doesn’t work (I tried it), so instead of leading ourselves down a path of madness, let’s slow down and think about what we’re actually trying to accomplish.</p>
+<p>The function we’re actually trying to write is this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">interpret ::</span> <span class="dt">Story</span> a <span class="ot">-&gt;</span> <span class="dt">CoStory</span> b <span class="ot">-&gt;</span> (a, b)</span></code></pre></div>
+<p>which is to say, a function that runs <code>Story a</code> programs through an interpreter with internal state <code>b</code>. While the program itself computes an <code>a</code>, in the case of our interpreter, it’s this internal state <code>b</code> that we’re actually interested in. When we get closer to actually using this machinery to generate stories, this <code>b</code> is going to be instantiated as necessary locations, interesting character quirks, and other things we’re trying to compute <em>about</em> our story.</p>
+<p>While <code>a</code> carries information between program segments (on the DSL side of things), <code>b</code> carries information <em>about</em> program segments (on the interpretation side).</p>
+<h2 id="when-zaps-in-charge-every-missions-a-suicide-mission"><a href="#when-zaps-in-charge-every-missions-a-suicide-mission" class="header-link">When Zap’s in Charge, Every Mission’s a Suicide Mission<span class="header-link-emoji">🔗</span></a></h2>
+<p>Due to <a href="https://bartoszmilewski.com/2014/09/22/parametricity-money-for-nothing-and-theorems-for-free/">free theorems from parametricity</a>, it’s often easier to find implementations of general functions than it is for more specific ones. In light of this, we can view this desired <code>interpret</code> function as the special case of a more general one:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">zap ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> g b <span class="ot">-&gt;</span> c</span></code></pre></div>
+<p>Here, <code>zap</code> is understood to be a function where somehow the functors <code>f</code> and <code>g</code> “annihilate” one another, and allow us to run pure functions over top of them. Obviously this depends on our choice of <code>f</code> and <code>g</code>, so we will make a typeclass:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FunctionalDependencies #-}</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses #-}</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Zap</span> f g <span class="op">|</span> f <span class="ot">-&gt;</span> g, g <span class="ot">-&gt;</span> f <span class="kw">where</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    zap ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> g b <span class="ot">-&gt;</span> c</span></code></pre></div>
+<p>It’s safe to ignore the <code>LANGUAGE</code> pragmas and the <code>| f -&gt; g, g -&gt; f</code> syntax if you don’t know what’s going on with them; they’re just there to convince Haskell that the gnarly things we’re doing with the type are kosher. Things won’t compile without them, but the type signature of <code>zap</code> is really what we care about here.</p>
+<p>If you’ve forgotten what we’re trying to do by this point, we’re still looking for a meaningful <code>CoStoryF</code> functor. Once we get that, we can make a <code>Cofree CoStoryF</code>, which will necessarily form a <code>Comonad</code> and we’ll <em>finally</em> be able to evaluate our programs. Carrying on.</p>
+<p>As is usually the case with typeclasses, we can probably derive <code>Zap f g</code> inductively, by which I mean this: if we have a <code>Zap StoryF CoStoryF</code>, we can likely use it to derive <code>Zap (Free StoryF) (Cofree CoStoryF)</code>. Following this line of reasoning, we’ll try to work backwards to see what <code>CoStoryF</code> might look like.</p>
+<p>But where do we start? Well, in the same line of reasoning, we can probably get a <code>Zap StoryF CoStoryF</code> from a <code>Zap</code> over the constituent functors of <code>StoryF</code>. Recall its definition:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span> (<span class="dt">ChangeResult</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Interrupt</span> (<span class="dt">Story</span> ()) (<span class="dt">Story</span> ()) a</span></code></pre></div>
+<p>The constituent functors here are kind of hidden, but if you stare at it, you’ll see we have a sum (between <code>Change</code> and <code>Interrupt</code>), a product (the parameters in each branch), and a function.</p>
+<p>In functor form, we know these as <code>Either x</code>, <code>(,) x</code> and <code>(-&gt;) x</code>. This suggests we should start looking for instances of <code>Zap</code> between these functors. Since pairs make up most of <code>StoryF</code>, we’ll start there. With the wisdom of having done it already, I’ll suggest we look for a <code>Zap ((,) x) ((-&gt;) x)</code> instance<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>If we expand this out, it means we’re looking for a function of type <code>(a -&gt; b -&gt; c) -&gt; (x, a) -&gt; (x -&gt; b) -&gt; c</code>. Given the signature, it’s actually pretty easy to work out:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Zap</span> ((,) x) ((<span class="ot">-&gt;</span>) x) <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a> <span class="co">-- zap :: (a -&gt; b -&gt; c) -&gt; (x, a) -&gt; (x -&gt; b) -&gt; c</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    zap f (x, a) xtob <span class="ot">=</span> f a (xtob x)</span></code></pre></div>
+<p>It’s worth noticing that <code>Zap f g</code> is symmetric about <code>f</code> and <code>g</code>. We had to pick one to go first, but there is no semantic distinction between the positions. We can exploit this fact to derive <code>Zap g f</code> automatically: we can just <code>flip</code> our incoming function:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FlexibleInstances #-}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE UndecidableInstances #-}</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="ot">{-# OVERLAPPABLE #-}</span> <span class="dt">Zap</span> f g <span class="ot">=&gt;</span> <span class="dt">Zap</span> g f <span class="kw">where</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    zap f a b <span class="ot">=</span> zap (<span class="fu">flip</span> f) b a</span></code></pre></div>
+<p>Again, more magic syntax to convince Haskell that this is kosher. <code>UndecidableInstances</code> certainly sounds scary, but I promise that this is an OK use of it.</p>
+<h2 id="searching-for-a-functor-clarity"><a href="#searching-for-a-functor-clarity" class="header-link">Searching for a Functor Clarity<span class="header-link-emoji">🔗</span></a></h2>
+<p>The construction of this <code>Zap</code> instance between pairs and functions is promising. If you’re curious about what sorcery is actually going on here, this magic comes directly from the <a href="http://comonad.com/reader/2008/kan-extensions-ii/">adjunction between curry and uncurry</a>. Since every term in our sum-type <code>StoryF</code> is made up of nothing but pairs and functions, and functions and pairs can annihilate one another, this suggests our <code>CoStoryF</code> should be a product-type where we swap all of our products with functions and vice-versa:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">CoStoryF</span> b <span class="ot">=</span> <span class="dt">CoStoryF</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                {<span class="ot"> changeH    ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">ChangeType</span> <span class="ot">-&gt;</span> (<span class="dt">ChangeResult</span>, b)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                ,<span class="ot"> interruptH ::</span> <span class="dt">Story</span> () <span class="ot">-&gt;</span> <span class="dt">Story</span> () <span class="ot">-&gt;</span> b</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">CoStory</span> b <span class="ot">=</span> <span class="dt">Cofree</span> <span class="dt">CoStoryF</span> b</span></code></pre></div>
+<p>This actually makes a great deal of sense if you look at it for a minute or two. If a <code>StoryF</code> is one of any possible commands, a <code>CoStoryF</code> should be a collection of functions to handle any action that a <code>StoryF</code> is capable of throwing at it. A <code>StoryF</code> is a sum of arguments, while a <code>CoStoryF</code> is a product of functions taking those arguments.</p>
+<p>Convinced that we’ve found the right data structure, we’ll write a <code>Functor</code> instance for it:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">CoStoryF</span> <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fmap</span> f (<span class="dt">CoStoryF</span> c i) <span class="ot">=</span> <span class="dt">CoStoryF</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        (<span class="fu">fmap</span> (<span class="fu">fmap</span> (<span class="fu">fmap</span> f)) c)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        (<span class="fu">fmap</span> (<span class="fu">fmap</span> f) i)</span></code></pre></div>
+<p>Your first thought might be “what a disgusting mess of <code>fmap</code>”. And you’d be right. You can convince yourself that it’s right by remembering that each application of <code>fmap</code> moves you inside a function, or into the second piece of a pair. Alternatively, you can try compiling it, see that it type-checks, and move on with your life thinking no more about it.</p>
+<p>Armed with the right data structure and a <code>Functor</code> instance it, we’ll go on to build our <code>Zap StoryF CoStoryF</code>. Remember that the pieces of our <code>CoStoryF</code> product are “handlers” of particular actions from our <code>StoryF</code>, and thus we’ll call these pieces <code>h</code> in the following snippet:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Zap</span> <span class="dt">StoryF</span> <span class="dt">CoStoryF</span> <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Change</span> c ct k) (<span class="dt">CoStoryF</span> h _) <span class="ot">=</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> (cr, b) <span class="ot">=</span> h c ct</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            a       <span class="ot">=</span> k cr</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>         <span class="kw">in</span> f a b</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Interrupt</span> x x&#39; a) (<span class="dt">CoStoryF</span> _ h) <span class="ot">=</span> f a (h x x&#39;)</span></code></pre></div>
+<p>Gross and ugly, I know. What are we writing here, C? Instead, we can exploit our <code>Zap</code> instance from earlier to perform the computation in that <code>let</code> block for us:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- much nicer version of our previous snippet</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Zap</span> <span class="dt">StoryF</span> <span class="dt">CoStoryF</span> <span class="kw">where</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Change</span>    c ct k) (<span class="dt">CoStoryF</span> h _) <span class="ot">=</span> zap f k (h c ct)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Interrupt</span> x x&#39; k) (<span class="dt">CoStoryF</span> _ h) <span class="ot">=</span>     f k (h x x&#39;)</span></code></pre></div>
+<p>Much better.</p>
+<p>I claim that this does what we want. But why does this work? Well we’re using the sum constructor from our <code>StoryF</code> type as an <em>index</em> into the related handler from the product of our <code>CoStoryF</code>.</p>
+<p>To interpret a <code>Change</code>, for example, we compute a <code>ChangeResult</code> from our handler given the arguments from <code>Change</code>. We then take this resulting <code>ChangeResult</code> and pass it into the continuation <code>(ChangeResult -&gt; a)</code> returned by <code>Change</code>. In effect, this instance of <code>Zap</code> has performed a single stage of reduction between our DSL and our interpreter.</p>
+<h2 id="the-cogs-in-the-machine"><a href="#the-cogs-in-the-machine" class="header-link">The Cogs in the Machine<span class="header-link-emoji">🔗</span></a></h2>
+<p>Maybe you’re starting to see now why this <code>Zap</code> machinery is useful for running our program: it automatically interleaves the results from our interpretation into the bound values in our DSL. What we’ve built so far automatically connects a single step of the program with a single step of the interpretation; as you might expect, the <code>Zap</code> over <code>Free</code> and <code>Cofree</code> will take care of running the individual reductions sequentially until we’ve fully evaluated our program.</p>
+<p>And so we need to find a derivation of <code>Zap (Free f) (Cofree g)</code>. If you followed the last derivation, this one should be a piece of cake. If not, it’s worth staring at for a little while – grokking it definitely helped solidify in my mind how <code>Free</code> and <code>Cofree</code> are related.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Zap</span> f g <span class="ot">=&gt;</span> <span class="dt">Zap</span> (<span class="dt">Cofree</span> f) (<span class="dt">Free</span> g) <span class="kw">where</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Pure</span> a)  (<span class="dt">Cofree</span> b _ ) <span class="ot">=</span> f a b</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    zap f (<span class="dt">Bind</span> as) (<span class="dt">Cofree</span> _ bs) <span class="ot">=</span> zap (zap f) as bs</span></code></pre></div>
+<p>Notice that we’re doing the same trick here: using the sum constructor of our <code>Free</code> type to pick a particular piece out of the product of our <code>Cofree</code> type.</p>
+<p>All that’s left now is to construct a particular <code>interpreter : CoStory b</code>, which we can <code>zap</code> against any <code>story : Story a</code>. That will be our focus for the next post, but in the meantime, we’ll convince ourselves that we’ve done something worthwhile here by implementing our desired <code>interpret</code> function from earlier:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">interpret ::</span> <span class="dt">Story</span> a <span class="ot">-&gt;</span> <span class="dt">CoStory</span> b <span class="ot">-&gt;</span> (a, b)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>interpret <span class="ot">=</span> zap (,)</span></code></pre></div>
+<p>Oh. That was easy. Definitely a sign that we’re onto something here.</p>
+<p>Until next time.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Deriving the other two instances is informative for how this machinery actually works, and is left as an exercise to the reader.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2023 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

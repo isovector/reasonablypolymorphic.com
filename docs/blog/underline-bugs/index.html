@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Underlining the Bugs :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/underline-bugs/index.html#">Underlining the Bugs</a></h1>
+</header>
+<p class="meta">
+    <time>2022-01-31</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>I had a magical Haskell experience today, and want to share the story.</p>
+<p>My current big programming project is <a href="https://github.com/isovector/cornelis"><code>cornelis</code></a> — a vim plugin for interacting with Agda. The Agda compiler is really good at doing interactive programming, but until <code>cornelis</code>, all of this functionality has been locked away, only to be used by blessed emacs developers.</p>
+<p>Tooling for (neo)vim has gotten really good since I last looked at it, and these days you can write plugins in a language of your choice. For anyone lucky enough to not appreciate how lovely this is, vimscript’s comparison operator checks a global flag to see if it should be case-sensitive or not. From that perspective, it’s truly a testament that <em>anyone</em> has managed to write <em>anything</em> for vim.</p>
+<p>The Haskell library for talking to (neo)vim is <a href="https://github.com/neovimhaskell/nvim-hs">particularly excellent</a>, and I would strongly recommend it if you’re thinking about writing a vim plugin.</p>
+<p>So anyway, the Agda compiler has this cool mode where you can send it queries about your code, and it gives back answers in JSON. For example, you might ask “what type does this thing have?” or “please case split this for me” and Agda will give you back answers. A plugin like <code>cornelis</code> or <code>agda-mode</code> (for emacs) can turn Agda’s responses into a lovely editing environment, where the computer does most of the work of programming for you.</p>
+<p>Agda doesn’t actually make any changes for you, it just says things like “replace from characters 5 to 10 on line 17 with <code>foo</code>.” This is nice for editor integration, since Agda doesn’t assume anything about your editing environment.</p>
+<p>Rather interestingly, Agda even does its <em>syntax</em> highlighting like this. You ask the compiler what colors things should have, and it responds. Editor plugins just need to attach that information to the buffer, and you never need to write another janky regex.</p>
+<p>One of the first things I implemented in <code>cornelis</code> was this syntax highlighting. My first attempt looked something like this:</p>
+<figure>
+<img src="/images/underline/highlighting.png" alt="Syntax Highlighting" /><figcaption aria-hidden="true">Syntax Highlighting</figcaption>
+</figure>
+<p>It’s… <em>almost</em> right. But those deep yellows should extend to the end of each line! However, notice that each of the light yellows on the left of the <code>:</code>s are right. So whatever’s going wrong here is getting reset every line.</p>
+<p>Looking closely at the subscript 1 on <code>f</code> gives us a clue what’s going wrong — unicode characters are throwing off the highlighting ranges! Some swearing and digging into the vim documentation shows that vim expects its highlighting ranges to be <em>byte-indexed</em> for some insane reason. Agda uses a lot of unicode, and (rightly) reports locations by their character-index, not their byte-index.</p>
+<p>The solution was to get the text being highlighted, and count its actual bytes in order to fix the numbers being sent to vim. Annoying, but workable. I left a comment and went on with my day.</p>
+<p>The next day, I was working on another feature, which is essentially interacting with typed-holes. The idea is you move your cursor over the hole, and then ask Agda to do something with it. But, sometimes, Agda would yell at me and say there was no hole there! Sure enough, that sometimes was when there was a unicode character earlier on the line. Same bug, same fix.</p>
+<p>Then the day after that, another bug caused by this unicode length stuff. OK, three strikes and you’re out. It was time to fix this bug once and for all. Fundamentally, the issue is that Agda-offsets don’t agree with Vim-offsets, which sounds like a type error to me. It seemed hard to patch the vim API, but I controlled all of the Agda-serialization stuff, so I <a href="https://github.com/isovector/cornelis/commit/d52708164d9e1e34a3ef941235d1396bacc937f7">made a patch</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">+ data OffsetType = Line | File</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">+ newtype Offset (a :: OffsetType) = Offset Int32</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">+   deriving stock Data</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">+   deriving newtype (Eq, Ord, Show, Read, FromJSON)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="va">+ type BufferOffset = Offset &#39;File</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="va">+ type LineOffset = Offset &#39;Line</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  data Position&#39; a = Pn</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    { srcFile :: !a</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">-   , posPos  :: !Int32</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="va">+   , posPos  :: !BufferOffset</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    , posLine :: !Int32</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">-   , posCol  :: !Int32</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="va">+   , posCol  :: !LineOffset</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    }</span></code></pre></div>
+<p>and then changed the types of the bug-fixing functions:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="st">- toBytes :: Text -&gt; Int -&gt; Int</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">+ toBytes :: Text -&gt; Offset a -&gt; Int</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">- fromBytes :: Text -&gt; Int -&gt; Int</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">+ fromBytes :: Text -&gt; Int -&gt; Offset a</span></span></code></pre></div>
+<p>After doing some plumbing to change all the function types to refer to <code>BufferOffset</code> and <code>LineOffset</code> rather than <code>Int</code>, I was left with a few type errors in the program: <em>corresponding exactly with the bug I had set out to fix, and two others I didn’t know about!</em></p>
+<figure>
+<img src="/images/underline/underline.png" alt="Underlined Bugs" /><figcaption aria-hidden="true">Underlined Bugs</figcaption>
+</figure>
+<p>Let me restate that. The computer <em>underlined the bugs</em> in my program. It found bugs in code I’d already written.</p>
+<p>If this isn’t one of the best arguments for static typing, I can’t imagine what would be.</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2023 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

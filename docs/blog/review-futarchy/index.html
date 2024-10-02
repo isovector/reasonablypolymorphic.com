@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Review: Shall We Vote on Values, But Bet on Beliefs? :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/review-futarchy/index.html#">Review: Shall We Vote on Values, But Bet on Beliefs?</a></h1>
+</header>
+<p class="meta">
+    <time>2022-01-14</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>Another week, another paper review. This week we’re looking at Robin Hanson’s <a href>“Shall We Vote on Values, But Bet on Beliefs?”</a> (SWVVBBB). In SWVVBBB, Hanson proposes a new form of government he calls “futuarchy,” which injects prediction markets into democratic government.</p>
+<p>The preamble starts like this:</p>
+<ol type="1">
+<li>Democracies fail by not aggregating information</li>
+<li>Prediction markets are really good at aggregating information</li>
+<li>We can postdict which nations did better than others.</li>
+</ol>
+<p>These three assumptions seem relatively self-evident, though perhaps the first is the least obvious. In support of this assumption, Hanson presents some evidence:</p>
+<ol type="1">
+<li>Most people vote the same way they’ve always voted.</li>
+<li>Most people don’t know what the government is doing.</li>
+<li>Most people don’t know which platforms parties stand for.</li>
+<li>It’s hard for governments to disseminate information.</li>
+<li>The populace often has different ideas about what government should do than what experts say it should do.</li>
+<li>At large, the populace believes in a bunch of rather crazy things (eg. 85% of Americans believe Jesus was born to a virgin, and 52% believe astrology has some scientific proof.)</li>
+<li>It seems untenable that bad policy decisions would be adopted if they were known to be bad policy decisions.</li>
+</ol>
+<p>The first three points are pretty easy to believe as well. The fourth is also tenable; the government relies on mainstream media to get messages out, where it can be editorialized before being published. Points five and six taken together suggest that the people are often <em>wrong</em> about what constitutes good policy.</p>
+<p>Hanson presents sources for these claims, but I don’t have any issues taking them on faith — this isn’t the crux of the paper. It’s safe to say that failure to aggregate information is a serious problem in democracies.</p>
+<p>Why does this matter? Because democracy gives us one vote, with which not only do we need to vote on our values, but also on how we’d like the government to bring about those values. For example, political parties’ platforms involve both <em>values</em> (“we care about healthcare, equality, housing, etc.”), and <em>strategy</em> (“we will build 1,000,000 new houses and hire 50,000 new nurses.”)</p>
+<p>Personally, I support Canada’s left-most party’s values, but I don’t think they’d be very capable if they actually got into power. This tension leads me away from voting for them, in an attempt to find a better mix of <em>competent</em> and <em>represents what I care about.</em></p>
+<p>The question that SWVVBBB answers is “how can we separate voting for values from voting for execution of those values.” And as the title suggests, the trick is to do it by putting our money where our mouths are.</p>
+<h2 id="betting-on-beliefs"><a href="#betting-on-beliefs" class="header-link">Betting on Beliefs<span class="header-link-emoji">🔗</span></a></h2>
+<p>The main contribution of SWVVBBB in my opinion is its clever mechanism design to pull <em>probabilities</em> out of <em>prices.</em> This will take some explanation.</p>
+<p>At a high level, the idea is we should vote for a party based only on our values. The winning party is responsible for choosing an explicit mathematical function that represents how well the country is doing on its values. For example, this function might be “GDP”, or “percent of the population employed,” or “global happiness ranking,” or what have you. Probably, it will be some combination of these things.</p>
+<p>The government’s only job is to define what success looks like, and how we’re going to measure it. That’s all the government does. They don’t get to raise taxes, or allocate spending, or appoint judges, or anything like that. They are responsible only to pick the utility function, and to create any agencies that might be required to measure it.</p>
+<p>Here’s where it gets interesting.</p>
+<p>We now put a prediction market in place. For a fee, anybody can propose any intervention on the way the country is run. Collectively, people buy and sell bonds corresponding to whether they think the proposal will help maximize the government’s value function. By looking at the market price of the bonds, we can get a good sense of whether or not the market thinks the proposal is a good idea. If it is, the proposal immediately gets turned into law.</p>
+<p>The details on how to actually go about building this market are a good chunk of the paper, which we will get to in the next section. For now, let’s continue thinking about the high-level idea.</p>
+<p>By connecting the law to a market, we immediately get a few benefits. The first is that we now incentivize people to have true beliefs about governance. If my ideas about how the country should be run are in fact good, I can make money off of that skill. Furthermore, it incentivizes transparency. If people can make lots of money off of this market, you can bet they’ll watch it extremely closely.</p>
+<p>Perhaps best of all, it pushes stupid people out of the market. If you are consistently <em>wrong</em> about what constitutes good governance, you will quickly price yourself out of the market — similar to people who go broke trying to play the stock market on the advice of their uncle.</p>
+<p>To be clear, this doesn’t disenfranchise people. They still get to vote on the government. But it requires questions of policy to be answered by putting your money where your mouth is. Thus, under this scheme, it becomes prohibitively expensive to have stupid beliefs strongly held.</p>
+<h2 id="mechanism-design"><a href="#mechanism-design" class="header-link">Mechanism Design<span class="header-link-emoji">🔗</span></a></h2>
+<p>So, that’s the high level idea. How do we actually go about implementing it?</p>
+<h3 id="discovering-probability"><a href="#discovering-probability" class="header-link">Discovering Probability<span class="header-link-emoji">🔗</span></a></h3>
+<p>Imagine a particular question of fact, that can be definitely observed in the future. For example, maybe we want to determine whether or not it will be raining next Friday at 10am in the park beside my house. The more specific the question, the better.</p>
+<p>The bank can offer a pair of assets:</p>
+<ol type="1">
+<li>Pays \$1 if it is raining on Friday at 10am.</li>
+<li>Pays \$1 if it is not raining on Friday at 10am.</li>
+</ol>
+<p>and the bank is happy to sell these assets for \$1, because exactly one of them will actually pay off. In the meantime, the bank can collect interest for free.</p>
+<p>Suppose Market-Making Marty buys 10,000 of these pairs from the bank. Marty can now sell the assets individually, for example, he might sell some not raining assets to Dusty, and some raining assets to Misty. Initially, he might price both assets at \$0.60.</p>
+<p>By selling both sides of the pair at \$0.60, Marty safely makes \$2,000 dollars off of his \$10,000 investment. It’s safe because he no longer holds any assets except for cold hard cash.</p>
+<p>Dusty figures that it’s sunny more than 60% of the time, so paying \$0.60 for an asset that pays \$1.00 is a good deal. If he estimates the likelihood of it being sunny on Friday at 80%, then he expects an 80% chance of making \$10,000, and a 20% chance of making \$0. Adding these together, he computes his expected value at <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.8</mn><mo>∗</mo><mn>10000</mn><mo>+</mo><mn>0.2</mn><mo>∗</mo><mn>0</mn><mo>=</mo><mn>8000</mn></mrow><annotation encoding="application/x-tex">0.8 * 10000 + 0.2 * 0 = 8000</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">10000</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8000</span></span></span></span>,</span> which is \$2,000 more in expectation than the cost of buying all the assets at \$6,000.</p>
+<p>Misty does some chain of reasoning that makes her believe that her money is also well spent.</p>
+<p>Summer has been thinking hard, and is pretty sure the chance of rain on Friday is actually closer to 5%. So she approaches Dusty, and offers to buy some of his no-rain assets for \$0.90. Dusty thinks this is too confident, so he happily unloads his options to Summer, since again he expects to be making money on this trade.</p>
+<p>When everything settles, no-rain assets are trading at a market price of \$0.83, while rain assets are at \$0.17 (in the limit, these must add up to \$1.00, or else you can make money by holding both sides.)</p>
+<p>Patty, who was thinking about having a picnic in the park on Friday, looks at the asset prices, and decides it’s not going to rain, since no-rain is trading above rain.</p>
+<p>Thus, Patty has made a decision about the future, based on information aggregated from Dusty, Misty, Summer, and whoever else might have been in on the market.</p>
+<p>Friday comes along, and it doesn’t rain. Patty is happy, as is everyone holding no-rain assets, since they all made money.</p>
+<h3 id="discovering-expected-value"><a href="#discovering-expected-value" class="header-link">Discovering Expected Value<span class="header-link-emoji">🔗</span></a></h3>
+<p>We can play the same game to extract information about expected values from the market. Suppose we want to guess the price of flour next week. The bank can look at the historical high of flour price, and sell pairs of assets:</p>
+<ol type="1">
+<li>Pays \$x, where <code>x</code> is the percentage of the cost of flour with respect to its all-time high. For example, if the all-time high was \$40, and the cost of flour next week was \$30, this asset pays \$0.75 (<span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>30</mn><mi mathvariant="normal">/</mi><mn>40</mn></mrow><annotation encoding="application/x-tex">30/40</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">30/40</span></span></span></span>).</span></li>
+<li>Pays \$(1 - x).</li>
+</ol>
+<p>Again, the bank is happy to make this trade because they are still only paying out \$1, and they still get to make interest on that dollar until the market pays out.</p>
+<p>The trading price of these assets now correspond to the market’s opinion of the expected value of the price of flour next week. If \$x assets are trading at \$0.30, we can read the expected value of flour next week to be <span style="white-space: nowrap;"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.3</mn><mo>∗</mo><mn>40</mn><mo>=</mo><mn>12</mn></mrow><annotation encoding="application/x-tex">0.3 * 40 = 12</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">40</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">12</span></span></span></span>.</span></p>
+<h3 id="conditional-assets"><a href="#conditional-assets" class="header-link">Conditional Assets<span class="header-link-emoji">🔗</span></a></h3>
+<p>There’s one last trick we can do. We can make conditional assets, that is, assets which only pay out when a certain precondition is met. We can consider the case of whether or not a big law firm BLF wins its case, conditional on whether or not they put Litigious Larry on as the lead prosecutor. In this case, the bank offers quads of assets for \$1:</p>
+<ol type="1">
+<li>Pays \$1 if BLF wins with Larry</li>
+<li>Pays \$1 if BLF wins without Larry</li>
+<li>Pays \$1 if BLF loses with Larry</li>
+<li>Pays \$1 if BLF loses without Larry</li>
+</ol>
+<p>Again, only one of these four cases will actually pay out (ignoring the possibility that it doesn’t go to court, but that’s a simplification for the example, not a limitation of the technique.)</p>
+<p>Like Patty in the park, BLF can make a decision about the future: whether or not they should put Larry on the case based on whether Win|Larry is trading higher than Win|-Larry.</p>
+<p>Furthermore, they can rethink whether or not they want to settle out of court if the BLF loses assets are trading at better than BLF wins.</p>
+<h2 id="putting-it-into-practice"><a href="#putting-it-into-practice" class="header-link">Putting It Into Practice<span class="header-link-emoji">🔗</span></a></h2>
+<p>With the mechanism design under our belt, we can now think about implementing futarchy.</p>
+<p>The people vote on the government based on parties’ values. The government puts forward its value function. Now, anyone can pay a transaction fee (perhaps quite high) to propose a policy intervention. The bank can offer a pair of assets:</p>
+<ol type="1">
+<li>Pays \$x if the intervention is made</li>
+<li>Pays \$(1-x) if the intervention is made</li>
+</ol>
+<p>where x is linear in the observed value function at some point in the future. The idea is to tie the payoff of the asset to how well it helps influence our value function.</p>
+<p>For example, maybe the government decides the value function is GDP. Maybe the target GDP in five years is \$30 trillion. Phoebe then proposes building a high-speed train between Toronto and Vancouver. The bank can offer assets as above, where x is the observed percentage of GDP out of \$30 trillion.</p>
+<p>After some period of trading, the \$x assets are trading well above \$(1-x). This is interpreted as the market thinking this train would be good for long term GDP. Immediately, the decision to build the train is ensconced in law.</p>
+<p>That doesn’t mean all the details are necessarily worked out. If Phoebe had the whole plan for the train worked out, she could have put those in her proposal. But let’s assume she didn’t. Instead, someone can make a new proposal, that Cost-Cutting Carlos should get put in charge of the project. At the same time, there is a proposal that Safety Susan should be put in charge. Markets pop up for both, and whichever is trading higher gets the bid (unless neither is trading well!)</p>
+<p>We can follow this process ad infinitum, to work out more and more particulars. If, at any time, someone thinks the train is actually a bad idea, they can make a proposal to stop its development. We need not worry about the inefficiency inherent this sort of flip-flopping; the market will necessarily price-in the sunk costs.</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2023 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

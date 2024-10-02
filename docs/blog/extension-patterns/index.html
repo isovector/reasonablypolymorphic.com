@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Low-Tech AST Extensibility with Extension Patterns :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/extension-patterns/index.html#">Low-Tech AST Extensibility with Extension Patterns</a></h1>
+</header>
+<p class="meta">
+    <time>2019-11-27</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <p>Today I want to share a common pattern I’ve been using for extending AST-like data structures that I don’t own. It’s an extremely low-tech solution to the problem (as opposed to something like the dreaded <a href="https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pdf">Trees That Grow</a>, which is more far complicated than any problem is worth.)</p>
+<p>A common problem I run into is wanting to add custom annotations to abstract syntax trees. As one example, a while back I was writing a Haskell editor that would <em>write Haskell code for you.</em> The idea was to get rid of the text representation of code entirely, and work directly with the Haskell AST. However, it’s often useful to insert metadata into the AST — for example, which bit of the tree you’re currently editing.</p>
+<p>As another example, I’m currently writing a book in markdown, and want to express high-level concepts that markdown doesn’t have any primitives for — things like <em>exercises</em> or <em>inline this snippet of code from a real codebase</em> or <em>this thing is like a footnote, but should have a special graphic.</em> If I were a pleb, I’d just manually write the low-level markdown necessary to achieve the visual goal I want.</p>
+<p>But: two problems. Firstly, I did that on the last book, and it turned out to be the biggest mistake I’ve made in quite a long time. The issue is that while this works for the representation you’re currently looking at, it all falls apart when you want to change the representation. My book looked great as a PDF, but it took me weeks and literal tears to turn that thing into an e-book.</p>
+<p>Secondly, this book I’m writing is <em>all about</em> how the root of all evil is a premature loss of precision — which is to say, it’s about designing and using abstractions. The irony would be too salty if I didn’t take my own advice here and build my book out of the abstractions I claim are so valuable.</p>
+<p>So this is the question: how can we add new abstraction primitives to a datatype that we don’t control?</p>
+<p>Let’s take a particular example that I implemented today. In <a href="http://journal.stuffwithstuff.com/2015/09/08/the-hardest-program-ive-ever-written/">The Hardest Program I’ve Ever Written</a>, Bob Nystrom walks through the implementation of an interesting program. Throughout the prose, there are little skulls which are footnotes describing a wrong path he took during the implementation. These mistakes are, in my opinion, more interesting than the essay itself.</p>
+<p>My book has a few case studies in which I work through building a real program using the techniques I’m advocating. The idea is to give readers an actual taste of how it works in practice, and to show that often times the journey is more valuable than the destination. As such, I thought Bob’s skull footnotes would make an excellent addition to these chapters.</p>
+<p>I dug in to see how Bob had implement his, and I was amazed! <a href="https://raw.githubusercontent.com/munificent/journal/master/_posts/2015-09-08-the-hardest-program-ive-ever-written.md">The poor bastard had done it all by hand!</a> My god, if that’s not commitment, I don’t know what is. There are like seventeen footnotes in that blog post. Someone should probably make Bob a saint for just how patient he must be.</p>
+<p>While this is commendable, it is antithetical to our purposes. This is clearly an abstraction leak; markdown is supposed to be human-readable format that eschews 15th-century technology like HTML. As soon as you have an abstraction leak, your abstraction is worth nothing. At this point it will only bring you pain.</p>
+<p>But what can we do instead?</p>
+<p>Well, my book is being authored in markdown, and then processed via <a href="https://pandoc.org/">pandoc</a> to turn it into pretty PDFs. I’ve separated the semantic bits from the presentation bits, in an act of forward thinking for when I make an e-book copy. What this means is that, <em>even though I’m writing markdown,</em> my book is actually a Pandoc document. Which is to say, there is a <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Block">Text.Pandoc.Definition.Block</a> somewhere in the platonic realm that describes my book.</p>
+<p>And so we return to the question of how to annotate ASTs. The <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Block">Pandoc AST</a> is a rather expressive format, but it primarily describes basic typographic elements. It primarily captures meaning as to how to layout a document, rather than capturing the meaning of <em>what is being expressed.</em></p>
+<p>While Pandoc already has the option to <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Inline">annotate a Footnote</a>, I don’t want to replace all footnotes with deathnotes (as I’ve taken to calling these little skull things.)</p>
+<p>The trick is a rather stupid one. While usual footnotes are written in markdown like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>This is some prose<span class="ot">[^1]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">[^1]: </span>This is a footnote.</span></code></pre></div>
+<p>I’ve decided to annotate my deathnotes like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>This is some prose<span class="ot">[^1]</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">[^1]: </span>death This is a deathnote.</span></code></pre></div>
+<p>The only difference is that the text of a deathnote starts with the word <code>death</code>. That’s it. There is nothing clever going on here. When parsed into a <code>Block</code>, the above has this structure:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Para</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  [ <span class="dt">Str</span> <span class="st">&quot;This&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Space</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Str</span> <span class="st">&quot;is&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Space</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Str</span> <span class="st">&quot;some&quot;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Space</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Str</span> <span class="st">&quot;prose&quot;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  , <span class="dt">Note</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    [ <span class="dt">Para</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      [ <span class="dt">Str</span> <span class="st">&quot;death&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Space</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Str</span> <span class="st">&quot;This&quot;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Space</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Str</span> <span class="st">&quot;is&quot;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Space</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Str</span> <span class="st">&quot;a&quot;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Space</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      , <span class="dt">Str</span> <span class="st">&quot;deathnote.&quot;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>      ]</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  ]</span></code></pre></div>
+<p>The bit of interest to us is the part of the AST that begins <code>Note [ Para [ Str &quot;death&quot;</code>. Because this is an easy thing to annotate directly in markdown, and because it won’t happen by accident, we can decide that this is the canonical representation for annotating a deathnote.</p>
+<p>Here’s the trick: we can reify that decision in Haskell via a pattern synonym. If you’re unfamiliar with pattern synonyms, they allow you to “create” “new” data constructors, which are just synonyms for arbitrary patterns you’d like to pick out. In our case, we want to pick out that <code>Note [ Para [ Str &quot;death&quot;</code> structure.</p>
+<p>We begin by writing a little function that will pattern match on the part we want, and remove the word <code>&quot;death&quot;</code> from the first paragraph.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">splitDeathNote ::</span> [<span class="dt">Block</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Block</span>]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>splitDeathNote (<span class="dt">Para</span> (<span class="dt">Str</span> <span class="st">&quot;death&quot;</span> <span class="op">:</span> ps) <span class="op">:</span> bs)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">Para</span> (<span class="fu">dropWhile</span> (<span class="op">==</span> <span class="dt">Space</span>) ps) <span class="op">:</span> bs)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>splitDeathNote _ <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p>The function <code>splitDeathNote</code> will try to match our deathnote pattern, and if it succeeds, give back the rest of the content. As a second step, we enable <code>-XViewPatterns</code> and <code>-XPatternSynonyms</code> and write a pattern:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">pattern</span> <span class="dt">DeathNote</span><span class="ot"> ::</span> [<span class="dt">Block</span>] <span class="ot">-&gt;</span> <span class="dt">Inline</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">pattern</span> <span class="dt">DeathNote</span> bs <span class="ot">&lt;-</span> <span class="dt">Note</span> (splitDeathNote <span class="ot">-&gt;</span> <span class="dt">Just</span> bs)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">DeathNote</span> (<span class="dt">Para</span> ps <span class="op">:</span> bs) <span class="ot">=</span> <span class="dt">Note</span> <span class="op">$</span> <span class="dt">Para</span> (<span class="dt">Str</span> <span class="st">&quot;death&quot;</span> <span class="op">:</span> <span class="dt">Space</span> <span class="op">:</span> ps) <span class="op">:</span> bs</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">DeathNote</span> bs             <span class="ot">=</span> <span class="dt">Note</span> <span class="op">$</span> <span class="dt">Para</span> [<span class="dt">Str</span> <span class="st">&quot;death&quot;</span>] <span class="op">:</span> bs</span></code></pre></div>
+<p>Patterns have egregious syntax, but it can be read in two parts. The first bit is the <code>pattern DeathNote bs &lt;- Note ...</code> bit, which is used for defining a <em>pattern match.</em> It says, “if you do a pattern match on the thing left of the <code>&lt;-</code>, instead replace it with the pattern match on the right. This weird <code>-&gt;</code> thing is a <em>view pattern,</em> which says”run the <code>splitDeathNote</code> function, and only match if it returns a <code>Just</code>.”</p>
+<p>The other part of the pattern synonym, the part after the <code>where</code>, allows us to <em>build an <code>Inline</code> out of a <a href="https://hackage.haskell.org/package/pandoc-types-1.17.6.1/docs/Text-Pandoc-Definition.html#t:Block">Block</a>.</em> Which is to say, it works like a data constructor; we can write something like <code>let foo = DeathNote blah</code>.</p>
+<p>In other words, after defining the <code>DeathNote</code> pattern synonym, for all intents and purposes it’s like we’ve added a new data constructor to the pandoc <code>Inline</code> type. For example, we can write a function that pattern matches on it:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">isDeathNote ::</span> <span class="dt">Inline</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>isDeathNote (<span class="dt">DeathNote</span> _) <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>isDeathNote _ <span class="ot">=</span> <span class="dt">False</span></span></code></pre></div>
+<p>GHC will happily compile this thing, and it will work as expected! Cool!</p>
+<p>The final step to actually getting these things working is to walk the pandoc AST, and transform our nice, newly-annotated deathnotes into something more amenable for a PDF. But! We want to do this <em>as part of generating a PDF.</em> That way we hold onto our semantic annotations until the <em>very last moment,</em> i.e., when we send our document to the printers.</p>
+<p>We can get this transformation for free via <a href="https://www.stackage.org/lts-14.16/package/syb-0.7.1">Scrap Your Boilerplate</a>(SYB for short.) SYB lets us write tiny transformations that operate only on a piece of data that we care about, and then lift that into a leaf-first transformation over arbitrarily large data structures.</p>
+<p>In our case, we can write a function like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">renderDeathNoteForLatex ::</span> <span class="dt">Inline</span> <span class="ot">-&gt;</span> <span class="dt">Inline</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>renderDeathNoteForLatex (<span class="dt">DeathNote</span> bs) <span class="ot">=</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">RawInline</span> <span class="st">&quot;latex&quot;</span> <span class="op">$</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mconcat</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      [ <span class="st">&quot;\\deathnote{&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      , <span class="fu">show</span> bs  <span class="co">-- the real implementation doesn&#39;t use show</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      , <span class="st">&quot;}&quot;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      ]</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>renderDeathNoteForLatex x <span class="ot">=</span> x  <span class="co">-- just id for all other nodes</span></span></code></pre></div>
+<p>And then use SYB to lift it over the entire <code>Pandoc</code> structure</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">latexPreProcess ::</span> <span class="dt">Pandoc</span> <span class="ot">-&gt;</span> <span class="dt">Pandoc</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>latexPreProcess <span class="ot">=</span> everywhere (mkT renderDeathNoteForLatex)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- we can potentially run other transformations here at the same time</span></span></code></pre></div>
+<p>And just like that, we’ve added a custom annotation to markdown, and separately given a presentation strategy for it. We can use <a href="http://hackage.haskell.org/package/pandoc-types-1.20/docs/Text-Pandoc-JSON.html#v:toJSONFilter"><code>toJSONFilter</code></a> to connect our little <code>latePreProcess</code> transformation to <code>pandoc</code>, and no one is any the wiser.</p>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2023 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+

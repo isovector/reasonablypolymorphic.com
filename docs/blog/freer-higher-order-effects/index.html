@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <base href="/"></base>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Polysemy Internals: Freer Interpretations of Higher-Order Effects :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/katex.min.css" />
+        <link rel="stylesheet" href="/css/agda-cats.css" />
+
+        <script src="/equations.js"></script>
+        <script src="/highlight-hover.js"></script>
+
+  <noscript>
+    <style>
+      body span.reasoning-step .as-written {
+        display: inline;
+      }
+
+      body span.reasoning-step .alternate {
+        display: none;
+      }
+    </style>
+  </noscript>
+
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/freer-higher-order-effects/index.html#">Polysemy Internals: Freer Interpretations of Higher-Order Effects</a></h1>
+</header>
+<p class="meta">
+    <time>2019-05-31</time>
+
+    <span class="tags">
+        
+    </span>
+</p>
+<div class="content">
+    <blockquote>
+<p>aka “what the hell is that <code>Yo</code> type?”</p>
+</blockquote>
+<p>This is the first post in a series of implementation details in <a href="https://github.com/isovector/polysemy"><code>polysemy</code></a> — a fast, powerful and low-boilerplate effect-system library.</p>
+<p>Even if you’re not particularly interested in <code>polysemy</code>, there are some functional pearls here — and a crash course on the history on the implementations of free monads in Haskell.</p>
+<hr />
+<p>Critics of free monads often make the claim that higher-order effects aren’t possible. This has historically been true, but Wu, Schrijvers and Hinze’s paper <a href="https://www.cs.ox.ac.uk/people/nicolas.wu/papers/Scope.pdf">Effect Handlers in Scope</a> gives a technique for lifting the restriction. Today I want to illustrate the problem, discuss Wu et al.’s solution, and then show what changes <code>polysemy</code> makes to remove the boilerplate. In the process, we’ll look at finding free constructions for tricky typeclasses.</p>
+<h2 id="the-problem"><a href="#the-problem" class="header-link">The Problem<span class="header-link-emoji">🔗</span></a></h2>
+<p>Let’s consider the <code>Error e</code> effect, in which we’d like to be able to <code>throw</code> errors of type <code>e</code>, and <code>catch</code> any errors thrown within a specific block of code. You’re already familiar with this concept, in <code>transformers</code> it’s called <code>ExceptT e</code>, and in <code>mtl</code>, <code>MonadError e</code>. A typical usage of this effect might be:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>foo <span class="ot">=</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">catch</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">do</span>             <span class="co">-- computation to run</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      when (<span class="fu">not</span> someBool) <span class="op">$</span> throw <span class="dt">SomeError</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> <span class="dt">True</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    \<span class="dt">SomeError</span> <span class="ot">-&gt;</span>  <span class="co">-- error handler</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> <span class="dt">False</span></span></code></pre></div>
+<p>We would expect <code>foo</code> to be <code>pure False</code> whenever <code>someBool</code> is <code>False</code>; and vice versa. The idea is that a <code>throw</code> should short-circuit the rest of the computation, until it reaches the end of a <code>catch</code> statement. This is the basis of every exception system of all time, so we won’t belabor the example any further.</p>
+<p>Given some appropriate <code>m</code>, we’d like to model this problem with the following interface:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">throw ::</span> e <span class="ot">-&gt;</span> m a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">catch</span><span class="ot"> ::</span> m a <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> m a</span></code></pre></div>
+<p>In first-order effect systems such as <a href="http://hackage.haskell.org/package/freer-simple"><code>freer-simple</code></a>, our effects have kind <code>* -&gt; *</code>. With such a kind, we can easily model <code>throw</code>, but it’s less clear how to model <code>catch</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Error</span> e a <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Throw</span><span class="ot"> ::</span> e <span class="ot">-&gt;</span> <span class="dt">Error</span> e a</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span><span class="ot"> ::</span> <span class="op">??</span></span></code></pre></div>
+<p>We simply don’t have an <code>m</code> available to us in order to write something equivalent to <code>m a -&gt; (e -&gt; m a) -&gt; m a</code>. There are a few unsatisfactory solutions here — you can either choose a concrete <code>m</code> and bake it in (which defeats the <em>entire purpose</em> of effect systems), or you can attempt to encode <code>m</code> somewhere inside of the <code>Error e</code> part. Neither is fruitful.</p>
+<p><code>freer-simple</code> actually takes a pretty clever approach to this problem. Instead of modeling <code>catch</code> in the <code>Error e</code> effect, it just provides <code>catch</code> as a function:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">catch</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Member</span> (<span class="dt">Error</span> e) r</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Eff</span> r a</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">catch</span> ma f <span class="ot">=</span> <span class="co">-- replace every call to `throw e` in `ma` with `f e`</span></span></code></pre></div>
+<p>And what do you know, this solution actually works pretty well. It accurately captures the semantics of <code>catch</code> for <code>ExceptT</code>. Success! For most people, most of the time, this implementation of <code>catch</code> is perfectly fine.</p>
+<p>But let’s consider an interpretation of <code>Error e</code> which <em>isn’t</em> completely analogous to <code>ExceptT</code>. After all, the whole point of effect-systems is to be able to arbitrarily reinterpret the meaning of your programs. So let’s pretend that we’re writing an interpretation of the system which wants to audit the happy code path. As a result, we’d like to log whether or not we successfully got to the end of a <code>catch</code> block.</p>
+<p>In essence, we’d like to replace every call to <code>catch ma f</code> with:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>catch&#39; ma f <span class="ot">=</span> <span class="fu">catch</span> (ma <span class="op">&lt;*</span> logSuccessfulExit) f</span></code></pre></div>
+<p>meaning <code>logSuccessfulExit</code> will be called <em>if and only if</em> <code>ma</code> didn’t contain a <code>throw</code> statement.</p>
+<p>Unfortunately, the clever encoding of <code>catch</code> as a separate function <em>outside</em> of <code>Effect e</code> means that this interpretation of <code>catch</code> is impossible. The problem is fundamentally that by virtue of being outside the effect, <code>catch</code> must choose its own interpretation of catching effects, and you’re out of luck if its choice isn’t what you want.</p>
+<p>This is a bit of a contrived example, but it shows up every time you want to embed a computation; such as doing callbacks, coroutines, asynchronous work, or resource bracketing. It’s a <em>big</em> class of problems that quickly become untenable in the first-order world.</p>
+<h2 id="effect-handlers-in-scope"><a href="#effect-handlers-in-scope" class="header-link">Effect Handlers in Scope<span class="header-link-emoji">🔗</span></a></h2>
+<p><a href="https://www.cs.ox.ac.uk/people/nicolas.wu/papers/Scope.pdf">Wu et al. give us a real solution</a> for the problem above. Instead of modeling our effects with kind <code>* -&gt; *</code>, we give them a kind <code>(* -&gt; *) -&gt; * -&gt; *</code>. This extra <code>(* -&gt; *)</code> is enough to hold a monad in. As such, <code>Error e</code> is now modeled as:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Error</span> e m a <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Throw</span><span class="ot"> ::</span> e <span class="ot">-&gt;</span> <span class="dt">Error</span> e m a</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span><span class="ot"> ::</span> m a <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> <span class="dt">Error</span> e m a</span></code></pre></div>
+<p>This extra <code>m</code> parameter lets us write <code>Catch</code> as a constructor, meaning it is now part of the effect algebra. By writing clever constructors, we can force <code>m</code> to be the effect stack we’re running in:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">catch</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Member</span> (<span class="dt">Error</span> e) r</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Eff</span> r a <span class="ot">-&gt;</span> (e <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a) <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</span></code></pre></div>
+<p>which nicely ties the recursive knot.</p>
+<p>This change is pretty straightforward, and has probably occurred to most people who’ve spent any time playing around with the internals of first-order free monads. However, here is where the first problem sets in.</p>
+<p>Effect systems model interpretations of effects as functions. For example, lets’ assume we have a <code>State s</code> effect to play with. We can give an interpretation of it with the type:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">runState ::</span> s <span class="ot">-&gt;</span> <span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r (s, a)</span></code></pre></div>
+<p>In the first-order world, you can just have <code>runState</code> walk through every action in <code>Eff</code>, and handle the <code>State s</code> ones. In the higher-order world, however, we <em>also</em> need to run <code>runState</code> on all of the <em>embedded</em> computations (like <code>Catch</code>) as well — and then somehow merge the resulting side states back into the main thread.</p>
+<p>Recall above that we tied the recursive knot on <code>catch</code>, so that the <code>m</code> in <code>Error e m</code> was always equal to the actual <code>Eff</code> monad its being run in. By calling <code>runState</code>, we’re promising that that <code>m</code> is of the form <code>Eff (State s &#39;: r)</code>. But now we’re eliminating the <code>State s</code> effect, <em>and we want to maintain the invariant that <code>m</code> is the same monad.</em> Which means, we need to somehow use <code>runState</code> to eliminate the <code>State s</code> <em>inside of</em> <code>Catch</code>.</p>
+<p>It makes my head spin, too. English is not particularly good at describing these kinds of things, so pay attention to the types here:</p>
+<ol type="1">
+<li>We called <code>catch :: Eff r a -&gt; (e -&gt; Eff r0 a) -&gt; Eff r0 a</code> somewhere in our application code</li>
+<li>We then interpret the application via <code>runState :: s -&gt; Eff (State s &#39;: r1) a -&gt; Eff r1 (s, a)</code></li>
+<li>As such, we learn that <code>r0 ~ (State s &#39;: r1)</code></li>
+<li>After calling <code>runState</code>, we are left only with <code>r1</code> in our effect stack.</li>
+<li>But <code>catch</code> still contains <code>r0</code>. We need to transform it into <code>r1</code> to maintain our invariant that the computations embedded <em>inside</em> <code>catch</code> are in same monad as the call <em>to</em> <code>catch</code>.</li>
+</ol>
+<p>Doing such a thing is going to require a function:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>call&#39;runState&#39;InsideError</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> s</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)) a</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> r) (s, a)</span></code></pre></div>
+<p>which for reasons that will become clearer later, we will uncurry into:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>call&#39;runState&#39;InsideError</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (s, <span class="dt">Error</span> (<span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)) a)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> r) (s, a)</span></code></pre></div>
+<p>The implementation of this function is guided by the types, and looks like this:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>call&#39;runState&#39;InsideError</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (s, <span class="dt">Error</span> (<span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)) a)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> r) (s, a)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>call&#39;runState&#39;InsideError (_, <span class="dt">Throw</span> e) <span class="ot">=</span> <span class="dt">Throw</span> e</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>call&#39;runState&#39;InsideError (s, <span class="dt">Catch</span> ma f) <span class="ot">=</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span> (runState s ma)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        (\e <span class="ot">-&gt;</span> runState s <span class="op">$</span> f e)</span></code></pre></div>
+<p>Such an example is helpful for building intuition, but is completely infeasible in the real world. Not only do we need one of these functions for every effect inside of our stack, but we also need one for every interpretation of every effect in our stack! This is <code>O(m*n)</code> functions in the number of effects and interpretations we have.</p>
+<p>The insight of Wu et al. is that we can get this down to <code>O(n)</code> — one function analogous to <code>call&#39;runState&#39;InsideError</code> for each effect. Let’s go through the derivation together.</p>
+<p>The first thing to notice is that we don’t need to hard-code <code>runState</code> in <code>call&#39;runState&#39;InsideError&#39;</code>. It’s fine to just pass it in as a parameter:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>elimStateInsideError</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (<span class="kw">forall</span> x<span class="op">.</span> (s, <span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r) x) <span class="ot">-&gt;</span> <span class="dt">Eff</span> r (s, x))</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (s, <span class="dt">Error</span> (<span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)) a)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> r) (s, a)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>elimStateInsideError _ (_, <span class="dt">Throw</span> e) <span class="ot">=</span> <span class="dt">Throw</span> e</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>elimStateInsideError elimState (s, <span class="dt">Catch</span> ma f) <span class="ot">=</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span> (elimState (s, ma))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        (\e <span class="ot">-&gt;</span> elimState (s, f e))</span></code></pre></div>
+<p>Note that the <code>elimState</code> function must be rank-2 so that we can use it on every instance of <code>Catch</code> — there’s no guarantee that they’ll all be called to produce the same type.</p>
+<p>The next step is to notice that there’s a homomorphism here; we transforming a <code>(s, m a)</code> into <code>m&#39; (s, a)</code>, by somehow pushing the <code>(,) s</code> bit through the monad. We can make that a little more clear by explicitly factoring it out:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>elimStateInsideError</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (f <span class="op">~</span> ((,) s))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (<span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r) x) <span class="ot">-&gt;</span> <span class="dt">Eff</span> r (f x))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f (<span class="dt">Error</span> (<span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)) a)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> r) (f a)</span></code></pre></div>
+<p>This type is identical to before, we’ve just renamed <code>(,) s</code> to <code>f</code>. Let’s do the same renaming trick on <code>Eff (State s &#39;: r)</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>elimStateInsideError</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> ( f <span class="op">~</span> ((,) s)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>       , m <span class="op">~</span> <span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>       )</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> <span class="dt">Eff</span> r (f x))</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f (<span class="dt">Error</span> m a)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> (<span class="dt">Eff</span> r) (f a)</span></code></pre></div>
+<p>and then <em>again</em> on <code>Eff r</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>elimStateInsideError</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> ( f <span class="op">~</span> ((,) s)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>       , m <span class="op">~</span> <span class="dt">Eff</span> (<span class="dt">State</span> s &#39;<span class="op">:</span> r)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>       , n <span class="op">~</span> <span class="dt">Eff</span> r</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>       )</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f (<span class="dt">Error</span> m a)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> n (f a)</span></code></pre></div>
+<p>As it stands, our current implementation of <code>elimStateInsideError</code> will actually work for any <code>m</code> and <code>n</code>; so we can just get rid of those renames:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (f <span class="op">~</span> ((,) s))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f (<span class="dt">Error</span> m a)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> n (f a)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError _ (_, <span class="dt">Throw</span> e) <span class="ot">=</span> <span class="dt">Throw</span> e</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError elim (s, <span class="dt">Catch</span> ma f) <span class="ot">=</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span> (elim (s, ma))</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        (\e <span class="ot">-&gt;</span> elim (s, f e))</span></code></pre></div>
+<p>Let’s now <em>undo</em> our uncurrying of our <code>s -&gt; Error m a -&gt; ...</code> as <code>(s, Error m a) -&gt; ...</code>. But since we’ve renamed <code>s</code> away, we’re not allowed to reference it anymore. Instead, we can use <code>f ()</code>, aka <code>(s, ())</code>, which you’ll notice is isomorphic to <code>s</code>.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (f <span class="op">~</span> ((,) s))</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f ()</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> m a</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> n (f a)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError _ _ <span class="dt">Throw</span> e <span class="ot">=</span> <span class="dt">Throw</span> e</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError elim (s, ()) (<span class="dt">Catch</span> ma f) <span class="ot">=</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span> (elim (s, ma))</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        (\e <span class="ot">-&gt;</span> elim (s, f e))</span></code></pre></div>
+<p>As one last step, we can rewrite the explicit destructuring of the <code>f ()</code> parameter using its functor instance. Given the ice-cream cone function <code>(&lt;$) :: Functor f =&gt; a -&gt; f b -&gt; f a</code>, which replaces the contents of a functor, we can rewrite <code>elimEffectInsideError</code> as follows:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (f <span class="op">~</span> ((,) s))</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f ()</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> m a</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> n (f a)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError _ _ <span class="dt">Throw</span> e <span class="ot">=</span> <span class="dt">Throw</span> e</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError elim s (<span class="dt">Catch</span> ma f) <span class="ot">=</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Catch</span> (elim <span class="op">$</span> ma <span class="op">&lt;$</span> s)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        (\e <span class="ot">-&gt;</span> elim <span class="op">$</span> f e <span class="op">&lt;$</span> s)</span></code></pre></div>
+<p>and in doing so, are now fully functor-agnostic, so we can get rid of the <code>f</code>-renaming now:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>elimEffectInsideError</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Functor</span> f</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f ()</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> m a</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Error</span> n (f a)</span></code></pre></div>
+<p>That was a lot of work! But we’ve bought ourselves a huge amount with this. Now <code>elimEffectInsideError</code> is general enough that it supports eliminating <em>any</em> effect inside of <code>Error</code>. The last step is to wrap this thing up into a typeclass, which Wu et al. call <code>weave</code>:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> (∀ m<span class="op">.</span> <span class="dt">Functor</span> m <span class="ot">=&gt;</span> <span class="dt">Functor</span> (e m)) <span class="ot">=&gt;</span> <span class="dt">Effect</span> e <span class="kw">where</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  weave</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="ot">      ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> m, <span class="dt">Functor</span> n)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>      <span class="ot">=&gt;</span> f ()</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> (∀ x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> e m a</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> e n (f a)</span></code></pre></div>
+<p>Don’t worry about the extra mentions of <code>Functor</code> in this definition; they’re there for reasons we don’t care about today.</p>
+<p>By giving an instance of <code>Effect</code> for <code>e</code>, we can now thread any other effects <em>through</em> <code>e</code>. If we give an instance of <code>Effect</code> for every effect, we get higher-order effects that can be run through one another in any order. Happy days!</p>
+<p>This <code>weave</code> transformation is the major contribution of Effect Handlers in Scope. And while it does indeed solve the problem of higher-order effects, such a thing brings with it a lot of boilerplate; we need to write an instance of <code>Effect</code> for each of our effects, which is non-trivial and can’t be automated via today’s support for generics.</p>
+<h2 id="free-effects"><a href="#free-effects" class="header-link">Free Effects<span class="header-link-emoji">🔗</span></a></h2>
+<p>Back in the bad old days of <a href="http://hackage.haskell.org/package/free"><code>free</code></a>, we would have had to model the first-order version of <code>Error e</code> above (the one that just has <code>Throw</code>) as follows:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Error</span> e a <span class="ot">=</span> <span class="kw">forall</span> x<span class="op">.</span> <span class="dt">Throw</span> (x <span class="ot">-&gt;</span> a)</span></code></pre></div>
+<p>while <code>State s</code> would look like this:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">State</span> s a</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Get</span> (s <span class="ot">-&gt;</span> a)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">Put</span> s (() <span class="ot">-&gt;</span> a)</span></code></pre></div>
+<p>It’s gross, <em>and</em> you’d need to give <code>Functor</code> instances for both. <em>AND</em> you can’t even derive <code>Functor</code> for <code>Error e</code> due to the existential.</p>
+<p>The specifics here aren’t very important, but the point is that this was a bunch of boilerplate that got in the way of doing any work. The main contribution of Kiselyov and Ishii’s paper <a href="https://okmij.org/ftp/Haskell/extensible/more.pdf">Freer Monads, More Extensible Effects</a> is that we can use a <em>free functor</em> to automate away this boilerplate. The result is what puts the “simple” in <code>freer-simple</code><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>The free functor is called <a href="https://www.stackage.org/haddock/lts-13.23/kan-extensions-5.2/Data-Functor-Coyoneda.html"><code>Coyoneda</code></a><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, and it looks like this:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Coyoneda</span> f b <span class="kw">where</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Coyoneda</span><span class="ot"> ::</span> f a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> f b</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Coyoneda</span> f) <span class="kw">where</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> f&#39; (<span class="dt">Coyoneda</span> fa f) <span class="ot">=</span> <span class="dt">Coyoneda</span> fa (f&#39; <span class="op">.</span> f)</span></code></pre></div>
+<p>As you can see, <code>Coyoneda f</code> is a <code>Functor</code>, <em>even when <code>f</code> itself isn’t.</em> <code>Coyoneda</code> just accumulates all of the <code>fmap</code>s you wanted to do, and you can choose later what to do with the resulting function.</p>
+<p>This got me to thinking. Maybe there’s a free <code>Effect</code> that can likewise accumulate all of the <code>weave</code>ing we’d like to do, so that library users don’t need to write those instances themselves.</p>
+<p>The “trick” to making a free construction is to just make a datatype that stores each parameter to the characteristic function. In the <code>Functor</code> example, you’ll notice a similarity between the types of (flipped) <code>fmap</code> and <code>Coyoneda</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">flip</span><span class="ot"> fmap ::</span> f a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f b</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Coyoneda</span><span class="ot">  ::</span> f a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> f b</span></code></pre></div>
+<p>So let’s do the same thing, for <code>weave</code>, and construct an equivalent datatype. Recall the type of <code>weave</code>:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>weave</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> m, <span class="dt">Functor</span> n)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> f ()</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (∀ x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> e m a</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> e n (f a)</span></code></pre></div>
+<p>As a first attempt, let’s just turn this thing into a GADT and see what happens. I called it <code>Yo</code> a little because it’s sorta like <code>Coyoneda</code>, but mostly because naming things is hard.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Yo</span> e m a <span class="kw">where</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Yo</span><span class="ot"> ::</span> <span class="dt">Functor</span> f</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>     <span class="ot">=&gt;</span> e m a</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> f ()</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">Yo</span> e n (f a)</span></code></pre></div>
+<p>While this looks right, it turns out to be a no-go. We can’t actually give an instance of <code>Effect</code> for <code>Yo e</code>. We can get close, by realizing that the composition of any two functors is also a functor (given via the <code>Compose</code> newtype). With that in mind, it’s just a little work to make all of the types line up:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Effect</span> (<span class="dt">Yo</span> e) <span class="kw">where</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  weave s&#39; elim&#39; (<span class="dt">Yo</span> e s elim) <span class="ot">=</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Yo</span> e (<span class="dt">Compose</span> <span class="op">$</span> s <span class="op">&lt;$</span> s&#39;)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>         (<span class="fu">fmap</span> <span class="dt">Compose</span> <span class="op">.</span> elim&#39; <span class="op">.</span> <span class="fu">fmap</span> elim <span class="op">.</span> getCompose)</span></code></pre></div>
+<p>Unfortunately, this definition doesn’t quite work. The problem is that <code>weave s elim</code> is supposed to result in a <code>e m a -&gt; e n (f a)</code>, but ours has type <code>e m (g a) -&gt; e n (Compose f g a)</code>! By hard-coding that <code>f</code> into the result of our GADT, we’ve painted ourselves into a corner. Similar problems would crop up if we wanted to give a <code>Functor</code> instance to <code>Yo e m</code>.</p>
+<p>As is so often the case in this line of work, the solution is to make <code>f</code> existential, and to take another function which is responsible for producing the desired type. We add a <code>(f a -&gt; b)</code> parameter to <code>Yo</code>, and make it return <code>Yo e n b</code>:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Yo</span> e m a <span class="kw">where</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Yo</span><span class="ot"> ::</span> <span class="dt">Functor</span> f</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>     <span class="ot">=&gt;</span> e m a</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> f ()</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f (m x) <span class="ot">-&gt;</span> n (f x))</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> (f a <span class="ot">-&gt;</span> b)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">Yo</span> e n b</span></code></pre></div>
+<p>We can now call <code>getCompose</code> in this last function — in order to undo our trick of packing the two pieces of state together.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Effect</span> (<span class="dt">Yo</span> e) <span class="kw">where</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  weave s&#39; elim&#39; (<span class="dt">Yo</span> e s elim f) <span class="ot">=</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Yo</span> e (<span class="dt">Compose</span> <span class="op">$</span> s <span class="op">&lt;$</span> s&#39;)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>         (<span class="fu">fmap</span> <span class="dt">Compose</span> <span class="op">.</span> elim&#39; <span class="op">.</span> <span class="fu">fmap</span> elim <span class="op">.</span> getCompose)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>         (<span class="fu">fmap</span> f <span class="op">.</span> getCompose)</span></code></pre></div>
+<p>Giving an instance of <code>Functor (Yo e m)</code> can also riff on this final parameter, exactly in the same way that <code>Coyoneda</code> did:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Yo</span> e m) <span class="kw">where</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> f&#39; (<span class="dt">Yo</span> e s elim f) <span class="ot">=</span> <span class="dt">Yo</span> e s elim (f&#39; <span class="op">.</span> f)</span></code></pre></div>
+<p>(The real implementation also needs <code>hoist :: (forall x. m x -&gt; n x) -&gt; e m a -&gt; e n a</code>, which turns out to be a special case of <code>weave</code>. This is left as an exercise for the ambitious reader.)</p>
+<p>All that’s left is be able to lift <code>e m a</code>s into <code>Yo e m a</code>s. In every free construction I’ve ever seen, this operation is to just fill all of your parameters with identity — and this case is no different!</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="ot">liftYo ::</span> <span class="dt">Functor</span> m <span class="ot">=&gt;</span> e m a <span class="ot">-&gt;</span> <span class="dt">Yo</span> e m a</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>liftYo e <span class="ot">=</span> <span class="dt">Yo</span> e (<span class="dt">Identity</span> ()) (<span class="fu">fmap</span> <span class="dt">Identity</span> <span class="op">.</span> runIdentity) runIdentity</span></code></pre></div>
+<p>We’re done! This funny <code>Yo</code> construction is powerful enough to coalesce entire chains of effect interpreters into a single call. We haven’t done anything magical here — someone still needs to figure out what these functions actually mean for their interpretation. By collecting it all into a single place, we can cut down on boilerplate and find easier ways to express these concepts to the end-user.</p>
+<p>But that’s a tale for another time, when we talk about <code>polysemy</code>’s <code>Tactics</code> machinery.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Plus, it provides better combinators and more helpful error messages.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>For further discussion of <code>Coyoneda</code> and how it can help performance, perhaps you might be interested in <a href="https://thinkingwithtypes.com/">my book</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js" repo="isovector/reasonablypolymorphic.com" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br />POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I&#39;m <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I&#39;d love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I&#39;M DOING</h2>
+        <ul>
+            <!-- <li><a href="/erdos">Erdos Project</a></li> -->
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <!-- <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li> -->
+        </ul>
+    
+        <p>
+        © 2015-2023 Sandy Maguire
+        </p>
+    </nav>
+
+    <!--
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+    -->
+</body>
+</html>
+
