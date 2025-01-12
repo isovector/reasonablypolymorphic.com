@@ -5,29 +5,29 @@
 
 packages:
 - completed:
-    hackage: datetime-0.3.1@sha256:7e275bd0ce7a2f66445bedfa0006abaf4d41af4c2204c3f8004c17eab5480e74,1534
+    hackage: sitepipe-0.4.0.2@sha256:8ddcda190134541ae0de47634f8b2b4d9c61e4756f4e314983de220b10e5bd9f,1461
     pantry-tree:
-      size: 334
-      sha256: d41d182c143676464cb1774f0b7777e870ddeaf8b6cd5fee6ff0114997a1f504
-  original:
-    hackage: datetime-0.3.1
-- completed:
-    hackage: sitepipe-0.4.0.1@sha256:5fc6cda5c34b68900d4dcbc4c69a812419d33aefe89705918f048ae16823afad,1470
-    pantry-tree:
+      sha256: 2870475c71869f85adf775aacb939ccd027799978e6727efed78d633285d0343
       size: 702
-      sha256: b96e437558da5a86e03650a434e4d516fbf8f1345b5a59655b7fa80c4f07222f
   original:
-    hackage: sitepipe-0.4.0.1
+    hackage: sitepipe-0.4.0.2
 - completed:
     hackage: strptime-1.0.10@sha256:f7f0c3ffedbedbfebc4ce77e0015b4ad879d79dffe11a747da7a304900b09d13,1156
     pantry-tree:
-      size: 331
       sha256: fb752cf40a8ac7ac9f6590b93d37b9ad9f3b4252d04f237b9e9f201226c8004b
+      size: 331
   original:
     hackage: strptime-1.0.10
+- completed:
+    hackage: MissingH-1.6.0.1@sha256:4e2cb9fd4eff3616ada0ac8aea2b1af49ae7cfac09f0426753c6a1fcb51e9d01,4697
+    pantry-tree:
+      sha256: 84ab88c326a6b678c277cb184e0bacc37145a1363e5eb20b746c8d66c80d1a3d
+      size: 5272
+  original:
+    hackage: MissingH-1.6.0.1
 snapshots:
 - completed:
-    size: 531237
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/0.yaml
-    sha256: 210e15b7043e2783115afe16b0d54914b1611cdaa73f3ca3ca7f8e0847ff54e5
-  original: lts-16.0
+    sha256: cdead65fca0323144b346c94286186f4969bf85594d649c49c7557295675d8a5
+    size: 586286
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/16.yaml
+  original: lts-18.16
