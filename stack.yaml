@@ -8,3 +8,8 @@ extra-deps:
 - strptime-1.0.10
 
 resolver: lts-16.0
+
+nix:
+  packages:
+    - pkg-config
+    - zlib

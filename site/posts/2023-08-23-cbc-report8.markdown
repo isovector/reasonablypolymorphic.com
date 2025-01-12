@@ -1,0 +1,49 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 8"
+date: 2023-08-23 21:00
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+Eight days away from my deadline. How's it going? Hectic.
+
+I've been in a flurry of editing for the last two weeks. As of right now, I'm
+currently editing page 138/252. At this rate, it's not looking promising, but I
+did just buy a flat of Red Bull, so you never know.
+
+Besides editing, what's new? Lots of minor typesetting stuff, like which
+paragraphs should be indented. I also did a pass through all the Agda modules
+with their new, final names, in easy searchable format. Along with that, the end
+of each chapter now has an explicit export list, which subsequent chapters
+import (rather than getting it from the stdlib.) This means you can see at a
+glance whether a chapter has prerequisites you need to read first! Minor stuff,
+but Nintendo polish nevertheless.
+
+I had to rewrite a good chunk of chapter 2, and a lot of the prose in chapter 3
+is from a very early edition of the book, and doesn't have the shine as the rest
+of it. So that's getting reworked too. My hope is that the later chapters were
+written more recently, and therefore will require less elbow grease. It's
+plausible, and would be greatly appreciated. But I fear that the setoids chapter
+needs a lot of work, and I'm just trying my best to ignore it. For now.
+
+In other news, I'm now uploading nightly builds to [Leanpub][cbc] in order to
+keep myself honest. There's no indication of which half of the book has been
+edited and which hasn't, but that seems like a good idea I should adopt for the
+next build. That way particularly dedicated readers could follow along and see
+just how quickly I can get material cleaned up. And it will prevent me from
+accidentally forgetting where I was and re-editing it all again. Which has
+happened several times, somehow.
+
+Okay that's enough of an update. Back to the grind. Love y'all.
+

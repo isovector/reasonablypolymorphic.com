@@ -1,0 +1,58 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 4"
+date: 2023-06-16 00:00
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+I landed a two-week long gig three weeks ago, and that ate up my time for a
+little bit. But I'm back in action, significantly richer, and much more inspired
+to be working on Certainty by Construction again.
+
+The end is finally in sight. This week I tore apart the modular arithmetic stuff
+from the material on setoids, realizing that the two were unrelated. I'd been
+having a lot of trouble getting that chapter sorted out, and it's because it
+shouldn't have been a chapter after all.
+
+Instead, I've been working on merging the stuff about monoids and monoid
+homomorphisms into the setoid chapter, which is a much better motivation for
+setoids when you realize you can't write many of the monoids you'd like to be
+able to. If I can fit lattices into there as well, I'll be a very happy man.
+
+Also this week I worked on some typesetting things. In particular, you'll notice
+a gutter indicator on every code block telling you exactly where the code block
+should be indented relative to the file. This is a big improvement from before
+when you just had to guess, but I'm not yet *happy* with it. Please give it a
+read and let me know if you like the change, or what might be better.
+
+Additionally I spent a *lot* of time making sure every code block had good
+vertical alignment of its code elements. That means all the equals signs should
+line up, and that the same argument is always in the same column, no matter how
+many patterns you've already matched. It's not the sort of thing you'd notice,
+but it's certainly the sort of thing whose *absence* you'd notice.
+
+I'm committing to a hard deadline for this book of *September 1, 2023.* The
+thing is going to be finished and off to the printers by that day, because I
+want to have it done before I'm married, and that is coming up soon. And also, I
+work much better with a deadline.
+
+---
+
+Anyway, that's all for today. If you've already bought the book, you can get the
+updates for free on [Leanpub][cbc]. If you haven't, might I suggest doing so?
+Your early support and feedback helps inspire me and ensure the book is as good
+as it can possibly be.
+
+
+
