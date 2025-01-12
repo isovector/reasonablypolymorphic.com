@@ -73,23 +73,23 @@
 <p>Since writing the first draft of this game engine, I’ve published a library called <a href="https://github.com/isovector/ecstasy"><code>ecstasy</code></a>. It’s an entity-component system that allows you to describe behaviors over components of things, and then compose all of those behaviors together. The magic here is that you can write a function that only manipulates the components you need, and the library will lift it over all entities such a behavior would be relevant to. This means you can pick-and-choose different behaviors for game objects without needing to do a lot of heavy plumbing to get everything to play nicely with one another.</p>
 <p>And so the next step was to hook up <code>ecstasy</code> to my existing engine. I didn’t want to alter any of the game’s behavior yet, so entities managed by <code>ecstasy</code> would have to exist completely parallel to the ones managed by the existing engine.</p>
 <p>I defined my <code>ecstasy</code> component type with the most minimal support for drawing things on the screen.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">EntWorld</span> f <span class="ot">=</span> <span class="dt">Entity</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  {<span class="ot"> pos      ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">Pos</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  ,<span class="ot"> gfx      ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">Picture</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>} <span class="kw">deriving</span> (<span class="dt">Generic</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">EntWorld</span> f <span class="ot">=</span> <span class="dt">Entity</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> pos      ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">Pos</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> gfx      ::</span> <span class="dt">Component</span> f <span class="dt">&#39;Field</span> <span class="dt">Picture</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>} <span class="kw">deriving</span> (<span class="dt">Generic</span>)</span></code></pre></div>
 <p>and then updated my drawing routine to find any <code>Entity</code> who had both a <code>pos</code> and a <code>gfx</code> and then hook it into the existing drawing stuff:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">drawGame ::</span> <span class="dt">MyState</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Picture</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>drawGame ms<span class="op">@</span>(s, _) <span class="ot">=</span> evalGame&#39; ms <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  gfxs <span class="ot">&lt;-</span> efor <span class="op">.</span> <span class="fu">const</span> <span class="op">$</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    (,) <span class="op">&lt;$&gt;</span> get pos <span class="op">&lt;*&gt;</span> get gfx</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>  <span class="fu">pure</span> <span class="op">.</span> scaleToView s</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>       <span class="op">.</span> <span class="fu">uncurry</span> translate (<span class="op">-</span>camera)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>       <span class="op">.</span> pictures</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>       <span class="op">$</span> roomPic</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>       <span class="op">:</span> [ drawActors actors</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>         , drawGfxs gfxs</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>         ]</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">drawGame ::</span> <span class="dt">MyState</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Picture</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>drawGame ms<span class="op">@</span>(s, _) <span class="ot">=</span> evalGame&#39; ms <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  gfxs <span class="ot">&lt;-</span> efor <span class="op">.</span> <span class="fu">const</span> <span class="op">$</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    (,) <span class="op">&lt;$&gt;</span> get pos <span class="op">&lt;*&gt;</span> get gfx</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">.</span> scaleToView s</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>       <span class="op">.</span> <span class="fu">uncurry</span> translate (<span class="op">-</span>camera)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>       <span class="op">.</span> pictures</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>       <span class="op">$</span> roomPic</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>       <span class="op">:</span> [ drawActors actors</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>         , drawGfxs gfxs</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>         ]</span></code></pre></div>
 <p>There was some silly plumbing necessary to connect my old, convoluted <code>Game</code> monad with the <code>System</code> monad provided by <code>ecstasy</code>. That’s what this <code>ms@(s, _)</code> and <code>Game'</code> silliness is here; little shims that can run the two monads simultaneously and reconcile the results. It was pretty gnarly, but thankfully only a hack until I could convert enough of the game logic over to being exclusively managed by <code>ecstasy</code>.</p>
 <p>I think that’s where we’ll leave the dev blog for today. I want to get us roughly caught up to the present in terms of getting from there-to-here in order to provide a better overall view of what game development in Haskell looks like. But I’m also pretty anxious to actually get some work done, rather than just describing work I have done. I expect the posts to get more technical as we get closer to being caught up, when I don’t need to depend on my memory for what changes were made.</p>
 <p>Next time we’ll discuss ripping out most of the silly global variables that used to be in play, and talk about how an ECS better models things like “what should the camera be focused on?” and “how should characters navigate the space?”</p>
@@ -149,7 +149,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

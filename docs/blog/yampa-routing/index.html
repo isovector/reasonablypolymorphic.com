@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>FRP in Yampa: Part 4: Routing :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/yampa-routing">FRP in Yampa: Part 4: Routing</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/yampa-switching">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/jj-strategy">&rarr;</a>
+    </span>
+    <time>December 26, 2023</time>
+
+    <span class="tags">
+        <a href="/tags/FRP.html">FRP</a>, <a href="/tags/yampa.html">yampa</a>, <a href="/tags/haskell.html">haskell</a>, <a href="/tags/technical.html">technical</a>, <a href="/tags/programming.html">programming</a>, <a href="/tags/gamedev.html">gamedev</a>
+    </span>
+</p>
+<div class="content">
+    <p>In the <a href="/blog/yampa-switching/">last post</a>, we investigated the <code>switch</code> combinator, and saw how it can give us the ability to work with “state machine”-sorts of things in our functionally reactive programs.</p>
+<p>Today we turn our attention towards game objects—that is, independently operating entities inside of the game, capable of behaving on their own and communicating with one another. I originally learned of this technique from the paper <a href="https://www.antonycourtney.com/pubs/hw03.pdf">The Yampa Arcade</a>, but haven’t looked at it in a few years, so any shortcomings here are my own.</p>
+<p>Nevertheless, the material presented here does in fact work—I’ve actually <a href="https://github.com/isovector/ld52/releases/tag/publish">shipped a game</a> using this exact technique!</p>
+<h2 id="game-objects">Game Objects</h2>
+<p>Before we dive into the Yampa, it’s worth taking some time to think about what it is we’re actually trying to accomplish. There are a series of constraints necessary to get everything working, and we’ll learn a lot about the problem domain by solving those constraints simultaneously.</p>
+<p>The problem: we’d like several <code>Object</code>s running around, which we’d like to program independently, but which behave compositionally. There are going to be a lot of moving pieces here—not only in our game, but also in our solution—so let’s take a moment to define a type synonym for ourselves:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Object</span> <span class="ot">=</span> <span class="dt">SF</span> <span class="dt">ObjectInput</span> <span class="dt">ObjectOutput</span></span></code></pre></div>
+<p>Of course, we haven’t yet defined <code>ObjectInput</code> or <code>ObjectOutput</code>, but that’s OK! They will be subject to a boatload of constraints, so we’ll sort them out as we go. At the very least, we will need the ability for an <code>Object</code> to render itself, so we can add a <code>Render</code> field:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render ::</span> <span class="dt">Render</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  , <span class="op">...</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>We would like <code>Object</code>s to be able to interact with one another. The usual functional approach to this problem is to use message passing—that is, <code>Object</code>s can send values of some message type to one another. Those messages could be things like “I shot you!” or “teleport to me,” or any sort of crazy game-specific behavior you’d like.</p>
+<p>In order to do this, we’ll need some sort of <code>Name</code> for each <code>Object</code>. The exact structure of this type depends on your game. For the purposes of this post we’ll leave the thing abstract:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Name</span> <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
+<p>We’ll also need a <code>Message</code> type, which again we leave abstract:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Message</span> <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
+<p>Sending messages is clearly an <em>output</em> of the <code>Object</code>, so we will add them to <code>ObjectOutput</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render ::</span> <span class="dt">Render</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_outbox ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  , <span class="op">...</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>There are actions we’d like to perform in the world which are not messages we want to send to anyone; particularly things like “kill my <code>Object</code>” or “start a new <code>Object</code>.” These two are particularly important, but you could imagine updating global game state or something else here.</p>
+<pre class="haskel"><code>data Command
+  = Die
+  | Spawn Name ObjectState Object
+  | ...</code></pre>
+<p>Commands are also outputs:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render   ::</span> <span class="dt">Render</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_outbox   ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_commands ::</span> [<span class="dt">Command</span>]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  , <span class="op">...</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>Finally, it’s often helpful to have some common pieces of state that belong to all <code>Object</code>s—things like their current position, and hot boxes, and anything else that might make sense to track in your game. We’ll leave this abstract:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjecState</span> <span class="ot">=</span> <span class="op">...</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render   ::</span> <span class="dt">Render</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_outbox   ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_commands ::</span> [<span class="dt">Command</span>]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_state    ::</span> <span class="dt">ObjectState</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>Let’s turn our attention now to the input side. It’s pretty clear we’re going to want incoming messages, and our current state:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectInput</span> <span class="ot">=</span> <span class="dt">ObjectInput</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oi_inbox ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oi_state ::</span> <span class="dt">ObjectState</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>What’s more interesting, however, than knowing our own state is knowing everyone’s state. Once we have that, we can re-derive <code>oi_state</code> if we know our own <code>Name</code>. Thus, instead:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectInput</span> <span class="ot">=</span> <span class="dt">ObjectInput</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oi_inbox    ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oi_me       ::</span> <span class="dt">Name</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oi_everyone ::</span> <span class="dt">Map</span> <span class="dt">Name</span> <span class="dt">ObjectState</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ot">oi_state ::</span> <span class="dt">ObjectInput</span> <span class="ot">-&gt;</span> <span class="dt">ObjectState</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>oi_state oi</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=</span> fromMaybe (<span class="fu">error</span> <span class="st">&quot;impossible!&quot;</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> Data.Map.lookup (oi_me oi)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> oi_everyone oi</span></code></pre></div>
+<h2 id="parallel-switching">Parallel Switching</h2>
+<p>Armed with our input and output types, we need now figure out how to implement any of this. The relevant combinator is Yampa’s <code>pSwitch</code>, with the ridiculous type:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pSwitch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Functor</span> col</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=&gt;</span> (<span class="kw">forall</span> sf<span class="op">.</span> gi <span class="ot">-&gt;</span> col sf <span class="ot">-&gt;</span> col (li, sf))</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> col (<span class="dt">SF</span> li o)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> (gi, col o) (<span class="dt">Event</span> e)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (col (<span class="dt">SF</span> li o) <span class="ot">-&gt;</span> e <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col o))</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col o)</span></code></pre></div>
+<p>Yes, there are five type variables here (six, if you include the rank-2 type.) In order, they are:</p>
+<ol type="1">
+<li><code>col</code>: the data structure we’d like to store everything in</li>
+<li><code>gi</code>: the <em>global</em> input, fed to the eventual signal</li>
+<li><code>li</code>: the <em>local</em> input, fed to each object</li>
+<li><code>o</code>: the output of each object signal</li>
+<li><code>e</code>: the type we will use to articulate desired changes to the world</li>
+</ol>
+<p>Big scary types like these are an excellent opportunity to turn on <code>-XTypeApplications</code>, and explicitly fill out the type parameters. From our work earlier, we know the types of <code>li</code> and <code>o</code>—they ought to be <code>ObjectInput</code> and <code>ObjectOutput</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pSwitch <span class="op">@</span>_</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>_</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectInput</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectOutput</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>_</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Functor</span> col</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=&gt;</span> (<span class="kw">forall</span> sf<span class="op">.</span> gi <span class="ot">-&gt;</span> col sf <span class="ot">-&gt;</span> col (<span class="dt">ObjectInput</span>, sf))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> col (<span class="dt">SF</span> <span class="dt">ObjectInput</span> <span class="dt">ObjectOutput</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> (gi, col <span class="dt">ObjectOutput</span>) (<span class="dt">Event</span> e)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (col (<span class="dt">SF</span> <span class="dt">ObjectInput</span> <span class="dt">ObjectOutput</span>) <span class="ot">-&gt;</span> e <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col <span class="dt">ObjectOutput</span>))</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col <span class="dt">ObjectOutput</span>)</span></code></pre></div>
+<p>It’s a little clearer what’s going on here. We can split it up by its four parameters:</p>
+<ol type="1">
+<li>The first (value) parameter is this rank-2 function which is responsible for splitting the global input into a local input for each object.</li>
+<li>The second parameter is the collection of starting objects.</li>
+<li>The third parameter extracts the desired changes from the collection of outputs</li>
+<li>The final parameter applies the desired changes, resulting in a new signal of collections.</li>
+</ol>
+<p>We are left with a few decisions, the big ones are: what should <code>col</code> be, and what should <code>e</code> be? My answer for the first is:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectMap</span> a <span class="ot">=</span> <span class="dt">ObjectMap</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> om_objects  ::</span> <span class="dt">Map</span> <span class="dt">Name</span> (<span class="dt">ObjectState</span>, a)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> om_messages ::</span> <span class="dt">MonoidalMap</span> <span class="dt">Name</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Functor</span></span></code></pre></div>
+<p>which not only conveniently associates names with their corresponding objects and states, but also keeps track of the messages which haven’t yet been delivered. We’ll investigate this further momentarily.</p>
+<p>For maximum switching power, we can therefore make our event type be <code>ObjectMap Object -&gt; ObjectMap Object</code>. Filling all the types in, we get:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>_</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectInput</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectOutput</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> (<span class="kw">forall</span> sf<span class="op">.</span> gi <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> sf <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> (<span class="dt">ObjectInput</span>, sf))</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> (gi, <span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        (<span class="dt">Event</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>))</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> ( <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>     )</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span></code></pre></div>
+<p>which is something that feels almost reasonable. Let’s write a function that calls <code>pSwitch</code> at these types. Thankfully, we can immediately fill in two of these parameters:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>router</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>router objs <span class="ot">=</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>_</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectInput</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectOutput</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    _</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    objs</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    _</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    (\om f <span class="ot">-&gt;</span> router&#39; <span class="op">$</span> (f om) { om_messages <span class="ot">=</span> <span class="fu">mempty</span> })</span></code></pre></div>
+<p>We are left with two holes: one which constructs <code>ObjectInput</code>s, the other which destructs <code>ObjectOutput</code>s. The first is simple enough:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">routeInput ::</span> gi <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> sf <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> (<span class="dt">ObjectInput</span>, sf)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>routeInput gi om<span class="op">@</span>(<span class="dt">ObjectMap</span> objs msgs) <span class="ot">=</span> om</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  { om_objects <span class="ot">=</span> <span class="fu">flip</span> Data.Map.mapWithKey objs <span class="op">$</span> \name (_, sf) <span class="ot">-&gt;</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      (, sf) <span class="op">$</span> <span class="dt">ObjectInput</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        { oi_inbox    <span class="ot">=</span> fromMaybe <span class="fu">mempty</span> <span class="op">$</span> Data.MonoidalMap.lookup name msgs</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        , oi_me       <span class="ot">=</span> name</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        , oi_everyone <span class="ot">=</span> <span class="fu">fmap</span> <span class="fu">fst</span> objs</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>Writing <code>decodeOutput</code> is a little more work—we need to accumulate every change that <code>ObjectOutput</code> might want to enact:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeOutput ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">ObjectOutput</span> <span class="ot">-&gt;</span> <span class="dt">Endo</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>decodeOutput from (<span class="dt">ObjectOutput</span> _ msgs cmds _) <span class="ot">=</span> <span class="fu">mconcat</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  [ <span class="fu">flip</span> <span class="fu">foldMap</span> msgs <span class="op">$</span> <span class="fu">uncurry</span> <span class="op">$</span> send from</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  , <span class="fu">flip</span> <span class="fu">foldMap</span> cmds <span class="op">$</span> decodeCommand from</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="ot">send ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Message</span> <span class="ot">-&gt;</span> <span class="dt">Endo</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>send from to msg</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Endo</span> <span class="op">$</span> <span class="op">#</span>om_messages <span class="op">&lt;&gt;~</span> Data.MonoidalMap.singleton to [(from, msg)]</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeCommand ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Command</span> <span class="ot">-&gt;</span> <span class="dt">Endo</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>decodeCommand _ (<span class="dt">Spawn</span> name st obj)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Endo</span> <span class="op">$</span> <span class="op">#</span>om_objects <span class="op">.</span> at name <span class="op">?~</span> (st, obj)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>decodeCommand who <span class="dt">Die</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Endo</span> <span class="op">$</span> <span class="op">#</span>om_objects <span class="op">%~</span> Data.Map.delete who</span></code></pre></div>
+<p>There’s quite a lot going on here. Rather than dealing with <code>ObjectMap Object -&gt; ObjectMap Object</code> directly, we instead work with <code>Endo (ObjectMap Object)</code> which gives us a nice monoid for combining endomorphisms. Then by exploiting <code>mconcat</code> and <code>foldMap</code>, we can split up all of the work of building the total transformation into pieces. Then <code>send</code> handles sending a message from one object to another, while also <code>decodeCommand</code> transforms each <code>Command</code> into an endomap.</p>
+<p>We can tie everything together:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>router</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>router objs <span class="ot">=</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>_</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectInput</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectOutput</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    routeInput</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    objs</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    (arr <span class="op">$</span> <span class="dt">Event</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> appEndo</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">foldMap</span> (<span class="fu">uncurry</span> decodeOutput)</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> Data.Map.assocs</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> om_objects</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">snd</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>         )</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    (\om f <span class="ot">-&gt;</span> router&#39; <span class="op">$</span> (f om) { om_messages <span class="ot">=</span> <span class="fu">mempty</span> })</span></code></pre></div>
+<p>Notice that we’ve again done the monoid trick to run <code>decodeOutput</code> on every output in the <code>ObjectMap</code>. If you’re not already on the monoid bandwagon, hopefully this point will help to change your mind about that!</p>
+<p>So our router is finally done! Except not quite. For some reason I don’t understand, <code>pSwitch</code> is capable of <em>immediately</em> switching if the <code>Event</code> you generate for <code>decodeOutput</code> immediately fires. This makes sense, but means Yampa will happily get itself into an infinite loop. The solution is to delay the event by an infinitesimal amount:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>router</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>router objs <span class="ot">=</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>_</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectInput</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectOutput</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    routeInput</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    objs</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    ((arr <span class="op">$</span> <span class="dt">Event</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> appEndo</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">foldMap</span> (<span class="fu">uncurry</span> decodeOutput)</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> Data.Map.assocs</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> om_objects</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">snd</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>         ) <span class="op">&gt;&gt;&gt;</span> notYet)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    (\om f <span class="ot">-&gt;</span> router&#39; <span class="op">$</span> (f om) { om_messages <span class="ot">=</span> <span class="fu">mempty</span> })</span></code></pre></div>
+<p>There’s probably a more elegant solution to this problem, and if you know it, please do get in touch!</p>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>Today we saw how to use the <code>pSwitch</code> combinator in order to build a router capable of managing independent objects, implementing message passing between them in the process.</p>
+<p>You should now have enough knowledge of Yampa to get real tasks done, although if I’m feeling inspired, I might write one more post on integrating a Yampa stream into your <code>main</code> function, and doing all the annoying boilerplate like setting up a game window. Maybe! Watch this space for updates!</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/yampa-switching">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/jj-strategy">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

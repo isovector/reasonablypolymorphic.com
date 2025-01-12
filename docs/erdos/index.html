@@ -117,11 +117,11 @@
       <p>Jan and I spent a lot of time chatting about row types; he showed me his new implementation in GHC and I asked lots of stupid questions about it. Together, we worked on some patches to GHC's custom <code>TypeError</code> machinery. The <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/1730">first of which</a> only emits custom type errors when they're derived constraints, rather than the givens that cause excessively loud errors today.</p>
 <p><a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/1739">The second</a> was to add a priority to type errors. Today, whenever a custom type error shows up, it completely erases legitimate errors from GHC. That means an insoluble type equality (eg. asking for <code>String ~ Bool</code>) will get swallowed up by a custom type error that happens at the same time. It's never helpful, and means type errors are often <em>actively unhelpful.</em></p>
 <p>But GHC already produces two error reports --- the first is for really bad errors that happen (insoluble type equalities), and the second is for other things it would like to comment on. Notably, the second report doesn't show up if the first one happened. Jan and my work was to expose this to the type errors API:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">ErrorPriorty</span> <span class="ot">=</span> <span class="dt">HighPriority</span> <span class="op">|</span> <span class="dt">LowPriority</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">TypeErrorPriorty</span> (<span class="ot">priority ::</span> <span class="dt">ErrorPriority</span>) (<span class="ot">msg ::</span> <span class="dt">ErrorMessage</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">TypeError</span> a <span class="ot">=</span> <span class="dt">TypeErrorPriority</span> <span class="dt">&#39;HighPriority</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ErrorPriorty</span> <span class="ot">=</span> <span class="dt">HighPriority</span> <span class="op">|</span> <span class="dt">LowPriority</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">TypeErrorPriorty</span> (<span class="ot">priority ::</span> <span class="dt">ErrorPriority</span>) (<span class="ot">msg ::</span> <span class="dt">ErrorMessage</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">TypeError</span> a <span class="ot">=</span> <span class="dt">TypeErrorPriority</span> <span class="dt">&#39;HighPriority</span> a</span></code></pre></div>
 <p>This change is completely backwards compatible with <code>TypeError</code>s as they're used today, but means we can now selectively control when a type error should be emitted. Nice!</p>
 <p>Besides all of the great Haskell-ing, Jan and his roommates turned out to be some of the smartest, kindest and most fun people I've had the pleasure to ever meet. They invited me to their band practice, we saw some break dancing competitions, and ate an aggressive amount of traditional Bavarian food. Thanks everyone, I love you all!</p>
     <h1>Vancouver, Canada</h1>
@@ -159,16 +159,16 @@
 <p>God am I ever excited for unsaturated type families.</p>
 <p>Anyway, such a refactor was an exceptionally breaking change. Literally every module we had assumed your code was written in the direct-HKD style. A few extra typeclass instances helped:</p>
 <p>Assuming you have <code>class GSomething (rep :: * -&gt; *)</code>, with instances for <code>GHC.Generics</code>, we found that if you separate the structural bits (<code>M1</code>, <code>:*:</code>, <code>:+:</code>, eg.) from the interesting pieces (<code>K1</code>), everything becomes much easier. We introduced a second typeclass for the <code>K1</code> contents, and then implemented the structural bit in terms of it:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">GSomethingTerm</span> (<span class="ot">t ::</span> <span class="op">*</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">GSomethingTerm</span> t <span class="ot">=&gt;</span> <span class="dt">GSomething</span> (<span class="dt">K1</span> _1 t) <span class="kw">where</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  gSomething <span class="ot">=</span> <span class="dt">K1</span> gSomethingTerm</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">GSomethingTerm</span> (<span class="ot">t ::</span> <span class="op">*</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">GSomethingTerm</span> t <span class="ot">=&gt;</span> <span class="dt">GSomething</span> (<span class="dt">K1</span> _1 t) <span class="kw">where</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  gSomething <span class="ot">=</span> <span class="dt">K1</span> gSomethingTerm</span></code></pre></div>
 <p>This separation allows you to easily inject the <code>higgledy</code>-style HKD logic into a more traditional approach. You need to add two additional cases of <code>GSomethingTerm</code>. The first is:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">GSomethingTerm</span> (<span class="dt">Magic</span> a) <span class="ot">=&gt;</span> <span class="dt">GSomethingTerm</span> (<span class="dt">ToTypeFam</span> a) <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  gSomethingTerm <span class="ot">=</span> <span class="dt">ToTypeFam</span> gSomethingTerm</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">GSomethingTerm</span> (<span class="dt">Magic</span> a) <span class="ot">=&gt;</span> <span class="dt">GSomethingTerm</span> (<span class="dt">ToTypeFam</span> a) <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  gSomethingTerm <span class="ot">=</span> <span class="dt">ToTypeFam</span> gSomethingTerm</span></code></pre></div>
 <p>which expands your type family's instance. The second is:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">GSomething</span> (<span class="dt">M1</span> _1 _2 _3) <span class="ot">=&gt;</span> <span class="dt">GSomethingTerm</span> (<span class="dt">M1</span> _1 _2 _3 _4) <span class="kw">where</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  gSomethingTerm <span class="ot">=</span> gSomething</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">GSomething</span> (<span class="dt">M1</span> _1 _2 _3) <span class="ot">=&gt;</span> <span class="dt">GSomethingTerm</span> (<span class="dt">M1</span> _1 _2 _3 _4) <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  gSomethingTerm <span class="ot">=</span> gSomething</span></code></pre></div>
 <p>which ties the recursive knot, connecting the <code>GHC.Generics</code>-based representation of <code>higgledy</code> back into the original generics instances you wrote for the traditional HKD style.</p>
 <p>It's crazy, but amazingly, it works. I don't even want to think about how much work we're making the compiler do in Weft.</p>
 <p>Enough shop talk. Jonathan also took me to the Toronto Haskell meetup which he organizes. I gave a beginner-level talk about the value of types, stressing Matt Parsons' old adage that <em>if your business logic bugs aren't type errors, you should make them be.</em></p>
@@ -247,7 +247,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

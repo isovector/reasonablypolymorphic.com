@@ -63,40 +63,40 @@
 <p>I’ve recently bought a 3D printer, and like most new technology, it has taken some time to acclimatize to. Having a mini-factory in your house is probably pretty powerful, but so far I’ve just been looking for excuses to use it. There are lots of weird projects on <a href="https://www.thingiverse.com/">Thingiverse</a> that I keep trying to convince myself I need in my apartment.</p>
 <p>But today was a turning point. The slippery mounting plate has some holes in it — so I realized I could manufacture a bracket that would sit in the mounting plate and prevent my tension rod from falling again.</p>
 <figure>
-<img src="/images/mounting-bracket.jpg" alt="" /><figcaption>The mounting plate</figcaption>
+<img src="/images/mounting-bracket.jpg" alt="The mounting plate" /><figcaption aria-hidden="true">The mounting plate</figcaption>
 </figure>
 <p>Armed with my <a href="https://www.amazon.ca/Digital-Measuring-Calipers-Conversions-Diameter/dp/B088R4XFBN">digital calipers</a>, I took some measurements of the plate, and quickly whipped up a CAD model using the <a href="https://github.com/colah/ImplicitCAD"><code>implicit</code> library</a> — a library for doing CAD modeling in Haskell:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Graphics.Implicit</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>main <span class="ot">=</span> writeSTL <span class="fl">0.25</span> <span class="st">&quot;/tmp/mount.stl&quot;</span> <span class="op">$</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="kw">let</span> base <span class="ot">=</span> center3 <span class="op">$</span> union</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        [ slamBack <span class="op">$</span> slamTop <span class="op">$</span> centeredBox <span class="dv">40</span> <span class="dv">40</span> <span class="dv">6</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>        , slamBack <span class="op">$</span> slamBottom <span class="op">$</span> centeredBox <span class="dv">9</span> <span class="fl">3.7</span> <span class="dv">6</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>        ]</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>   <span class="kw">in</span> difference</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>        [ slamFront <span class="op">$</span> difference</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>          [ slamBottom <span class="op">$</span> union</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>            [ mirror (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>) base</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>            , mirror (<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>) base</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>            , base</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>            ]</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>          , translate (mk3 <span class="dv">0</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">6</span>))</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>              <span class="op">$</span> slamBottom</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>              <span class="op">$</span> cylinder (<span class="dv">33</span> <span class="op">/</span> <span class="dv">2</span>) <span class="dv">10</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>          , translate (mk3 <span class="dv">0</span> (<span class="op">-</span><span class="dv">3</span>) (<span class="op">-</span><span class="dv">6</span>))</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>              <span class="op">$</span> slamBottom</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>              <span class="op">$</span> cylinder (<span class="dv">33</span> <span class="op">/</span> <span class="dv">2</span>) <span class="dv">10</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>          ]</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>        , slamFront <span class="op">$</span> slamBottom <span class="op">$</span> centeredBox <span class="dv">40</span> <span class="fl">14.5</span> <span class="dv">6</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>        ]</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Graphics.Implicit</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> writeSTL <span class="fl">0.25</span> <span class="st">&quot;/tmp/mount.stl&quot;</span> <span class="op">$</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> base <span class="ot">=</span> center3 <span class="op">$</span> union</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        [ slamBack <span class="op">$</span> slamTop <span class="op">$</span> centeredBox <span class="dv">40</span> <span class="dv">40</span> <span class="dv">6</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        , slamBack <span class="op">$</span> slamBottom <span class="op">$</span> centeredBox <span class="dv">9</span> <span class="fl">3.7</span> <span class="dv">6</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> difference</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        [ slamFront <span class="op">$</span> difference</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>          [ slamBottom <span class="op">$</span> union</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            [ mirror (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>) base</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            , mirror (<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>) base</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>            , base</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>          , translate (mk3 <span class="dv">0</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">6</span>))</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>              <span class="op">$</span> slamBottom</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>              <span class="op">$</span> cylinder (<span class="dv">33</span> <span class="op">/</span> <span class="dv">2</span>) <span class="dv">10</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>          , translate (mk3 <span class="dv">0</span> (<span class="op">-</span><span class="dv">3</span>) (<span class="op">-</span><span class="dv">6</span>))</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>              <span class="op">$</span> slamBottom</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>              <span class="op">$</span> cylinder (<span class="dv">33</span> <span class="op">/</span> <span class="dv">2</span>) <span class="dv">10</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>          ]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        , slamFront <span class="op">$</span> slamBottom <span class="op">$</span> centeredBox <span class="dv">40</span> <span class="fl">14.5</span> <span class="dv">6</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        ]</span></code></pre></div>
 <p>This program isn’t going to win any awards and the magic numbers are petrifying. But it’s OK, because it saves to <code>/tmp</code> anyway. The result is a little bracket that sits inside of the holes of the mounting plate and prevents the tension bar from moving.</p>
 <p>The tension of the rod pushes the pins into the holes, which prevent the bracket from falling, which in turn holds up the tension rod. Amazing, really.</p>
 <figure>
-<img src="/images/bracket-top.png" alt="" /><figcaption>Tension rod slot</figcaption>
+<img src="/images/bracket-top.png" alt="Tension rod slot" /><figcaption aria-hidden="true">Tension rod slot</figcaption>
 </figure>
 <figure>
-<img src="/images/bracket-bottom.png" alt="" /><figcaption>Mounting pins</figcaption>
+<img src="/images/bracket-bottom.png" alt="Mounting pins" /><figcaption aria-hidden="true">Mounting pins</figcaption>
 </figure>
 <p>An hour of printing later, and my new brackets were done. They fit into the holes just fine, and I can rest soundly knowing that the darkness of my room is forever safeguarded.</p>
 
@@ -154,7 +154,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

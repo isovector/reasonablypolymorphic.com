@@ -60,172 +60,172 @@
 <p>At a high level, the specialization pass is responsible for optimizing away uses of ad-hoc polymorphism (typeclasses) in Haskell source code. When <code>-fspecialise</code> is enabled, GHC will make a monomorphic copy of every polymorphic method — one for every unique type it’s called with. The result should feel similar to anyone who’s written modern C++, as it’s completely analogous to how templates work.</p>
 <p>While polymorphic functions are great for <em>humans to write</em>, they’re significantly slower for <em>machines to execute,</em> since you need to pass around vtables and perform dynamic dispatches, and all sorts of crazy things. This is exactly the purpose of GHC’s specialization pass, to simply get rid of all of that machinery and keep only the pieces that are explicitly used.</p>
 <p>Let’s take an example. Consider the following program:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">{-# OPTIONS_GHC</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="ot">      -ddump-simpl</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">      -dsuppress-idinfo</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="ot">      -dsuppress-coercions</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="ot">      -dsuppress-module-prefixes</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="ot">      -fforce-recomp</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="ot">      #-}</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Control.Monad.State.Class</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.Trans.State</span> <span class="kw">as</span> <span class="dt">S</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="ot">countdown ::</span> <span class="dt">S.StateT</span> <span class="dt">Int</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>countdown <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>  v <span class="ot">&lt;-</span> get</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>  <span class="kw">case</span> v <span class="kw">of</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> ()</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>      put <span class="op">$</span> v <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>      countdown</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>main <span class="ot">=</span> S.evalStateT countdown <span class="dv">10</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# OPTIONS_GHC</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">      -ddump-simpl</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">      -dsuppress-idinfo</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ot">      -dsuppress-coercions</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ot">      -dsuppress-module-prefixes</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ot">      -fforce-recomp</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ot">      #-}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.State.Class</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.Trans.State</span> <span class="kw">as</span> <span class="dt">S</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ot">countdown ::</span> <span class="dt">S.StateT</span> <span class="dt">Int</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>countdown <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> get</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> v <span class="kw">of</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> ()</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      put <span class="op">$</span> v <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      countdown</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> S.evalStateT countdown <span class="dv">10</span></span></code></pre></div>
 <p>When compiled via <code>ghc Example.hs -O -fno-specialise</code><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, we can look directly at the resulting Core of this program. If you’re unfamiliar with Core, it’s GHC’s intermediate language between source-level Haskell and the generated machine code. Core differs in two notable ways from source Haskell: its evaluation is explicit via <code>case</code> expressions, and both types and typeclass instances are explicitly passed around.</p>
 <p>Anyway, here’s the relevant Core for our above program:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="dt">Rec</span> {</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="co">-- RHS size: {terms: 14, types: 13, coercions: 0, joins: 0/0}</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="op">$</span>wcountdown</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="ot">  ::</span> <span class="dt">Int</span><span class="op">#</span> <span class="ot">-&gt;</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, ((), <span class="dt">Int</span>) <span class="op">#</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="op">$</span>wcountdown</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>  <span class="ot">=</span> \ (<span class="ot">ww_s49L ::</span> <span class="dt">Int</span><span class="op">#</span>) (<span class="ot">w_s49I ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>      <span class="kw">case</span> ww_s49L <span class="kw">of</span> ds_X2I1 {</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        __DEFAULT <span class="ot">-&gt;</span> <span class="op">$</span>wcountdown (<span class="op">-#</span> ds_X2I1 <span class="dv">1</span><span class="op">#</span>) w_s49I;</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>        <span class="dv">0</span><span class="op">#</span> <span class="ot">-&gt;</span> (<span class="op">#</span> w_s49I, lvl1_r4ap <span class="op">#</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>      }</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>end <span class="dt">Rec</span> }</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="co">-- RHS size: {terms: 12, types: 29, coercions: 0, joins: 0/0}</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="ot">main1 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, () <span class="op">#</span>)</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>main1</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>  <span class="ot">=</span> \ (<span class="ot">s_a2Ks ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>      <span class="kw">case</span> <span class="op">$</span>wcountdown <span class="dv">10</span><span class="op">#</span> s_a2Ks <span class="kw">of</span> { (<span class="op">#</span> ipv_a2Kv, ipv1_a2Kw <span class="op">#</span>) <span class="ot">-&gt;</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>      (<span class="op">#</span> ipv_a2Kv,</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>         <span class="kw">case</span> ipv1_a2Kw <span class="kw">of</span> { (a1_a2I6, ds2_a2I7) <span class="ot">-&gt;</span> a1_a2I6 } <span class="op">#</span>)</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>      }</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Rec</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- RHS size: {terms: 14, types: 13, coercions: 0, joins: 0/0}</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">$</span>wcountdown</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Int</span><span class="op">#</span> <span class="ot">-&gt;</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, ((), <span class="dt">Int</span>) <span class="op">#</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">$</span>wcountdown</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> \ (<span class="ot">ww_s49L ::</span> <span class="dt">Int</span><span class="op">#</span>) (<span class="ot">w_s49I ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> ww_s49L <span class="kw">of</span> ds_X2I1 {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        __DEFAULT <span class="ot">-&gt;</span> <span class="op">$</span>wcountdown (<span class="op">-#</span> ds_X2I1 <span class="dv">1</span><span class="op">#</span>) w_s49I;</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span><span class="op">#</span> <span class="ot">-&gt;</span> (<span class="op">#</span> w_s49I, lvl1_r4ap <span class="op">#</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>end <span class="dt">Rec</span> }</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- RHS size: {terms: 12, types: 29, coercions: 0, joins: 0/0}</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="ot">main1 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, () <span class="op">#</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>main1</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> \ (<span class="ot">s_a2Ks ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> <span class="op">$</span>wcountdown <span class="dv">10</span><span class="op">#</span> s_a2Ks <span class="kw">of</span> { (<span class="op">#</span> ipv_a2Kv, ipv1_a2Kw <span class="op">#</span>) <span class="ot">-&gt;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>      (<span class="op">#</span> ipv_a2Kv,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>         <span class="kw">case</span> ipv1_a2Kw <span class="kw">of</span> { (a1_a2I6, ds2_a2I7) <span class="ot">-&gt;</span> a1_a2I6 } <span class="op">#</span>)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>      }</span></code></pre></div>
 <p>As you can see, this is very short and to the point. Reading Core is a bit of an art, but the gist of it is this: <code>main1</code> calls <code>$wcountdown</code>, which recursively calls itself, until the value of <code>w_s49I</code> is <code>0#</code> when it stops. It’s probably exactly the same code you’d write by hand, if for some reason you were writing Core by hand.</p>
 <p>Our program above is written directly against <code>transformers</code>, but nobody actually writes code against <code>transformers</code> in the real world. Choosing a concrete monad transformer stack is limiting, and at the same time, prevents you from restricting access to pieces of the stack. Instead, we’re encouraged to write code against abstract monad capabilities, traditionally <code>mtl</code>.</p>
 <p>So let’s subtly change the type of <code>countdown</code> above:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">countdown ::</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">=&gt;</span> m ()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">countdown ::</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">=&gt;</span> m ()</span></code></pre></div>
 <p>Nothing else in the program needs to change. Let’s now compile this program again via <code>ghc Example.hs -O -fno-specialise</code>. The result is <em>horrendously</em> worse Core:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="dt">Rec</span> {</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="co">-- RHS size: {terms: 35, types: 47, coercions: 0, joins: 0/2}</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="op">$</span>wcountdown</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">  ::</span> <span class="kw">forall</span> (<span class="ot">m ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="op">.</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>     <span class="dt">Applicative</span> m <span class="ot">=&gt;</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>     (<span class="kw">forall</span> a b<span class="op">.</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>     <span class="ot">-&gt;</span> (<span class="kw">forall</span> a b<span class="op">.</span> m a <span class="ot">-&gt;</span> m b <span class="ot">-&gt;</span> m b)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>     <span class="ot">-&gt;</span> m <span class="dt">Int</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>     <span class="ot">-&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> m ())</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>     <span class="ot">-&gt;</span> m ()</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a><span class="op">$</span>wcountdown</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>  <span class="ot">=</span> \ (<span class="op">@</span> (<span class="ot">m_s4WK ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>))</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>      (<span class="ot">ww_s4WR ::</span> <span class="dt">Applicative</span> m_s4WK)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>      (<span class="ot">ww1_s4WS ::</span> <span class="kw">forall</span> a b<span class="op">.</span> m_s4WK a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m_s4WK b) <span class="ot">-&gt;</span> m_s4WK b)</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>      (<span class="ot">ww2_s4WT ::</span> <span class="kw">forall</span> a b<span class="op">.</span> m_s4WK a <span class="ot">-&gt;</span> m_s4WK b <span class="ot">-&gt;</span> m_s4WK b)</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>      (<span class="ot">ww3_s4WX ::</span> m_s4WK <span class="dt">Int</span>)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>      (<span class="ot">ww4_s4WY ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m_s4WK ()) <span class="ot">-&gt;</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a>      <span class="kw">let</span> {</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a><span class="ot">        lvl6_s4W1 ::</span> m_s4WK ()</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true"></a>        lvl6_s4W1</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true"></a>          <span class="ot">=</span> <span class="op">$</span>wcountdown</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true"></a>              <span class="op">@</span> m_s4WK ww_s4WR ww1_s4WS ww2_s4WT ww3_s4WX ww4_s4WY } <span class="kw">in</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true"></a>      <span class="kw">let</span> {</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true"></a><span class="ot">        lvl7_s4W2 ::</span> m_s4WK ()</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true"></a>        lvl7_s4W2 <span class="ot">=</span> <span class="fu">pure</span> <span class="op">@</span> m_s4WK ww_s4WR <span class="op">@</span> () () } <span class="kw">in</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true"></a>      ww1_s4WS</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true"></a>        <span class="op">@</span> <span class="dt">Int</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true"></a>        <span class="op">@</span> ()</span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true"></a>        ww3_s4WX</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true"></a>        (\ (<span class="ot">v_a192 ::</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true"></a>           <span class="kw">case</span> v_a192 <span class="kw">of</span> { <span class="dt">I</span><span class="op">#</span> ds_d3xJ <span class="ot">-&gt;</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true"></a>           <span class="kw">case</span> ds_d3xJ <span class="kw">of</span> ds1_X3xT {</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true"></a>             __DEFAULT <span class="ot">-&gt;</span></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true"></a>               ww2_s4WT <span class="op">@</span> () <span class="op">@</span> () (ww4_s4WY (<span class="dt">I</span><span class="op">#</span> (<span class="op">-#</span> ds1_X3xT <span class="dv">1</span><span class="op">#</span>))) lvl6_s4W1;</span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true"></a>             <span class="dv">0</span><span class="op">#</span> <span class="ot">-&gt;</span> lvl7_s4W2</span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true"></a>           }</span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true"></a>           })</span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true"></a>end <span class="dt">Rec</span> }</span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true"></a></span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true"></a><span class="co">-- RHS size: {terms: 17, types: 32, coercions: 21, joins: 0/0}</span></span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true"></a><span class="ot">main1 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, () <span class="op">#</span>)</span>
-<span id="cb4-42"><a href="#cb4-42" aria-hidden="true"></a>main1</span>
-<span id="cb4-43"><a href="#cb4-43" aria-hidden="true"></a>  <span class="ot">=</span> \ (<span class="ot">s_a3z5 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
-<span id="cb4-44"><a href="#cb4-44" aria-hidden="true"></a>      <span class="kw">case</span> ((((<span class="op">$</span>wcountdown</span>
-<span id="cb4-45"><a href="#cb4-45" aria-hidden="true"></a>                 <span class="op">@</span> (<span class="dt">StateT</span> <span class="dt">Int</span> <span class="dt">IO</span>)</span>
-<span id="cb4-46"><a href="#cb4-46" aria-hidden="true"></a>                 lvl_r4VN</span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true"></a>                 lvl1_r50i</span>
-<span id="cb4-48"><a href="#cb4-48" aria-hidden="true"></a>                 lvl2_r50j</span>
-<span id="cb4-49"><a href="#cb4-49" aria-hidden="true"></a>                 (lvl3_r50k <span class="ot">`cast`</span> <span class="op">&lt;</span><span class="dt">Co</span><span class="op">:</span><span class="dv">13</span><span class="op">&gt;</span>)</span>
-<span id="cb4-50"><a href="#cb4-50" aria-hidden="true"></a>                 lvl4_r50l)</span>
-<span id="cb4-51"><a href="#cb4-51" aria-hidden="true"></a>              <span class="ot">`cast`</span> <span class="op">&lt;</span><span class="dt">Co</span><span class="op">:</span><span class="dv">4</span><span class="op">&gt;</span>)</span>
-<span id="cb4-52"><a href="#cb4-52" aria-hidden="true"></a>               lvl5_r50m)</span>
-<span id="cb4-53"><a href="#cb4-53" aria-hidden="true"></a>            <span class="ot">`cast`</span> <span class="op">&lt;</span><span class="dt">Co</span><span class="op">:</span><span class="dv">4</span><span class="op">&gt;</span>)</span>
-<span id="cb4-54"><a href="#cb4-54" aria-hidden="true"></a>             s_a3z5</span>
-<span id="cb4-55"><a href="#cb4-55" aria-hidden="true"></a>      <span class="kw">of</span></span>
-<span id="cb4-56"><a href="#cb4-56" aria-hidden="true"></a>      { (<span class="op">#</span> ipv_a3z8, ipv1_a3z9 <span class="op">#</span>) <span class="ot">-&gt;</span></span>
-<span id="cb4-57"><a href="#cb4-57" aria-hidden="true"></a>      (<span class="op">#</span> ipv_a3z8,</span>
-<span id="cb4-58"><a href="#cb4-58" aria-hidden="true"></a>         <span class="kw">case</span> ipv1_a3z9 <span class="kw">of</span> { (a1_a3y3, ds2_a3y4) <span class="ot">-&gt;</span> a1_a3y3 } <span class="op">#</span>)</span>
-<span id="cb4-59"><a href="#cb4-59" aria-hidden="true"></a>      }</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Rec</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- RHS size: {terms: 35, types: 47, coercions: 0, joins: 0/2}</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">$</span>wcountdown</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="kw">forall</span> (<span class="ot">m ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="op">.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>     <span class="dt">Applicative</span> m <span class="ot">=&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>     (<span class="kw">forall</span> a b<span class="op">.</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> (<span class="kw">forall</span> a b<span class="op">.</span> m a <span class="ot">-&gt;</span> m b <span class="ot">-&gt;</span> m b)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> m <span class="dt">Int</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> m ())</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> m ()</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="op">$</span>wcountdown</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> \ (<span class="op">@</span> (<span class="ot">m_s4WK ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>))</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>      (<span class="ot">ww_s4WR ::</span> <span class="dt">Applicative</span> m_s4WK)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      (<span class="ot">ww1_s4WS ::</span> <span class="kw">forall</span> a b<span class="op">.</span> m_s4WK a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m_s4WK b) <span class="ot">-&gt;</span> m_s4WK b)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      (<span class="ot">ww2_s4WT ::</span> <span class="kw">forall</span> a b<span class="op">.</span> m_s4WK a <span class="ot">-&gt;</span> m_s4WK b <span class="ot">-&gt;</span> m_s4WK b)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      (<span class="ot">ww3_s4WX ::</span> m_s4WK <span class="dt">Int</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>      (<span class="ot">ww4_s4WY ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m_s4WK ()) <span class="ot">-&gt;</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> {</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="ot">        lvl6_s4W1 ::</span> m_s4WK ()</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        lvl6_s4W1</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=</span> <span class="op">$</span>wcountdown</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>              <span class="op">@</span> m_s4WK ww_s4WR ww1_s4WS ww2_s4WT ww3_s4WX ww4_s4WY } <span class="kw">in</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> {</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="ot">        lvl7_s4W2 ::</span> m_s4WK ()</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        lvl7_s4W2 <span class="ot">=</span> <span class="fu">pure</span> <span class="op">@</span> m_s4WK ww_s4WR <span class="op">@</span> () () } <span class="kw">in</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>      ww1_s4WS</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span> <span class="dt">Int</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span> ()</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>        ww3_s4WX</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        (\ (<span class="ot">v_a192 ::</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>           <span class="kw">case</span> v_a192 <span class="kw">of</span> { <span class="dt">I</span><span class="op">#</span> ds_d3xJ <span class="ot">-&gt;</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>           <span class="kw">case</span> ds_d3xJ <span class="kw">of</span> ds1_X3xT {</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>             __DEFAULT <span class="ot">-&gt;</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>               ww2_s4WT <span class="op">@</span> () <span class="op">@</span> () (ww4_s4WY (<span class="dt">I</span><span class="op">#</span> (<span class="op">-#</span> ds1_X3xT <span class="dv">1</span><span class="op">#</span>))) lvl6_s4W1;</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>             <span class="dv">0</span><span class="op">#</span> <span class="ot">-&gt;</span> lvl7_s4W2</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>           }</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>           })</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>end <span class="dt">Rec</span> }</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="co">-- RHS size: {terms: 17, types: 32, coercions: 21, joins: 0/0}</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="ot">main1 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, () <span class="op">#</span>)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>main1</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> \ (<span class="ot">s_a3z5 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> ((((<span class="op">$</span>wcountdown</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                 <span class="op">@</span> (<span class="dt">StateT</span> <span class="dt">Int</span> <span class="dt">IO</span>)</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>                 lvl_r4VN</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>                 lvl1_r50i</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>                 lvl2_r50j</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>                 (lvl3_r50k <span class="ot">`cast`</span> <span class="op">&lt;</span><span class="dt">Co</span><span class="op">:</span><span class="dv">13</span><span class="op">&gt;</span>)</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>                 lvl4_r50l)</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>              <span class="ot">`cast`</span> <span class="op">&lt;</span><span class="dt">Co</span><span class="op">:</span><span class="dv">4</span><span class="op">&gt;</span>)</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>               lvl5_r50m)</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>            <span class="ot">`cast`</span> <span class="op">&lt;</span><span class="dt">Co</span><span class="op">:</span><span class="dv">4</span><span class="op">&gt;</span>)</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>             s_a3z5</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>      <span class="kw">of</span></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>      { (<span class="op">#</span> ipv_a3z8, ipv1_a3z9 <span class="op">#</span>) <span class="ot">-&gt;</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>      (<span class="op">#</span> ipv_a3z8,</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>         <span class="kw">case</span> ipv1_a3z9 <span class="kw">of</span> { (a1_a3y3, ds2_a3y4) <span class="ot">-&gt;</span> a1_a3y3 } <span class="op">#</span>)</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>      }</span></code></pre></div>
 <p>Yikes! What a mess! It’s amazing how much of a difference that one type signature made! Our simple <code>mtl</code> program above has turned into an unholy mess of passing around overly-polymorphic functions. We’ve paid an awful price to abstract away our monad stack, <em>even though the actual program being run didn’t change!</em></p>
 <p>Of course, this isn’t a <em>real problem</em> in the wild. Compile the program again, this time without the <code>-fno-specialise</code> flag<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> — <code>ghc Example.hs -O</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="dt">Rec</span> {</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="co">-- RHS size: {terms: 14, types: 13, coercions: 0, joins: 0/0}</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="op">$</span>w<span class="op">$</span>scountdown</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="ot">  ::</span> <span class="dt">Int</span><span class="op">#</span> <span class="ot">-&gt;</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, ((), <span class="dt">Int</span>) <span class="op">#</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="op">$</span>w<span class="op">$</span>scountdown</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>  <span class="ot">=</span> \ (<span class="ot">ww_s5dY ::</span> <span class="dt">Int</span><span class="op">#</span>) (<span class="ot">w_s5dV ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>      <span class="kw">case</span> ww_s5dY <span class="kw">of</span> ds_X3xU {</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>        __DEFAULT <span class="ot">-&gt;</span> <span class="op">$</span>w<span class="op">$</span>scountdown (<span class="op">-#</span> ds_X3xU <span class="dv">1</span><span class="op">#</span>) w_s5dV;</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>        <span class="dv">0</span><span class="op">#</span> <span class="ot">-&gt;</span> (<span class="op">#</span> w_s5dV, lvl1_r5jV <span class="op">#</span>)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>      }</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>end <span class="dt">Rec</span> }</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a><span class="co">-- RHS size: {terms: 12, types: 29, coercions: 0, joins: 0/0}</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a><span class="ot">main1 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, () <span class="op">#</span>)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a>main1</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a>  <span class="ot">=</span> \ (<span class="ot">s_X3Bw ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a>      <span class="kw">case</span> <span class="op">$</span>w<span class="op">$</span>scountdown <span class="dv">10</span><span class="op">#</span> s_X3Bw <span class="kw">of</span> { (<span class="op">#</span> ipv_a3z9, ipv1_a3za <span class="op">#</span>) <span class="ot">-&gt;</span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a>      (<span class="op">#</span> ipv_a3z9,</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true"></a>         <span class="kw">case</span> ipv1_a3za <span class="kw">of</span> { (a1_a3y4, ds2_a3y5) <span class="ot">-&gt;</span> a1_a3y4 } <span class="op">#</span>)</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true"></a>      }</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Rec</span> {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- RHS size: {terms: 14, types: 13, coercions: 0, joins: 0/0}</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">$</span>w<span class="op">$</span>scountdown</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Int</span><span class="op">#</span> <span class="ot">-&gt;</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, ((), <span class="dt">Int</span>) <span class="op">#</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">$</span>w<span class="op">$</span>scountdown</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> \ (<span class="ot">ww_s5dY ::</span> <span class="dt">Int</span><span class="op">#</span>) (<span class="ot">w_s5dV ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> ww_s5dY <span class="kw">of</span> ds_X3xU {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        __DEFAULT <span class="ot">-&gt;</span> <span class="op">$</span>w<span class="op">$</span>scountdown (<span class="op">-#</span> ds_X3xU <span class="dv">1</span><span class="op">#</span>) w_s5dV;</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="dv">0</span><span class="op">#</span> <span class="ot">-&gt;</span> (<span class="op">#</span> w_s5dV, lvl1_r5jV <span class="op">#</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>end <span class="dt">Rec</span> }</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- RHS size: {terms: 12, types: 29, coercions: 0, joins: 0/0}</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="ot">main1 ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span> <span class="ot">-&gt;</span> (<span class="op">#</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>, () <span class="op">#</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>main1</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> \ (<span class="ot">s_X3Bw ::</span> <span class="dt">State</span><span class="op">#</span> <span class="dt">RealWorld</span>) <span class="ot">-&gt;</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> <span class="op">$</span>w<span class="op">$</span>scountdown <span class="dv">10</span><span class="op">#</span> s_X3Bw <span class="kw">of</span> { (<span class="op">#</span> ipv_a3z9, ipv1_a3za <span class="op">#</span>) <span class="ot">-&gt;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>      (<span class="op">#</span> ipv_a3z9,</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>         <span class="kw">case</span> ipv1_a3za <span class="kw">of</span> { (a1_a3y4, ds2_a3y5) <span class="ot">-&gt;</span> a1_a3y4 } <span class="op">#</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>      }</span></code></pre></div>
 <p>Whew! We’re back to the speedy program we started with. <code>-fspecialise</code> has done the hard work of transforming our <em>abstract code</em> into <em>fast code</em> for us — exactly as a good compiler should.</p>
 <h2 id="whats-going-on">What’s Going On?</h2>
 <p>It’s amazing how drastic the differences are in the generated code, just from flipping a switch!</p>
 <p>Before we can discuss exactly how this transformation helps, we need to first go over some details of how GHC implements a few source-level Haskell features. The first is <em>dictionaries</em>, which are how typeclass dispatch works.</p>
 <h3 id="dictionaries">Dictionaries</h3>
 <p>Consider the following program in source-level Haskell:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">Eq</span> a <span class="kw">where</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">  (==) ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Eq</span> () <span class="kw">where</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>  (<span class="op">==</span>) _ _ <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a><span class="ot">equate ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>equate a1 a2 <span class="ot">=</span> a1 <span class="op">==</span> a2</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> equate () ()</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Eq</span> a <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  (==) ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> () <span class="kw">where</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  (<span class="op">==</span>) _ _ <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="ot">equate ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>equate a1 a2 <span class="ot">=</span> a1 <span class="op">==</span> a2</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> equate () ()</span></code></pre></div>
 <p>Internally, GHC will generate the equivalent program:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Eq</span> a <span class="ot">=</span> <span class="dt">Eq</span>  <span class="co">-- #1</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="ot">(==) ::</span> <span class="dt">Eq</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>(<span class="op">==</span>) dEq&#39;a <span class="ot">=</span>  <span class="co">-- #2</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>  <span class="kw">case</span> dEq&#39;a <span class="kw">of</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>    <span class="dt">Eq</span> eqMethod <span class="ot">-&gt;</span> eqMethod</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a><span class="ot">eqUnit ::</span> <span class="dt">Eq</span> ()  <span class="co">-- # 3</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>eqUnit <span class="ot">=</span> <span class="dt">Eq</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>  (\_ _ <span class="ot">-&gt;</span> <span class="dt">True</span>)</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a><span class="ot">equate ::</span> <span class="dt">Eq</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>  <span class="co">-- #4</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a>equate dEq&#39;a a1 a2 <span class="ot">=</span> (<span class="op">==</span>) dEq&#39;a a1 a2  <span class="co">-- #5</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> equate eqUnit () ()  <span class="co">-- #6</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Eq</span> a <span class="ot">=</span> <span class="dt">Eq</span>  <span class="co">-- #1</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">(==) ::</span> <span class="dt">Eq</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>(<span class="op">==</span>) dEq&#39;a <span class="ot">=</span>  <span class="co">-- #2</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> dEq&#39;a <span class="kw">of</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Eq</span> eqMethod <span class="ot">-&gt;</span> eqMethod</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="ot">eqUnit ::</span> <span class="dt">Eq</span> ()  <span class="co">-- # 3</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>eqUnit <span class="ot">=</span> <span class="dt">Eq</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  (\_ _ <span class="ot">-&gt;</span> <span class="dt">True</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="ot">equate ::</span> <span class="dt">Eq</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>  <span class="co">-- #4</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>equate dEq&#39;a a1 a2 <span class="ot">=</span> (<span class="op">==</span>) dEq&#39;a a1 a2  <span class="co">-- #5</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> equate eqUnit () ()  <span class="co">-- #6</span></span></code></pre></div>
 <p>Notably, the following changes occur:</p>
 <ol type="1">
 <li>The <code>class Eq a</code> is transformed into <code>data Eq a</code>, with each class method becoming a field.</li>
@@ -239,96 +239,96 @@
 <p>From all of this that we see that, under the hood, <code>class</code> definitions are just <code>data</code> definitions, and that constraints are just invisible parameters.</p>
 <h3 id="case-of-known-constructor">Case of Known Constructor</h3>
 <p>Consider the following program:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>blah <span class="ot">=</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  <span class="kw">case</span> <span class="dt">True</span> <span class="kw">of</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> foo</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> bar</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>blah <span class="ot">=</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="dt">True</span> <span class="kw">of</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> foo</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> bar</span></code></pre></div>
 <p>Because we’re scrutinizing on a constant value here, the result of this expression must always be <code>foo</code>. As such, it’s safe to replace the entire pattern match expression with <code>foo</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>blah <span class="ot">=</span> foo</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>blah <span class="ot">=</span> foo</span></code></pre></div>
 <p>This transformation is known as the <em>case of known constructor</em> optimization. While humans would never write such a thing by hand, expressions like these often come up as the result of other optimizing transformations.</p>
 <h3 id="rewrite-rules">Rewrite Rules</h3>
 <p>One final thing to discuss is GHC’s term rewriting mechanism, known as <em>rewrite rules</em>.</p>
 <p>Rewrite rules are little statements that say “<em>this thing</em> can be written as <em>that thing</em>.” Whenever GHC encounters <em>this thing</em>, it will duly rewrite it as <em>that thing</em>. The motivating use case is to allow library authors to implement domain-specific optimizations — such as ensuring composing functions don’t generate intermediate structures. You might have heard of “list fusion,” which is implemented via rewrite rules.</p>
 <p>Rewrite rules must preserve the type of the expression, but besides that are free to do anything they’d like. Just as an example, we can write a program which prints <code>hello world</code> seemingly from nowhere:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">{-# RULES</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="ot">  &quot;it&#39;s magic!&quot;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a><span class="ot">    pure () = putStrLn &quot;hello world&quot;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a><span class="ot">  #-}</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">pure</span> ()</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# RULES</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  &quot;it&#39;s magic!&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ot">    pure () = putStrLn &quot;hello world&quot;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  #-}</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">pure</span> ()</span></code></pre></div>
 <p>Compiling this with <code>-O0</code> won’t print any message when run, but will print <code>hello world</code> when compiled with <code>-O</code>. Spooky!</p>
 <p>When <code>-XTypeApplications</code> is enabled, rewrite rules are allowed to match on types too! For example, the following program will print <code>2 1 1</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE AllowAmbiguousTypes #-}</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a><span class="ot">{-# LANGUAGE RankNTypes          #-}</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a><span class="ot">{-# LANGUAGE TypeApplications    #-}</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a><span class="ot">magic ::</span> <span class="kw">forall</span> b a<span class="op">.</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>magic <span class="ot">=</span> <span class="fu">id</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a><span class="ot">{-# NOINLINE magic #-}</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a><span class="ot">{-# RULES &quot;it&#39;s magic!&quot;</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true"></a><span class="ot">      forall (a :: Int).</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true"></a><span class="ot">        magic @String a = a + 1</span></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true"></a><span class="ot">      #-}</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true"></a></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true"></a>  <span class="fu">print</span> <span class="op">$</span> magic <span class="op">@</span><span class="dt">String</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true"></a>  <span class="fu">print</span> <span class="op">$</span> magic <span class="op">@</span><span class="dt">Bool</span>   (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true"></a>  <span class="fu">print</span> <span class="op">$</span> magic <span class="op">@</span><span class="dt">String</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Integer</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE AllowAmbiguousTypes #-}</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE RankNTypes          #-}</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeApplications    #-}</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ot">magic ::</span> <span class="kw">forall</span> b a<span class="op">.</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>magic <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# NOINLINE magic #-}</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# RULES &quot;it&#39;s magic!&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="ot">      forall (a :: Int).</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="ot">        magic @String a = a + 1</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="ot">      #-}</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> magic <span class="op">@</span><span class="dt">String</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> magic <span class="op">@</span><span class="dt">Bool</span>   (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> magic <span class="op">@</span><span class="dt">String</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Integer</span>)</span></code></pre></div>
 <p>Of course, you shouldn’t abuse rewrite rules like this — make sure any rules you write are just more efficient versions of an equivalent program — but it’s helpful to demonstrate what’s going on.</p>
 <p>Internally, GHC uses lots of rewrite rules itself! All of its constant-folding (e.g. replacing <code>2 + 3</code> with <code>5</code> at compile time) is done via rewrite rules, which helps separate that logic from the main compiler.</p>
 <h2 id="specialization">Specialization</h2>
 <p>So with all of that background information out of the way, we’re finally ready to talk about how the specializer works.</p>
 <p>Recall our original <code>mtl</code> program, transformed so it has its dictionaries explicitly passed:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="ot">countdown ::</span> <span class="dt">Monad</span> m <span class="ot">-&gt;</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">-&gt;</span> m ()</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="co">-- There is a `Monad m` constraint on `MonadState s m`, which is where this</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="co">-- extra constraint comes from.</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>countdown dMonad&#39;m dMonadState&#39;m <span class="ot">=</span> <span class="kw">do</span> dMonad&#39;m</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>  v <span class="ot">&lt;-</span> get dMonadState&#39;m</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a>  <span class="kw">case</span> v <span class="kw">of</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> dMonad&#39;m ()</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span> dMonad&#39;m</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true"></a>      put dMonadState&#39;m <span class="op">$</span> v <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true"></a>      countdown dMonad&#39;m dMonadState&#39;m</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true"></a></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true"></a>main <span class="ot">=</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true"></a>  S.evalStateT</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true"></a>    (countdown</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true"></a>      (dMonadStateT dMonadIO)</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true"></a>      (dMonadStateStateT dMonadIO))</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true"></a>    <span class="dv">10</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">countdown ::</span> <span class="dt">Monad</span> m <span class="ot">-&gt;</span> <span class="dt">MonadState</span> <span class="dt">Int</span> m <span class="ot">-&gt;</span> m ()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- There is a `Monad m` constraint on `MonadState s m`, which is where this</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- extra constraint comes from.</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>countdown dMonad&#39;m dMonadState&#39;m <span class="ot">=</span> <span class="kw">do</span> dMonad&#39;m</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> get dMonadState&#39;m</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> v <span class="kw">of</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> dMonad&#39;m ()</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span> dMonad&#39;m</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>      put dMonadState&#39;m <span class="op">$</span> v <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>      countdown dMonad&#39;m dMonadState&#39;m</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  S.evalStateT</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    (countdown</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>      (dMonadStateT dMonadIO)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>      (dMonadStateStateT dMonadIO))</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="dv">10</span></span></code></pre></div>
 <p>When <code>-fspecialise</code> is set, the specializer will look for any calls to polymorphic functions with all of their dictionaries saturated by “interesting” dictionaries. The dictionaries <code>dMonad'm</code> and <code>dMonadState'm</code> in <code>countdown</code> aren’t interesting, since they’re just opaque dictionary variables; we don’t know anything about them.</p>
 <p>However, GHC notices that <code>countdown</code> is called with <code>m ~ StateT Int IO</code>, and that all of its dictionaries are statically known. As such, it emits a <em>specialized</em> version of <code>countdown</code>, monomorphized to <code>StateT Int IO ()</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="ot">scountdown_StateT ::</span> <span class="dt">StateT</span> <span class="dt">Int</span> <span class="dt">IO</span> ()</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>scountdown_StateT <span class="ot">=</span> <span class="kw">do</span> (dMonadStateT dMonadIO)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>  v <span class="ot">&lt;-</span> get (dMonadStateStateT dMonadIO)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>  <span class="kw">case</span> v <span class="kw">of</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> (dMonadStateT dMonadIO) ()</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span> (dMonadStateT dMonadIO)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true"></a>      put (dMonadStateStateT dMonadIO) <span class="op">$</span> v <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true"></a>      scountdown_StateT</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">scountdown_StateT ::</span> <span class="dt">StateT</span> <span class="dt">Int</span> <span class="dt">IO</span> ()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>scountdown_StateT <span class="ot">=</span> <span class="kw">do</span> (dMonadStateT dMonadIO)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> get (dMonadStateStateT dMonadIO)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> v <span class="kw">of</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> (dMonadStateT dMonadIO) ()</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span> (dMonadStateT dMonadIO)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>      put (dMonadStateStateT dMonadIO) <span class="op">$</span> v <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>      scountdown_StateT</span></code></pre></div>
 <p>In addition, the specializer will emit a rewrite rule:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">{-# RULES &quot;SPEC countdown @ (StateT Int IO)&quot;</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a><span class="ot">      forall (dMonad&#39;m :: Monad (StateT Int IO))</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a><span class="ot">             (dMonadState&#39;m :: MonadState Int (StateT Int IO)).</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a><span class="ot">        countdown @(StateT Int IO) dMonad&#39;m dMonadState&#39;m =</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a><span class="ot">          scountdown_StateT</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a><span class="ot">      #-}</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# RULES &quot;SPEC countdown @ (StateT Int IO)&quot;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">      forall (dMonad&#39;m :: Monad (StateT Int IO))</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ot">             (dMonadState&#39;m :: MonadState Int (StateT Int IO)).</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="ot">        countdown @(StateT Int IO) dMonad&#39;m dMonadState&#39;m =</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="ot">          scountdown_StateT</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="ot">      #-}</span></span></code></pre></div>
 <p>This rewrite rule will find any call to countdown at <code>m ~ StateT Int IO</code>, ignore the dictionaries passed to it, and replace the entire expression with the specialized <code>scountdown_StateT</code> function.</p>
 <p>In particular, this means that <code>main</code> becomes:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>main <span class="ot">=</span> S.evalStateT scountdown_StateT <span class="dv">10</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> S.evalStateT scountdown_StateT <span class="dv">10</span></span></code></pre></div>
 <p>The rule takes advantage of the fact that dictionaries are known to be consistent (all expressions for a dictionary of a given type eventually evaluate to the same record), so it can completely ignore its two dictionary arguments. However, in principle there’s <em>absolutely no reason</em> this same technique couldn’t be used to specialize on other, non-dictionary, arguments!</p>
 <p>Notice now that <code>pure</code>, <code>get</code>, and the two do-blocks in <code>scountdown_StateT</code> are now called with interesting dictionaries, so <code>pure</code>, <code>get</code> and <code>&gt;&gt;=</code> can now all also be specialized at <code>StateT Int IO</code>.</p>
 <p>Eventually the concrete dictionaries and corresponding specializations have propagated throughout the entire program. The optimizer can take advantage of two other properties now, namely that class methods were already transformed into pattern matches, and that all of the dictionaries are statically known. Which means, we have created several places in which we can now <em>case of known case!</em></p>
 <p>For example, let’s consider the <code>get</code> in <code>countdown</code>. It now looks something like this:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>  v <span class="ot">&lt;-</span> <span class="kw">case</span> <span class="dt">MonadState</span> (<span class="dt">StateT</span> <span class="op">$</span> \s <span class="ot">-&gt;</span> implOfPureForIO (s, s)) <span class="op">...</span> <span class="kw">of</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>         <span class="dt">MonadState</span> getMethod _ _ <span class="ot">-&gt;</span> getMethod</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> <span class="kw">case</span> <span class="dt">MonadState</span> (<span class="dt">StateT</span> <span class="op">$</span> \s <span class="ot">-&gt;</span> implOfPureForIO (s, s)) <span class="op">...</span> <span class="kw">of</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>         <span class="dt">MonadState</span> getMethod _ _ <span class="ot">-&gt;</span> getMethod</span></code></pre></div>
 <p>which can obviously be simplified to</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>  v <span class="ot">&lt;-</span> <span class="dt">StateT</span> <span class="op">$</span> \s <span class="ot">-&gt;</span> implOfPureForIO (s, s)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> <span class="dt">StateT</span> <span class="op">$</span> \s <span class="ot">-&gt;</span> implOfPureForIO (s, s)</span></code></pre></div>
 <p>This is already a great improvement! But it gets better, recall that we’re binding in the <code>StateT</code> monad, which in turn is calling bind in <code>IO</code>. But bind in <code>IO</code> is itself implemented as a pattern match, and so case-of-known-constructor applies there too!</p>
 <p>The end result is that GHC spins for a while, alternatingly specializing, inlining, case-of-known-casing, and performing a few other optimizations. Each of these in turn opens up additional opportunities for the others to fire. After a few iterations of this, the resulting code is often <em>orders of magnitude</em> faster!</p>
 <h2 id="coming-in-8.10.1">Coming in 8.10.1…</h2>
@@ -336,7 +336,7 @@
 <p>Like our experiments above into <code>mtl</code>, I was paying a performance cost for abstraction, even though the concrete program was identical.</p>
 <p>Some investigation by the indefatigable <a href="https://mpickering.github.io/">mpickering</a> pointed out that the specializer was failing to specialize. As it happens, the specializer is more than happy to optimize away dictionaries that are passed as the <em>first</em> non-type arguments to a function, but no others.</p>
 <p>That means it will go home early if it runs into a function whose signature is of the form:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="ot">foo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="op">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="op">...</span></span></code></pre></div>
 <p>Again, humans would never write such a thing, but the optimizer is more than happy to spit these things out. Additionally, code like this often shows up whenever you use a newtype to get around GHC’s annoying error that it “does not (yet) support impredicative polymorphism”.</p>
 <p>Anyway, all of this is to say that in 8.10.1, the specialization pass is <a href="https://gitlab.haskell.org/ghc/ghc/merge_requests/668">now smart enough</a> to specialize functions like <code>foo</code>. As a result, we should see very real performance improvements in libraries like <code>polysemy</code> and <code>lens</code>, and, excitingly, <em>any programs which use them!</em></p>
 <section class="footnotes" role="doc-endnotes">
@@ -401,7 +401,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

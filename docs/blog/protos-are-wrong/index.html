@@ -84,19 +84,19 @@
 </ul>
 <p>That’s it! These three features are all you need in order to define any possible piece of data. With these simpler pieces, we can re-implement the rest of the protobuffer spec in terms of them.</p>
 <p>For example, we can rebuild <code>optional</code> fields:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>product Unit {</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="co">// no fields</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>}</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>coproduct Optional&lt;t&gt; {</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  t    value = <span class="dv">0</span>;</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>  Unit unset = <span class="dv">1</span>;</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>product Unit <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// no fields</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>coproduct Optional<span class="op">&lt;</span>t<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  t    value <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  Unit unset <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>Building <code>repeated</code> fields is simple too:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>coproduct List&lt;t&gt; {</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  Unit empty = <span class="dv">0</span>;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  Pair&lt;t, List&lt;t&gt;&gt; cons = <span class="dv">1</span>;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>coproduct List<span class="op">&lt;</span>t<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  Unit empty <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  Pair<span class="op">&lt;</span>t<span class="op">,</span> List<span class="op">&lt;</span>t<span class="op">&gt;&gt;</span> cons <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>Of course, the actual serialization logic is allowed to do something smarter than pushing linked-lists across the network—after all, <a href="/blog/follow-the-denotation/">implementations and semantics don’t need to align one-to-one</a>.</p>
 <h3 id="questionable-choices">Questionable Choices</h3>
 <p>In the vein of Java, protobuffers make the distinction between <em>scalar</em> types and <em>message</em> types. Scalars correspond more-or-less to machine primitives—things like <code>int32</code>, <code>bool</code> and <code>string</code>. Messages, on the other hand, are everything else. All library- and user-defined types are messages.</p>
@@ -105,35 +105,35 @@
 <p>It’s impossible to differentiate a field that was missing in a protobuffer from one that was assigned to the default value. Presumably this decision is in place in order to allow for an optimization of not needing to send default scalar values over the wire. Presumably, though the <a href="https://developers.google.com/protocol-buffers/docs/encoding">encoding guide</a> makes no mention of this optimization being performed, so your guess is as good as mine.</p>
 <p>As we’ll see when we discuss protobuffers’ claim to being god’s gift to backwards- and forwards-compatible APIs, this inability to distinguish between unset and default values is a nightmare. Especially if indeed it’s a design decision made in order to save one bit (set or not) per field.</p>
 <p>Contrast this behavior against message types. While scalar fields are dumb, the behavior for message fields is outright <em>insane.</em> Internally, message fields are either there or they’re not—but their behavior is crazy. Some pseudocode for their accessor is worth a thousand words. Pretend this is Java or something similar:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">private</span> Foo m_foo;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="kw">public</span> Foo foo {</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  <span class="co">// only if `foo` is used as an expression</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  get {</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>    <span class="kw">if</span> (m_foo != <span class="kw">null</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>      <span class="kw">return</span> m_foo;</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>    <span class="kw">else</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>      <span class="kw">return</span> <span class="kw">new</span> <span class="fu">Foo</span>();</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>  }</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>  <span class="co">// instead if `foo` is used as an lvalue</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>  mutable get {</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>    <span class="kw">if</span> (m_foo = <span class="kw">null</span>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>      m_foo = <span class="kw">new</span> <span class="fu">Foo</span>();</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a>    <span class="kw">return</span> m_foo;</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>  }</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> Foo m_foo<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> Foo foo <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// only if `foo` is used as an expression</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  get <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>m_foo <span class="op">!=</span> <span class="kw">null</span><span class="op">)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> m_foo<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="kw">new</span> <span class="fu">Foo</span><span class="op">();</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">// instead if `foo` is used as an lvalue</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  mutable get <span class="op">{</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>m_foo <span class="op">=</span> <span class="kw">null</span><span class="op">)</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      m_foo <span class="op">=</span> <span class="kw">new</span> <span class="fu">Foo</span><span class="op">();</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> m_foo<span class="op">;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>The idea is that if the <code>foo</code> field is unset, you’ll see a default-initialized copy whenever you ask for it, but won’t actually modify its container. But if you modify <code>foo</code>, it will modify its parent as well! All of this just to avoid using a <code>Maybe Foo</code> type and the associated “headaches” of the nuance behind needing to figure out what an unset value should mean.</p>
 <p>This behavior is especially egregious, because it breaks a law! We’d expect the assignment <code>msg.foo = msg.foo;</code> to be a no-op. Instead the implementation will actually silently change <code>msg</code> to have a zero-initialized copy of <code>foo</code> if it previously didn’t have one.</p>
 <p>Unlike scalar fields, at least it’s possible to detect if a message field is unset. Language bindings for protobuffers offer something along the lines of a generated <code>bool has_foo()</code> method. In the frequent case of copying a message field from one proto to another, iff it was present, you’ll need to write the following code:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="cf">if</span> (src.has_foo(src)) {</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  dst.set_foo(src.foo());</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>src<span class="op">.</span>has_foo<span class="op">(</span>src<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  dst<span class="op">.</span>set_foo<span class="op">(</span>src<span class="op">.</span>foo<span class="op">());</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>Notice that, at least in statically-typed languages, this pattern <em>cannot be abstracted</em> due to the nominal relationship between the methods <code>foo()</code>, <code>set_foo()</code> and <code>has_foo()</code>. Because all of these functions are their own <em>identifiers</em>, we have no means of programmatically generating them, save for a preprocessor macro:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="pp">#define COPY_IFF_SET</span>(src,<span class="pp"> </span>dst,<span class="pp"> </span>field)<span class="pp"> </span>\</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="cf">if</span><span class="pp"> </span>(src.<span class="va">has_</span><span class="pp">##</span>field(src))<span class="pp"> </span>{<span class="pp"> </span>\</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="pp">  </span>dst.<span class="va">set_</span><span class="pp">##</span>field(src.field());<span class="pp"> </span>\</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define COPY_IFF_SET</span><span class="op">(</span>src<span class="op">,</span><span class="pp"> </span>dst<span class="op">,</span><span class="pp"> </span>field<span class="op">)</span><span class="pp"> </span><span class="op">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span><span class="pp"> </span><span class="op">(</span>src<span class="op">.</span><span class="va">has_</span><span class="pp">##</span>field<span class="op">(</span>src<span class="op">))</span><span class="pp"> </span><span class="op">{</span><span class="pp"> </span><span class="op">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="pp">  </span>dst<span class="op">.</span><span class="va">set_</span><span class="pp">##</span>field<span class="op">(</span>src<span class="op">.</span>field<span class="op">());</span><span class="pp"> </span><span class="op">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>(but preprocessor macros are verboten by the <a href="https://google.github.io/styleguide/cppguide.html#Preprocessor_Macros">Google style guide</a>.)</p>
 <p>If instead all optional fields were implemented as <code>Maybe</code>s, you’d get abstract-able, referentially transparent call-sites for free.</p>
 <p>To change tack, let’s talk about another questionable decision. While you can define <code>oneof</code> fields in protobuffers, their semantics are <em>not</em> of coproduct types! Rookie mistake my dudes! What you get instead is an optional field for each case of the <code>oneof</code>, and magic code in the setters that will just unset any other case if this one is set.</p>
@@ -226,7 +226,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

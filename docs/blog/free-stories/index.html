@@ -82,35 +82,35 @@
 <p>There are lots of potential failure modes here, but the approach seems feasible.</p>
 <h2 id="the-pieces">The Pieces</h2>
 <p>So I went through a bunch of games whose stories I adore, and I attempted to deconstruct them into their primitive operations. A simplified datastructure of what I came up with is provided here:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Story</span> <span class="ot">=</span> [<span class="dt">StoryPrim</span>]</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">StoryPrim</span> <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>               <span class="op">|</span> <span class="dt">Interrupt</span> <span class="dt">Story</span> <span class="dt">Story</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">ChangeType</span> <span class="ot">=</span> <span class="dt">Introduce</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>                <span class="op">|</span> <span class="dt">Die</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>                <span class="op">|</span> <span class="dt">Leave</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>                <span class="op">|</span> <span class="dt">Arrive</span> <span class="dt">Location</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>                <span class="op">|</span> <span class="dt">Kill</span> <span class="dt">Character</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>                <span class="op">|</span> <span class="dt">Learn</span> <span class="dt">ChangeResult</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">ChangeResult</span> <span class="ot">=</span> <span class="dt">ChangeResult</span> <span class="dt">Character</span> <span class="dt">ChangeType</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Story</span> <span class="ot">=</span> [<span class="dt">StoryPrim</span>]</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryPrim</span> <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>               <span class="op">|</span> <span class="dt">Interrupt</span> <span class="dt">Story</span> <span class="dt">Story</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ChangeType</span> <span class="ot">=</span> <span class="dt">Introduce</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                <span class="op">|</span> <span class="dt">Die</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                <span class="op">|</span> <span class="dt">Leave</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                <span class="op">|</span> <span class="dt">Arrive</span> <span class="dt">Location</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                <span class="op">|</span> <span class="dt">Kill</span> <span class="dt">Character</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                <span class="op">|</span> <span class="dt">Learn</span> <span class="dt">ChangeResult</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ChangeResult</span> <span class="ot">=</span> <span class="dt">ChangeResult</span> <span class="dt">Character</span> <span class="dt">ChangeType</span></span></code></pre></div>
 <p>which is to say, a <code>Story</code> is a list of <code>StoryPrim</code>s, which is either a change in character state, or one <code>Story</code> being interrupted by another (eg. if someone’s murder attempt is foiled by an unexpected arrival.)</p>
 <p>This isn’t comprehensive enough to generate entire stories, but it’s definitely good enough to motivate the remainder of this post.</p>
 <h2 id="free-monads">Free Monads</h2>
 <p>Let’s take a little break and talk some math.</p>
 <p>Free monads are one of the neatest things I’ve learned about recently. The definition (in Haskell) of a free monad over a functor <code>f</code> is this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Free</span> f a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>              <span class="op">|</span> <span class="dt">Bind</span> (f (<span class="dt">Free</span> f a))</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Free</span> f a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Bind</span> (f (<span class="dt">Free</span> f a))</span></code></pre></div>
 <p>Which can be thought of a recursive datastructure which bottoms out with a <code>Pure</code> or recurses with an <code>Bind</code>. The definition was hard for me to work my head around, so let’s give it a concrete functor and see what pops out:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Free</span> [] a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>               <span class="op">|</span> <span class="dt">Bind</span> [<span class="dt">Free</span> [] a]</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Free</span> [] a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>               <span class="op">|</span> <span class="dt">Bind</span> [<span class="dt">Free</span> [] a]</span></code></pre></div>
 <p>If we squint, this is actually just a tree where <code>Bind</code> is a <span class="math inline">\(n\)</span>-ary branch, and <code>Pure</code> is a value at a leaf. So a tree is just a special case of the free monad. That’s kinda hot, if you’re as into this stuff as much as I am.</p>
 <p>But what’s more hot is that given any <code>instance Functor f</code>, <code>Free f</code> forms a monad:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Free</span> f) <span class="kw">where</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  <span class="fu">return</span> a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="dt">Pure</span> a <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> f a</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>  <span class="dt">Bind</span> m <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="dt">Bind</span> (<span class="fu">fmap</span> (<span class="op">&gt;&gt;=</span> f) m)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Free</span> f) <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Pure</span> a <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> f a</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Bind</span> m <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="dt">Bind</span> (<span class="fu">fmap</span> (<span class="op">&gt;&gt;=</span> f) m)</span></code></pre></div>
 <p>It’s probably the dumbest <code>Monad</code> instance imaginable, but hey, it adheres to the monad laws, and that’s really all we ask for. The laws are satisfied only in a very trivial sense, in that all we’ve done here is encode the rules of <code>return</code> and <code>(&gt;&gt;=)</code> into our datastructure which is to say, we haven’t done any processing yet. We’ll return to this in a moment.</p>
 <p>It’s called “free” for exactly this reason of trivially satisfying the laws – given any functor <code>f</code> we can get an (admittedly stupid) monad over <code>f</code> for free.</p>
 <p>Because our free monad is just a datastructure in the exact shape of a computation we <em>would</em> want to carry out over its contents, it’s easy to write an interpreter for it. Or several.</p>
@@ -120,47 +120,47 @@
 <h2 id="the-command-functor">The Command Functor</h2>
 <p>So we need a means of getting a <code>Functor</code> instance for our <code>Story</code> type described above. But how?</p>
 <p>Let’s start playing madlibs with what we know.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Story</span> a <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">StoryF</span> a</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="co">-- ???</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Story</span> a <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">StoryF</span> a</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="co">-- ???</span></span></code></pre></div>
 <p>Looking at the definition of <code>Free</code> specialized over our functor <code>StoryF</code> once again hints us in the right direction:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Story</span> a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>             <span class="op">|</span> <span class="dt">Bind</span> (<span class="dt">StoryF</span> (<span class="dt">Story</span> a))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Story</span> a <span class="ot">=</span> <span class="dt">Pure</span> a</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>             <span class="op">|</span> <span class="dt">Bind</span> (<span class="dt">StoryF</span> (<span class="dt">Story</span> a))</span></code></pre></div>
 <p>The polymorphic variable of our <code>StoryF</code> functor is only ever going to be a <code>Story a</code>, which is to say a pure <code>a</code> or a bind computing more of the final value.</p>
 <p>So our polymorphic type variable is the type of the continuing computation. Because <code>Pure</code> from <code>Free</code> takes care of how computations terminate, our functor should always have a continuing computation. Voila:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span> (<span class="dt">ChangeResult</span> <span class="ot">-&gt;</span> a)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>              <span class="op">|</span> <span class="dt">Interrupt</span> (<span class="dt">Story</span> ()) (<span class="dt">Story</span> ()) a</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">StoryF</span> a <span class="ot">=</span> <span class="dt">Change</span> <span class="dt">Character</span> <span class="dt">ChangeType</span> (<span class="dt">ChangeResult</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Interrupt</span> (<span class="dt">Story</span> ()) (<span class="dt">Story</span> ()) a</span></code></pre></div>
 <p>contrasting this against our old <code>StoryPrim</code>, we’ve just added a new product involving <code>a</code> to all each of our sum terms. Again, <code>a</code> should be considered to be the type of the continuing computation.</p>
 <p>But what’s this funny <code>ChangeResult -&gt; a</code> thing? Well, recall that we wanted a <code>Change</code> to return a <code>ChangeResult</code> indicating what changed, which is to say this result should be a <em>parameter</em> to the rest of the computation – thus our function type<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
 <p><code>StoryF</code> is what’s known as our command functor, because as we will see, its constructors will eventually act as commands in our DSL.</p>
 <p>But wait! Not so fast. We haven’t yet provided a <code>Functor</code> instance for <code>StoryF</code>. It’s trivial, but we present it here for completeness:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">StoryF</span> <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>    <span class="fu">fmap</span> f (<span class="dt">Change</span> c ct k)    <span class="ot">=</span> <span class="dt">Change</span> c ct (f <span class="op">.</span> k)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="fu">fmap</span> f (<span class="dt">Interrupt</span> s s&#39; k) <span class="ot">=</span> <span class="dt">Interrupt</span> s s&#39; (f k)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">StoryF</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fmap</span> f (<span class="dt">Change</span> c ct k)    <span class="ot">=</span> <span class="dt">Change</span> c ct (f <span class="op">.</span> k)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fmap</span> f (<span class="dt">Interrupt</span> s s&#39; k) <span class="ot">=</span> <span class="dt">Interrupt</span> s s&#39; (f k)</span></code></pre></div>
 <p>And so <code>StoryF</code> is now a <code>Functor</code>, which means that <code>Free StoryF</code> is a <code>Monad</code>, which means that we can use <code>do</code> notation inside of it! We’re most of the way to our DSL!</p>
 <p>All that’s left is to lift our <code>StoryF</code> data constructors into <code>Story</code> constructors. The details of this are a little messy, but luckily <code>liftF</code> from the <code>free</code> package does most of the manual labor for us.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">change ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">ChangeType</span> <span class="ot">-&gt;</span> <span class="dt">Story</span> <span class="dt">ChangeResult</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>change c ct <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Change</span> c ct <span class="fu">id</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="ot">interrupt ::</span> <span class="dt">Story</span> () <span class="ot">-&gt;</span> <span class="dt">Story</span> () <span class="ot">-&gt;</span> <span class="dt">Story</span> ()</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>interrupt s s&#39; <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Interrupt</span> s s&#39; ()</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">change ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">ChangeType</span> <span class="ot">-&gt;</span> <span class="dt">Story</span> <span class="dt">ChangeResult</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>change c ct <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Change</span> c ct <span class="fu">id</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">interrupt ::</span> <span class="dt">Story</span> () <span class="ot">-&gt;</span> <span class="dt">Story</span> () <span class="ot">-&gt;</span> <span class="dt">Story</span> ()</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>interrupt s s&#39; <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Interrupt</span> s s&#39; ()</span></code></pre></div>
 <p>and that’s it! Short of some helpful combinators, we’re done! We can now write basic stories in Haskell using <code>do</code> notation!</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">myStory ::</span> <span class="dt">Story</span> <span class="dt">Int</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>myStory <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>    <span class="kw">let</span> mandalf <span class="ot">=</span> <span class="dt">Character</span> <span class="st">&quot;Mandalf the Wizard&quot;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>        orcLord <span class="ot">=</span> <span class="dt">Character</span> <span class="st">&quot;Orclord Lord of the Orcs&quot;</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>        orcBaby <span class="ot">=</span> <span class="dt">Character</span> <span class="st">&quot;Orclord&#39;s Child&quot;</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>    sadness <span class="ot">&lt;-</span> kill mandalf orcLord</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>    change orcBaby <span class="op">$</span> <span class="dt">Learn</span> sadness</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true"></a></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true"></a>    <span class="fu">return</span> <span class="dv">5</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true"></a></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true"></a><span class="ot">die ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">Story</span> <span class="dt">ChangeResult</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true"></a>die who <span class="ot">=</span> change who <span class="dt">Die</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true"></a></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true"></a><span class="ot">kill ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">Story</span> <span class="dt">ChangeResult</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true"></a>kill who whom <span class="ot">=</span> change who (<span class="dt">Kill</span> whom) <span class="op">&lt;*</span> die whom</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">myStory ::</span> <span class="dt">Story</span> <span class="dt">Int</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>myStory <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> mandalf <span class="ot">=</span> <span class="dt">Character</span> <span class="st">&quot;Mandalf the Wizard&quot;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        orcLord <span class="ot">=</span> <span class="dt">Character</span> <span class="st">&quot;Orclord Lord of the Orcs&quot;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        orcBaby <span class="ot">=</span> <span class="dt">Character</span> <span class="st">&quot;Orclord&#39;s Child&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    sadness <span class="ot">&lt;-</span> kill mandalf orcLord</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    change orcBaby <span class="op">$</span> <span class="dt">Learn</span> sadness</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> <span class="dv">5</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="ot">die ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">Story</span> <span class="dt">ChangeResult</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>die who <span class="ot">=</span> change who <span class="dt">Die</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="ot">kill ::</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">Character</span> <span class="ot">-&gt;</span> <span class="dt">Story</span> <span class="dt">ChangeResult</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>kill who whom <span class="ot">=</span> change who (<span class="dt">Kill</span> whom) <span class="op">&lt;*</span> die whom</span></code></pre></div>
 <p>As far as stories go, one about a child learning of its father’s death is probably not going to win any feel-good-novella-of-the-year, but the example serves to showcase several things:</p>
 <ul>
 <li>We can build abstractions with standard Haskell combinators (eg. killing someone implies that they die.)</li>
@@ -229,7 +229,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 
