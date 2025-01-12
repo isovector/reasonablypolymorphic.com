@@ -9,7 +9,7 @@ rm -rf docs/
 mkdir docs
 mv dist/* docs/
 git checkout docs/CNAME
-git add docs
-git commit -m "i am excellent at programming"
-git push
+jj describe -m 'automatic deploy'
+jj branch set master
+jj git push
 

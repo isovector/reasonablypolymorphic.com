@@ -1,7 +1,7 @@
 ---
 layout: post
-title: Don't Read the Profiler Output
-date: TO_BE_DETERMINED
+title: Read the Code, Not the Profile
+date: 2025-01-12 15:29
 comments: true
 tags: haskell, profiling
 ---
