@@ -1,0 +1,58 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 3"
+date: 2023-05-25 19:40
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+Week three, and this update is coming in hot, a whole day early! This week I
+worked on the ring solving chapter, realizing that I can make a very much
+non-toy solver, and pack it into a chapter. We now build a multivariate semiring
+solver, discuss how and why it works, and then do some dependent-type
+shenanigans to put a delightful user interface in front of the whole thing.
+
+In addition, it came with some excellent opportunities to discuss where
+semantics come from, and let me talk about homomorphisms earlier than I was
+otherwise hoping to.
+
+My plan for the week was to tackle the remainder of the setoids chapter, but
+setoids are awful and it's hard to motivate myself to do that, since I avoid
+using them in my day-to-day life whenever I can. Which is always. We'll see what
+happens with this chapter, but maybe it'll get melted down into something else.
+Nevertheless, understanding setoids *is* important for actually doing anything
+with the stdlib, so I dunno.
+
+On the typesetting front, I spent an hour today fighting with Latex trying to
+ensure that it has glyphs for every unicode character in the book. I've got all
+but one of them sorted out now, and in the process, learned way more about
+Latex than any human should need to know.
+
+The plan for next week is to cleanup the extremely WIP backmatter chapters.
+There's a bunch of crap in there about me trying to do math math and failing,
+because math math doesn't give two sniffs about constructability, and so none of
+it works out. If I'm feeling particularly plucky, I might try my hand at
+defining the reals, just because it might be fun.
+
+As of today's update, the book is now 360 pages long! I estimate it'll be about
+450 when it's done, so we're clearly  making progress.
+
+---
+
+Anyway, that's all for today. If you've already bought the book, you can get the
+updates for free on [Leanpub][cbc]. If you haven't, might I suggest doing so?
+Your early support and feedback helps inspire me and ensure the book is as good
+as it can possibly be.
+
+
+

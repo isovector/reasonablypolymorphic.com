@@ -1,0 +1,59 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 6"
+date: 2023-07-14 15:30
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+Aaaand we're back. Traveling was nice, but it's nicer to be home and being
+productive and making things.
+
+This week I did a lot of work on the isomorphisms chapter. First and foremost, I
+proved that everything I knew about cardinalities from the Curry-Howard
+isomorphism held true. That is, that sum types add the cardinalities of their
+constituent types, product types multiply them, and by far the hardest to prove,
+that functions act as exponentials.
+
+Going through the work of that taught me that I haven't really internalized
+everything I ought to have regarding setoids, since I originally framed the
+problem wrong and needed Reed to help sort me out. There is some material in
+this chapter about building the relevant setoids for all of the necessary types,
+which sucks and would be better to avoid. I'm unsure if it will get moved out to
+the setoid chapter, or if I'll just give a sketch in the final version, or maybe
+if it just gets left where it is.
+
+For me, the motivating use case behind the algebra of types is to find different
+representations of things, ones with better computational properties. This turns
+out to be extremely easy to exploit in Haskell, but upon trying to write about
+it, I realized how much magic the Haskell runtime is doing in order to make that
+happen. It's amazing that I'm still managing to trick myself into thinking I
+understand things, even after working on this book for nearly a year. But I
+suppose that's the whole purpose!
+
+So anyway, that section isn't yet finished, but I think one more week will be
+enough to tie it together. And at that point, I've written everything I intend
+to, and will spend the remainder of my project time on editing, rewriting,
+cleaning up, and tackling the weird typesetting problems that remain. The end is
+nigh!
+
+---
+
+That's all for today. If you've already bought the book, you can get the
+updates for free on [Leanpub][cbc]. If you haven't, might I suggest doing so?
+Your early support and feedback helps inspire me and ensure the book is as good
+as it can possibly be.
+
+
+
+

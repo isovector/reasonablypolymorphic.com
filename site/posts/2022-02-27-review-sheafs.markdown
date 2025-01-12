@@ -9,10 +9,11 @@ tags: agrios, sheaves, math, reverse engineering, agda
 ```
 {-# OPTIONS --type-in-type #-}
 
-module Blog.sheafs where
+module blog.sheafs where
 
 open import Data.Integer hiding (_<_)
-open import Data.Integer.Properties using (*-zeroˡ; ≤-reflexive; ≤-trans)
+open import Data.Integer.Properties
+              using (*-zeroˡ; ≤-reflexive; ≤-trans)
 open import Data.Vec hiding (restrict; reverse)
 open import Categories
 open import Category.LIN
@@ -369,9 +370,8 @@ module BadEx where
 ```
 -->
 
--- TODO(sandy): make this cleaner
-
-Unfortunately, this formalization doesn't quite work out; there are no arrows
+Unfortunately, this formalization doesn't quite work out; there are no
+interesting arrows
 out of `terminal`{.Agda}:
 
 ```
@@ -584,7 +584,8 @@ module Op (C : Category) where
   op .id-r (reverse f) = C .id-l f
   op .id-l (reverse f) = C .id-r f
   op .∘-assoc (reverse h) (reverse g) (reverse f) =
-    setoid C .isEquivalence .S.IsEquivalence.sym (C .∘-assoc f g h)
+    setoid C .isEquivalence
+             .S.IsEquivalence.sym (C .∘-assoc f g h)
     where
       open import Relation.Binary.Bundles using (Setoid)
       open Setoid using (isEquivalence)
@@ -626,7 +627,8 @@ module _ where
   ex' .F-map-∘ (reverse e12<v2) (reverse (ex<-refl _)) a = refl
   ex' .F-map-∘ (reverse (ex<-refl _)) (reverse e12<v1) a = refl
   ex' .F-map-∘ (reverse (ex<-refl _)) (reverse e12<v2) a = refl
-  ex' .F-map-∘ (reverse (ex<-refl _)) (reverse (ex<-refl _)) a = refl
+  ex' .F-map-∘ (reverse (ex<-refl _)) (reverse (ex<-refl _)) a
+    = refl
 ```
 
 which leaves only the question of what a `GlobalSection` is under this
@@ -673,17 +675,15 @@ of the requirements, but it doesn't tell us much about the world. This is the
 metaphorical equivalent of explaining our sensors' readings as "anything is
 possible!"
 
-More interestingly, we could pick `F-Obj terminal` to be `ℤ2 × ℤ3 × ℤ2`,
-corresponding to the product of `F-Obj v1`, `F-Obj v2` and `F-Obj e12`. We can
-satisfy the functor laws by projecting from the `F-Obj term` down to one of its
-components. And, best of all, it gives us a place to stick the values from our
-worked example.
+More interestingly, we could pick `F-Obj terminal` to be $\mathbb{Z}^2 ×
+\mathbb{Z}^3 × \mathbb{Z}^2$, corresponding to the product of `F-Obj v1`, `F-Obj
+v2` and `F-Obj e12`. We can satisfy the functor laws by projecting from the
+`F-Obj term` down to one of its components. And, best of all, it gives us a
+place to stick the values from our worked example.
 
 I'd love to code this up in more detail, but unfortunately I'm out of time.
 That's the flaw of trying to get through one paper a week, the deadline is
 strict whether you're ready for it or not.
 
-This whole post is a literate Agda file. I'm currently in the process of writing
-an Agda blogging backend for the site, so hopefully if you come back in a week
-or so, everything here should be hyperlinked and interactive.
+This whole post is a literate Agda file.
 

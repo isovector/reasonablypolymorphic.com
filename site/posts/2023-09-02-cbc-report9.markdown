@@ -1,0 +1,69 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 9"
+date: 2023-09-02 02:50
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+It is now the wee hours of Sept 2, and it's safe to say I did not make the
+deadline. The book is not yet finished come hell or high water. Damn. Here's the
+state of the world:
+
+- Everything up to page 203/296 has been aggressively edited, in terms of prose,
+  code, general presentation, and overall topic order. There are still a few
+  TODOs to write chapter summaries, but those aren't the end of the world if
+  they don't happen.
+- It's now possible to build semi-readable epubs. Needing to run everything
+  through the Agda compiler makes build pipelines surprisingly hard, but I think
+  this should only require a couple of hours to get it into a good place.
+- I have commissioned a contest of potential covers for the book; no results
+  yet, but I expect to to have some things to look at by the end of this week.
+- Since my last update, I realized I had accidentally lost the chapter on ring
+  solving when doing my big refactor. I've since found it, but it's no longer
+  particularly motivated and is rather out of place, so I think it's going to
+  get cut. Kill your darlings and all that.
+
+All in all, I'm bummed I didn't make the deadline, but the quality of the book
+is exponentially better, so I think it's a worthwhile trade. I've got three/four
+chapters left to edit (depending on if ring solving gets cut), and I need to
+write a closing chapter to make the end less jarring.
+
+On a personal note, although the book is much longer in content than my other
+books, it's packed much tighter and thus is going to be *physically* smaller
+when I get it printed. For some reason that is holding a lot of space in my head
+right now, and steering me away from cutting too much. I suppose I shouldn't
+fret too much; there's still an index and glossary I need to add which will
+probably add a bit of length. Also I know this doesn't matter, but I care about
+it nevertheless.
+
+So why didn't I get this done on time? The reason seems to be just that it was
+too ambitious a goal. I definitely underestimated the amount of polish required
+here. This month I put 65 hours of honest-to-goodness *work* into the book,
+which if you measure in terms of the 2.9h average hours of work that an officer
+worker does in a day is more than a full time job. It's very late and I don't
+know if that makes sense but I think it might.
+
+Anyway, here's the plan going forwards---I've got some of this week to work on
+the book before getting married and starting grad school. The goal is to just
+keep on at this pace for as long as I possibly can until I die or real life gets
+in the way. It sucks and I'm exhausted and would like to be finished with this
+thing, but it's not done with *me* yet. And so we go on.
+
+But maybe I'll take tomorrow off because I need to sort out getting married, and
+I don't think this kind of extreme focus is good for my mental health. It's a
+bit of a balancing act though, because life is only going to get more busy after
+next week.
+
+Sorry for the bleak trail off here. I should go to bed.
+

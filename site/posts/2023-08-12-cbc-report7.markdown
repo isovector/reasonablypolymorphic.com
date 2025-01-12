@@ -1,0 +1,50 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 7"
+date: 2023-08-12 23:45
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+Where has this dingus Sandy been?? Busy busy busy! I'm in the middle of planning
+a wedding (my own), as well as just finished being the best man at my friend's
+wedding. Plus getting the tax man's records all sorted out for him, and a bunch
+of other things that fell into the "urgent" AND "important" categories.
+
+Yeesh. Enough excuses though. I'm back and haven't given up on any of this!
+
+These days I'm calling the book "essentially done," and all that is required is
+extensive editing. Which I've been doing. Every day on the bus I'm reading my
+PDF copy and making notes in the margin. Then I get home and go through the
+notes and clean up the prose.
+
+It's slow going, but that's the way of the world. The prose is getting
+dramatically tightened up, however. It's kind of fun to go through, be aware of
+the point I'm trying to make, and realize that I haven't actually made it. I'm
+not calling this "rewriting," but most paragraphs are changing dramatically.
+
+Today I also sat down and hashed out a bunch of the technical pipeline issues
+I've been putting off for a year. Like getting section references working. So
+now instead of saying "as in **sec:propeq?**", the prose now says "as in section
+3.2". The annotations have always been there, but getting the build to actually
+put in the text has taken away several hours of my life.
+
+More excitingly, I also managed to get inline code snippets properly
+highlighted---and, even better, *broken code* now also highlights. This is a
+resounding achievement, because the whole idea of literate Agda is that it must
+compile. And the compiler is what generates the syntax highlighting. It's a
+terrifying marvel of engineering, but it does work.
+
+So that's all. I'm just going to push on this book thing until it's done. Or
+until September 1. Whichever comes sooner. That's a terrifying thought, so I
+guess I'd better get back to it.

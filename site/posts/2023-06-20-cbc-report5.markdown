@@ -1,0 +1,61 @@
+---
+layout: post
+title: "Certainty by Construction Progress Report 5"
+date: 2023-06-20 22:04
+comments: true
+tags: book, agda, progres report, certainty by construction
+---
+
+The following is a progress report for [Certainty by
+Construction][cbc], a new book I'm
+writing on learning and effectively wielding Agda. Writing a book is a tedious
+and demoralizing process, so if this is the sort of thing you're excited about,
+please do let me know!
+
+[cbc]: https://leanpub.com/certainty-by-construction
+
+---
+
+Reporting in a little early this week, since I'm going to be traveling for two
+weeks without my laptop starting tomorrow. That means the book isn't going to
+get much work done on it until early July.
+
+Nevertheless, I've been busy this week. I looked at a "real" book the other
+day, and was floored by how beautifully it was typeset. It inspired me to up my
+game and put a lot more energy into presentation. The results, in my opinion,
+are stunning. I redid the chapter headings. I changed the page headers.
+Painfully, I changed the margins too, which left the book 100 pages shorter than
+it used to be. Ouch! But what I'm most proud of is the new color scheme.
+
+Let's face it. The out-of-the-box color scheme for Agda is hard to love. It's
+got ten seemingly-randomly-chosen colors, all smashed together. At first I tried
+a black and white color scheme, which looked great, but made the code hard to
+parse. So instead, I've settled on a trichomatic scheme based on the colors from
+[Byrne's Euclid](https://c82.net/euclid/#books). It took a lot of tweaking to
+make everything work, but I'm really happy with how it's turned out.
+
+But presentation isn't everything I did this week. No, I also rewrote everything
+I had on setoids, and have now motivated them by way of a section on monoids and
+their homomorphisms. This material is also a rewrite of the old janky monoid
+stuff, and it's really come together. I've been trying to tie in a little more
+"and, as a programmer, why you should care" about some of these ideas.
+
+Furthermore, there's some rudimentary new material on finite numbers,
+characteristic functions and isomorphisms, with the eventual programming tie-in
+being automatic memoization of functions. This is a topic I thought I
+understood, but working through the formalization makes me realize I had fooled
+myself.
+
+Anyway. I'm going to be gone for a few weeks, but I'll pick right back up when
+I hit ground again. See you soon.
+
+---
+
+That's all for today. If you've already bought the book, you can get the
+updates for free on [Leanpub][cbc]. If you haven't, might I suggest doing so?
+Your early support and feedback helps inspire me and ensure the book is as good
+as it can possibly be.
+
+
+
+
