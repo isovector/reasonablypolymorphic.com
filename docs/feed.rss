@@ -7,13 +7,88 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2024-05-18T18:03:00Z</pubDate>
+  <pubDate>2025-01-12T15:29:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Read the Code, Not the Profile</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/read-the-code/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/read-the-code/index.html</guid>
+      <pubDate>2025-01-12T15:29:00Z</pubDate>
+      <content:encoded><![CDATA[
+        <p>At work a few weeks back, I found myself digging into profile reports, trying to determine why our program was running so slowly. Despite having the extremely obvious-in-retrospect data in front of me, I wasted a lot of time speeding up code that turned out to not move the needle at all.</p>
+<p>Although perhaps it will be interesting only to future me, I thought it would be a good exercise to write up the experience—if only so I learn the lesson about how to read profiles and not make the same mistake again.</p>
+<h2 id="some-context">Some Context</h2>
+<p>I’m currently employed to work on a compiler. The performance has never been stellar, in that we were usually seeing about 5s to compile programs, even trivially small ones consisting of less than a hundred instructions. It was painful, but not <em>that</em> painful, since the test suite still finished in a minute or two. It was a good opportunity to get a coffee. I always assumed that the time penalties we were seeing were constant factors; perhaps it took a second or two to connect to Z3 or something like that.</p>
+<p>But then we started unrolling loops, which turned <em>trivially</em> small programs into <em>merely</em> small programs, and our performance ballooned. Now we were looking at 45s for some of our tests! Uh oh! That’s no longer in the real of constant factors, and it was clear that something asymptotically was wrong.</p>
+<p>So I fired up GHC with the trusty old <code>-prof</code> flag, and ran the test suite in <code>+RTS -p</code> mode, which instruments the program with all sorts of profiling goodies. After a few minutes, the test suite completed, and left a <code>test-suite.prof</code> file laying around in the current directory. You can inspect such things by hand, but tools like <a href="https://github.com/jaspervdj/profiteur">profiteur</a> make the experience much nicer.</p>
+<p>Without further ado, here’s what our profile looked like:</p>
+<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
+<p>Well, that’s not very helpful. Of course <code>MAIN</code> takes 100% of the time. So I expanded that, and saw:</p>
+<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
+└ main . . . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
+<p>No clearer. Opening up <code>main</code>:</p>
+<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
+└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
+  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
+<p>Sheesh.</p>
+<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
+└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
+  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
+    └ getTest  . . . . . . . . . . . . . . . . . . . 100%</code></pre>
+<p>OH MY GOD. JUST TELL ME SOMETHING ALREADY.</p>
+<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
+└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
+  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
+    └ getTest  . . . . . . . . . . . . . . . . . . . 100%
+      └ test . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
+<p>Fast forwarding for <em>quite</em> a while, I opened up the entire stack until I got to something that <em>didn’t</em> take 100% of the program’s runtime:</p>
+<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
+└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
+  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
+    └ getTest  . . . . . . . . . . . . . . . . . . . 100%
+      └ test . . . . . . . . . . . . . . . . . . . . 100%
+        └ makeTest . . . . . . . . . . . . . . . . . 100%
+          └ makeTest.\ . . . . . . . . . . . . . . . 100%
+            └ compileProgram . . . . . . . . . . . . 100%
+              └ evalAppT . . . . . . . . . . . . . . 100%
+                └ runAppT  . . . . . . . . . . . . . 100%
+                  └ runAppT&#39; . . . . . . . . . . . . 100%
+                    └ withLogging  . . . . . . . . . 100%
+                      └ transformSSA . . . . . . . . 100%
+                        └ &gt;&gt;=  . . . . . . . . . . . 100%
+                          └ &gt;&gt;&gt;= . . . . . . . . . . 100%
+                            └ ibind  . . . . . . . . 100%
+                              └ ibind.\  . . . . . . 100%
+                                └ ibind.\.\  . . . . 100%
+                                  ├ toSSA  . . . . . 15%
+                                  ├ transform1 . . . 15%
+                                  ├ transform2 . . . 10%
+                                  ├ transform3 . . . 10%
+                                  ├ transform4 . . . 20%
+                                  └ collectGarbage . 30%</code></pre>
+<p>Now we’re in business. I dutifully dug into <code>toSSA</code>, the transforms, and <code>collectGarbage</code>. I cached some things, used better data structures, stopped appending lists, you know, the usual Haskell tricks. My work was rewarded, in that I managed to shave 80% off the runtime of our program.</p>
+<p>A few months later, we wrote a bigger program and fed it to the compiler. This one didn’t stop compiling. We left it overnight.</p>
+<p>Uh oh. Turns out I hadn’t fixed the problem. I’d only papered over it.</p>
+<h2 id="retrospective">Retrospective</h2>
+<p>So what went wrong here? Quite a lot, in fact! And worse, I had all of the information all along, but managed to misinterpret it at several steps of the process.</p>
+<p>Unwinding the story stack, the most salient aspect of having not solved the problem was reducing the runtime by <em>only</em> 80%. Dramatic percentages <em>feel</em> like amazing improvements, but that’s because human brains are poorly designed for building software. In the real world, big percentages are fantastic. In software, they are <em>linear</em> improvements.</p>
+<p>That is to say that a percentage-based improvement is <span class="math inline">\(O(n)\)</span> faster in the best case. My efforts improved our runtime from 45s to 9s. Which feels great, but the <em>real</em> problem is that this program is <em>measured in seconds</em> at all.</p>
+<p>It’s more informative to think in terms of orders of magnitude. Taking 45s on a ~3GHz processor is on the order of 10<sup>11</sup> instructions, while 9s is 10<sup>10</sup>. How the <em>hell</em> is it taking us TEN BILLION instructions to compile a dinky little program? That’s the <em>real problem.</em> Improving things from one hundred billion down to ten billion is no longer very impressive at all.</p>
+<p>To get a sense of the scale here, even if we spent 1M cycles (which feels conservatively expensive) for each instruction we wanted to compile, we should <em>still</em> be looking at &lt; 0.1s. Somehow we are over 1000x worse than that.</p>
+<p>So that’s one mistake I made: being impressed by extremely marginal improvements. Bad Sandy.</p>
+<p>The other mistake came from my interpretation of the profile. As a quick pop quiz, scroll back up to the profile and see if you can spot where the problem is.</p>
+<p>After expanding a few obviously-not-the-problem call centers that each were 100% of the runtime, I turned my brain off and opened <em>all</em> of the 100% nodes. But in doing so, I accidentally breezed past the real problem. The <em>real</em> problem is either that <code>compileProgram</code> takes 100% of the time of the test, or that <code>transformSSA</code> takes 100% of compiling the program. Why’s that? Because unlike <code>main</code> and co, <code>test</code> does more work than just compiling the program. It also does non-trivial IO to produce debugging outputs, and property checks the resulting programs. Similarly for <code>compileProgram</code>, which does a great deal more than <code>transformSSA</code>.</p>
+<p>This is somewhat of a philosophical enlightenment. The program execution hasn’t changed at all, but our perspective has. Rather than micro-optimizing the code that <em>is</em> running, this new perspective suggests we should focus our effort on determining <em>why that code is running in the first place.</em></p>
+<p>Digging through <code>transformSSA</code> made it <em>very obvious</em> the problem was an algorithmic one—we were running an unbounded loop that terminated on convergence, where each step it took <span class="citation" data-cites="O">@O</span>(n^2)@ work to make a single step. When I stopped to actually <em>read</em> the code, the problem was immediate, and the solution obvious.</p>
+<p>The lesson? Don’t read the profile. Read the code. Use the profile to focus your attention.</p>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Jujutsu Strategies</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -768,24 +843,6 @@
 <p>I had to rewrite a good chunk of chapter 2, and a lot of the prose in chapter 3 is from a very early edition of the book, and doesn’t have the shine as the rest of it. So that’s getting reworked too. My hope is that the later chapters were written more recently, and therefore will require less elbow grease. It’s plausible, and would be greatly appreciated. But I fear that the setoids chapter needs a lot of work, and I’m just trying my best to ignore it. For now.</p>
 <p>In other news, I’m now uploading nightly builds to <a href="https://leanpub.com/certainty-by-construction">Leanpub</a> in order to keep myself honest. There’s no indication of which half of the book has been edited and which hasn’t, but that seems like a good idea I should adopt for the next build. That way particularly dedicated readers could follow along and see just how quickly I can get material cleaned up. And it will prevent me from accidentally forgetting where I was and re-editing it all again. Which has happened several times, somehow.</p>
 <p>Okay that’s enough of an update. Back to the grind. Love y’all.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Certainty by Construction Progress Report 7</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/cbc-report7/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/cbc-report7/index.html</guid>
-      <pubDate>2023-08-12T23:45:00Z</pubDate>
-      <content:encoded><![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>Where has this dingus Sandy been?? Busy busy busy! I’m in the middle of planning a wedding (my own), as well as just finished being the best man at my friend’s wedding. Plus getting the tax man’s records all sorted out for him, and a bunch of other things that fell into the “urgent” AND “important” categories.</p>
-<p>Yeesh. Enough excuses though. I’m back and haven’t given up on any of this!</p>
-<p>These days I’m calling the book “essentially done,” and all that is required is extensive editing. Which I’ve been doing. Every day on the bus I’m reading my PDF copy and making notes in the margin. Then I get home and go through the notes and clean up the prose.</p>
-<p>It’s slow going, but that’s the way of the world. The prose is getting dramatically tightened up, however. It’s kind of fun to go through, be aware of the point I’m trying to make, and realize that I haven’t actually made it. I’m not calling this “rewriting,” but most paragraphs are changing dramatically.</p>
-<p>Today I also sat down and hashed out a bunch of the technical pipeline issues I’ve been putting off for a year. Like getting section references working. So now instead of saying “as in <strong>sec:propeq?</strong>”, the prose now says “as in section 3.2”. The annotations have always been there, but getting the build to actually put in the text has taken away several hours of my life.</p>
-<p>More excitingly, I also managed to get inline code snippets properly highlighted—and, even better, <em>broken code</em> now also highlights. This is a resounding achievement, because the whole idea of literate Agda is that it must compile. And the compiler is what generates the syntax highlighting. It’s a terrifying marvel of engineering, but it does work.</p>
-<p>So that’s all. I’m just going to push on this book thing until it’s done. Or until September 1. Whichever comes sooner. That’s a terrifying thought, so I guess I’d better get back to it.</p>
       ]]></content:encoded>
   </item>
 </channel>
