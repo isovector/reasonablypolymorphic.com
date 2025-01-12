@@ -15,7 +15,6 @@ executable poly
   main-is:          Main.hs
   build-depends:    base
                   , sitepipe
-                  , datetime
                   , parsec
                   , pandoc
                   , pandoc-types

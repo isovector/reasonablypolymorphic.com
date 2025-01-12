@@ -3,11 +3,11 @@ packages:
 - '.'
 
 extra-deps:
-- datetime-0.3.1
-- sitepipe-0.4.0.1
+- sitepipe-0.4.0.2
 - strptime-1.0.10
+- MissingH-1.6.0.1
 
-resolver: lts-16.0
+resolver: lts-18.16
 
 nix:
   packages:
