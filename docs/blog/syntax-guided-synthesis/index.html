@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Review: Syntax-Guided Synthesis :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/syntax-guided-synthesis">Review: Syntax-Guided Synthesis</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/generic-parallel-fp">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proof-carrying-code">&rarr;</a>
+    </span>
+    <time>March 19, 2022</time>
+
+    <span class="tags">
+        <a href="/tags/synthesis.html">synthesis</a>, <a href="/tags/pl.html">pl</a>, <a href="/tags/alur.html">alur</a>, <a href="/tags/review.html">review</a>, <a href="/tags/sketch.html">sketch</a>
+    </span>
+</p>
+<div class="content">
+    <!--
+```
+module blog.syntax-guided-synthesis where
+
+open import Data.Nat
+open import Data.Nat.Properties
+open import Data.Product
+open import Data.Sum
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary using (Dec; yes; no; _because_; ¬_; ofʸ; ofⁿ)
+open import Data.Bool hiding (_≟_; _≤_; _≤?_)
+open import Relation.Nullary.Negation
+open import Data.List hiding (and; [_])
+open import Function hiding (const)
+open import Data.Maybe
+```
+-->
+<p>I was describing my idea from <a href="/blog/generic-parallel-fp">last week</a> to <a href="/blog/generic-parallel-fp/#future-work">automatically optimize programs</a> to Colin, who pointed me towards <a href="https://sygus.org/assets/pdf/Journal_SyGuS.pdf">Syntax-Guided Synthesis</a> by Alur et al.</p>
+<p>Syntax-Guided Synthesis is the idea that free-range program synthesis is really hard, so instead, let’s constrain the search space with a grammar of allowable programs. We can then enumerate those possible programs, attempting to find one that satisfies some constraints. The idea is quite straightforward when you see it, but that’s not to say it’s unimpressive; the paper has lots of quantitative results about exactly how well this approach does.</p>
+<p>The idea is we want to find programs with type <code class="sourceCode agda">I</code> <code>→</code> <code class="sourceCode agda">O</code>, that satisfy some <code class="sourceCode agda">spec</code>ification. We’ll do that by picking some <code class="sourceCode agda">Lang</code>uage of syntax, and trying to build our programs there.</p>
+<p>All of this is sorta moot, because we assume we have some <code class="sourceCode agda">oracle</code> which can tell us if our program satisfies the <code class="sourceCode agda">spec</code>. But the <code class="sourceCode agda">oracle</code> is probably some SMT solver, and is thus expensive to call, so we’d like to try hard not to call it if possible.</p>
+<p>Let’s take an example, and say that we’d like to synthesize the <code>max</code> of two <code class="sourceCode agda">Nat</code>s. There are lots of ways of doing that! But we’d like to find a function that satisfies the following:</p>
+<pre><code>data MaxSpec (f : ℕ × ℕ → ℕ) : ℕ × ℕ → Set where
+  is-max : {x y : ℕ}
+         → x ≤ f (x , y)
+         → y ≤ f (x , y)
+         → ((f (x , y) ≡ x) ⊎ (f (x , y) ≡ y))
+         → MaxSpec f (x , y)</code></pre>
+<p>If we can successfully produce an element of <code class="sourceCode agda">MaxSpec</code> <code>f</code>, we have a proof that <code>f</code> is an implementation of <code>max</code>. Of course, actually producing such a thing is rather tricky; it’s equivalent to determining if <code class="sourceCode agda">MaxSpec</code> <code>f</code> is <code class="sourceCode agda">Dec</code>idable for the given input.</p>
+<p>In the first three cases, we have some conflicting piece of information, so we are unable to produce a <code class="sourceCode agda">MaxSpec</code>:</p>
+<pre><code>decideMax : (f : ℕ × ℕ → ℕ) → (i : ℕ × ℕ) → Dec (MaxSpec f i)
+decideMax f i@(x , y) with f i | inspect f i
+... | o | [ fi≡o ] with x ≤? o | y ≤? o
+... | no ¬x≤o | _ = no λ { (is-max x≤o _ _) →
+        contradiction (≤-trans x≤o (≤-reflexive fi≡o)) ¬x≤o }
+... | yes _ | no ¬y≤o = no λ { (is-max x y≤o x₂) →
+        contradiction (≤-trans y≤o (≤-reflexive fi≡o)) ¬y≤o }
+... | yes x≤o | yes y≤o with o ≟ x | o ≟ y
+... | no x≠o | no y≠o =
+        no λ { (is-max x x₁ (inj₁ x₂)) →
+                  contradiction (trans (sym fi≡o) x₂) x≠o
+             ; (is-max x x₁ (inj₂ y)) →
+                  contradiction (trans (sym fi≡o) y) y≠o
+             }</code></pre>
+<p>Otherwise, we have a proof that <code>o</code> is equal to either <code>y</code> or <code>x</code>:</p>
+<pre><code>... | no proof | yes o≡y = yes
+        (is-max (≤-trans x≤o (≤-reflexive (sym fi≡o)))
+                (≤-trans y≤o (≤-reflexive (sym fi≡o)))
+                (inj₂ (trans fi≡o o≡y)))
+... | yes o≡x | _ = yes
+        (is-max (≤-trans x≤o (≤-reflexive (sym fi≡o)))
+                (≤-trans y≤o (≤-reflexive (sym fi≡o)))
+                (inj₁ (trans fi≡o o≡x)))</code></pre>
+<p><code class="sourceCode agda">MaxSpec</code> is a proof that our function is an implementation of <code>max</code>, and <code class="sourceCode agda">decideMax</code> is a proof that “we’d know one if we saw one.” So that’s the specification taken care of. The next step is to define the syntax we’d like to guard our search.</p>
+<p>The paper presents this syntax as a BNF grammar, but my thought is why use a grammar when we could instead use a type system? Our syntax is a tiny little branching calculus, capable of representing <code class="sourceCode agda">Term</code>s and branching <code class="sourceCode agda">Cond</code>itionals:</p>
+<pre><code>mutual
+  data Term : Set where
+    var-x : Term
+    var-y : Term
+    const : ℕ → Term
+    if-then-else : Cond → Term → Term → Term
+
+  data Cond : Set where
+    leq : Term → Term → Cond
+    and : Cond → Cond → Cond
+    invert : Cond → Cond</code></pre>
+<p>All that’s left for our example is the ability to “compile” a <code class="sourceCode agda">Term</code> down to a candidate function. Just pattern match on the constructors and push the inputs around until we’re done:</p>
+<pre><code>mutual
+  eval : Term → ℕ × ℕ → ℕ
+  eval var-x (x , y) = x
+  eval var-y (x , y) = y
+  eval (const c) (x , y) = c
+  eval (if-then-else c t f) i =
+    if evalCond c i then eval t i else eval f i
+
+  evalCond : Cond → ℕ × ℕ → Bool
+  evalCond (leq m n) i   = Dec.does (eval m i ≤? eval n i)
+  evalCond (and c1 c2) i = evalCond c1 i ∧ evalCond c2 i
+  evalCond (invert c) i  = not (evalCond c i)</code></pre>
+<p>So that’s most of the idea; we’ve specified what we’re looking for, via <code class="sourceCode agda">MaxSpec</code>, what our syntax is, via <code class="sourceCode agda">Term</code>, and a way of compiling our syntax into functions, via <code class="sourceCode agda">eval</code>. This is the gist of the technique; the rest is just algorithms.</p>
+<p>The paper presents several algorithms and evaluates their performances. But one is clearly better than the others in the included benchmarks, so we’ll just go through that one.</p>
+<p>Our algorithm to synthesize code corresponding to the specification takes a few parameters. We’ve seen the first few:</p>
+<pre><code>module Solver
+    {Lang I O : Set}
+    (spec : (I → O) → I → Set)
+    (decide : (f : I → O) → (i : I) → Dec (spec f i))
+    (compile : Lang → I → O)</code></pre>
+<p>However, we also need a way of synthesizing terms in our <code class="sourceCode agda">Lang</code>uage. For that, we’ll use <code class="sourceCode agda">enumerate</code>, which maps a natural number to a term:</p>
+<pre><code>    (enumerate : ℕ → Lang)</code></pre>
+<p>Although it’s not necessary for the algorithm, we should be able to implement <code class="sourceCode agda">exhaustive</code> over <code class="sourceCode agda">enumerate</code>, which states every <code class="sourceCode agda">Lang</code> is eventually produced by <code class="sourceCode agda">enumerate</code>:</p>
+<pre><code>    (exhaustive : (x : Lang) → Σ[ n ∈ ℕ ] (enumerate n ≡ x))</code></pre>
+<p>Finally, we need an <code class="sourceCode agda">oracle</code> capable of telling us if our solution is correct. This might sound a bit like cheating, but behind the scenes it’s just a magic SMT solver. The idea is that SMT can either confirm that our program is correct, or produce a counterexample that violates the <code class="sourceCode agda">spec</code>. The type here is a bit crazy, so we’ll take it one step at a time.</p>
+<p>An <code class="sourceCode agda">oracle</code> is a function that takes a <code class="sourceCode agda">Lang</code>…</p>
+<pre><code>    (oracle
+      : (exp : Lang)</code></pre>
+<p>and either gives back a function that can produce a <code>spec (compile exp)</code> for every input:</p>
+<pre><code>      →   ((i : I) → spec (compile exp) i)</code></pre>
+<p>or gives back some input which is not a <code>spec (compile exp)</code>:</p>
+<pre><code>        ⊎ Σ[ i ∈ I ] ¬ spec (compile exp) i)
+    where</code></pre>
+<p>The algorithm here is actually quite clever. The idea is that to try each <code class="sourceCode agda">enumerate</code>d value in order, attempting to minimize the number of calls we make to the <code class="sourceCode agda">oracle</code>, because they’re expensive. So instead, well keep a list of every counterexample we’ve seen so far, and ensure that our synthesized function passes all of them before sending it off to the <code class="sourceCode agda">oracle</code>. First, we’ll need a data structure to store our search progress:</p>
+<pre><code>  record SearchState : Set where
+    field
+      iteration : ℕ
+      cases : List I
+  open SearchState</code></pre>
+<p>The initial search state is one in which we start at the beginning, and have no counterexamples:</p>
+<pre><code>  start : SearchState
+  iteration start = 0
+  cases start = []</code></pre>
+<p>We can try a function by testing every counterexample:</p>
+<pre><code>  try : (I → O) → List I → Bool
+  try f = all (Dec.does ∘ decide f)</code></pre>
+<p>and finally, can now attempt to synthesize some code. Our function <code class="sourceCode agda">check</code> takes a <code class="sourceCode agda">SearchState</code>, and either gives back the next step of the search, or some program, and a proof that it’s what we’re looking for.</p>
+<pre><code>  check
+      : SearchState
+      → SearchState
+          ⊎ (Σ[ exp ∈ Lang ] ((i : I) → spec (compile exp) i))
+  check ss</code></pre>
+<p>We begin by getting and compiling the next <code class="sourceCode agda">enumerate</code>d term:</p>
+<pre><code>           with enumerate (iteration ss)
+  ... | exp with compile exp</code></pre>
+<p>check if it passes all the previous counterexamples:</p>
+<pre><code>  ... | f with try f (cases ss)</code></pre>
+<p>if it doesn’t, just fail with the next <code class="sourceCode agda">iteration</code>:</p>
+<pre><code>  ... | false = inj₁ (record { iteration = suc (iteration ss)
+                             ; cases = cases ss
+                             })</code></pre>
+<p>Otherwise, our proposed function might just be the thing we’re looking for, so it’s time to consult the <code class="sourceCode agda">oracle</code>:</p>
+<pre><code>  ... | true with oracle exp</code></pre>
+<p>which either gives a counterexample that we need to record:</p>
+<pre><code>  ... | inj₂ (y , _) =
+          inj₁ (record { iteration = suc (iteration ss)
+                       ; cases = y ∷ cases ss
+                       })</code></pre>
+<p>or it confirms that our function satisfies the specification, and thus that were done:</p>
+<pre><code>  ... | inj₁ x = inj₂ (exp , x)</code></pre>
+<p>Pretty cool! The paper gives an optimization that caches the result of every counterexample on every synthesized program, and reuses these whenever that program appears as a subprogram of a larger one. The idea is that we can trade storage so we only ever need to evaluate each subprogram once — important for expensive computations.</p>
+<p>Of course, pumping <code class="sourceCode agda">check</code> by hand is annoying, so we can instead package it up as <code class="sourceCode agda">solve</code> which takes a search depth, and iterates <code class="sourceCode agda">check</code> until it runs out of gas or gets the right answer:</p>
+<pre><code>  solve
+      : ℕ
+      → Maybe (Σ[ exp ∈ Lang ] ((i : I) → spec (compile exp) i))
+  solve = go start
+    where
+      go
+          : SearchState
+          → ℕ
+          → Maybe
+              (Σ Lang (λ exp → (i : I) → spec (compile exp) i))
+      go ss zero = nothing
+      go ss (suc n) with check ss
+      ... | inj₁ x = go ss n
+      ... | inj₂ y = just y</code></pre>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/generic-parallel-fp">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/proof-carrying-code">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

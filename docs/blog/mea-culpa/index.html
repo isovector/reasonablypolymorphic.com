@@ -67,19 +67,19 @@
 <p>So that’s more or less the story. But there are a few loose ends; such as why Lexi and I are seeing different benchmarking results. I realize this doesn’t actually matter, and I agree with her that Polysemy <em>is in fact slow.</em> That being said, I feel like enough of my reputation is on the line that I’d like to put towards some more evidence that I didn’t fabricate the whole thing. Also, the investigation will unearth some more systematic problems.</p>
 <p>First and foremost, the last time I looked at the source of Lexi’s benchmarks, I noted that they don’t use <code>polysemy-plugin</code>, which <a href="https://github.com/polysemy-research/polysemy#stellar-engineering---aligning-the-stars-to-optimize-polysemy-away">the documentation states is necessary for the good performance</a>. I don’t remember where these benchmarks actually are, but it doesn’t matter, because even if she had enabled the plugin, Polysemy <em>would still not optimize away.</em></p>
 <p>Why not? Polysemy’s performance was extremely reliant on unfolding of its recursive bind operation. As <a href="https://reasonablypolymorphic.com/blog/writing-custom-optimizations/#inlining-recursive-calls">described here</a>, you could trick GHC into unfolding a recursive call once by explicitly giving a loop-breaker. In essence, it required transforming the following recursive call:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial (n <span class="op">-</span> <span class="dv">1</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">{-# INLINE factorial #-}</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# INLINE factorial #-}</span></span></code></pre></div>
 <p>Into this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial&#39; (n <span class="op">-</span> <span class="dv">1</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="ot">{-# INLINE factorial #-}</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="ot">factorial&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>factorial&#39; <span class="ot">=</span> factorial</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="ot">{-# NOINLINE factorial&#39; #-}</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>factorial <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>factorial n <span class="ot">=</span> n <span class="op">*</span> factorial&#39; (n <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# INLINE factorial #-}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ot">factorial&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>factorial&#39; <span class="ot">=</span> factorial</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# NOINLINE factorial&#39; #-}</span></span></code></pre></div>
 <p>For whatever reason, this trick exposes enough of Polysemy’s bind so that the simplifier could inline away the expensive bits. But this was tedious! Every recursive call needed an explicit loop-breaker, and missing one would silently jeopardize your performance! Doing this by hand seemed antithetical to Polysemy’s other goal of no-boilerplate, and so at some point we factored out this logic into a GHC plugin, and then <a href="https://github.com/polysemy-research/polysemy/commit/8bbd9dc7d6ff1d55c9f8ea5f7f160ecf337d0e6e#diff-a6a5069006aaf9c213df8bfcf538bda8">removed our hand-written loop-breakers.</a>. The initial implementation of that plugin is described <a href="https://reasonablypolymorphic.com/blog/writing-custom-optimizations/">in this blog post</a>.</p>
 <p>In retrospect, this explicit breaking-of-loops doesn’t seem to be required in the benchmark — only in Polysemy — but that escaped my attention at the time and believing that user-code required this optimization was the main motivation in turning it into a GHC plugin. Anyway…</p>
 <p>As it turns out, this plugin <em>didn’t actually work!</em> It was successfully rewriting the core into the explicitly loop-broken version, but for whatever reason, <a href="https://github.com/polysemy-research/polysemy/pull/90#issuecomment-500090395">the simplifier wasn’t picking up where we left off.</a> To this day I don’t know why it doesn’t work, but it doesn’t. Instead we proposed to implement this plugin as a renamer pass, but that presents serious implementation problems. Since there was no way in hell Polysemy could possibly be fast before GHC 8.10 (to be released roughly a year in the future) motivation to find a solution to this problem was understandably low, and it fell by the wayside. It has never been fixed, and remains disabled and half-worked around in Polysemy to this day.</p>
@@ -192,7 +192,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

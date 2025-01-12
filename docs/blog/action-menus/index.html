@@ -64,152 +64,152 @@
 <p>One abstraction I think in terms of when working with adventure games is that of the <strong>hotspot</strong>. A hotspot is a mask on the background image which indicates a static piece of interesting geometry. For example, a window that never moves would be baked into the background image of the room, and then a hotspot would be masked on top of it to allow the character to interact with it.</p>
 <p>For example, if our room looks like this (thanks to MI2 for the temporary art):</p>
 <figure>
-<img src="/images/bg.png" alt="" /><figcaption>room background</figcaption>
+<img src="/images/bg.png" alt="room background" /><figcaption aria-hidden="true">room background</figcaption>
 </figure>
 <p>Then our mask image would look like this:</p>
 <figure>
-<img src="/images/mask.png" alt="" /><figcaption>room mask</figcaption>
+<img src="/images/mask.png" alt="room mask" /><figcaption aria-hidden="true">room mask</figcaption>
 </figure>
 <p>We can add some logic to be able to read the mask:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>mkHotspot</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="ot">-&gt;</span> (<span class="dt">Word8</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Hotspot</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Pos</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Hotspot</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>mkHotspot img f h <span class="ot">=</span> bool <span class="dt">Nothing</span> (<span class="dt">Just</span> h)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>                  <span class="op">.</span> f</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>                  <span class="op">.</span> getHotspotByte</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>                  <span class="op">.</span> <span class="fu">uncurry</span> (pixelAt img)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>                  <span class="op">.</span> (\(<span class="dt">V2</span> x y) <span class="ot">-&gt;</span> (x, y))</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>                  <span class="op">.</span> clampToWorld</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>                  <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">round</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>    clampToWorld <span class="ot">=</span> clamp (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="op">$</span> imageSize img</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>    getHotspotByte (<span class="dt">PixelRGBA8</span> _ g _ _) <span class="ot">=</span> g</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>mkHotspot</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Image</span> <span class="dt">PixelRGBA8</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (<span class="dt">Word8</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Hotspot</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Pos</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Hotspot</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>mkHotspot img f h <span class="ot">=</span> bool <span class="dt">Nothing</span> (<span class="dt">Just</span> h)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                  <span class="op">.</span> f</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                  <span class="op">.</span> getHotspotByte</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                  <span class="op">.</span> <span class="fu">uncurry</span> (pixelAt img)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                  <span class="op">.</span> (\(<span class="dt">V2</span> x y) <span class="ot">-&gt;</span> (x, y))</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                  <span class="op">.</span> clampToWorld</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                  <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">round</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    clampToWorld <span class="ot">=</span> clamp (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="op">$</span> imageSize img</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    getHotspotByte (<span class="dt">PixelRGBA8</span> _ g _ _) <span class="ot">=</span> g</span></code></pre></div>
 <p>and now bake the first three parameters of this function when we construct our level definition.</p>
 <p>In order to test these things, I gave added a field <code>_hsName :: Hotspot -&gt; String</code> in order to be able to test if my logic worked. The next step was to bind the click event to be able to call the <code>Pos -&gt; Maybe Hotspot</code> that I curried out of <code>mkHotspot</code> and stuck into my <code>Room</code> datastructure (<code>_hotspots :: Room -&gt; Pos -&gt; Maybe Hotspot</code>).</p>
 <p>I clicked around a bunch, and found that <code>print . fmap _hsName $ _hotspots currentRoom mousePos</code> lined up with the door when I clicked on it. It seemed to be working, so I considered my first yak shave successful: I now had something in the world that I could interact with.</p>
 <p>The next step was to code up a little bit of the DFA I was originally working on. I decided that I should make the avatar walk to the place you clicked if it wasn’t a hotspot.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">case</span> event <span class="kw">of</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="dt">MouseButton</span> <span class="dt">Down</span> <span class="ot">-&gt;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="kw">case</span> _hotspots currentRoom mousePos <span class="kw">of</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>      <span class="dt">Just</span> hs <span class="ot">-&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>        <span class="fu">print</span> <span class="op">$</span> _hsName hs</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        when (isWalkable (_navmesh currentRoom) mousePos) <span class="op">$</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>          emap <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>            with isAvatar</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>            <span class="fu">pure</span> defEntity&#39;</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>              { pathing <span class="ot">=</span> <span class="dt">Set</span> <span class="op">$</span> <span class="dt">NavTo</span> mousePos</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>              }</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">case</span> event <span class="kw">of</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">MouseButton</span> <span class="dt">Down</span> <span class="ot">-&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">case</span> _hotspots currentRoom mousePos <span class="kw">of</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Just</span> hs <span class="ot">-&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">print</span> <span class="op">$</span> _hsName hs</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        when (isWalkable (_navmesh currentRoom) mousePos) <span class="op">$</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>          emap <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>            with isAvatar</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>            <span class="fu">pure</span> defEntity&#39;</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>              { pathing <span class="ot">=</span> <span class="dt">Set</span> <span class="op">$</span> <span class="dt">NavTo</span> mousePos</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>              }</span></code></pre></div>
 <p>So: when the mouse is pressed, see if it was over top of a hotspot. If so, print out the name of it. Otherwise, check the navmesh of the room, and see if that’s a valid place to walk. If so, update any entity who has the <code>isAvatar</code> component and set its <code>pathing</code> component to be the location we want.</p>
 <p>The engine at this point already has navigation primitives, which is why this works. We’ll discuss how the navmesh is generated and used in another devlog post.</p>
 <p>I ran this code and played around with it for a while. Everything looked good – after I remembered to set <code>isAvatar</code> on my player entity :)</p>
 <p>The next step was to implement timers that would have a callback, and could be started and stopped. I’d need support for these in order to wait a little bit before opening up the action menu. Thankfully, timers are super easy: just have an amount of time you decrement every frame until it hits zero, and then do the necessary action. I came up with this model for timers:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Timer</span> <span class="ot">=</span> <span class="dt">Timer</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  {<span class="ot"> _tTime     ::</span> <span class="dt">Time</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  ,<span class="ot"> _tCallback ::</span> <span class="dt">Game</span> ()</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  }</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">TimerType</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>  <span class="ot">=</span> <span class="dt">TimerCoin</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">GlobalState</span> <span class="ot">=</span> <span class="dt">GlobalState</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>  { <span class="op">...</span> <span class="co">-- other stuff</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>  ,<span class="ot"> _timers ::</span> <span class="dt">Map</span> <span class="dt">TimerType</span> <span class="dt">Timer</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Timer</span> <span class="ot">=</span> <span class="dt">Timer</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> _tTime     ::</span> <span class="dt">Time</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> _tCallback ::</span> <span class="dt">Game</span> ()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TimerType</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">TimerCoin</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">GlobalState</span> <span class="ot">=</span> <span class="dt">GlobalState</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  { <span class="op">...</span> <span class="co">-- other stuff</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> _timers ::</span> <span class="dt">Map</span> <span class="dt">TimerType</span> <span class="dt">Timer</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>A <code>Timer</code> is just an amount of remaining time and something to do afterwards. It’s stored in the <code>GlobalState</code> with a <code>TimerType</code> key. I originally thought about using a bigger type (such as <code>Int</code>) as my timer key, but realized that would make canceling specific timers harder as it would imply they’re given a non-deterministic key when started. The interface for starting and canceling timers turned out to be trivial:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">startTimer ::</span> <span class="dt">TimerType</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> () <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>startTimer tt t cb <span class="ot">=</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  setGlobals <span class="op">$</span> timers <span class="op">.</span> at tt <span class="op">?~</span> <span class="dt">Timer</span> t cb</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="ot">cancelTimer ::</span> <span class="dt">TimerType</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>cancelTimer tt <span class="ot">=</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>  setGlobals <span class="op">$</span> timers <span class="op">.</span> at tt <span class="op">.~</span> <span class="dt">Nothing</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">startTimer ::</span> <span class="dt">TimerType</span> <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> () <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>startTimer tt t cb <span class="ot">=</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  setGlobals <span class="op">$</span> timers <span class="op">.</span> at tt <span class="op">?~</span> <span class="dt">Timer</span> t cb</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ot">cancelTimer ::</span> <span class="dt">TimerType</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>cancelTimer tt <span class="ot">=</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  setGlobals <span class="op">$</span> timers <span class="op">.</span> at tt <span class="op">.~</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p>The only thing left is to update timers and run their callbacks when it’s time. I fucked around with this implementation too hard, trying to find a completely lensy way of doing it, but eventually settled on this ugly <code>fromList . toList</code> thing:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">updateTimers ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>updateTimers dt <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  ts  <span class="ot">&lt;-</span> getGlobals <span class="op">$</span> view timers</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>  ts&#39; <span class="ot">&lt;-</span> forOf <span class="fu">traverse</span> ts <span class="op">$</span> \t <span class="ot">-&gt;</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>           <span class="kw">if</span> _tTime t <span class="op">-</span> dt <span class="op">&lt;=</span> <span class="dv">0</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>             <span class="kw">then</span> _tCallback t <span class="op">$&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>             <span class="kw">else</span> <span class="fu">pure</span> <span class="op">.</span> <span class="dt">Just</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>                       <span class="op">$</span> t <span class="op">&amp;</span> tTime <span class="op">-~</span> dt</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>  setGlobals <span class="op">$</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>    timers <span class="op">.~</span> M.fromList (catMaybes <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">sequence</span> <span class="op">$</span> M.toList ts&#39;)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">updateTimers ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Game</span> ()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>updateTimers dt <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  ts  <span class="ot">&lt;-</span> getGlobals <span class="op">$</span> view timers</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  ts&#39; <span class="ot">&lt;-</span> forOf <span class="fu">traverse</span> ts <span class="op">$</span> \t <span class="ot">-&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>           <span class="kw">if</span> _tTime t <span class="op">-</span> dt <span class="op">&lt;=</span> <span class="dv">0</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>             <span class="kw">then</span> _tCallback t <span class="op">$&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>             <span class="kw">else</span> <span class="fu">pure</span> <span class="op">.</span> <span class="dt">Just</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                       <span class="op">$</span> t <span class="op">&amp;</span> tTime <span class="op">-~</span> dt</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  setGlobals <span class="op">$</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    timers <span class="op">.~</span> M.fromList (catMaybes <span class="op">.</span> <span class="fu">fmap</span> <span class="fu">sequence</span> <span class="op">$</span> M.toList ts&#39;)</span></code></pre></div>
 <p><code>ts'</code> is a traversal over the <code>Map</code> of timers, that decrements each of their times, optionally runs their callbacks, then returns a <code>Mayber Timer</code> for each one. The last line is where the interesting bit is – <code>sequence</code> over a <code>(TimerType, Maybe Timer)</code> is a <code>Maybe (TimerType, Timer)</code>, which we can then insert back into our <code>Map</code> as we construct it – essentially filtering out any timers which have expired.</p>
 <p>Finally we can get back to our DFA. Instead of printing out the name of the hotspot you clicked on, we can now start a timer that will update our game state. I added a field to <code>GlobalState</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">GlobalState</span> <span class="ot">=</span> <span class="dt">GlobalState</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  { <span class="op">...</span> <span class="co">-- other stuff</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  ,<span class="ot"> _gInputDFA ::</span> <span class="dt">InputDFA</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>  }</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">InputDFA</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>  <span class="ot">=</span> <span class="dt">IStart</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">IBeforeCoin</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">ICoinOpen</span> <span class="dt">Pos</span> <span class="dt">HotSpot</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">GlobalState</span> <span class="ot">=</span> <span class="dt">GlobalState</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  { <span class="op">...</span> <span class="co">-- other stuff</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> _gInputDFA ::</span> <span class="dt">InputDFA</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">InputDFA</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">IStart</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">IBeforeCoin</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">ICoinOpen</span> <span class="dt">Pos</span> <span class="dt">HotSpot</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>)</span></code></pre></div>
 <p>The idea is that we start in state <code>IStart</code>, transition into <code>IBeforeCoin</code> when we start the timer, and into <code>ICoinOpen</code> when the timer expires. Additionally, if the user releases the mouse button, we want to cancel the timer. All of this becomes:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">case</span> (_gInputDFA globalState, event) <span class="kw">of</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  (<span class="dt">IStart</span>, <span class="dt">MouseButton</span> <span class="dt">Down</span>) <span class="ot">-&gt;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    <span class="kw">case</span> _hotspots currentRoom mousePos <span class="kw">of</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>      <span class="dt">Just</span> hs <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>        startTimer <span class="dt">TimerCoin</span> <span class="fl">0.5</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>          setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">ICoinOpen</span> mousePos hs</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>        setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">IBeforeCoin</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>        <span class="co">-- as before</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>  (<span class="dt">IBeforeCoin</span>, <span class="dt">MouseButton</span> <span class="dt">Up</span>) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>    cancelTimer <span class="dt">TimerCoin</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a>    setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">IStart</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a>  (<span class="dt">ICoinOpen</span> p hs, <span class="dt">MouseButton</span> <span class="dt">Up</span>) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a>    <span class="kw">let</span> verb <span class="ot">=</span> getBBSurface (coinSurface p) mousePos</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a>    for_ verb <span class="op">$</span> doInteraction hs</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a>    setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">IStart</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">case</span> (_gInputDFA globalState, event) <span class="kw">of</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">IStart</span>, <span class="dt">MouseButton</span> <span class="dt">Down</span>) <span class="ot">-&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">case</span> _hotspots currentRoom mousePos <span class="kw">of</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Just</span> hs <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        startTimer <span class="dt">TimerCoin</span> <span class="fl">0.5</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>          setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">ICoinOpen</span> mousePos hs</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">IBeforeCoin</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- as before</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">IBeforeCoin</span>, <span class="dt">MouseButton</span> <span class="dt">Up</span>) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    cancelTimer <span class="dt">TimerCoin</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">IStart</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">ICoinOpen</span> p hs, <span class="dt">MouseButton</span> <span class="dt">Up</span>) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> verb <span class="ot">=</span> getBBSurface (coinSurface p) mousePos</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    for_ verb <span class="op">$</span> doInteraction hs</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    setGlobals <span class="op">$</span> gInputDFA <span class="op">.~</span> <span class="dt">IStart</span></span></code></pre></div>
 <p>If you care, try to trace through these cases and convince yourself that this logic is correct. The reason we have a position stored inside the <code>ICoinOpen</code> is so that we know where the mouse was when the user started holding their mouse down. This corresponds to where we should draw the action menu.</p>
 <p>This is done in the drawing routine by checking the current state of <code>_gInputDFA</code> – if it’s <code>ICoinOpen</code> it means the menu is up and we need to draw it.</p>
 <p>The only last thing is how can we map where you release your mouse button on the menu to what interaction we should do. Our action menu looks like this:</p>
 <figure>
-<img src="/images/actionbar.png" alt="" /><figcaption>the action menu</figcaption>
+<img src="/images/actionbar.png" alt="the action menu" /><figcaption aria-hidden="true">the action menu</figcaption>
 </figure>
 <p>From left to right, these squares represent talking/eating, examining, and manipulating. We need some way of mapping a location on this image to a desired outcome.</p>
 <p>Doing rectangle collision is easy enough – we define a bounding box and a test to see if a point is inside of it (as well as some auxiliary functions for constructing and moving <code>BB</code>s, elided here):</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">BB</span> <span class="ot">=</span> <span class="dt">BB</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  {<span class="ot"> leftX   ::</span> <span class="dt">Float</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  ,<span class="ot"> rightX  ::</span> <span class="dt">Float</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  ,<span class="ot"> topY    ::</span> <span class="dt">Float</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  ,<span class="ot"> bottomY ::</span> <span class="dt">Float</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a><span class="ot">inBB ::</span> <span class="dt">BB</span> <span class="ot">-&gt;</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>inBB <span class="dt">BB</span>{<span class="op">..</span>} (<span class="dt">V2</span> x y) <span class="ot">=</span> <span class="fu">and</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>  [ x <span class="op">&gt;=</span> leftX</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true"></a>  , x <span class="op">&lt;</span>  rightX</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true"></a>  , y <span class="op">&gt;=</span> topY</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true"></a>  , y <span class="op">&lt;</span>  bottomY</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true"></a>  ]</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true"></a></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true"></a><span class="ot">rectBB ::</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">BB</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true"></a><span class="ot">moveBB ::</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">BB</span> <span class="ot">-&gt;</span> <span class="dt">BB</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">BB</span> <span class="ot">=</span> <span class="dt">BB</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> leftX   ::</span> <span class="dt">Float</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> rightX  ::</span> <span class="dt">Float</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> topY    ::</span> <span class="dt">Float</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> bottomY ::</span> <span class="dt">Float</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="ot">inBB ::</span> <span class="dt">BB</span> <span class="ot">-&gt;</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>inBB <span class="dt">BB</span>{<span class="op">..</span>} (<span class="dt">V2</span> x y) <span class="ot">=</span> <span class="fu">and</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  [ x <span class="op">&gt;=</span> leftX</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  , x <span class="op">&lt;</span>  rightX</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  , y <span class="op">&gt;=</span> topY</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  , y <span class="op">&lt;</span>  bottomY</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="ot">rectBB ::</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">BB</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="ot">moveBB ::</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">BB</span> <span class="ot">-&gt;</span> <span class="dt">BB</span></span></code></pre></div>
 <p>The final step is to somehow map these bounding boxes to things we want to return. This seems like it’ll be a recurring theme, so we build some machinery for it:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">BBSurface</span> a <span class="ot">=</span> <span class="dt">BBSurface</span> [(<span class="dt">BB</span>, a)]</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a><span class="ot">getBBSurface ::</span> <span class="dt">BBSurface</span> a <span class="ot">-&gt;</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>getBBSurface (<span class="dt">BBSurface</span> bs) p <span class="ot">=</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>  getFirst <span class="op">.</span> <span class="fu">flip</span> <span class="fu">foldMap</span> bs <span class="op">$</span> \(b, a) <span class="ot">-&gt;</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>    <span class="kw">if</span> inBB b p</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>       <span class="kw">then</span> <span class="dt">First</span> <span class="op">$</span> <span class="dt">Just</span> a</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>       <span class="kw">else</span> <span class="dt">First</span> <span class="op">$</span> <span class="dt">Nothing</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">BBSurface</span> a <span class="ot">=</span> <span class="dt">BBSurface</span> [(<span class="dt">BB</span>, a)]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ot">getBBSurface ::</span> <span class="dt">BBSurface</span> a <span class="ot">-&gt;</span> <span class="dt">Pos</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>getBBSurface (<span class="dt">BBSurface</span> bs) p <span class="ot">=</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  getFirst <span class="op">.</span> <span class="fu">flip</span> <span class="fu">foldMap</span> bs <span class="op">$</span> \(b, a) <span class="ot">-&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> inBB b p</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>       <span class="kw">then</span> <span class="dt">First</span> <span class="op">$</span> <span class="dt">Just</span> a</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>       <span class="kw">else</span> <span class="dt">First</span> <span class="op">$</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p>The abstraction is my amazingly-named <code>BBSurface</code>, which is a mapping of <code>BB</code>s to values of some type <code>a</code>. We can find a <code>Maybe a</code> on the <code>BBSurface</code> by just checking if the point is in any of the bounding boxes. If it is, we return the first value we find.</p>
 <p>All that’s left is to construct one of these <code>BBSurface</code>s for the coin, and then to move it to the position indicated inside the <code>ICoinOpen</code>. Easy as pie. Pulling everything together, and our interactive menu works as expected. Great success!</p>
 <p>Next time we’ll talk about navigation. Thanks for reading!</p>
@@ -268,7 +268,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

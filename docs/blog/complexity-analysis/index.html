@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Review: Lightweight Semiformal Time Complexity Analysis for Purely Functional Data Structures :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/complexity-analysis">Review: Lightweight Semiformal Time Complexity Analysis for Purely Functional Data Structures</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/review-sheafs">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/generic-parallel-fp">&rarr;</a>
+    </span>
+    <time>March  6, 2022</time>
+
+    <span class="tags">
+        <a href="/tags/danielsson.html">danielsson</a>, <a href="/tags/asymptotics.html">asymptotics</a>, <a href="/tags/complexity.html">complexity</a>, <a href="/tags/agda.html">agda</a>
+    </span>
+</p>
+<div class="content">
+    <p>What a mouthful of a title! <a href="https://www.cse.chalmers.se/~nad/publications/danielsson-popl2008.pdf">LWTCAfPFDS</a> is our paper for the week, written by Nils Anders Danielsson. At a high level, the idea is to introduce a graded monad which counts computation steps, whose bind adds those steps together. By constructing our program in this monad, we can use the type-system to track its runtime asymptotics.</p>
+<h2 id="core-definitions">Core Definitions</h2>
+<p>We might as well dive in. Since all of this complexity analysis stuff shouldn’t <em>change</em> anything at runtime, we really only need to stick the analysis in the types, and can erase it all at runtime.</p>
+<p>The paper thus presents its main tools in an <code>abstract</code> block, which is a new Agda feature for me. And wow, does Agda ever feel like it’s Haskell but from the future. An <code>abstract</code> block lets us give some definitions, which <em>inside</em> the <code>abstract</code> block can be normalized. But outside the block, they are opaque symbols that are just what they are. This is a delightful contrast to Haskell, where we need to play a game of making a new module, and carefully not exporting things in order to get the same behavior. And even then, in Haskell, we can’t give opaque <code>type</code> synonyms or anything like that.</p>
+<p>Anyway, the main type in the paper is <code class="sourceCode agda">Thunk</code>, which tracks how many computation steps are necessary to produce an eventual value:</p>
+<!--
+```
+{-# OPTIONS --rewriting #-}
+
+module blog.complexity-analysis where
+
+open import Function
+open import Data.Nat
+open import Data.Nat.Properties
+open import Data.Bool using (Bool; true; false)
+open import Relation.Binary.PropositionalEquality as Eq
+
+open Eq
+
+private variable
+  a b : Set
+  m n : ℕ
+```
+-->
+<pre><code>abstract
+  Thunk : ℕ → Set → Set
+  Thunk n a = a</code></pre>
+<p>Because none of this exists at runtime, we can just ignore the <code>n</code> argument, and use the <code>abstract</code>ion barrier to ensure nobody can use this fact in anger. <code class="sourceCode agda">Thunk</code> is a <em>graded</em> monad, that is, a monad parameterized by a monoid, which uses <code>mempty</code> for <code>pure</code>, and <code>mappend</code> for binding. We can show that <code class="sourceCode agda">Thunk</code> does form a graded monad:</p>
+<pre><code>  pure : a → Thunk 0 a
+  pure x = x
+
+  infixl 1 _&gt;&gt;=_
+  _&gt;&gt;=_ : Thunk m a → (a → Thunk n b) → Thunk (m + n) b
+  x &gt;&gt;= f = f x
+
+  infixr 1 _=&lt;&lt;_
+  _=&lt;&lt;_ : (a → Thunk n b) → Thunk m a → Thunk (m + n) b
+  f =&lt;&lt; x = f x</code></pre>
+<p>We’ll omit the proofs that <code class="sourceCode agda">Thunk</code> really is a monad, but it’s not hard to see; <code class="sourceCode agda">Thunk</code> is truly just the identity monad.</p>
+<p><code class="sourceCode agda">Thunk</code> is also equipped with two further operations; the ability to mark a computation cycle, and the ability to extract the underlying value by throwing away the complexity analysis:</p>
+<pre><code>  infixr 0 !_
+  !_ : Thunk n a → Thunk (suc n) a
+  !_ a = a
+
+  force : {a : Set} → Thunk n a → a
+  force x = x</code></pre>
+<p>Here, <code class="sourceCode agda">!<span class="ot">_</span></code> is given a low, right-spanning precedence, which means it’s relatively painless to annotate with:</p>
+<pre><code>_ : Thunk 3 ℕ
+_ = ! ! ! pure 0</code></pre>
+<h2 id="conventions">Conventions</h2>
+<p>Our definitions are “opt-in,” in the sense that the compiler won’t yell at you if you forget to call <code class="sourceCode agda">!<span class="ot">_</span></code> somewhere a computational step happens. Thus, we require users to follow the following conventions:</p>
+<ol type="1">
+<li>Every function body must begin with a call to <code class="sourceCode agda">!<span class="ot">_</span></code>.</li>
+<li><code class="sourceCode agda">force</code> may not be used in a function body.</li>
+<li>None of <code class="sourceCode agda">pure</code>, <code class="sourceCode agda"><span class="ot">_</span>&gt;&gt;=<span class="ot">_</span></code> nor <code class="sourceCode agda">!<span class="ot">_</span></code> may be called partially applied.</li>
+</ol>
+<p>The first convention ensures we count everything that should be counted. The second ensures we don’t cheat by discarding complexity information before it’s been counted. And the third ensures we don’t accidentally introduce uncounted computation steps.</p>
+<p>The first two are pretty obvious, but the third is a little subtler. Under the hood, partial application gets turned into a lambda, which introduces a computation step to evaluate. But that step won’t be ticked via <code class="sourceCode agda">!<span class="ot">_</span></code>, so we will have lost the bijection between our programs and their analyses.</p>
+<h2 id="lazy-data-types">Lazy Data Types</h2>
+<p>The paper shows us how to define a lazy vector. <code class="sourceCode agda">VecL</code> <code>a c n</code> is a vector of <code>n</code> elements of type <code>a</code>, where the cost of forcing each subsequent tail is <code>c</code>:</p>
+<pre><code>{-# NO_POSITIVITY_CHECK #-}
+data VecL (a : Set) (c : ℕ) : ℕ → Set where
+  [] : VecL a c 0
+  _∷_ : a → Thunk c (VecL a c n) → VecL a c (suc n)
+
+infixr 5 _∷_</code></pre>
+<p>Let’s try to write <code class="sourceCode agda">fmap</code> for <code class="sourceCode agda">VecL</code>. We’re going to need a helper function, which delays a computation by artificially inflating its number of steps:</p>
+<pre><code>abstract
+  wait : {n : ℕ} → Thunk m a → Thunk (n + m) a
+  wait m = m</code></pre>
+<p>(the paper follows its own rules and ensures that we call <code class="sourceCode agda">!<span class="ot">_</span></code> every time we <code class="sourceCode agda">wait</code>, thus it comes with an extra <code class="sourceCode agda">suc</code> in the type of <code class="sourceCode agda">wait</code>. It gets confusing, so we’ll use this version instead.)</p>
+<p>Unfortunately, the paper also plays fast and loose with its math. It’s fine, because the math is right, but the code presented in the paper doesn’t typecheck in Agda. As a workaround, we need to enable rewriting:</p>
+<pre><code>open import Agda.Builtin.Equality.Rewrite
+{-# REWRITE +-suc +-identityʳ #-}</code></pre>
+<p>We’ll also need to be able to lift equalities over the <code>Thunk</code> time bounds:</p>
+<pre><code>cast : m ≡ n → Thunk m a → Thunk n a
+cast eq x rewrite eq = x</code></pre>
+<p>Finally, we can write <code class="sourceCode agda">fmap</code>:</p>
+<pre><code>fmap
+  : {c fc : ℕ}
+  → (a → Thunk fc b)
+  → VecL a c n
+  → Thunk (2 + fc) (VecL b (2 + fc + c) n)
+fmap f [] = wait (pure [])
+fmap {c = c} f (x ∷ xs)
+          = ! f x
+  &gt;&gt;= \x&#39; → ! pure (x&#39; ∷ cast (+-comm c _) (xs &gt;&gt;= fmap f))</code></pre>
+<p>This took me about an hour to write; I’m not convinced the approach here is as “lightweight” as claimed. Of particular challenge was figuring out the actual time bounds on this thing. The problem is that we usually reason about asymptotics via Big-O notation, which ignores all of these constant factors. What would be nicer is the hypothetical type:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fmap</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">:</span> {c fc <span class="op">:</span> ℕ}</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  → (a → <span class="dt">Thunk</span> (<span class="dt">O</span> fc) b)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  → <span class="dt">VecL</span> a c n</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  → <span class="dt">Thunk</span> (<span class="dt">O</span> c) (<span class="dt">VecL</span> b (<span class="dt">O</span> (fc <span class="op">+</span> c)) n)</span></code></pre></div>
+<p>where every thunk is now parameterized by <code>O x</code> saying our asymptotics are bounded by <code>x</code>. We’ll see about fleshing this idea out later. For now, we can power through on the paper, and write vector insertion. Let’s assume we have a constant time comparison function for <code class="sourceCode agda">a</code>:</p>
+<pre><code>postulate
+  _&lt;=_ : a → a → Thunk 1 Bool</code></pre>
+<p>First things first, we need another waiting function to inflate the times on every tail:</p>
+<pre><code>waitL
+    : {c&#39; : ℕ} {c : ℕ}
+    → VecL a c&#39; n
+    → Thunk 1 (VecL a (2 + c + c&#39;) n)
+waitL [] = ! pure []
+waitL (x ∷ xs) = ! pure (x ∷ wait (waitL =&lt;&lt; xs))</code></pre>
+<p>and a helper version of <code class="sourceCode agda">if<span class="ot">_</span>then<span class="ot">_</span>else<span class="ot">_</span></code> which accounts in <code class="sourceCode agda">Thunk</code>:</p>
+<pre><code>if_then_else_ : Bool → a → a → Thunk 1 a
+if false then t else f = ! pure f
+if true  then t else f = ! pure t
+infixr 2 if_then_else_</code></pre>
+<p>we can thus write vector insertion:</p>
+<pre><code>insert
+    : {c : ℕ}
+    → a
+    → VecL a c n
+    → Thunk 4 (VecL a (4 + c) (suc n))
+insert x [] = wait (pure (x ∷ wait (pure [])))
+insert x (y ∷ ys)
+         = ! x &lt;= y
+  &gt;&gt;= \b → ! if b then x ∷ wait (waitL (y ∷ ys))
+                  else y ∷ (insert x =&lt;&lt; ys)</code></pre>
+<p>The obvious followup to <code class="sourceCode agda">insert</code> is insertion <code class="sourceCode agda">sort</code>:</p>
+<pre><code>open import Data.Vec using (Vec; []; _∷_; tail)
+
+sort : Vec a n → Thunk (1 + 5 * n) (VecL a (4 * n) n)
+sort [] = ! pure []
+sort (x ∷ xs) = ! insert x =&lt;&lt; sort xs</code></pre>
+<p>This thing looks linear, but insertion sort is <span class="math inline">\(O(n^2)\)</span>, so what gives? The thing to notice is that the cost of each <em>tail</em> is linear, but we have <span class="math inline">\(O(n)\)</span> tails, so forcing the whole thing indeed works out to <span class="math inline">\(O(n^2)\)</span>. We can now show <code class="sourceCode agda">head</code> runs in constant time:</p>
+<pre><code>head : {c : ℕ} → VecL a c (suc n) → Thunk 1 a
+head (x ∷ _) = ! pure x</code></pre>
+<p>and that we can find the <code class="sourceCode agda">minimum</code> element in linear time:</p>
+<pre><code>minimum : Vec a (suc n) → Thunk (8 + 5 * n) a
+minimum xs = ! head =&lt;&lt; sort xs</code></pre>
+<p>Interestingly, Agda can figure out the bounds on <code class="sourceCode agda">minimum</code> by itself, but not any of our other functions.</p>
+<p>The paper goes on to show that we can define <code class="sourceCode agda">last</code>, and then get a quadratic-time <code>maximum</code> using it:</p>
+<pre><code>last : {c : ℕ} → VecL a c (suc n) → Thunk (1 + suc n * suc c) a
+last (x ∷ xs) = ! last&#39; x =&lt;&lt; xs
+  where
+    last&#39; : {c : ℕ} → a → VecL a c n → Thunk (1 + n * suc c) a
+    last&#39; a [] = ! pure a
+    last&#39; _ (x ∷ xs) = ! last&#39; x =&lt;&lt; xs</code></pre>
+<p>Trying to define <code>maximum</code> makes Agda spin, probably because of one of my rewrite rules. But here’s what it should be:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">maximum</span> <span class="op">:</span> <span class="dt">Vec</span> a (suc n) → <span class="dt">Thunk</span> (<span class="dv">13</span> <span class="op">+</span> <span class="dv">14</span> <span class="op">*</span> n <span class="op">+</span> <span class="dv">4</span> <span class="op">*</span> n <span class="op">^</span> <span class="dv">2</span>) a</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">maximum</span> xs <span class="ot">=</span> <span class="op">!</span> <span class="fu">last</span> <span class="op">=&lt;&lt;</span> <span class="fu">sort</span> xs</span></code></pre></div>
+<p>The paper goes on to say some thinks about partially evaluating thunks, and then shows its use to measure some popular libraries. But I’m more interested in making the experience better.</p>
+<h2 id="extra-curricular-big-o">Extra-curricular Big O</h2>
+<p>Clearly this is all too much work. When we do complexity analysis by hand, we are primarily concerned with <em>complexity classes,</em> not exact numbers of steps. How hard would it be to generalize all of this so that <code>Thunk</code> takes a function bounding the runtime necessary to produce its value?</p>
+<p>First, a quick refresher on what big-O means. A function <span class="math inline">\(f : \mathbb{N} \to \mathbb{N}\)</span> is said to be in <span class="math inline">\(O(g)\)</span> for some <span class="math inline">\(g : \mathbb{N} \to \mathbb{N}\)</span> iff:</p>
+<p><span class="math display">\[
+\exists (C k : \mathbb{N}). \forall (n : \mathbb{N}, k \leq n). f(n) \leq C \cdot g(n)
+\]</span></p>
+<p>That is, there is some point <span class="math inline">\(k\)</span> at which <span class="math inline">\(g(n)\)</span> stays above <span class="math inline">\(f(n)\)</span>. This is the formal definition, but in practice we usually play rather fast and loose with our notation. For example, we say “quicksort is <span class="math inline">\(O(n\cdot\log{n})\)</span> in the length of the list”, or “<span class="math inline">\(O(n\cdot\log{m})\)</span> , where <span class="math inline">\(m\)</span> is the size of the first argument.”</p>
+<p>We need to do a bit of elaboration here to turn these informal statements into a formal claim. In both cases, there should are implicit binders inside the <span class="math inline">\(O(-)\)</span>, binding <span class="math inline">\(n\)</span> in the first, and <span class="math inline">\(m, n\)</span> in the second. These functions then get instantiated with the actual sizes of the lists. It’s a subtle point, but it needs to be kept in mind.</p>
+<p>The other question is how the hell do we generalize that definition to multiple variables? Easy! We replace <span class="math inline">\(n : \mathbb{N}, k \leq n\)</span> with a vector of natural numbers, subject to the constraint that they’re <em>all</em> bigger than <span class="math inline">\(k\)</span>.</p>
+<p>OK, let’s write some code. We can give the definition of <code class="sourceCode agda">O</code>:</p>
+<pre><code>open import Data.Vec.Relation.Unary.All
+    using (All; _∷_; [])
+    renaming (tail to tailAll)
+
+record O {vars : ℕ} (g : Vec ℕ vars  → ℕ) : Set where
+  field
+    f : Vec ℕ vars → ℕ
+    C : ℕ
+    k : ℕ
+    def : (n : Vec ℕ vars) → All (k ≤_) n → f n ≤ C * g n</code></pre>
+<p>The generality of <code class="sourceCode agda">O</code> is a bit annoying for the common case of being a function over one variable, so we can introduce a helper function <code class="sourceCode agda">O&#39;</code>:</p>
+<pre><code>hoist : {a b : Set} → (a → b) → Vec a 1 → b
+hoist f (x ∷ []) = f x
+
+O&#39; : (ℕ → ℕ) → Set
+O&#39; f = O (hoist f)</code></pre>
+<p>We can trivially lift any function <code>f</code> into <code class="sourceCode agda">O</code> <code>f</code>:</p>
+<pre><code>O-build : {vars : ℕ} → (f : Vec ℕ vars → ℕ) → O f
+O-build f .O.f = f
+O-build f .O.C = 1
+O-build f .O.k = 0
+O-build f .O.def n x = ≤-refl</code></pre>
+<p>and also trivially weaken an <code class="sourceCode agda">O</code> into using more variables:</p>
+<pre><code>O-weaken : ∀ {vars} {f : Vec ℕ vars → ℕ} → O f → O (f ∘ tail)
+O-weaken o .O.f = o .O.f ∘ tail
+O-weaken o .O.C = o .O.C
+O-weaken o .O.k = o .O.k
+O-weaken o .O.def (_ ∷ x) (_ ∷ eq) = o .O.def x eq</code></pre>
+<p>More interestingly, we can lift a given <code class="sourceCode agda">O&#39;</code> into a higher power, witnessing the fact that eg, something of <span class="math inline">\(O(n^2)\)</span> is also <span class="math inline">\(O(n^3)\)</span>:</p>
+<pre><code>O-^-suc : {n : ℕ} → O&#39; (_^ n) → O&#39; (_^ suc n)
+O-^-suc o .O.f = o .O.f
+O-^-suc o .O.C = o .O.C
+O-^-suc o .O.k = suc (o .O.k)
+O-^-suc {n} o .O.def xs@(x ∷ []) ps@(s≤s px ∷ []) =
+  begin
+    f xs               ≤⟨ def xs (≤-step px ∷ []) ⟩
+    C * (x ^ n)        ≤⟨ *-monoˡ-≤ (x ^ n) (m≤m*n C (s≤s z≤n)) ⟩
+    (C * x) * (x ^ n)  ≡⟨ *-assoc C x (x ^ n) ⟩
+    C * (x * (x ^ n))
+  ∎
+  where
+    open O o
+    open ≤-Reasoning</code></pre>
+<p>However, the challenge is and has always been to simplify the construction of <code class="sourceCode agda">Thunk</code> bounds. Thus, we’d like the ability to remove low-order terms from <code class="sourceCode agda">O</code>s. We can do this by eliminating <span class="math inline">\(n^k\)</span> whenever there is a <span class="math inline">\(n^{k&#39;}\)</span> term around with <span class="math inline">\(k \leq k&#39;\)</span>:</p>
+<pre><code>postulate
+  O-drop-low
+    : {z x y k k&#39; : ℕ}
+    → k ≤ k&#39;
+    → O&#39; (\n → z + x * n ^ k + y * n ^ k&#39;)
+    → O&#39; (\n → z + n ^ k&#39;)</code></pre>
+<p>The <code>z</code> variable here lets us compose <code class="sourceCode agda">O-drop-low</code> terms, by subsequently instantiating</p>
+<p>As a special case, we can eliminate constant terms via <code class="sourceCode agda">O-drop-low</code> by first expanding constant terms to be coefficients of <span class="math inline">\(n^0\)</span>:</p>
+<pre><code>O-drop-1
+  : {x y k : ℕ}
+  → O&#39; (\n → x + y * n ^ k)
+  → O&#39; (\n → n ^ k)
+O-drop-1 {x} {y} {k} o rewrite sym (*-identityʳ x) =
+  O-drop-low {0} {x} {y} {k = 0} {k} z≤n o</code></pre>
+<p>With these functions, we can now easily construct <code class="sourceCode agda">O&#39;</code> values for arbitrary one-variable functions:</p>
+<pre><code>_ : O&#39; (_^ 1)
+_ = O-drop-1 {4} {5} {1} $ O-build $ hoist \n → 4 + 5 * n ^ 1
+
+_ : O&#39; (_^ 2)
+_ = O-drop-1 {4} {1} {2}
+  $ O-drop-low {4} {5} {3} {1} {2} (s≤s z≤n)
+  $ O-build $ hoist \n → 4 + 5 * n ^ 1 + 3 * n ^ 2</code></pre>
+<p>Finally, we just need to build a version of <code class="sourceCode agda">Thunk</code> that is adequately lifted over the same functions we use for <code class="sourceCode agda">O</code>:</p>
+<pre><code>abstract
+  OThunk : {vars : ℕ} → (Vec ℕ vars → ℕ) → Set → Set
+  OThunk _ a = a
+
+  OThunk&#39; : (ℕ → ℕ) → Set → Set
+  OThunk&#39; f = OThunk (hoist f)</code></pre>
+<p>The <code class="sourceCode agda">limit</code> function can be used to lift a <code class="sourceCode agda">Thunk</code> into an <code class="sourceCode agda">OThunk</code>:</p>
+<pre><code>  limit
+    : {vars : ℕ} {f : Vec ℕ vars → ℕ} {a : Set}
+    → (v : Vec ℕ vars)
+    → (o : O f)
+    → Thunk (o .O.f v) a → OThunk f a
+  limit _ _ x = x</code></pre>
+<p>and we can now give an asymptotic bound over <code class="sourceCode agda">sort</code>:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>o2 <span class="op">:</span> <span class="dt">O&#39;</span> (_<span class="op">^</span> <span class="dv">1</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>o2 <span class="ot">=</span> <span class="dt">O</span><span class="op">-</span><span class="fu">drop</span><span class="op">-</span><span class="dv">1</span> {<span class="dv">1</span>} {<span class="dv">5</span>} {<span class="dv">1</span>} <span class="op">$</span> <span class="dt">O</span><span class="op">-</span>build <span class="op">$</span> hoist \n <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="op">+</span> <span class="dv">5</span> <span class="op">*</span> n</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>linearHeadSort <span class="op">:</span> <span class="dt">Vec</span> a n → <span class="dt">OThunk&#39;</span> (_<span class="op">^</span> <span class="dv">1</span>) (<span class="dt">VecL</span> a (<span class="dv">4</span> <span class="op">*</span> n) n)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>linearHeadSort {n <span class="ot">=</span> n} v <span class="ot">=</span> limit (n ∷ []) o2 <span class="op">$</span> <span class="fu">sort</span> v</span></code></pre></div>
+<h2 id="conclusions">Conclusions</h2>
+<p>I’m traveling right now, and ran out of internet on publication day, which means I don’t have a copy of the paper in front of me as I write this (foolish!) Overall, the paper is slightly interesting, though I don’t think there’s anything especially novel here. Sticking the runtime behavior into the type is pretty much babby’s first example of graded monads, and we don’t even get asymptotics out of it! Instead we need to push big polynomials around, and explicitly call <code class="sourceCode agda">wait</code> to make different branches work out.</p>
+<p>The <code class="sourceCode agda">O</code> stuff I’ve presented here alleviates a few of those problems; as it allows us to relatively-easily throw away the polynomials and just work with the highest order terms. A probably better approach would be to throw away the functions, and use a canonical normalizing-form to express the asymptotes. Then we could define a <span class="math inline">\(\lub\)</span> operator over <code class="sourceCode agda">OThunk</code>s, and define:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">&gt;&gt;=</span>_ <span class="op">:</span> <span class="dt">OThunk</span> f a → (a → <span class="dt">OThunk</span> g b) → <span class="dt">OThunk</span> (f ⊔ g) b</span></code></pre></div>
+<p>to let us work compositionally in the land of big O.</p>
+<p>My biggest takeaway here is that the techniques described in this paper are probably not powerful enough to be used in anger. Or, at least, not if you actually want to get any work done. Between the monads, polynomials, and waiting, the experience could use a lot of TLC.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/review-sheafs">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/generic-parallel-fp">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

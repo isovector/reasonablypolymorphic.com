@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Review: Generic Parallel Functional Programming :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/generic-parallel-fp">Review: Generic Parallel Functional Programming</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/complexity-analysis">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/syntax-guided-synthesis">&rarr;</a>
+    </span>
+    <time>March 12, 2022</time>
+
+    <span class="tags">
+        <a href="/tags/elliott.html">elliott</a>, <a href="/tags/review.html">review</a>, <a href="/tags/fft.html">fft</a>, <a href="/tags/functors.html">functors</a>
+    </span>
+</p>
+<div class="content">
+    <!--
+```
+module blog.generic-parallel-fp where
+
+open import Agda.Primitive
+
+private
+  variable
+    A : Set
+    F G : Set → Set
+    𝓁 : Level
+
+record Monoid (A : Set) : Set where
+  infixr 6 _<>_
+  field
+    mempty : A
+    _<>_ : A → A → A
+open Monoid ⦃ ... ⦄
+
+
+open import Function
+open import Data.Product hiding (zip)
+```
+-->
+<p>Today we’re heading back into the Elliottverse — a beautiful world where programming is principled and makes sense. The paper of the week is Conal Elliott’s <a href="http://conal.net/papers/generic-parallel-functional/generic-parallel-functional.pdf">Generic Parallel Functional Programming</a>, which productively addresses the duality between “easy to reason about” and “fast to run.”</p>
+<p>Consider the case of a right-associated list, we can give a scan of it in linear time and constant space:</p>
+<pre><code>module ExR where
+  data RList (A : Set) : Set where
+    RNil : RList A
+    _◁_ : A → RList A → RList A
+
+  infixr 5 _◁_
+
+  scanR : ⦃ Monoid A ⦄ → RList A → RList A
+  scanR = go mempty
+    where
+      go : ⦃ Monoid A ⦄ → A → RList A → RList A
+      go acc RNil = RNil
+      go acc (x ◁ xs) = acc ◁ go (acc &lt;&gt; x) xs</code></pre>
+<p>This is a nice functional algorithm that runs in <span class="math inline">\(O(n)\)</span> time, and requires <span class="math inline">\(O(1)\)</span> space. However, consider the equivalent algorithm over left-associative lists:</p>
+<pre><code>module ExL where
+  data LList (A : Set) : Set where
+    LNil : LList A
+    _▷_ : LList A → A → LList A
+
+  infixl 5 _▷_
+
+  scanL : ⦃ Monoid A ⦄ → LList A → LList A
+  scanL = proj₁ ∘ go
+    where
+      go : ⦃ Monoid A ⦄ → LList A → LList A × A
+      go LNil = LNil , mempty
+      go (xs ▷ x) =
+        let xs&#39; , acc = go xs
+         in xs&#39; ▷ acc , x &lt;&gt; acc</code></pre>
+<p>While <code class="sourceCode agda">scanL</code> is also <span class="math inline">\(O(n)\)</span> in its runtime, it is not amenable to tail call optimization, and thus also requires <span class="math inline">\(O(n)\)</span> <em>space.</em> Egads!</p>
+<p>You are probably not amazed to learn that different ways of structuring data lead to different runtime and space complexities. But it’s a more interesting puzzle than it sounds; because <code class="sourceCode agda">RList</code> and <code class="sourceCode agda">LList</code> are isomorphic! So what gives?</p>
+<p>Reed’s pithy description here is</p>
+<blockquote>
+<p>Computation time doesn’t respect isos</p>
+</blockquote>
+<p>Exploring that question with him has been very illuminating. Math is deeply about extentionality; two mathematical objects are equivalent if their abstract interfaces are indistinguishable. Computation… doesn’t have this property. When computing, we care a great deal about runtime performance, which depends on fiddly implementation details, even if those aren’t externally observable.</p>
+<p>In fact, as he goes on to state, this is the whole idea of denotational design. Figure out the extensional behavior first, and then figure out how to implement it.</p>
+<p>This all harkens back to my review of another of Elliott’s papers, <a href="/blog/adders-and-arrows">Adders and Arrows</a>, which starts from the extensional behavior of natural addition (encoded as the Peano naturals), and then derives a chain of proofs showing that our everyday binary adders preserve this behavior.</p>
+<p>Anyway, let’s switch topics and consider a weird fact of the world. Why do so many parallel algorithms require gnarly array indexing? Here’s an example I found by googling for “parallel c algorithms cuda”:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>__global__ <span class="dt">void</span> stencil_1d<span class="op">(</span><span class="dt">int</span> <span class="op">*</span>in<span class="op">,</span> <span class="dt">int</span> <span class="op">*</span>out<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  __shared__ <span class="dt">int</span> temp<span class="op">[</span>BLOCK_SIZE <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> RADIUS<span class="op">];</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> gindex <span class="op">=</span> threadIdx<span class="op">.</span>x <span class="op">+</span> blockIdx<span class="op">.</span>x <span class="op">*</span> blockDim<span class="op">.</span>x<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> lindex <span class="op">=</span> threadIdx<span class="op">.</span>x <span class="op">+</span> RADIUS<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  temp<span class="op">[</span>lindex<span class="op">]</span> <span class="op">=</span> in<span class="op">[</span>gindex<span class="op">];</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>threadIdx<span class="op">.</span>x <span class="op">&lt;</span> RADIUS<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    temp<span class="op">[</span>lindex <span class="op">-</span> RADIUS<span class="op">]</span> <span class="op">=</span> in<span class="op">[</span>gindex <span class="op">-</span> RADIUS<span class="op">];</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    temp<span class="op">[</span>lindex <span class="op">+</span> BLOCK_SIZE<span class="op">]</span> <span class="op">=</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    in<span class="op">[</span>gindex <span class="op">+</span> BLOCK_SIZE<span class="op">];</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  __syncthreads<span class="op">();</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> result <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> offset <span class="op">=</span> <span class="op">-</span>RADIUS <span class="op">;</span> offset <span class="op">&lt;=</span> RADIUS <span class="op">;</span> offset<span class="op">++)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    result <span class="op">+=</span> temp<span class="op">[</span>lindex <span class="op">+</span> offset<span class="op">];</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  out<span class="op">[</span>gindex<span class="op">]</span> <span class="op">=</span> result<span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>and here’s another, expressed as an “easy induction” recurrence relation, from <a href="http://personal.denison.edu/~bressoud/cs402-s11/Supplements/ParallelPrefix.pdf">Richard E Ladner and Michael J Fischer. Parallel prefix computation</a>:</p>
+<center>
+<img src="/images/generic-parallel-fp/indices.png">
+</center>
+<p>Sweet lord. No wonder we’re all stuck pretending our computer machines are single threaded behemoths from the 1960s. Taking full advantage of parallelism on modern CPUs must require a research team and five years!</p>
+<p>But it’s worth taking a moment and thinking about what all of this janky indexing must be doing. Whatever algorithm is telling the programmer which indices to write where necessarily must be providing a view on the data. That is, the programmer has some sort of “shape” in mind for how the problem should be subdivided, and the indexing is an implementation of accessing the raw array elements in the desired shape.</p>
+<p>At risk of beating you on the head with it, this array indexing is <em>a bad implementation of a type system.</em> Bad because it’s something the implementer needed to invent by hand, and is not in any form that the compiler can help ensure the correctness of.</p>
+<p>That returns us to the big contribution of <em>Generic Function Parallel Algorithms,</em> which is a technique for decoupling the main thrust of an algorithm from extentionally-inconsequential encodings of things. The idea is to implement the algorithm on lots of trivial data structures, and then compose those small pieces together to get a <em>class</em> of algorithms.</p>
+<h2 id="generic-representations">Generic Representations</h2>
+<p>The first step is to determine which trivial data structures we need to support. Following the steps of Haskell’s <code>GHC.Generics</code> module, we can decompose any Haskell98 data type as compositions of the following pieces:</p>
+<pre><code>data Rep : Set₁ where
+  V : Rep
+  U : Rep
+  K : Set → Rep
+  Par : Rep
+  Rec : (Set → Set) → Rep
+  _:+:_ : Rep → Rep → Rep
+  _:*:_ : Rep → Rep → Rep
+  _:∘:_ : Rep → Rep → Rep</code></pre>
+<p>which we can embed in <code class="sourceCode agda"><span class="dt">Set</span></code> via <code class="sourceCode agda">Represent</code>:</p>
+<pre><code>open import Data.Empty
+open import Data.Sum
+open import Data.Unit hiding (_≤_)
+
+record Compose (F G : Set → Set) (A : Set) : Set where
+  constructor compose
+  field
+    composed : F (G A)
+open Compose
+
+Represent : Rep → Set → Set
+Represent V a         = ⊥
+Represent U a         = ⊤
+Represent (K x) a     = x
+Represent Par a       = a
+Represent (Rec f) a   = f a
+Represent (x :+: y) a = Represent x a ⊎ Represent y a
+Represent (x :*: y) a = Represent x a × Represent y a
+Represent (x :∘: y) a = Compose (Represent x) (Represent y) a</code></pre>
+<p>If you’ve ever worked with <code>GHC.Generics</code>, none of this should be very exciting. We can bundle everything together, plus an iso to transform to and from the <code class="sourceCode agda">Represent</code>ed type:</p>
+<pre><code>record Generic (F : Set → Set) : Set₁ where
+  field
+    RepOf : Rep
+    from  : F A → Represent RepOf A
+    to    : Represent RepOf A → F A
+open Generic ⦃ ... ⦄
+
+GenericRep : (F : Set → Set) → ⦃ Generic F ⦄ → Set → Set
+GenericRep _ = Represent RepOf</code></pre>
+<p>Agda doesn’t have any out-of-the-box notion of <code>-XDeriveGeneric</code>, which seems like a headache at first blush. It means we need to explicitly write out a <code class="sourceCode agda">RepOf</code> and <code class="sourceCode agda">from</code>/<code class="sourceCode agda"><span class="kw">to</span></code> pairs by hand, <em>like peasants.</em> Surprisingly however, needing to implement by hand is beneficial, as it reminds us that <code class="sourceCode agda">RepOf</code> <em>is not uniquely determined!</em></p>
+<p>A good metaphor here is the number 16, which stands for some type we’d like to generify. A <code class="sourceCode agda">RepOf</code> for 16 is an equivalent representation for 16. Here are a few:</p>
+<ul>
+<li><span class="math inline">\(2+(2+(2+(2+(2+(2+(2+2))))))\)</span></li>
+<li><span class="math inline">\(((2+2)*2)+(((2+2)+2)+2)\)</span></li>
+<li><span class="math inline">\(2 \times 8\)</span></li>
+<li><span class="math inline">\(8 \times 2\)</span></li>
+<li><span class="math inline">\((4 \times 2) \times 2\)</span></li>
+<li><span class="math inline">\((2 \times 4) \times 2\)</span></li>
+<li><span class="math inline">\(4 \times 4\)</span></li>
+<li><span class="math inline">\(2^4\)</span></li>
+<li><span class="math inline">\(2^{2^2}\)</span></li>
+</ul>
+<p>And there are lots more! Each of <span class="math inline">\(+\)</span>, <span class="math inline">\(\times\)</span> and exponentiation corresponds to a different way of building a type, so every one of these expressions is a distinct (if isomorphic) type with 16 values. Every single possible factoring of 16 corresponds to a different way of dividing-and-conquering, which is to say, a different (but related) algorithm.</p>
+<p>The trick is to define our algorithm inductively over each <code class="sourceCode agda"><span class="dt">Set</span></code> that can result from <code class="sourceCode agda">Represent</code>. We can then pick different algorithms from the class by changing the specific way of factoring our type.</p>
+<h2 id="left-scans">Left Scans</h2>
+<p>Let’s consider the case of left scans. I happen to know it’s going to require <code class="sourceCode agda">Functor</code> capabilities, so we’ll also define that:</p>
+<pre><code>record Functor (F : Set 𝓁 → Set 𝓁) : Set (lsuc 𝓁) where
+  field
+    fmap : {A B : Set 𝓁} → (A → B) → F A → F B
+
+record LScan (F : Set → Set) : Set₁ where
+  field
+    overlap ⦃ func ⦄ : Functor F
+    lscan : ⦃ Monoid A ⦄ → F A → F A × A
+
+open Functor ⦃  ...  ⦄
+open LScan ⦃ ... ⦄</code></pre>
+<p>What’s with the type of <code class="sourceCode agda">lscan</code>? This thing is an exclusive scan, so the first element is always <code class="sourceCode agda">mempty</code>, and thus the last elemenet is always returned as <code class="sourceCode agda">proj₂</code> of <code class="sourceCode agda">lscan</code>.</p>
+<p>We need to implement <code class="sourceCode agda">LScan</code> for each <code class="sourceCode agda">Represent</code>ation, and because there is no global coherence requirement in Agda, we can define our <code class="sourceCode agda">Functor</code> instances at the same time.</p>
+<p>The simplest case is void which we can scan because we have a <code class="sourceCode agda">⊥</code> in negative position:</p>
+<pre><code>instance
+  lV : LScan (\a → ⊥)
+  lV .func .fmap f x = ⊥-elim x
+  lV .lscan ()</code></pre>
+<p><code class="sourceCode agda">⊤</code> is also trivial. Notice that there isn’t any <code>a</code> inside of it, so our final accumulated value must be <code class="sourceCode agda">mempty</code>:</p>
+<pre><code>  lU : LScan (\a → ⊤)
+  lU .func .fmap f x = x
+  lU .lscan x = x , mempty</code></pre>
+<p>The identity functor is also trivial. Except this time, we <em>do</em> have a result, so it becomes the accumulated value, and we replace it with how much we’ve scaned thus far (nothing):</p>
+<pre><code>  lP : LScan (\a → a)
+  lP .func .fmap f = f
+  lP .lscan x = mempty , x</code></pre>
+<p>Coproducts are uninteresting; we merely lift the tag:</p>
+<pre><code>  l+ : ⦃ LScan F ⦄ → ⦃ LScan G ⦄ → LScan (\a → F a ⊎ G a)
+  l+ .func .fmap f (inj₁ y) = inj₁ (fmap f y)
+  l+ .func .fmap f (inj₂ y) = inj₂ (fmap f y)
+  l+ .lscan (inj₁ x) =
+    let x&#39; , y = lscan x
+     in inj₁ x&#39; , y
+  l+ .lscan (inj₂ x) =
+    let x&#39; , y = lscan x
+     in inj₂ x&#39; , y</code></pre>
+<p>And then we come to the interesting cases. To scan the product of <code>F</code> and <code>G</code>, we notice that every left scan of <code>F</code> is a prefix of <code>F × G</code> (because <code>F</code> is on the left.) Thus, we can use <code>lscan F</code> directly in the result, and need only adjust the results of <code>lscan G</code> with the accumulated value from <code>F</code>:</p>
+<pre><code>  l* : ⦃ LScan F ⦄ → ⦃ LScan G ⦄ → LScan (\a → F a × G a)
+  l* .func .fmap f x .proj₁ = fmap f (x .proj₁)
+  l* .func .fmap f x .proj₂ = fmap f (x .proj₂)
+  l* .lscan (f-in , g-in) =
+    let f-out , f-acc = lscan f-in
+        g-out , g-acc = lscan g-in
+     in (f-out , fmap (f-acc &lt;&gt;_) g-out) , f-acc &lt;&gt; g-acc</code></pre>
+<p><code class="sourceCode agda">l*</code> is what makes the whole algorithm parallel. It says we can scan <code>F</code> and <code>G</code> in parallel, and need only a single join node at the end to stick <code>f-acc &lt;&gt;_</code> on at the end. This parallelism is visible in the <code>let</code> expression, where there is no data dependency between the two bindings.</p>
+<p>Our final generic instance of <code class="sourceCode agda">LScan</code> is over composition. Howevef, we can’t implement <code class="sourceCode agda">LScan</code> for every composition of functors, since we require the ability to “zip” two functors together. The paper is pretty cagey about exactly what <code>Zip</code> is, but after some sleuthing, I think it’s this:</p>
+<pre><code>record Zip (F : Set → Set) : Set₁ where
+  field
+    overlap ⦃ func ⦄ : Functor F
+    zip : {A B : Set} → F A → F B → F (A × B)
+open Zip ⦃ ... ⦄</code></pre>
+<p>That looks a lot like being an applicative, but it’s missing <code>pure</code> and has some weird idempotent laws that are not particularly relevant today. We can define some helper functions as well:</p>
+<pre><code>zipWith : ∀ {A B C} → ⦃ Zip F ⦄ → (A → B → C) → F A → F B → F C
+zipWith f fa fb = fmap (uncurry f) (zip fa fb)
+
+unzip : ⦃ Functor F ⦄ → {A B : Set} → F (A × B) → F A × F B
+unzip x = fmap proj₁ x , fmap proj₂ x</code></pre>
+<p>Armed with all of this, we can give an implementation of <code class="sourceCode agda">lscan</code> over functor composition. The idea is to <code class="sourceCode agda">lscan</code> each inner functor, which gives us an <code>G (F A × A)</code>. We can then <code class="sourceCode agda">unzip</code> that, whose second projection is then the totals of each inner scan. If we scan these <em>totals</em>, we’ll get a running scan for the whole thing; and all that’s left is to adjust each.</p>
+<!--
+```
+instance
+  composeFunc : ⦃ Functor F ⦄ → ⦃ Functor G ⦄ → Functor (Compose F G)
+  composeFunc .fmap f (compose x) .composed = fmap (fmap f) x
+```
+-->
+<pre><code>instance
+  l∘ : ⦃ LScan F ⦄ → ⦃ LScan G ⦄ → ⦃ Zip G ⦄ → LScan (Compose G F)
+  l∘ .func .fmap f = fmap f
+  l∘ .lscan (compose gfa) =
+    let gfa&#39; , tots = unzip (fmap lscan gfa)
+        tots&#39; , tot = lscan tots
+        adjustl t = fmap (t &lt;&gt;_)
+    in compose (zipWith adjustl tots&#39; gfa&#39;) , tot</code></pre>
+<!--
+```
+instance
+  zI : Zip (\a → a)
+  zI .func .fmap f a = f a
+  zI .zip a b = a , b
+
+  z* : ⦃ Zip F ⦄ → ⦃ Zip G ⦄ → Zip (\a → F a × G a)
+  z* .func .fmap f (x , y) = fmap f x , fmap f y
+  z* .zip (fa , ga) (fb , gb) = zip fa fb , zip ga gb
+
+  z∘ : ⦃ Zip F ⦄ → ⦃ Zip G ⦄ → Zip (Compose F G)
+  z∘ .func .fmap f = fmap f
+  z∘ .zip (compose fa) (compose ga) =
+    compose (fmap (uncurry zip) (zip fa ga))
+```
+-->
+<p>And we’re done! We now have an algorithm defined piece-wise over the fundamental ADT building blocks. Let’s put it to use.</p>
+<h2 id="dividing-and-conquering">Dividing and Conquering</h2>
+<p>Let’s pretend that <code class="sourceCode agda">Vec</code>s are random access arrays. We’d like to be able to build array algorithms out of our algorithmic building blocks. To that end, we can make a typeclass corresponding to types that are isomorphic to arrays:</p>
+<pre><code>open import Data.Nat
+open import Data.Vec hiding (zip; unzip; zipWith)
+
+record ArrayIso (F : Set → Set) : Set₁ where
+  field
+    Size : ℕ
+    deserialize : Vec A Size → F A
+    serialize : F A → Vec A Size
+    -- also prove it&#39;s an iso
+
+open ArrayIso ⦃ ... ⦄</code></pre>
+<!--
+```
+instance
+  dU : ArrayIso (\a → ⊤)
+  dU .Size = 0
+  dU .deserialize _ = tt
+  dU .serialize _ = []
+
+  d* : ⦃ ArrayIso F ⦄ → ⦃ ArrayIso G ⦄ → ArrayIso (\a → F a × G a)
+  d* ⦃ d-f ⦄ ⦃ d-g ⦄ .Size = Size ⦃ d-f ⦄ + Size ⦃ d-g ⦄
+  d* ⦃ d-f ⦄ ⦃ d-g ⦄ .deserialize x =
+    deserialize ⦃ d-f ⦄ (take (Size ⦃ d-f ⦄) {Size ⦃ d-g ⦄} x) ,
+    deserialize ⦃ d-g ⦄ (drop (Size ⦃ d-f ⦄) {Size ⦃ d-g ⦄} x)
+  d* ⦃ d-f ⦄ ⦃ d-g ⦄ .serialize (f , g) =
+    serialize ⦃ d-f ⦄ f ++ serialize ⦃ d-g ⦄ g
+
+  dP : ArrayIso (\a → a)
+  dP .Size = 1
+  dP .deserialize (x ∷ []) = x
+  dP .serialize x = x ∷ []
+
+  d∘ : ⦃ ArrayIso F ⦄ → ⦃ ArrayIso G ⦄ → ArrayIso (Compose F G)
+  d∘ ⦃ d-f ⦄ ⦃ d-g ⦄ .Size = Size ⦃ d-f ⦄ * Size ⦃ d-g ⦄
+  d∘ ⦃ d-f ⦄ ⦃ d-g ⦄ .deserialize x =
+    let y , _ = group (Size ⦃ d-f ⦄) _ x
+     in compose (deserialize (Data.Vec.map (deserialize ⦃ d-g ⦄) y))
+  d∘ ⦃ d-f ⦄ ⦃ d-g ⦄ .serialize (compose x) =
+    concat (Data.Vec.map (serialize ⦃ d-g ⦄) (serialize ⦃ d-f ⦄ x))
+```
+-->
+<p>There are instances of <code class="sourceCode agda">ArrayIso</code> for the functor building blocks (though none for <code class="sourceCode agda">:+:</code> since arrays are big records.) We can now use an <code class="sourceCode agda">ArrayIso</code> and an <code class="sourceCode agda">LScan</code> to get our desired parallel array algorithms:</p>
+<pre><code>genericScan
+    : ⦃ Monoid A ⦄
+    → (rep : Rep)
+    → ⦃ d : ArrayIso (Represent rep) ⦄
+    → ⦃ LScan (Represent rep) ⦄
+    → Vec A (Size ⦃ d ⦄)
+    → Vec A (Size ⦃ d ⦄) × A
+genericScan _ ⦃ d = d ⦄ x =
+  let res , a = lscan (deserialize x)
+   in serialize ⦃ d ⦄ res , a</code></pre>
+<p>I think this is the first truly dependent type I’ve ever written. We take a <code class="sourceCode agda">Rep</code> corresponding to how we’d like to divvy up the problem, and then see if the <code class="sourceCode agda">Represent</code> of that has <code class="sourceCode agda">ArrayIso</code> and <code class="sourceCode agda">LScan</code> instances, and then give back an algorithm that scans over arrays of the correct <code class="sourceCode agda">Size</code>.</p>
+<p>Finally we’re ready to try this out. We can give the <code class="sourceCode agda">RList</code> implementation from earlier:</p>
+<pre><code>▷_ : Rep → Rep
+▷_ a = Par :*: a
+
+_ : ⦃ Monoid A ⦄ → Vec A 4 → Vec A 4 × A
+_ = genericScan (▷ ▷ ▷ Par)</code></pre>
+<p>or the <code class="sourceCode agda">LList</code> instance:</p>
+<pre><code>_◁ : Rep → Rep
+_◁ a = a :*: Par
+
+_ : ⦃ Monoid A ⦄ → Vec A 4 → Vec A 4 × A
+_ = genericScan (Par ◁ ◁ ◁)</code></pre>
+<p>But we can also come up with more interesting strategies as well. For example, we can divvy up the problem by left-associating the first half, and right-associating the second:</p>
+<pre><code>_ : ⦃ Monoid A ⦄ → Vec A 8 → Vec A 8 × A
+_ = genericScan ((Par ◁ ◁ ◁) :*: (▷ ▷ ▷ Par))</code></pre>
+<p>This one probably isn’t an <em>efficient</em> algorithm, but it’s cool that we can express such a thing so succinctly. Probably of more interest is a balanced tree over our array:</p>
+<pre><code>_ : ⦃ Monoid A ⦄ → Vec A 16 → Vec A 16 × A
+_ = let ⌊_⌋ a = a :*: a
+     in genericScan (⌊ ⌊ ⌊ ⌊ Par ⌋ ⌋ ⌋ ⌋)</code></pre>
+<p>The balanced tree over products is interesting, but what if we make a balanced tree over <em>composition?</em> In essence, we can split the problem into chunks of <span class="math inline">\(2^(2^n)\)</span> amounts of work via <code class="sourceCode agda">Bush</code>:</p>
+<pre><code>{-# NO_POSITIVITY_CHECK #-}
+data Bush : ℕ → Set → Set where
+  twig : A × A → Bush 0 A
+  bush : {n : ℕ} → Bush n (Bush n A) → Bush (suc n) A</code></pre>
+<p>Which we won’t use directly, but can use it’s <code class="sourceCode agda">Rep</code>:</p>
+<pre><code>_ : ⦃ Monoid A ⦄ → Vec A 16 → Vec A 16 × A
+_ = let pair = Par :*: Par
+     in genericScan ((pair :∘: pair) :∘: (pair :∘: pair))</code></pre>
+<p>The paper compares several of these strategies for dividing-and-conquering. In particular, it shows that we can minimize total work via a left-associated <code class="sourceCode agda">⌊<span class="ot">_</span>⌋</code> strategy, but maximize parallelism with a <em>right</em>-associated <code class="sourceCode agda">⌊<span class="ot">_</span>⌋</code>. And using the <code>Bush</code> from earlier, we can get a nice middle ground.</p>
+<h2 id="very-quick-ffts">Very Quick FFTs</h2>
+<p>The paper follows up, applying this approach to implementations of the fast fourier transform. There, the <code class="sourceCode agda">Bush</code> approach gives constant factor improvments for both <em>work</em> and <em>parallelism,</em> compared to all previously known algorithms.</p>
+<p>Results like these are strong evidence that Elliott is <em>actually onto something</em> with his seemingly crazy ideas that computation should be elegant and well principled. Giving significant constant factor improvements to well-known, extremely important algorithms <em>mostly for free</em> is a true superpower, and is worth taking extremely seriously.</p>
+<h2 id="fighting-against-publication-bias">Fighting Against Publication Bias</h2>
+<p>Andrew McKnight and I tried to use this same approach to get a nice algorithm for sorting, hoping that we could get well-known sorting algorithms to fall out as special cases of our more general functor building blocks. We completely failed on this front, namely because we couldn’t figure out how to give an instance for product types. Rather alarmingly, we’re not entirely sure <em>why</em> the approach failed there; maybe it was just not thinking hard enough.</p>
+<p>Another plausible idea is that sorting requires branching, and that this approach only works for statically-known codepaths.</p>
+<h2 id="future-work">Future Work</h2>
+<p>Andrew and I spent a good chunk of the week thinking about this problem, and we figure there are solid odds that you could <em>automatically</em> discover these generic algorithmic building blocks from a well-known algorithm. Here’s the sketch:</p>
+<p>Use the well-known algorithm as a specification, instantiate all parameters at small types and see if you can find instances of the algorithm for the functor building blocks that agree with the spec. It seems like you should be able to use factorization of the input to target which instances you’re looking for.</p>
+<p>Of course, once you have the algorithmic building blocks, conventional search techniques can be used to optimize any particular goal you might have.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/complexity-analysis">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/syntax-guided-synthesis">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

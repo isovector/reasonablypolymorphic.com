@@ -57,43 +57,43 @@
 <div class="content">
     <p>To conclude this <a href="/tags/polysemy.html">series of posts</a> on <a href="https://github.com/polysemy-research/polysemy-check">polysemy-check</a>, today we’re going to talk about how to ensure your effects are sane. That is, we want to prove that correct interpreters compose into correct programs. If you’ve followed along with the series, you won’t be surprised to note that <code>polysemy-check</code> can test this right out of the box.</p>
 <p>But first, what does it mean to talk about the correctness of composed interpreters? This idea comes from Yang and Wu’s <a href="https://dl.acm.org/doi/10.1145/3473578">Reasoning about effect interaction by fusion</a>. The idea is that for a given program, changing the order of two subsequent actions from different effects should not change the program. Too abstract? Well, suppose I have two effects:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">foo ::</span> <span class="dt">Member</span> <span class="dt">Foo</span> r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">bar ::</span> <span class="dt">Member</span> <span class="dt">Bar</span> r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">foo ::</span> <span class="dt">Member</span> <span class="dt">Foo</span> r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">bar ::</span> <span class="dt">Member</span> <span class="dt">Bar</span> r <span class="ot">=&gt;</span> <span class="dt">Sem</span> r ()</span></code></pre></div>
 <p>Then, the composition of interpreters for <code>Foo</code> and <code>Bar</code> is correct if and only if<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> the following two programs are equivalent:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">forall</span> m1 m2<span class="op">.</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  m1 <span class="op">&gt;&gt;</span> foo <span class="op">&gt;&gt;</span> bar <span class="op">&gt;&gt;</span> m2</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="ot">=</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  m1 <span class="op">&gt;&gt;</span> bar <span class="op">&gt;&gt;</span> foo <span class="op">&gt;&gt;</span> m2</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> m1 m2<span class="op">.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  m1 <span class="op">&gt;&gt;</span> foo <span class="op">&gt;&gt;</span> bar <span class="op">&gt;&gt;</span> m2</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  m1 <span class="op">&gt;&gt;</span> bar <span class="op">&gt;&gt;</span> foo <span class="op">&gt;&gt;</span> m2</span></code></pre></div>
 <p>That is, since <code>foo</code> and <code>bar</code> are actions from different effects, they should have <em>no influence on one another.</em> This sounds like an obvious property; effects correspond to individual units of functionality, and so they should be completely independent of one another. At least — that’s how we humans think about things. Nothing actually forces this to be the case, and extremely hard-to-find bugs will occur if this property doesn’t hold, because it breaks a mental abstraction barrier.</p>
 <p>It’s hard to come up with good examples of this property being broken in the wild, so instead we can simulate it with a different broken abstraction. Let’s imagine we’re porting a legacy codebase to <code>polysemy</code>, and the old code hauled around a giant stateful god object:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">TheWorld</span> <span class="ot">=</span> <span class="dt">TheWorld</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  {<span class="ot"> counter ::</span> <span class="dt">Int</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  ,<span class="ot"> lots    ::</span> <span class="dt">Int</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  ,<span class="ot"> more&#39;   ::</span> <span class="dt">Bool</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  ,<span class="ot"> stuff   ::</span> [<span class="dt">String</span>]</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TheWorld</span> <span class="ot">=</span> <span class="dt">TheWorld</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> counter ::</span> <span class="dt">Int</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> lots    ::</span> <span class="dt">Int</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> more&#39;   ::</span> <span class="dt">Bool</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> stuff   ::</span> [<span class="dt">String</span>]</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
 <p>To quickly <a href="/blog/porting-to-polysemy/">get everything ported</a>, we replaced the original <code>StateT TheWorld IO</code> application monad with a <code>Member (State TheWorld) r</code> constraint. But we know better than to do that for the long haul, and instead are starting to carve out effects. We introduce <code>Counter</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Counter</span> m a <span class="kw">where</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  <span class="dt">Increment</span><span class="ot"> ::</span> <span class="dt">Counter</span> m ()</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="dt">GetCount</span><span class="ot"> ::</span> <span class="dt">Counter</span> m <span class="dt">Int</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>makeSem &#39;<span class="dt">&#39;Counter</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Counter</span> m a <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Increment</span><span class="ot"> ::</span> <span class="dt">Counter</span> m ()</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">GetCount</span><span class="ot"> ::</span> <span class="dt">Counter</span> m <span class="dt">Int</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>makeSem &#39;<span class="dt">&#39;Counter</span></span></code></pre></div>
 <p>with an interpretation into our god object:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>runCounterBuggy</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">TheWorld</span>) r</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Sem</span> (<span class="dt">Counter</span> &#39;<span class="op">:</span> r) a</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>runCounterBuggy <span class="ot">=</span> interpret <span class="op">$</span> \<span class="kw">case</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>  <span class="dt">Increment</span> <span class="ot">-&gt;</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>    modify <span class="op">$</span> \world <span class="ot">-&gt;</span> world</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>                         { counter <span class="ot">=</span> counter world <span class="op">+</span> <span class="dv">1</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>                         }</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>  <span class="dt">GetCount</span> <span class="ot">-&gt;</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>    gets counter</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>runCounterBuggy</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Member</span> (<span class="dt">State</span> <span class="dt">TheWorld</span>) r</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Sem</span> (<span class="dt">Counter</span> &#39;<span class="op">:</span> r) a</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>runCounterBuggy <span class="ot">=</span> interpret <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Increment</span> <span class="ot">-&gt;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    modify <span class="op">$</span> \world <span class="ot">-&gt;</span> world</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                         { counter <span class="ot">=</span> counter world <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                         }</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">GetCount</span> <span class="ot">-&gt;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    gets counter</span></code></pre></div>
 <p>On its own, this interpretation is fine. The problem occurs when we use <code>runCounterBuggy</code> to handle <code>Counter</code> effects that coexist in application code that uses the <code>State TheWorld</code> effect. Indeed, <code>polysemy-check</code> tells us what goes wrong:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>quickCheck <span class="op">$</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  prepropCommutative <span class="op">@</span>&#39;[<span class="dt">State</span> <span class="dt">TheWorld</span>] <span class="op">@</span>&#39;[<span class="dt">Counter</span>] <span class="op">$</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    <span class="fu">pure</span> <span class="op">.</span> runState defaultTheWorld <span class="op">.</span> runCounterBuggy</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>quickCheck <span class="op">$</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  prepropCommutative <span class="op">@</span>&#39;[<span class="dt">State</span> <span class="dt">TheWorld</span>] <span class="op">@</span>&#39;[<span class="dt">Counter</span>] <span class="op">$</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> <span class="op">.</span> runState defaultTheWorld <span class="op">.</span> runCounterBuggy</span></code></pre></div>
 <p>we see:</p>
 <pre><code>Failed.
 
@@ -108,12 +108,12 @@ k2  = Pure ()
 (TheWorld 1 0 False [],()) /= (TheWorld 0 0 False [],())</code></pre>
 <p>Of course, these effects are not commutative under the given interpreter, because changing <code>State TheWorld</code> will overwrite the <code>Counter</code> state! That’s not to say that this sequence of actions <em>actually exists</em> anywhere in your codebase, but it’s a trap waiting to happen. Better to take defensive action and make sure nobody can ever even <em>accidentally</em> trip this bug!</p>
 <p>The bug is fixed by using a different data store for <code>Counter</code> than <code>TheWorld</code>. Maybe like this:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>runCounter</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Sem</span> (<span class="dt">Counter</span> &#39;<span class="op">:</span> r) a</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>runCounter <span class="ot">=</span> (evalState <span class="dv">0</span>) <span class="op">.</span> reinterpret <span class="op">@</span>_ <span class="op">@</span>(<span class="dt">State</span> <span class="dt">Int</span>) <span class="op">$</span> \<span class="kw">case</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  <span class="dt">Increment</span> <span class="ot">-&gt;</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>  <span class="dt">GetCount</span> <span class="ot">-&gt;</span> get</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>runCounter</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Sem</span> (<span class="dt">Counter</span> &#39;<span class="op">:</span> r) a</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sem</span> r a</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>runCounter <span class="ot">=</span> (evalState <span class="dv">0</span>) <span class="op">.</span> reinterpret <span class="op">@</span>_ <span class="op">@</span>(<span class="dt">State</span> <span class="dt">Int</span>) <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Increment</span> <span class="ot">-&gt;</span> modify (<span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">GetCount</span> <span class="ot">-&gt;</span> get</span></code></pre></div>
 <p>Contrary to the old handler, <code>runCounter</code> now introduces its own anonymous <code>State Int</code> effect (via <code>reinterpret</code>), and then immediately eliminates it. This ensures the state is invisible to all other effects, with absolutely no opportunity to modify it. In general, this <code>evalState . reintrpret</code> pattern is a very good one for implementing pure effects.</p>
 <p>Of course, a really complete solution here would also remove the <code>counter</code> field from <code>TheWorld</code>.</p>
 <p>Behind the scenes, <code>prepropCommutative</code> is doing exactly what you’d expect — synthesizing monadic preludes and postludes, and then randomly pulling effects from each set of rows and ensuring everything commutes.</p>
@@ -189,7 +189,7 @@ k2  = Pure ()
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

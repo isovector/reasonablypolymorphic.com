@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>FRP in Yampa: Part 2: Arrowized FRP :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/arrowized-frp">FRP in Yampa: Part 2: Arrowized FRP</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/yampa-frp">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/yampa-switching">&rarr;</a>
+    </span>
+    <time>December 22, 2023</time>
+
+    <span class="tags">
+        <a href="/tags/FRP.html">FRP</a>, <a href="/tags/yampa.html">yampa</a>, <a href="/tags/haskell.html">haskell</a>, <a href="/tags/technical.html">technical</a>, <a href="/tags/programming.html">programming</a>, <a href="/tags/gamedev.html">gamedev</a>, <a href="/tags/arrows.html">arrows</a>
+    </span>
+</p>
+<div class="content">
+    <p>In the <a href="https://reasonablypolymorphic.com/blog/yampa-frp/index.html">last part</a>, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
+<p>So today we’ll look at one of Haskell’s lesser-known features—arrow notation—and learn how it can help structure bigger reactive programs.</p>
+<h2 id="arrows">Arrows</h2>
+<p>What an awful, overloaded word we’ve found ourselves with. Being Haskell programmers, we’re all very familiar with the everyday function arrow <code>(-&gt;)</code>, which you should think of as a special case of a more general notion of <em>arrow.</em></p>
+<p>Notice how both function arrows (<code>i -&gt; o</code>) and signal functions (<code>SF i o</code>) have two type parameters—one for the input side of things, and another for the output side. And indeed, we should think of these as <em>sides</em> of the computation, where we are transforming an <code>i</code> into an <code>o</code>.</p>
+<p>For our purposes today, we’ll want to be very precise when we differentiate between functions-as-data and functions-as-ways-of-building things. In order to do so, we will give give ourselves a little type synonym to help differentiate:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fn</span> i o <span class="ot">=</span> i <span class="ot">-&gt;</span> o</span></code></pre></div>
+<p>And henceforth, we will use the <code>Fn</code> synonym to refer to functions we’re manipulating, reserving <code>(-&gt;)</code> to talk about combinators for <em>building</em> those functions.</p>
+<p>For example, our favorite identity function is a <code>Fn</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span><span class="ot"> ::</span> <span class="dt">Fn</span> a a</span></code></pre></div>
+<p>We usually give the constant function the type <code>a -&gt; b -&gt; a</code>, but my claim is that it ought to be:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">const</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Fn</span> b a</span></code></pre></div>
+<p>The subtle thing I’m trying to point out is that there is a (conceptual) difference between the functions we want to operate on at runtime (called <code>Fn</code>s), and the <em>combinators</em> we use to build those functions (called <code>(-&gt;)</code>.)</p>
+<p>Like I said, it’s a bit hard to point to in Haskell, because one of the great successes of functional programming has been to <em>blur</em> this distinction.</p>
+<p>Anyway, let’s return to our discussion of arrows. Both functions and <code>SF</code>s admit a notion of composition, which allow us to line up the <em>output</em> of one arrow with the <em>input</em> of another, fusing the two into a single computation. The types they have are:</p>
+<ul>
+<li><code>(.)   :: Fn b c -&gt; Fn a b -&gt; Fn a c</code></li>
+<li><code>(&lt;&lt;&lt;) :: SF b c -&gt; SF a b -&gt; SF a c</code></li>
+</ul>
+<p>Despite our intimate familiarity with functions, this pattern of types with both an input and an output is quite uncommon in Haskell. Due to the immense mindshare that the monad meme takes up, we usually think about computation in terms of monads, and it can be hard to remember that not all computation is monadic (nor applicative.)</p>
+<p>Monadic values are of the shape <code>M o</code>, with only a single type parameter that corresponds (roughly) with the <em>output</em> of the computation. That is to say, all of the interesting computational structure of a monad exists only in its output, and <em>never in its input</em>—in fact, we can’t even <em>talk</em> about the input to a monad. What we do instead is cheat; we take the input side of the computation directly from the function arrow.</p>
+<p>If we expand out the types of <code>(&lt;*&gt;)</code> and <code>flip (&gt;&gt;=)</code>, using our <code>Fn</code> notation from above, they get the types:</p>
+<ul>
+<li><code>(&lt;*&gt;)      :: M (Fn i o) -&gt; Fn (M i) (M o)</code></li>
+<li><code>flip (&gt;&gt;=) :: Fn i (M o) -&gt; Fn (M i) (M o)</code></li>
+</ul>
+<p>which makes it much clearer that the relevant interactions here are some sort of distributivity of our monad over the regular, everyday function arrows. In other words, that monads are cheating by getting their “inputs” from functions.</p>
+<h2 id="what-the-hell">What the Hell?</h2>
+<p>Enough philosophy. What the hell <em>are</em> arrows? The example that really made it stick for me is in the domain of <em>digital circuits.</em> A digital circuit is some piece of silicon with wire glued to it, that moves electrons from one side to the other—with the trick being that the eventual endpoint of the electrons depends on their original positions. With enough squinting, you can see the whole thing as a type <code>Circuit i o</code>, where <code>i</code> corresponds to which wires we chose to put a high voltage on, and <code>o</code> is which wires have a high voltage at the end of the computation. With a little more squinting, it’s not too hard to reconceptualize these wires as bits, which we can again reconceptualize as encodings of particular types.</p>
+<p>The point I was trying to make earlier about the distinction between <code>(-&gt;)</code> and <code>Fn</code> makes much more sense in this context; just replace <code>Fn</code> with <code>Circuit</code>. Here it makes much more sense to think about the identity circuit:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span><span class="ot"> ::</span> <span class="dt">Circuit</span> a a</span></code></pre></div>
+<p>which is probably just a bundle of wires, and the constant circuit:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">const</span><span class="ot"> ::</span> o <span class="ot">-&gt;</span> <span class="dt">Circuit</span> i o</span></code></pre></div>
+<p>which lets you pick some particular <code>o</code> value (at design time), and then make a circuit that is disconnected from its input wires and merely holds the chosen <code>o</code> value over its output wires.</p>
+<p>Anyway. The important thing about digital circuits is that you have infinite flexibility when you are designing them, but once they’re manufactured, they stay that way. If you chose to wire the frobulator directly to the zanzigurgulator, those two components are, and always will be, wired together. In perpetuity.</p>
+<p>Of course, you can do some amount of dynamic reconfiguring of a circuit, by conditionally choosing which wires you consider to be “relevant” right now, but those wires are going to have signals on them whether you’re interested in them or not.</p>
+<p>In other words, there is a strict phase distinction between the components on the board and the data they carry at runtime.</p>
+<p>And this is what arrows are all about.</p>
+<p>Arrows are about computations whose internal structure must remain constant. You’ve got all the flexibility in the world when you’re designing them, but you can’t reconfigure anything at runtime.</p>
+<h2 id="arrow-notation">Arrow Notation</h2>
+<p>Yesterday’s post ended with the following code, written directly with the arrow combinators.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">onPress ::</span> (<span class="dt">Controller</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> a)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>onPress field a <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">fmap</span> (<span class="fu">const</span> a)) <span class="op">$</span> <span class="fu">fmap</span> field controller <span class="op">&gt;&gt;&gt;</span> edge</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ot">arrowEvents ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> (<span class="dt">V2</span> a))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>arrowEvents <span class="ot">=</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  (\u d l r <span class="ot">-&gt;</span> asum [u, d, l r])</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;$&gt;</span> onPress ctrl_up    (<span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_down  (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_left  (<span class="dt">V2</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">0</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_right (<span class="dt">V2</span> <span class="dv">1</span>    <span class="dv">0</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ot">snakeDirection ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>snakeDirection <span class="ot">=</span> arrowEvents <span class="op">&gt;&gt;&gt;</span> hold (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="ot">snakePosition ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>snakePosition <span class="ot">=</span> snakeDirection <span class="op">&gt;&gt;&gt;</span> integral</span></code></pre></div>
+<p>While technically you can get anything done in this style, it’s a lot like writing all of your monadic code directly in terms of <code>(&gt;&gt;=)</code>. Possible certainly, but indisputably clunky.</p>
+<p>Instead, let’s rewrite it with arrow notation:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE Arrows #-}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ot">snakePosition ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>snakePosition <span class="ot">=</span> proc i <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> onPress ctrl_up    <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>) <span class="op">-&lt;</span> i</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> onPress ctrl_down  <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>    <span class="op">-&lt;</span> i</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  l <span class="ot">&lt;-</span> onPress ctrl_left  <span class="op">$</span> <span class="dt">V2</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">0</span> <span class="op">-&lt;</span> i</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  r <span class="ot">&lt;-</span> onPress ctrl_right <span class="op">$</span> <span class="dt">V2</span> <span class="dv">1</span>    <span class="dv">0</span> <span class="op">-&lt;</span> i</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  dir <span class="ot">&lt;-</span> hold <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span> <span class="op">-&lt;</span> asum [u, d, l r]</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> integral <span class="op">-&lt;</span> dir</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  returnA <span class="op">-&lt;</span> pos</span></code></pre></div>
+<p>Much tidier, no? Reading arrow notation takes a little getting used to, but there are really only two things you need to understand. The first is that <code>proc i -&gt; do</code> introduces an arrow computation, much like the <code>do</code> keyword introduces a monadic computation. Here, the input to the entire arrow is bound to <code>i</code>, but you can put any legal Haskell pattern you want there.</p>
+<p>The other thing to know about arrow notation is that <code>&lt;-</code> and <code>-&lt;</code> are two halves of the same syntax. The notation here is:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  output <span class="ot">&lt;-</span> arrow <span class="op">-&lt;</span> input</span></code></pre></div>
+<p>where <code>arrow</code> is of type <code>SF i o</code>, and <code>input</code> is any normal everyday Haskell value of type <code>i</code>. At the end of the day, you bind the result to <code>output</code>, whose type is obviously <code>o</code>.</p>
+<p>The mnemonic for this whole thing is that you’re shooting an arrow (of bow and arrow fame) from the input to the output. And the name of the arrow is written on the shaft. It makes more sense if you play around with the whitespace:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  output   <span class="ot">&lt;-</span>arrow<span class="op">-&lt;</span>   input</span></code></pre></div>
+<p>More importantly, the name of that arrow can be any valid Haskell expression, including one with infix operators. Thus, we should parse:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> onPress ctrl_up <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>) <span class="op">-&lt;</span> i</span></code></pre></div>
+<p>as</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> (onPress ctrl_up <span class="op">$</span> <span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>)) <span class="op">-&lt;</span> i</span></code></pre></div>
+<p>What’s likely to bite you as you get familiar with arrow notation is that the computations (the bits between <code>&lt;-</code> and <code>-&lt;</code>) exist in a completely different <em>phase</em>/<em>namespace</em> than the inputs and outputs. That means the following program is illegal:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>  proc (i, j) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> blah  <span class="op">-&lt;</span> i</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> bar x <span class="op">-&lt;</span> j</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span></code></pre></div>
+<p>because <code>x</code> simply <em>isn’t in scope</em> in the expression <code>bar x</code>. It’s the equivalent of designing a circuit board with <code>n</code> capacitors on it, where <code>n</code> will be determined by an input voltage supplied by the end-user. Completely nonsensical!</p>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>That’s all for today, folks. The day caught me by surprise, so we’ll be back tomorrow to talk about building state machines in Yampa—something extremely important for making real video games.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/yampa-frp">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/yampa-switching">&rarr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

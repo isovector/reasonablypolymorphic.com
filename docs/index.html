@@ -39,437 +39,164 @@
 
 <article>
 <header>
-  <h1><a href="/blog/review-sheafs">Review: A Very Elementary Introduction to Sheaves</a></h1>
+  <h1><a href="/blog/jj-strategy">Jujutsu Strategies</a></h1>
 </header>
 <p class="meta">
     <span class="prev">
-        <a href="/blog/ring-solving">&larr;</a>
+        <a href="/blog/yampa-routing">&larr;</a>
     </span>
-    <time>February 27, 2022</time>
+    <time>May 18, 2024</time>
 
     <span class="tags">
-        <a href="/tags/agrios.html">agrios</a>, <a href="/tags/sheaves.html">sheaves</a>, <a href="/tags/math.html">math</a>, <a href="/tags/reverse engineering.html">reverse engineering</a>, <a href="/tags/agda.html">agda</a>
+        <a href="/tags/jj.html">jj</a>, <a href="/tags/version control.html">version control</a>, <a href="/tags/git.html">git</a>
     </span>
 </p>
 <div class="content">
-    <pre><code>{-# OPTIONS --type-in-type #-}
-
-module Blog.sheafs where
-
-open import Data.Integer hiding (_&lt;_)
-open import Data.Integer.Properties using (*-zeroˡ; ≤-reflexive; ≤-trans)
-open import Data.Vec hiding (restrict; reverse)
-open import Categories
-open import Category.LIN
-open import Category.SET
-open import Category.AGRP
-open import Category.MyFunctor
-import Relation.Binary.PropositionalEquality as Eq
-
-open Eq using (_≡_; cong; sym; refl)
-open LinMap</code></pre>
-<p>A while back I reviewed some paper (maybe codata? — too lazy to check) and came away thinking “I should learn more about presheaves.” The first paper I found is <a href="https://arxiv.org/pdf/2202.01379.pdf">A Very Elementary Introduction to Sheaves</a> by Mark Agrios, and mildly interestingly, was published less than three weeks ago.</p>
-<p>The paper is called “very elementary,” and in the first sentence states it “is a very non-rigorous, loose, and extremely basic introduction to sheaves,” and it delivers on these promises. There is a section on metaphorically what a sheaf is, and then two somewhat-worked examples.</p>
-<p>After reading through the paper, I feel like I have a very rough idea of what a sheaf is, and thought that this would be an excellent opportunity to flex my category theory muscles. That is, can I correctly generalize from these two examples to a solid category theoretical definition of a sheaf? I’m not sure, but this is a unique opportunity, so it’s worth a shot.</p>
-<h2 id="the-metaphor">The Metaphor</h2>
-<p>The central metaphor of the paper is that a sheaf enriches some mathematical structure, much like a garden enriches a plot of dirt. There are lots of gardens you could make on a plot of dirt, and then you can harvest things from them. I guess this makes sense to the author, but it doesn’t particularly help me. I suspect this is an example of the monad tutorial fallacy in the wild: after thinking really hard about an idea for a while, the author came up with a metaphor that really works for them. But, this metaphor is more an artifact of their thinking process than it is descriptive of the idea itself. Anyway, either way, I wasn’t able to extract much meaning here.</p>
-<h2 id="example-graphs">Example: Graphs</h2>
-<p>We can build a (pre-?)sheaf over a graph. By playing fast and loose with our types like mathematicians are so wont to do, we can model the edge <span class="math inline">\(e_{ij} : V_i \to V_j\)</span> in a graph as an “intersection of the nodes it connects.” The paper writes <span class="math inline">\(e_{ij} &lt; v_i, v_j\)</span>. I’m not super sure what that means, but I think it’s saying that given some graph <span class="math inline">\(G = (V, E)\)</span>, we can say <span class="math inline">\(e_{ij} \subseteq v_i \cup v_j\)</span>? Except that this doesn’t typecheck, since <code>v_i</code> is an element of a set, not a set itself. I don’t know.</p>
-<p>Anyway, the important thing here seems to be that there is a preorder between edges and vertices. So let’s quickly define a <code>Preorder</code>:</p>
-<pre><code>record Preorder : Set where
-  field
-    Carrier : Set
-    _&lt;_ : Carrier → Carrier → Set
-    &lt;-refl : (a : Carrier) → a &lt; a
-    &lt;-trans : {a b c : Carrier} → a &lt; b → b &lt; c → a &lt; c</code></pre>
-<p>and then just forget about the whole graph thing, because I am not convinced it is a meaningful presentation. Instead, we’ll cheat, and just build exactly the object we want to discuss.</p>
-<pre><code>data Ex : Set where
-  v1  : Ex
-  v2  : Ex
-  e12 : Ex</code></pre>
-<p>corresponding to this rather boring graph:</p>
-<pre class="quiver"><code>\[\begin{tikzcd}
-  v1 &amp;&amp; {} &amp;&amp; v2
-  \arrow[&quot;e12&quot;&#39;, from=1-1, to=1-5]
-\end{tikzcd}\]</code></pre>
-<p>We can then build a <code class="sourceCode agda">Preorder</code> on <code class="sourceCode agda">Ex</code> with explicit cases for <code class="sourceCode agda">e12</code> being less than its vertices:</p>
-<pre><code>data Ex&lt; : Ex → Ex → Set where
-  e12&lt;v1 : Ex&lt; e12 v1
-  e12&lt;v2 : Ex&lt; e12 v2</code></pre>
-<p>and two cases to satisfy the preorder laws:</p>
-<pre><code>  ex&lt;-refl : (x : Ex) → Ex&lt; x x</code></pre>
-<p>and then mechanically hook everything up:</p>
-<pre><code>module _ where
-  open Preorder
-  ex-preorder : Preorder
-  ex-preorder .Carrier = Ex
-  ex-preorder ._&lt;_ = Ex&lt;
-  ex-preorder .&lt;-refl = ex&lt;-refl
-  ex-preorder .&lt;-trans e12&lt;v1 (ex&lt;-refl .v1) = e12&lt;v1
-  ex-preorder .&lt;-trans e12&lt;v2 (ex&lt;-refl .v2) = e12&lt;v2
-  ex-preorder .&lt;-trans (ex&lt;-refl _) e12&lt;v1 = e12&lt;v1
-  ex-preorder .&lt;-trans (ex&lt;-refl _) e12&lt;v2 = e12&lt;v2
-  ex-preorder .&lt;-trans (ex&lt;-refl x) (ex&lt;-refl _) = ex&lt;-refl x</code></pre>
-<p>The paper goes on to say we have some sheaf <code>F</code>, which maps <code class="sourceCode agda">Ex</code>s to “just about anything,” this codomain being called the <em>stalk.</em> For now, let’s assume it’s to <code class="sourceCode agda"><span class="dt">Set</span></code>.</p>
-<p>Furthermore, the sheaf <code>F</code> also has a “second mechanism,” which in our example maps an edge <span class="math inline">\(e_{ij} : v_i \to v_j\)</span> to two functions:</p>
-<p><span class="math display">\[
-F_{v_i;e_{ij}} : F(v_i) \to F(e_{ij}) \\
-F_{v_j;e_{ij}} : F(v_j) \to F(e_{ij})
-\]</span></p>
-<p>This is where some of the frustration in only being given examples comes in. Why are these in the definition of a sheaf? The only thing that could possibly make any sense to me is that this comes from a more general construction:</p>
-<pre class="text"><code>restrict : (x y : Ex) → x &lt; y → Stalk y → Stalk x</code></pre>
-<p>which states we have a mapping from <span class="math inline">\(F(y)\)</span> to <span class="math inline">\(F(x)\)</span> if and only if we have <span class="math inline">\(x &lt; y\)</span>. These <code>restrict</code> things are called <em>restriction maps</em>.</p>
-<p>What’s further confusing is the following point:</p>
-<blockquote>
-<p>Since each stalk is a vector space, it is natural to have our restriction maps be linear transformations described by matrices.</p>
-</blockquote>
-<p>Why linear transformations, and not just arbitrary functions? When I hear “linear transformation” I think homomorphism, or more probably, morphism in some category. Which then probably means the <code>Stalk</code> isn’t a function to <code class="sourceCode agda"><span class="dt">Set</span></code>, it’s a mapping into a category.</p>
-<p>OK, so that all seems straightforward enough. Let’s try to formalize it.</p>
-<pre><code>module Sheaf (pre : Preorder) (C : Category) where
-  open Preorder pre
-  open Category C
-
-  record Sheaf : Set where
-    field
-      Stalk : Carrier → Obj
-      restrict : {x y : Carrier} → x &lt; y → Stalk y ~&gt; Stalk x</code></pre>
-<p>which seems reasonable. The paper now gives us a specific sheaf, with <code class="sourceCode agda">restrict</code> <code class="sourceCode agda">e12&lt;v1</code> being the linear map encoded by the matrix:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-1 &amp; -1 \\
-0 &amp; 2
-\end{bmatrix}
-\]</span></p>
-<p>which we can write as a morphism in <code class="sourceCode agda">LIN</code> (the category of linear algebra, with objects as vector spaces, and morphisms as linear maps):</p>
-<!--
-```
-module _ where
-  open Category LIN
-  open Sheaf ex-preorder LIN
-  open Sheaf.Sheaf
-
-  postulate
-    trustMe : ∀ {A : Set} {a b : A} → a ≡ b
-    sorry : ∀ {A : Set} → A
-```
--->
-<pre><code>  e12~&gt;v1 : 2 ~&gt; 2
-  e12~&gt;v1 .linmap (x ∷ y ∷ []) =
-    (x - y)   ∷
-    (+ 2 * y) ∷
-             []
-  e12~&gt;v1 .preserves-+ u v = trustMe
-  e12~&gt;v1 .preserves-* a v = trustMe</code></pre>
-<p>and <code class="sourceCode agda">restrict</code> <code class="sourceCode agda">e12&lt;v2</code> being the linear map encoded by the matrix:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-3 &amp; 1 &amp; -1 \\
-2 &amp; 0 &amp; 2
-\end{bmatrix}
-\]</span></p>
-<p>written as:</p>
-<pre><code>  e12~&gt;v2 : 3 ~&gt; 2
-  e12~&gt;v2 .linmap (x ∷ y ∷ z ∷ []) =
-    (+ 3 * x + y - z)   ∷
-    (+ 2 * x + + 2 * z) ∷
-                       []
-  e12~&gt;v2 .preserves-+ u v = trustMe
-  e12~&gt;v2 .preserves-* a v = trustMe</code></pre>
-<p>Thus, we can finally build the example <code>Sheaf</code>:</p>
-<pre><code>  ex : Sheaf
-  ex .Stalk v1  = 2
-  ex .Stalk v2  = 3
-  ex .Stalk e12 = 2
-  ex .restrict e12&lt;v1 = e12~&gt;v1
-  ex .restrict e12&lt;v2 = e12~&gt;v2
-  ex .restrict (ex&lt;-refl z) = id</code></pre>
-<p>What’s with the <code class="sourceCode agda">Stalk</code> of <code class="sourceCode agda">v1</code> being 2, you might ask? Remember, the stalk is an object in some category, in this case <code class="sourceCode agda">LIN</code>. Objects in <code class="sourceCode agda">LIN</code> are natural numbers, corresponding to the length of vectors.</p>
-<h3 id="sections-and-global-sections">Sections and Global Sections</h3>
-<p>Here’s where our categorical generalization of the paper goes a bit haywire. The paper defines a <em>section</em> as picking an element from each <code class="sourceCode agda">Stalk</code> of the sheaf. He picks, for example:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-2 \\ 1
-\end{bmatrix}
-\in \text{Stalk } v1
-\]</span></p>
-<p><span class="math display">\[
-\begin{bmatrix}
-3 \\ -1 \\ 0
-\end{bmatrix}
-\in \text{Stalk } v2
-\]</span></p>
-<p>and</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-1 \\ -1
-\end{bmatrix}
-\in \text{Stalk } e12
-\]</span></p>
-<p>which is all fine and dandy, except that when we categorize, our objects no longer have internal structure. Fortunately, we can use “generalized elements,” a.k.a., morphisms out of the <code class="sourceCode agda">terminal</code> object.</p>
-<!--
-```
-module BadSections
-         {pre : Preorder}
-         {C : Category}
-         (term : HasTerminal C)
-         (sheaf : Sheaf.Sheaf pre C) where
-  open HasTerminal term
-  open Preorder pre
-  open Sheaf.Sheaf sheaf
-  open Category C
-```
--->
-<pre><code>  Section : Carrier → Set
-  Section c = terminal ~&gt; Stalk c</code></pre>
-<p>That is, a <code class="sourceCode agda">Section</code> is a mapping from every element in the <code class="sourceCode agda">Preorder</code> to a generalized element of its <code class="sourceCode agda">Stalk</code>. We can evaluate a <code class="sourceCode agda">Section</code> by checking the commutativity of all <code class="sourceCode agda">restrict</code>s. That is, we’d like the following diagram to commute:</p>
-<pre class="quiver"><code>\[\begin{tikzcd}
-  &amp;&amp; {0} \\
-  \\
-  {\text{Stalk } v_1} &amp;&amp;&amp;&amp; {\text{Stalk } e_{12}}
-  \arrow[&quot;{\text{Section }v_1}&quot;&#39;, from=1-3, to=3-1]
-  \arrow[&quot;{\text{Section } e_{12}}&quot;, from=1-3, to=3-5]
-  \arrow[&quot;{\text{restrict } e_{12}&lt;v_1}&quot;&#39;, from=3-1, to=3-5]
-\end{tikzcd}\]</code></pre>
-<p>Doing this in Agda is hard because it wants lots of dumb arithmetic proofs, so instead we’ll make ourselves content with some by-hand math:</p>
-<p><span class="math display">\[
-r \circ S v1
-=  \begin{bmatrix}
-      1 &amp; -1 \\
-      0 &amp; 2
-    \end{bmatrix}
-    \begin{bmatrix}
-      2 \\ 1
-    \end{bmatrix}
-=  \begin{bmatrix}
-      1 \\
-      2
-    \end{bmatrix}
-\neq
-    \begin{bmatrix}
-    1 \\ -1
-    \end{bmatrix}
-\]</span></p>
-<p>So, our chosen <code class="sourceCode agda">Section</code> doesn’t commute. That is, it doesn’t respect the global equalities, thus it is not a <em>global section.</em> Sounds like something worth formalizing:</p>
-<pre><code>  record GlobalSection : Set where
-    field
-      section : forall (c : Carrier) → Section c
-      commutes
-        : {x y : Carrier}
-        → (x&lt;y : x &lt; y)
-        → restrict x&lt;y ∘ section y ≈ section x</code></pre>
-<p>All that’s left is to find a <code class="sourceCode agda">GlobalSection</code> of our weird graph category:</p>
-<!--
-```
-module BadEx where
-  open Preorder
-  open Category LIN
-  open Sheaf ex-preorder LIN
-  open Sheaf.Sheaf
-```
--->
-<p>– TODO(sandy): make this cleaner</p>
-<p>Unfortunately, this formalization doesn’t quite work out; there are no arrows out of <code class="sourceCode agda">terminal</code>:</p>
-<pre><code>  boring-arrows
-      : (f : 0 ~&gt; 1)
-      → (x : Vec ℤ 0)
-      → f .linmap x ≡ + 0 ∷ []
-  boring-arrows f [] with f .linmap [] in eq
-  ... | x ∷ [] rewrite sym eq =
-    begin
-      f .linmap []                 ≡⟨⟩
-      f .linmap (map (+ 0 *_) [])  ≡⟨ f .preserves-* (+ 0) _ ⟩
-      map (+ 0 *_) (f .linmap [])  ≡⟨ cong (map (+ 0 *_)) eq ⟩
-      map (+ 0 *_) (x ∷ [])        ≡⟨⟩
-      (+ 0 * x) ∷ []               ≡⟨ cong (_∷ []) (*-zeroˡ +0) ⟩
-      +0 ∷ []
-    ∎
-    where open Eq.≡-Reasoning</code></pre>
-<p>So, that’s no good. We’ve modeled <code class="sourceCode agda">Section</code> incorrectly, as the generalized element approach doesn’t work, since we are unable to follow the example.</p>
-<p>What are some other ways to go from an <code class="sourceCode agda">Obj</code> to a <code class="sourceCode agda"><span class="dt">Set</span></code>? Maybe we could try modeling this as a functor to <code class="sourceCode agda">SET</code> instead:</p>
-<!--
-```
-module _ where
-  open _=>_
-  open import Relation.Binary.PropositionalEquality using (refl)
-```
--->
-<pre><code>  ex-func : LIN =&gt; SET
-  ex-func .F-Obj x = Vec ℤ x
-  ex-func .F-map f = f .linmap
-  ex-func .F-map-id _ _ = refl
-  ex-func .F-map-∘ g f a = refl</code></pre>
-<p>And we can try again with <code>Section</code>s:</p>
-<p>and then we can say a <code>Section</code> is an element of the action of <code class="sourceCode agda">Func</code>:</p>
-<!--
-```
-import Category.MyFunctor
-module Sections
-         {pre : Preorder}
-         {C : Category}
-         (Func : C Category.MyFunctor.=> SET)
-         (sheaf : Sheaf.Sheaf pre C) where
-  open Preorder pre
-  open Sheaf.Sheaf sheaf
-  open Category.MyFunctor._=>_ Func
-  open Category SET
-  open import Relation.Binary.PropositionalEquality using (_≡_)
-```
--->
-<pre><code>  Section : Carrier → Set
-  Section c = F-Obj (Stalk c)</code></pre>
-<p>and a <code>GlobalSection</code>, which recall, is a globally-coherent assignment of sections:</p>
-<pre><code>  record GlobalSection : Set where
-    field
-      section : forall (c : Carrier) → Section c
-      commutes
-        : {x y : Carrier}
-        → (x&lt;y : x &lt; y)
-        → F-map (restrict x&lt;y) (section y) ≡ section x</code></pre>
-<!--
-```
-module GoodEx where
-  open Sheaf ex-preorder LIN
-  open Sheaf.Sheaf ex
-  open Sections ex-func ex
-  open GlobalSection
-  open Category.MyFunctor._=>_ ex-func
-```
--->
-<pre><code>  soln : GlobalSection
-  soln .section v1 = + 2 ∷ + 1 ∷ []
-  soln .section v2 = -[1+ 1 ] ∷ + 10 ∷ + 3 ∷ []
-  soln .section e12 = + 1 ∷ + 2 ∷ []
-  soln .commutes e12&lt;v1 = refl
-  soln .commutes e12&lt;v2 = refl
-  soln .commutes (ex&lt;-refl _) = refl</code></pre>
-<p>Sure enough, this was a global section:</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-2 \\ 1
-\end{bmatrix}
-\in \text{Stalk } v1
-\]</span></p>
-<p><span class="math display">\[
-\begin{bmatrix}
--2 \\ 10 \\ 3
-\end{bmatrix}
-\in \text{Stalk } v2
-\]</span></p>
-<p>and</p>
-<p><span class="math display">\[
-\begin{bmatrix}
-1 \\ 2
-\end{bmatrix}
-\in \text{Stalk } e12
-\]</span></p>
-<h2 id="example-continuous-intervals">Example: Continuous Intervals</h2>
-<p>The paper presents a second example as well. Maybe it’s just that I’m less well-versed in the subject matter, but this example feels significantly more incoherent than the first. I tried to work through it, and the formalization above was sufficiently powerful to do what I needed, but I didn’t understand the example or what it was trying to accomplish. There was some Abelian group stuff that never actually got used.</p>
-<p>Rather than clean this section up, I’m instead going to spend the time before my publication deadline writing about what I learned about pre-sheafs after hitting the wall, and asking for help.</p>
-<h2 id="extracuricular-presheafs">Extracuricular Presheafs</h2>
-<p>So let’s talk about what all of this sheaf business above is trying to do. The ever helpful Reed Mullanix came to my rescue with a few helpful intuitions. To paraphrase him (if there are any mistakes in the following, they are my mistakes, not his):</p>
-<blockquote>
-<p>Think about a sensor network. You have some physical space, with a series of sensors attached in specific places. Maybe you have a microphone in the hallway, and a camera at the front door, and a thermometer in the bedroom. Each of these sensors is <em>locally correct</em>, that is, we can be reasonably sure that if the thermometer says 37C, it is in fact 37C.</p>
-<p>A presheaf is a mapping from this collection of sensors to a world in which we can reason about the total space. For example, we might want to get an idea of what’s going on in the basement, where we have no sensors, but which is part of our house nevertheless.</p>
-<p>And a global section over that presheaf is a globally consistent take on the system. It’s some mapping into the hypothesis space that <em>agrees with all of the measurements.</em> If we know it’s 37C in the bedroom, we’re probably not going to see snow in the front-door camera.</p>
-</blockquote>
-<p>Okay, so what’s all this preorder stuff about? I think it’s actually just a poor man’s category. We can lift any preorder into a category by considering the <code>&lt;</code> relationship to be a morphism:</p>
-<pre><code>module PreorderToCategory (P : Preorder) where
-  open Preorder P
-  open Category
-
-  open import Data.Unit using (⊤; tt)
-
-  cat : Category
-  cat .Obj = Carrier
-  cat ._~&gt;_ = _&lt;_
-  cat ._≈_ f g = ⊤
-  cat .≈-equiv = sorry
-  cat .id {A = A} = &lt;-refl A
-  cat ._∘_ g f = &lt;-trans f g
-  cat .∘-cong = λ _ _ → tt
-  cat .id-r f = tt
-  cat .id-l f = tt
-  cat .∘-assoc h g f = tt</code></pre>
-<p>and now that we have a <code class="sourceCode agda">Category</code>, we can avoid the whole <code class="sourceCode agda">Sheaf</code> / <code class="sourceCode agda">GlobalSection</code> by giving a functor into <code class="sourceCode agda">SET</code>. Well, almost, because <code class="sourceCode agda">restrict</code> goes the opposite direction. So instead, we can build an opposite category:</p>
-<pre><code>module Op (C : Category) where
-  open Category
-
-  data OpArr : Obj C → Obj C → Set where
-    reverse : {X Y : Obj C} → C [ X , Y ] → OpArr Y X
-
-  op : Category
-  op .Obj = C .Obj
-  op ._~&gt;_ = OpArr
-  op ._≈_ (reverse f) (reverse g) = C ._≈_ f g
-  op .≈-equiv {A} {B} = sorry
-  op .id = reverse (C .id)
-  op ._∘_ (reverse g) (reverse f) = reverse (C ._∘_ f g)
-  op .∘-cong = sorry
-  op .id-r (reverse f) = C .id-l f
-  op .id-l (reverse f) = C .id-r f
-  op .∘-assoc (reverse h) (reverse g) (reverse f) =
-    setoid C .isEquivalence .S.IsEquivalence.sym (C .∘-assoc f g h)
-    where
-      open import Relation.Binary.Bundles using (Setoid)
-      open Setoid using (isEquivalence)
-      import Relation.Binary.Structures as S</code></pre>
-<p>Now, we can express a presheaf as a functor:</p>
-<pre><code>module _ where
-  open import Category.MyFunctor
-  open Op
-
-  Presheaf : Category → Set
-  Presheaf C = op C =&gt; SET</code></pre>
-<p>or our specific example from earlier:</p>
-<pre><code>module _ where
-  open PreorderToCategory ex-preorder
-  open _=&gt;_
-  open import Data.Nat using (ℕ)
-  open Op
-
-  Z : ℕ → Set
-  Z = Vec ℤ
-
-  ex&#39; : Presheaf cat
-  ex&#39; .F-Obj v1 = Z 2
-  ex&#39; .F-Obj v2 = Z 3
-  ex&#39; .F-Obj e12 = Z 2
-  ex&#39; .F-map (reverse e12&lt;v1) = e12~&gt;v1 .linmap
-  ex&#39; .F-map (reverse e12&lt;v2) = e12~&gt;v2 .linmap
-  ex&#39; .F-map (reverse (ex&lt;-refl _)) a = a
-  ex&#39; .F-map-id A a = refl
-  ex&#39; .F-map-∘ (reverse e12&lt;v1) (reverse (ex&lt;-refl _)) a = refl
-  ex&#39; .F-map-∘ (reverse e12&lt;v2) (reverse (ex&lt;-refl _)) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse e12&lt;v1) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse e12&lt;v2) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse (ex&lt;-refl _)) a = refl</code></pre>
-<p>which leaves only the question of what a <code>GlobalSection</code> is under this representation.</p>
-<p>I got stumped on this one for a while too, but again, Reed to the rescue, who points out that in our preorder, <code>&lt;</code> corresponds to a “smaller” space. Thus, we want to find a mapping out of the biggest space, which corresponds to a top element in the order, or a terminal object in the category. The terminal object is going to be the “total space” in consideration (in our sensor example, eg.) and the functor laws will ensure consistency.</p>
-<pre><code>GlobalSection
-    : {C : Category}
-    → (pre : Presheaf C)
-    → (t : HasTerminal C)
-    → Set
-GlobalSection pre t =
-  pre ._=&gt;_.F-Obj (t .HasTerminal.terminal)</code></pre>
-<p>Unfortunately, this is a problem for our worked example — we don’t <em>have</em> a terminal object! But that’s OK, it’s easy to trivially construct one by just adding a top:</p>
-<pre class="quiver"><code>\[\begin{tikzcd}
-  &amp; terminal \\
-  v1 &amp;&amp; v2 \\
-  &amp; e12
-  \arrow[from=3-2, to=2-1]
-  \arrow[from=3-2, to=2-3]
-  \arrow[from=2-3, to=1-2]
-  \arrow[from=2-1, to=1-2]
-\end{tikzcd}\]</code></pre>
-<p>and by picking an object in <code class="sourceCode agda">SET</code> to map it to for our presheaf. There are some interesting choices here; we could just pick <code class="sourceCode agda">⊤</code>, which is interesting in how boring a choice it is. Such a thing trivially satisfies all of the requirements, but it doesn’t tell us much about the world. This is the metaphorical equivalent of explaining our sensors’ readings as “anything is possible!”</p>
-<p>More interestingly, we could pick <code>F-Obj terminal</code> to be <code>ℤ2 × ℤ3 × ℤ2</code>, corresponding to the product of <code>F-Obj v1</code>, <code>F-Obj v2</code> and <code>F-Obj e12</code>. We can satisfy the functor laws by projecting from the <code>F-Obj term</code> down to one of its components. And, best of all, it gives us a place to stick the values from our worked example.</p>
-<p>I’d love to code this up in more detail, but unfortunately I’m out of time. That’s the flaw of trying to get through one paper a week, the deadline is strict whether you’re ready for it or not.</p>
-<p>This whole post is a literate Agda file. I’m currently in the process of writing an Agda blogging backend for the site, so hopefully if you come back in a week or so, everything here should be hyperlinked and interactive.</p>
+    <p>Today I want to talk about <a href="https://github.com/martinvonz/jj">jujutsu</a>, aka <code>jj</code>, which describes itself as being “a Git-compatible VCS that is both simple and powerful”. This is selling itself short. Picking up <code>jj</code> has been the best change I’ve made to my developer workflow in over a decade.</p>
+<p>Before <code>jj</code>, I was your ordinary git user. I did things on Github and knew a handful of git commands. Sometimes I did cherry picks. <em>Very</em> occasionally I’d do a non-trivial rebase, but I had learned to stay away from that unless necessary, because rebasing things was a perfect way of fucking up the git repo. And then, God forbid, I’d have to re-learn about the reflog and try to unhose myself.</p>
+<p>You know. Just everyday git stuff.</p>
+<p>What I hadn’t realized until picking up <code>jj</code> was just how awful the whole git experience is. Like, everything about it sucks. With git, you need to pick a branch name for your feature <em>before</em> you’ve made the feature. What if while doing the work you come up with a better understanding of the problem?</p>
+<p>With git, you <em>can</em> stack PRs, but if you do, you’d better hope the reviewers don’t want any non-trivial changes in the first PR, or else you’ll be playing commit tag, trying to make sure all of your branches agree on the state of the world.</p>
+<p>With git, you can do an interactive rebase and move things relative to a merge commit, but you’d better make sure you know how <code>rerere</code> works, or else you’re going to spend the next several hours resolving the same conflicts across <strong>every single commit</strong> from the merge.</p>
+<p>We all know our commit history should tell the story of how our code has evolved. But with git, we all feel a little bit ashamed that our commit histories <em>don’t</em>, because doing so requires a huge amount of extra work after the fact, and means you’ll probably run into all of the problems listed above.</p>
+<p>Somehow, that’s just the state of the world that we all take for granted. Version control Stockholm syndrome. Git sucks.</p>
+<p>And jujutsu is the answer.</p>
+<p>The first half of this post is an amuse bouche to pique your interest, and hopefully convince you to give <code>jj</code> a go. You won’t regret it. The second half is on effective strategies I’ve found for using <code>jj</code> in my day to day job.</p>
+<h2 id="changes-vs-commits">Changes vs Commits</h2>
+<p>In git, the default unit of work is a “commit.” In <code>jj</code>, it’s a “change.” In practice, the two are interchangeable. The difference is all in the perspective.</p>
+<p>A commit is a unit of work that you’ve committed to the git log. And having done that, you’re <em>committed</em> to it. If that unit of work turns out to not have been the entire story (and it rarely is), you must make another commit on top that fixes the problem. The only choice you have is whether or not you want to squash rebase it on top of the original change.</p>
+<p>A change, on the other hand, is just a unit of work. If you want, you can pretend it’s a commit. But the difference is that you can always go back and edit it. At any time. When you’re done, <code>jj</code> automatically rebases all subsequent changes on top of it. It’s amazing, and makes you feel like a time traveler.</p>
+<p>Let’s take a real example from my day job. At work, I’m currently finessing a giant refactor, which involves reverse engineering what the code currently does, making a generic interface for that operation, pulling apart the inline code into instances of that interface, and then rewriting the original callsite against the interface. After an honest day’s work, my <code>jj log</code> looked something like this:</p>
+<pre><code>@  qq
+│  Rewrite first callsite
+◉  pp
+│  Give vector implementation
+◉  oo
+│  Give image implementation
+◉  nn
+│  Add interface for FileIO
+◉  mm
+│  (empty) ∅
+~</code></pre>
+<p>This is the <code>jj</code> version of the <code>git log</code>. On the left, we see a (linear) ascii tree of changes, with the most recent being at the top. The current change, marked with <code>@</code> has id <code>qq</code> and description <code>Rewrite first callsite</code>. I’m now ready to add a new change, which I can do via <code>jj new -m 'Rewrite second callsite'</code>:</p>
+<pre><code>@  rr
+│  Rewrite second callsite
+◉  qq
+│  Rewrite first callsite
+◉  pp
+│  Give vector implementation
+◉  oo
+│  Give image implementation
+◉  nn
+│  Add interface for FileIO
+◉  mm
+│  (empty) ∅
+~</code></pre>
+<p>I then went on my merry way, rewriting the second callsite. And then, suddenly, out of nowhere, DISASTER. While working on the second callsite, I realized my original <code>FileIO</code> abstraction didn’t actually help at callsite 2. I had gotten the interface wrong.</p>
+<p>In git land, situations like these are hard. Do you just add a new commit, changing the interface, and hope your coworkers don’t notice lest they look down on you? Or do you do a rebase? Or do you just abandon the branch entirely, and hope that you can cherry pick the intermediary commits.</p>
+<p>In <code>jj</code>, you just go fix the <code>Add interface for FileIO</code> change via <code>jj edit nn</code>:</p>
+<pre><code>◉  rr
+│  Rewrite second callsite
+◉  qq
+│  Rewrite first callsite
+◉  pp
+│  Give vector implementation
+◉  oo
+│  Give image implementation
+@  nn
+│  Add interface for FileIO
+◉  mm
+│  (empty) ∅
+~</code></pre>
+<p>and then you update your interface before jumping back (<code>jj edit rr</code>) to get the job done. Honestly, time traveler stuff.</p>
+<p>Of course, sometimes doing this results in a conflict, but <code>jj</code> is happy to just keep the conflict markers around for you. It’s much, much less traumatic than in git.</p>
+<h2 id="stacked-prs">Stacked PRs</h2>
+<p>Branches play a much diminished role in <code>jj</code>. Changes don’t need to be associated to any branch, which means you’re usually working in what git calls a <em>detached head</em> state. This probably makes you nervous if you’ve still got the git Stockholm syndrome, but it’s not a big deal in <code>jj</code>. In <code>jj</code>, the only reason you need branches is to ship code off to your git-loving colleagues.</p>
+<p>Because changes don’t need to be associated to a branch, this allows for workflows that git might consider “unnatural,” or at least unwieldy. For example, I’ll often just do a bunch of work (rewriting history as I go), and figure out how to split it into PRs after the fact. Once I’m ~ten changes away from an obvious stopping point, I’ll go back, mark one of the change as the head of a branch <code>jj branch create -r rr feat-fileio</code>, and then continue on my way.</p>
+<p>This marks change <code>rr</code> as the head of a branch <code>feat-fileio</code>, but this action doesn’t otherwise have any significance to <code>jj</code>; my change tree hasn’t changed in the slightest. It now looks like this:</p>
+<pre><code>@  uu
+|  Update ObjectName
+◉  tt
+|  Changes to pubsub
+◉  ss
+|  Fix shape policy
+◉  rr feat-fileio
+│  Rewrite second callsite
+◉  qq
+│  Rewrite first callsite
+◉  pp
+│  Give vector implementation
+◉  oo
+│  Give image implementation
+◉  nn
+│  Add interface for FileIO
+◉  mm
+│  (empty) ∅
+~</code></pre>
+<p>where the only difference is the line <code>◉  rr feat-fileio</code>. Now when <code>jj</code> sends this off to git, the branch <code>feat-fileio</code> will have one commit for each change in <code>mm..rr</code>. If my colleagues ask for changes during code review, I just add the change somewhere in my change tree, and it automatically propagates downstream to the changes that will be in my next PR. No more cherry picking. No more inter-branch merge commits. I use the same workflow I would in <code>jj</code> that I would if there weren’t a PR in progress. It just works. It’s amazing.</p>
+<h2 id="the-dev-branch">The Dev Branch</h2>
+<p><a href="https://qword.net/2023/10/22/the-use-and-abuse-of-the-dev-branch">The use and abuse of the dev branch pattern</a>, makes a great argument for a particular git workflow in which you have all of your branches based on a local <code>dev</code> branch. Inside of this <code>dev</code> branch, you make any changes relevant to your local developer experience, where you change default configuration options, or add extra logging, or whatever. The idea is that you want to keep all of your private changes somewhere organized, but not have to worry about those changes accidentally ending up in your PRs.</p>
+<p>I’ve never actually used this in a git workflow, but it makes even more sense in a <code>jj</code> repository. At time of writing, my change tree at work looks something like the following:</p>
+<pre><code>◉  wq
+╷  reactor: Cleanup singleton usage
+╷ ◉  pv
+╭─╯  feat: Optimize image rendering
+╷ ◉  u
+╷ |  fix: Fix bug in networking code
+╷ | ◉  wo
+╷ ╭─╯  feat: Finish porting to FileIO
+╷ ◉  rr
+╭─╯  feat: Add interface for FileIO
+@  dev
+│  (empty) ∅
+◉  main@origin
+│  Remove unused actions (#1074)</code></pre>
+<p>Here you can see I’ve got quite a few things on the go! <code>wq</code>, <code>pv</code> and <code>rr</code> are all branched directly off of <code>dev</code>, which correspond to PRs I currently have waiting for review. <code>u</code> and <code>wo</code> are stacked changes, waiting on <code>rr</code> to land. The ascii tree here is worth its weight in gold in keeping track of where all my changes are.</p>
+<p>You’ll notice that my <code>dev</code> branch is labeled as <code>(empty)</code>, which is to say it’s a change with no diff. But even so, I’ve found it immensely helpful to keep around. Because when my coworkers’ changes land in <code>main</code>, I need only rebase <code>dev</code> on top of the new changes to <code>main</code>, and <code>jj</code> will do the rest. Let’s say <code>rr</code> now has conflicts. I can just go and edit <code>rr</code> to fix the conflicts, and that fix will be propagated to <code>u</code> and <code>wo</code>!!!!</p>
+<p>YOU JUST FIX THE CONFLICT ONCE, FOR ALL OF YOUR PULL REQUESTS. IT’S ACTUALLY AMAZING.</p>
+<h2 id="revsets">Revsets</h2>
+<p>In <code>jj</code>, sets of changes are first class objects, known (somewhat surprisingly) as <em>revsets.</em> Revsets are created algebraically by way of a little, purely functional language that manipulates sets. The id of any change is a singleton revset. We can take the union of two revsets with <code>|</code>, and the intersection with <code>&amp;</code>. We can take the complement of a revset via <code>~</code>. We can get descendants of a revset <code>x</code> via <code>x::</code>, and its ancestors in the obvious way.</p>
+<p>Revsets took me a little work to wrap my head around, but it’s been well worth the investment. Yesterday I somehow borked my <code>dev</code> change (????), so I just made <code>new-dev</code>, and then reparented the immediate children of <code>dev</code> over to <code>new-dev</code> in one go. You can get the children of a revset <code>x</code> via <code>x+</code>, so this was done via <code>jj rebase -s dev+ -d new-dev</code>.</p>
+<p>Stuff like that is kinda neat, but the best use of revsets in my opinion is to customize the <code>jj</code> experience in exactly the right way for you. For example, I do a lot of stacked PRs, and I want my <code>jj log</code> to reflect that. So my default revset for <code>jj log</code> only shows me the changes that are in my “current PR”. It’s a bit hard to explain, but it works like an accordion. I mark my PRs with branches, and my revset will only show me the changes from the most immediate ancestral branch to the most immediate descendant branch. That is, my log acts as an accordion, and collapses any changes that are not part of the PR I’m currently looking at.</p>
+<p>But, it’s helpful to keep track of where I am in the bigger change tree, so my default revset will also show me how my PR is related to all of my other PRs. The tree we looked at earlier is in fact the closed version of this accordion. When you change <code>@</code> to be inside of one of the PRs, it immediately expands to give you all of the local context, without sacrificing how it fits into the larger whole:</p>
+<pre><code>◉  wq
+╷  reactor: Cleanup singleton usage
+╷ ◉  pv
+╭─╯  feat: Optimize image rendering
+╷ ◉  u
+╷ |  fix: Fix bug in networking code
+╷ | ◉  wo
+╷ | |  feat: Finish porting to FileIO
+╷ | ◉  sn
+╷ | |  Newtype deriving for Tracker
+╷ | @  pm
+╷ | |  Add dependency on monoidal-map
+╷ | ◉  vw
+╷ | |  Fix bamboozler
+╷ | ◉  ozy
+╷ ╭─╯  update InClientRam
+╷ ◉  rr
+╭─╯  feat: Add interface for FileIO
+◉  dev
+│  (empty) ∅</code></pre>
+<p>The coolest part about the revset UI is that you can make your own named revsets, by adding them as aliases to <code>jj/config.toml</code>. Here’s the definition of my accordioning revset:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode toml"><code class="sourceCode toml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[</span><span class="dt">revsets</span><span class="kw">]</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">log</span> <span class="op">=</span> <span class="st">&quot;@ | bases | branches | curbranch::@ | @::nextbranch | downstream(@, branchesandheads)&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">[</span><span class="dt">revset-aliases</span><span class="kw">]</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;bases&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">dev</span><span class="st">&#39;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;downstream(x,y)&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">(x::y) &amp; y</span><span class="st">&#39;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;branches&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">downstream(trunk(), branches()) &amp; mine()</span><span class="st">&#39;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;branchesandheads&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">branches | (heads(trunk()::) &amp; mine())</span><span class="st">&#39;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;curbranch&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">latest(branches::@- &amp; branches)</span><span class="st">&#39;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;nextbranch&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">roots(@:: &amp; branchesandheads)</span><span class="st">&#39;</span></span></code></pre></div>
+<p>You can see from <code>log</code> that we always show <code>@</code> (the current edit), all of the named bases (currently just <code>dev</code>, but you might want to add <code>main</code>), and all of the named branches. It then shows everything from <code>curbranch</code> to <code>@</code>, which is to say, the changes in the branch leading up to <code>@</code>, as well as everything from <code>@</code> to the beginning of the next (stacked) branch. Finally, we show all the leafs of the change tree downstream of <code>@</code>, which is nice when you haven’t yet done enough work to consider sending off a PR.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Jujutsu is absolutely amazing, and is well worth the four hours of your life it will take you to pick up. If you’re looking for some more introductory material, look at <a href="https://v5.chriskrycho.com/essays/jj-init/">jj init</a> and <a href="https://steveklabnik.github.io/jujutsu-tutorial/">Steve’s jujutsu tutorial</a></p>
 
 <p class="meta">
     <span class="prev">
-        <a href="/blog/ring-solving">&larr;</a>
+        <a href="/blog/yampa-routing">&larr;</a>
     </span>
 </p>
 
@@ -518,7 +245,7 @@ GlobalSection pre t =
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

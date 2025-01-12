@@ -58,10 +58,10 @@
     <p>I’ve been reading through <a href="https://homepages.inf.ed.ac.uk/wadler/">Wadler’s</a> classic paper “<a href="http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf">Theorems for Free</a>”.</p>
 <p>The thesis of the paper is that given a most-general (taking as few constraints on its values as possible) polymorphic type signature, we can generate for free a theorem to which any inhabitant of such a type must adhere.</p>
 <p>Translating into familiar Haskell notation, Wadler gives the following example:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">r ::</span> [x] <span class="ot">-&gt;</span> [x]</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">r ::</span> [x] <span class="ot">-&gt;</span> [x]</span></code></pre></div>
 <blockquote>
 <p>From this, as we shall see, it is possible to conclude that <code>r</code> satisfies the following theorem: for all types <code>a</code> and <code>b</code> and every total function <code>f : a -&gt; b</code> we have:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="fu">map</span> f <span class="op">.</span> r <span class="ot">=</span> r <span class="op">.</span> <span class="fu">map</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">map</span> f <span class="op">.</span> r <span class="ot">=</span> r <span class="op">.</span> <span class="fu">map</span> f</span></code></pre></div>
 </blockquote>
 <p>He explains:</p>
 <blockquote>
@@ -120,8 +120,8 @@
 \reln{\hat{f}\times\hat{g}} = \myset{(a, b), (f\;a,g\;b)}{a \in A,\; b \in B}
 \]</span></p>
 <p>or, alternatively, could be written in Haskell as:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">prodRel ::</span> (a <span class="ot">-&gt;</span> a&#39;) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b&#39;) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a&#39;, b&#39;)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>prodRel f g (a, b) <span class="ot">=</span> (f a, g b)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">prodRel ::</span> (a <span class="ot">-&gt;</span> a&#39;) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b&#39;) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a&#39;, b&#39;)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>prodRel f g (a, b) <span class="ot">=</span> (f a, g b)</span></code></pre></div>
 <p>If you’re familiar with the <code>bimap</code> function provided by the <code>Bifunctor</code> class, <code>prodRel</code> is a special case of that.</p>
 <p>This technique of specializing a relation <span class="math inline">\(\reln{A}\)</span> to a function <span class="math inline">\(\reln{\hat{f}}\)</span> turns out to be a very useful trick for actually getting results out of the technique. I’m trying to emphasize this point since I missed it my first few times through the paper, and was subsequently rather stumped.</p>
 <h3 id="list-types">List Types</h3>
@@ -163,9 +163,9 @@
 \]</span></p>
 <p>where <span class="math inline">\(\text{inl}\)</span> and <span class="math inline">\(\text{inr}\)</span> are more commonly known in Haskell under the guises <code>Left</code> and <code>Right</code>.</p>
 <p>In the special case that <span class="math inline">\(\reln{\hat{f}}\)</span> and <span class="math inline">\(\reln{\hat{g}}\)</span> are functions, the relation <span class="math inline">\(\reln{(\hat{f}|\hat{g})}\)</span> is itself a function:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">coprodRel ::</span> (a <span class="ot">-&gt;</span> a&#39;) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b&#39;) <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> a&#39; b&#39;</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>coprodRel f _ (<span class="dt">Left</span> a)  <span class="ot">=</span> <span class="dt">Left</span>  (f a)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>coprodRel _ g (<span class="dt">Right</span> b) <span class="ot">=</span> <span class="dt">Right</span> (g b)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">coprodRel ::</span> (a <span class="ot">-&gt;</span> a&#39;) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b&#39;) <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> a&#39; b&#39;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>coprodRel f _ (<span class="dt">Left</span> a)  <span class="ot">=</span> <span class="dt">Left</span>  (f a)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>coprodRel _ g (<span class="dt">Right</span> b) <span class="ot">=</span> <span class="dt">Right</span> (g b)</span></code></pre></div>
 <p>which again, if you’re familiar with <code>Bifunctor</code>, is just <code>bimap</code> in disguise</p>
 <h2 id="generating-free-theorems">Generating Free Theorems</h2>
 <p>With all of that foreplay out of the way, we’re now ready to tackle the meat of the paper. Wadler gives his contribution of the article:</p>
@@ -257,15 +257,15 @@
 \end{align*}
 \]</span></p>
 <p>This theorem can be read out in Haskell as the equality <code>const (f a) . g = f . const a</code>, which is true! We can add back the points to it in order to see this fact more clearly:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="fu">const</span> (f a) (g b) <span class="ot">=</span> f (<span class="fu">const</span> a b)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">const</span> (f a) (g b) <span class="ot">=</span> f (<span class="fu">const</span> a b)</span></code></pre></div>
 <p>It’s an exceptionally short proof to show the correctness of this, so we’ll go through the motions</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="fu">const</span> (f a) (g b)  <span class="co">-- given</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>f a                <span class="co">-- definition of `const`</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a><span class="ot">=</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>f (<span class="fu">const</span> a b)      <span class="co">-- given</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>f a                <span class="co">-- definition of `const`</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">const</span> (f a) (g b)  <span class="co">-- given</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>f a                <span class="co">-- definition of `const`</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>f (<span class="fu">const</span> a b)      <span class="co">-- given</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>f a                <span class="co">-- definition of `const`</span></span></code></pre></div>
 <p>Very snazzy! Maybe Wadler is onto something with all of this stuff. The remainder of the paper is a tighter formalization of the preceding, as well as an extension of it into System F. Finally it provides a proof that fixpoints don’t violate parametricity, which crucially gives us access to inductive types and recursive functions.</p>
 <p>At this point, however, we have enough of an understanding of the technique for the purpose of this essay, and we’ll accept the remainder of Wadler89 without further ado.</p>
 <h2 id="commentary-on-the-computer-science">Commentary (on the computer science)</h2>
@@ -297,7 +297,7 @@ FB\ar[r]_{\mathcal{N}_B} &amp; GB
 \]</span></p>
 <p>We can understand such a thing in Haskell as looking at the arrows as functions, and the objects (the things that the functions are <em>between</em>) as types. Therefore, a natural transformation <span class="math inline">\(\mathcal{N} : F\to G\)</span> takes a function <code>f :: A -&gt; B</code> to the equation <span class="math inline">\(\mathcal{N}_B \circ Ff = Gf \circ \mathcal{N}_A\)</span>. Remind you of anything we’ve looked at recently?</p>
 <p>A natural transformation is a mapping from one functor to another; which we can express in Haskell as:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Nat</span> f g <span class="ot">=</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> <span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> g x</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Nat</span> f g <span class="ot">=</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> <span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> g x</span></code></pre></div>
 <p>Remember how our relation constructors when specialized to functions turned out to be (bi)functors? As a matter of fact, we can view our relation for concrete types as the <code>Identity</code> functor, and so the rabbit hole continues.</p>
 <p>But why must we specialize our relations to functions in all of our free theorem analysis? Well by specializing to functions, we ensure they’re arrows in <span class="math inline">\(\mathcal{Hask}\)</span>. Given that our identity, product, coproduct, and list relation constructions are functors from <span class="math inline">\(\mathcal{Hask}\to\mathcal{Hask}\)</span> (ie. “endofunctors”), this means our analysis must stay in the realm of Haskell. Which makes sense, since our original goal was to prove things about Haskell types.</p>
 <p>The pieces of the puzzle have mostly come together. We must specialize our relations to arrows in order to force our other relations to form (endo)functors in Haskell. Once we have endofunctors, we can use our function relation as a natural transformation as the only way of introducing non-trivial equations into our analysis (the so-called naturality condition). All that’s left before we can definitively claim that Wadler’s free theorems are nothing more than basic applications of category theory<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> is a categorical notion of the universally quantified relation.</p>
@@ -313,14 +313,14 @@ FB\ar[r]_{\mathcal{N}_B} &amp; GB
 </ul>
 <p>The first bullet isn’t actionable, so we’ll keep it in mind as we go through the other points.</p>
 <p>However, the second bullet is interesting. Interesting because if we look at any universally qualified types that <em>don’t</em> involve functions, we’ll find that they <em>aren’t</em> interesting. For example:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">universalMaybe ::</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Maybe</span> a</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>universalMaybe <span class="ot">=</span> <span class="dt">Nothing</span>  <span class="co">-- the only inhabitant of our type</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="ot">universalList ::</span> <span class="kw">forall</span> a<span class="op">.</span> [a]</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>universalList <span class="ot">=</span> []        <span class="co">-- the only inhabitant of our type</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a><span class="ot">universalEither ::</span> <span class="kw">forall</span> a b<span class="op">.</span> <span class="dt">Either</span> a b</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>universalEither <span class="ot">=</span> <span class="fu">undefined</span>  <span class="co">-- no inhabitants of this type!</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">universalMaybe ::</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Maybe</span> a</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>universalMaybe <span class="ot">=</span> <span class="dt">Nothing</span>  <span class="co">-- the only inhabitant of our type</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ot">universalList ::</span> <span class="kw">forall</span> a<span class="op">.</span> [a]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>universalList <span class="ot">=</span> []        <span class="co">-- the only inhabitant of our type</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ot">universalEither ::</span> <span class="kw">forall</span> a b<span class="op">.</span> <span class="dt">Either</span> a b</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>universalEither <span class="ot">=</span> <span class="fu">undefined</span>  <span class="co">-- no inhabitants of this type!</span></span></code></pre></div>
 <p>The only inhabitants of these types are ones that don’t contain any <code>a</code>s at all. Given this realization, it seems safe to say that our first bullet point is correct; that universal construction is the other side of the coin to the natural transformation created by our function relation, manifest as an artifact for reasons only the eldritch set-theoretical gods know.</p>
 <hr />
 <p>Thanks to <a href="https://github.com/DebugSteven">J Haigh</a> for proofreading an early version of this post.</p>
@@ -385,7 +385,7 @@ FB\ar[r]_{\mathcal{N}_B} &amp; GB
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

@@ -45,6 +45,9 @@
     <span class="prev">
         <a href="/blog/ring-solving">&larr;</a>
     </span>
+    <span class="next">
+        <a href="/blog/complexity-analysis">&rarr;</a>
+    </span>
     <time>February 27, 2022</time>
 
     <span class="tags">
@@ -54,10 +57,11 @@
 <div class="content">
     <pre><code>{-# OPTIONS --type-in-type #-}
 
-module Blog.sheafs where
+module blog.sheafs where
 
 open import Data.Integer hiding (_&lt;_)
-open import Data.Integer.Properties using (*-zeroˡ; ≤-reflexive; ≤-trans)
+open import Data.Integer.Properties
+              using (*-zeroˡ; ≤-reflexive; ≤-trans)
 open import Data.Vec hiding (restrict; reverse)
 open import Categories
 open import Category.LIN
@@ -267,8 +271,7 @@ module BadEx where
   open Sheaf.Sheaf
 ```
 -->
-<p>– TODO(sandy): make this cleaner</p>
-<p>Unfortunately, this formalization doesn’t quite work out; there are no arrows out of <code class="sourceCode agda">terminal</code>:</p>
+<p>Unfortunately, this formalization doesn’t quite work out; there are no interesting arrows out of <code class="sourceCode agda">terminal</code>:</p>
 <pre><code>  boring-arrows
       : (f : 0 ~&gt; 1)
       → (x : Vec ℤ 0)
@@ -408,7 +411,8 @@ module GoodEx where
   op .id-r (reverse f) = C .id-l f
   op .id-l (reverse f) = C .id-r f
   op .∘-assoc (reverse h) (reverse g) (reverse f) =
-    setoid C .isEquivalence .S.IsEquivalence.sym (C .∘-assoc f g h)
+    setoid C .isEquivalence
+             .S.IsEquivalence.sym (C .∘-assoc f g h)
     where
       open import Relation.Binary.Bundles using (Setoid)
       open Setoid using (isEquivalence)
@@ -442,7 +446,8 @@ module GoodEx where
   ex&#39; .F-map-∘ (reverse e12&lt;v2) (reverse (ex&lt;-refl _)) a = refl
   ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse e12&lt;v1) a = refl
   ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse e12&lt;v2) a = refl
-  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse (ex&lt;-refl _)) a = refl</code></pre>
+  ex&#39; .F-map-∘ (reverse (ex&lt;-refl _)) (reverse (ex&lt;-refl _)) a
+    = refl</code></pre>
 <p>which leaves only the question of what a <code>GlobalSection</code> is under this representation.</p>
 <p>I got stumped on this one for a while too, but again, Reed to the rescue, who points out that in our preorder, <code>&lt;</code> corresponds to a “smaller” space. Thus, we want to find a mapping out of the biggest space, which corresponds to a top element in the order, or a terminal object in the category. The terminal object is going to be the “total space” in consideration (in our sensor example, eg.) and the functor laws will ensure consistency.</p>
 <pre><code>GlobalSection
@@ -463,13 +468,16 @@ GlobalSection pre t =
   \arrow[from=2-1, to=1-2]
 \end{tikzcd}\]</code></pre>
 <p>and by picking an object in <code class="sourceCode agda">SET</code> to map it to for our presheaf. There are some interesting choices here; we could just pick <code class="sourceCode agda">⊤</code>, which is interesting in how boring a choice it is. Such a thing trivially satisfies all of the requirements, but it doesn’t tell us much about the world. This is the metaphorical equivalent of explaining our sensors’ readings as “anything is possible!”</p>
-<p>More interestingly, we could pick <code>F-Obj terminal</code> to be <code>ℤ2 × ℤ3 × ℤ2</code>, corresponding to the product of <code>F-Obj v1</code>, <code>F-Obj v2</code> and <code>F-Obj e12</code>. We can satisfy the functor laws by projecting from the <code>F-Obj term</code> down to one of its components. And, best of all, it gives us a place to stick the values from our worked example.</p>
+<p>More interestingly, we could pick <code>F-Obj terminal</code> to be <span class="math inline">\(\mathbb{Z}^2 × \mathbb{Z}^3 × \mathbb{Z}^2\)</span>, corresponding to the product of <code>F-Obj v1</code>, <code>F-Obj v2</code> and <code>F-Obj e12</code>. We can satisfy the functor laws by projecting from the <code>F-Obj term</code> down to one of its components. And, best of all, it gives us a place to stick the values from our worked example.</p>
 <p>I’d love to code this up in more detail, but unfortunately I’m out of time. That’s the flaw of trying to get through one paper a week, the deadline is strict whether you’re ready for it or not.</p>
-<p>This whole post is a literate Agda file. I’m currently in the process of writing an Agda blogging backend for the site, so hopefully if you come back in a week or so, everything here should be hyperlinked and interactive.</p>
+<p>This whole post is a literate Agda file.</p>
 
 <p class="meta">
     <span class="prev">
         <a href="/blog/ring-solving">&larr;</a>
+    </span>
+    <span class="next">
+        <a href="/blog/complexity-analysis">&rarr;</a>
     </span>
 </p>
 
@@ -518,7 +526,7 @@ GlobalSection pre t =
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

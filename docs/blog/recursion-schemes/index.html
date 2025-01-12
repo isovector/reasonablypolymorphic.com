@@ -63,26 +63,26 @@
 <p>By way of example, Meijer et al. present the following specialization of a catamorphism over lists:</p>
 <blockquote>
 <p>Let <code>default :: b</code> and <code>step :: a -&gt; b -&gt; b</code>, then a <em>list-catamorphism</em> <code>h :: [a] -&gt; b</code> if a function of the following form:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>h [] <span class="ot">=</span> default</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>h (a <span class="op">:</span> as) <span class="ot">=</span> step a (h as)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>h [] <span class="ot">=</span> default</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>h (a <span class="op">:</span> as) <span class="ot">=</span> step a (h as)</span></code></pre></div>
 </blockquote>
 <p>This definition should look pretty familiar; if you specialize the function <code>foldr</code> to lists, you’ll see it has the type:</p>
 <pre class="haskel"><code>foldr :: (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b</code></pre>
 <p>We can view <code>foldr</code> as taking our values <code>step :: a -&gt; b -&gt; b</code> and <code>default :: b</code>, and then giving back a function that takes an <code>[a]</code> and computes some <code>b</code>. For example, we can write a few of the common prelude functions over lists as catamorphisms of this form.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="fu">length</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="fu">length</span> <span class="ot">=</span> <span class="fu">foldr</span> (\_ n <span class="ot">-&gt;</span> n <span class="op">+</span> <span class="dv">1</span>) <span class="dv">0</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="fu">filter</span><span class="ot"> ::</span> <span class="kw">forall</span> a<span class="op">.</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="fu">filter</span> p <span class="ot">=</span> <span class="fu">foldr</span> step []</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">    step ::</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    step a as <span class="ot">=</span> <span class="kw">if</span> p a</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>                   <span class="kw">then</span> a <span class="op">:</span> as</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>                   <span class="kw">else</span> as</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span> <span class="ot">=</span> <span class="fu">foldr</span> (\_ n <span class="ot">-&gt;</span> n <span class="op">+</span> <span class="dv">1</span>) <span class="dv">0</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span><span class="ot"> ::</span> <span class="kw">forall</span> a<span class="op">.</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span> p <span class="ot">=</span> <span class="fu">foldr</span> step []</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    step ::</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    step a as <span class="ot">=</span> <span class="kw">if</span> p a</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                   <span class="kw">then</span> a <span class="op">:</span> as</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                   <span class="kw">else</span> as</span></code></pre></div>
 <p>When written this way – Meijer et al. are quick to point out – the so-called “fusion” law is easily seen:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>f <span class="op">.</span> <span class="fu">foldr</span> step default <span class="ot">=</span> <span class="fu">foldr</span> step&#39; default&#39;</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    step&#39; a b <span class="ot">=</span> step a (f b)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    default&#39;  <span class="ot">=</span> f default</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">.</span> <span class="fu">foldr</span> step default <span class="ot">=</span> <span class="fu">foldr</span> step&#39; default&#39;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    step&#39; a b <span class="ot">=</span> step a (f b)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    default&#39;  <span class="ot">=</span> f default</span></code></pre></div>
 <p>which intuitively says that you can “fuse” a catamorphism with a subsequent composition into a single catamorphism.</p>
 <h3 id="anamorphisms-over-lists">Anamorphisms over Lists</h3>
 <p>If a catamorphism refers to a “fold”, an <strong>anamorphism</strong> corresponds to an <em>unfold</em> of a data structure. A good mnemonic for this is that an <em>ana</em>morphism builds things up, just like <em>ana</em>bolic steroids can be an easy way to build up muscle mass.</p>
@@ -90,78 +90,78 @@
 <p>unfoldr :: (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]</p>
 <blockquote>
 <p>Given a function <code>produce :: b -&gt; Maybe (a, b)</code>, a list-anamorphism <code>h :: b -&gt; [a]</code> is defined as:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>h seed <span class="ot">=</span> <span class="kw">case</span> produce seed <span class="kw">of</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>           <span class="dt">Just</span> (a, b) <span class="ot">=</span> a <span class="op">:</span> h b</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>           <span class="dt">Nothing</span>     <span class="ot">=</span> []</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>h seed <span class="ot">=</span> <span class="kw">case</span> produce seed <span class="kw">of</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>           <span class="dt">Just</span> (a, b) <span class="ot">=</span> a <span class="op">:</span> h b</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>           <span class="dt">Nothing</span>     <span class="ot">=</span> []</span></code></pre></div>
 </blockquote>
 <p>As expected, this corresponds to the <code>unfoldr :: (b -&gt; Maybe (a, b)) -&gt; b -&gt; [a]</code> function from <code>Data.List</code>.</p>
 <p>By way of example, they provide the following:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="fu">zip</span><span class="ot"> ::</span> ([a], [b]) <span class="ot">-&gt;</span> [(a, b)]</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="fu">zip</span> <span class="ot">=</span> unfoldr produce</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>    produce (as, bs) <span class="ot">=</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>      <span class="kw">if</span> <span class="fu">null</span> as <span class="op">||</span> <span class="fu">null</span> bs</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>         <span class="kw">then</span> <span class="dt">Nothing</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>         <span class="kw">else</span> <span class="dt">Just</span> ((<span class="fu">head</span> as, <span class="fu">head</span> bs), (<span class="fu">tail</span> as, <span class="fu">tail</span> bs))</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zip</span><span class="ot"> ::</span> ([a], [b]) <span class="ot">-&gt;</span> [(a, b)]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">zip</span> <span class="ot">=</span> unfoldr produce</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    produce (as, bs) <span class="ot">=</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="fu">null</span> as <span class="op">||</span> <span class="fu">null</span> bs</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>         <span class="kw">then</span> <span class="dt">Nothing</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> <span class="dt">Just</span> ((<span class="fu">head</span> as, <span class="fu">head</span> bs), (<span class="fu">tail</span> as, <span class="fu">tail</span> bs))</span></code></pre></div>
 <p>and</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="fu">iterate</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [a]</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="fu">iterate</span> f <span class="ot">=</span> unfoldr (\a <span class="ot">-&gt;</span> <span class="dt">Just</span> (a, f a))</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">iterate</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [a]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">iterate</span> f <span class="ot">=</span> unfoldr (\a <span class="ot">-&gt;</span> <span class="dt">Just</span> (a, f a))</span></code></pre></div>
 <p>An interesting case is that of <code>map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code>. We note that both the input and output of this function are lists, and thus might suspect the function can be written as either a catamorphism <em>or</em> an anamorphism. And indeed, it can be:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">cataMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>cataMap f <span class="ot">=</span> <span class="fu">foldr</span> (\a bs <span class="ot">-&gt;</span> f a <span class="op">:</span> bs) []</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="ot">anaMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>anaMap f <span class="ot">=</span> unfoldr produce</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>    produce [] <span class="ot">=</span> <span class="dt">Nothing</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>    produce (a <span class="op">:</span> as) <span class="ot">=</span> <span class="dt">Just</span> (f a, as)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cataMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>cataMap f <span class="ot">=</span> <span class="fu">foldr</span> (\a bs <span class="ot">-&gt;</span> f a <span class="op">:</span> bs) []</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">anaMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>anaMap f <span class="ot">=</span> unfoldr produce</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    produce [] <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    produce (a <span class="op">:</span> as) <span class="ot">=</span> <span class="dt">Just</span> (f a, as)</span></code></pre></div>
 <p>Neat!</p>
 <h3 id="hylomorphisms-over-lists">Hylomorphisms over Lists</h3>
 <p>A <strong>hylomorphism</strong> over lists is a recursive function of type <code>a -&gt; b</code> whose call-tree is isomorphic to a list. A hylomorphism turns out to be nothing more than a catamorphism following an anamorphism; the anamorphism builds up the call-tree, and the catamorphism evaluates it.</p>
 <p>An easy example of hylomorphisms is the factorial function, which can be naively (ie. without recursion schemes) implemented as follows:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">fact ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>fact <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>fact n <span class="ot">=</span> n <span class="op">*</span> fact (n <span class="op">-</span> <span class="dv">1</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">fact ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>fact <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>fact n <span class="ot">=</span> n <span class="op">*</span> fact (n <span class="op">-</span> <span class="dv">1</span>)</span></code></pre></div>
 <p>When presented like this, it’s clear that <code>fact</code> will be called a linear number of times in a tail-recursive fashion. That sounds a lot like a list to me, and indeed we can implement <code>fact</code> as a hylomorphism:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">fact ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>fact <span class="ot">=</span> <span class="fu">foldr</span> (<span class="op">*</span>) <span class="dv">1</span> <span class="op">.</span> unfoldr (\n <span class="ot">-&gt;</span> <span class="kw">if</span> n <span class="op">==</span> <span class="dv">0</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>                                       <span class="kw">then</span> <span class="dt">Nothing</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>                                       <span class="kw">else</span> <span class="dt">Just</span> (n, n <span class="op">-</span> <span class="dv">1</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">fact ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>fact <span class="ot">=</span> <span class="fu">foldr</span> (<span class="op">*</span>) <span class="dv">1</span> <span class="op">.</span> unfoldr (\n <span class="ot">-&gt;</span> <span class="kw">if</span> n <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                                       <span class="kw">then</span> <span class="dt">Nothing</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                                       <span class="kw">else</span> <span class="dt">Just</span> (n, n <span class="op">-</span> <span class="dv">1</span>))</span></code></pre></div>
 <p>The hylomorphic representation of <code>fact</code> works by unfolding its argument <code>n</code> into a list <code>[n, n-1 .. 1]</code>, and then folding that list by multiplying every element in it.</p>
 <p>However, as Meijer et al. point out, this implementation of <code>fact</code> is a little unsatisfactory. Recall that the natural numbers are themselves an inductive type (<code>data Nat = Zero | Succ Nat</code>), however, according to the paper, there is no easy catamorphism (nor anamorphism) that implements <code>fact</code>.</p>
 <h3 id="paramorphisms">Paramorphisms</h3>
 <p>Enter <strong>paramorphisms</strong>: intuitively catamorphisms that have access to the current state of the structure-being-torn-down. Meijer et al.:</p>
 <blockquote>
 <p>[Let <code>init :: b</code> and <code>merge :: Nat -&gt; b -&gt; b</code>. ] For type <code>Nat</code>, a paramorphism is a function <code>h :: Nat -&gt; b</code> of the form:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>h <span class="dt">Zero</span> <span class="ot">=</span> <span class="fu">init</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a>h (<span class="dt">Succ</span> n) <span class="ot">=</span> merge n (h n)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>h <span class="dt">Zero</span> <span class="ot">=</span> <span class="fu">init</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>h (<span class="dt">Succ</span> n) <span class="ot">=</span> merge n (h n)</span></code></pre></div>
 </blockquote>
 <p>As far as I can tell, there is no function in the Haskell standard library that corresponds to this function-as-specialized, so we will write it ourselves:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="ot">paraNat ::</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> b</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>paraNat _ <span class="fu">init</span> <span class="dt">Zero</span> <span class="ot">=</span> <span class="fu">init</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>paraNat merge <span class="fu">init</span> (<span class="dt">Succ</span> n) <span class="ot">=</span> merge n (paraNat merge <span class="fu">init</span> n)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">paraNat ::</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> b</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>paraNat _ <span class="fu">init</span> <span class="dt">Zero</span> <span class="ot">=</span> <span class="fu">init</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>paraNat merge <span class="fu">init</span> (<span class="dt">Succ</span> n) <span class="ot">=</span> merge n (paraNat merge <span class="fu">init</span> n)</span></code></pre></div>
 <p>We can thus write <code>fact :: Nat -&gt; Nat</code> as a paramorphism:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">fact ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>fact <span class="ot">=</span> paraNat (\n acc <span class="ot">-&gt;</span> (<span class="dv">1</span> <span class="op">+</span> n) <span class="op">*</span> acc) <span class="dv">1</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">fact ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>fact <span class="ot">=</span> paraNat (\n acc <span class="ot">-&gt;</span> (<span class="dv">1</span> <span class="op">+</span> n) <span class="op">*</span> acc) <span class="dv">1</span></span></code></pre></div>
 <p>Similarly, we can define paramorphisms over lists via the function:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="ot">paraList ::</span> (a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>paraList _ <span class="fu">init</span> [] <span class="ot">=</span> <span class="fu">init</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>paraList merge <span class="fu">init</span> (a <span class="op">:</span> as) <span class="ot">=</span> merge a as (paraList merge <span class="fu">init</span> as)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">paraList ::</span> (a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> b</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>paraList _ <span class="fu">init</span> [] <span class="ot">=</span> <span class="fu">init</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>paraList merge <span class="fu">init</span> (a <span class="op">:</span> as) <span class="ot">=</span> merge a as (paraList merge <span class="fu">init</span> as)</span></code></pre></div>
 <p>with which we can write the function <code>tails :: [a] -&gt; [[a]]</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="ot">tails ::</span> <span class="kw">forall</span> a<span class="op">.</span> [a] <span class="ot">-&gt;</span> [[a]]</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>tails <span class="ot">=</span> paraList merge []</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a><span class="ot">    merge ::</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]] <span class="ot">-&gt;</span> [[a]]</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a>    merge a as ass <span class="ot">=</span> (a <span class="op">:</span> as) <span class="op">:</span> ass</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">tails ::</span> <span class="kw">forall</span> a<span class="op">.</span> [a] <span class="ot">-&gt;</span> [[a]]</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>tails <span class="ot">=</span> paraList merge []</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    merge ::</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]] <span class="ot">-&gt;</span> [[a]]</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    merge a as ass <span class="ot">=</span> (a <span class="op">:</span> as) <span class="op">:</span> ass</span></code></pre></div>
 <h2 id="general-recursion-schemes">General Recursion Schemes</h2>
 <h3 id="intuition">Intuition</h3>
 <p>As you’ve probably guessed, the reason we’ve been talking so much about these recursion schemes is that they generalize to all recursive data types. The trick, of course, is all in the representation.</p>
 <p>Recall the standard definition of list:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">List</span> a <span class="ot">=</span> <span class="dt">Nil</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>            <span class="op">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">List</span> a <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>            <span class="op">|</span> <span class="dt">Cons</span> a (<span class="dt">List</span> a)</span></code></pre></div>
 <p>However, there’s no reason we need the explicit recursion in the <code>Cons</code> data structure. Consider instead, an alternative, “fixable” representation:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">List&#39;</span> a x <span class="ot">=</span> <span class="dt">Nil&#39;</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>               <span class="op">|</span> <span class="dt">Cons&#39;</span> a x</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">List&#39;</span> a x <span class="ot">=</span> <span class="dt">Nil&#39;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>               <span class="op">|</span> <span class="dt">Cons&#39;</span> a x</span></code></pre></div>
 <p>If we were somehow able to convince the typesystem to unify <code>x ~ List' a x</code>, we’d get the type <code>List' a (List' a (List' a ...))</code>, which is obviously isomorphic to <code>List a</code>. We’ll look at how to unify this in a second, but a more pressing question is “why would we want to express a list this way?”.</p>
 <p>It’s a good question, and the answer is we’d want to do this because <code>List' a x</code> is obviously a functor in <code>x</code>. Furthermore, in general, any datastructure we perform this transformation on will be a functor in its previously-recursive <code>x</code> parameter.</p>
 <p>We’re left only more curious, however. What good is it to us if <code>List' a x</code> is a functor in <code>x</code>? It means that we can replace <code>x</code> with some other type <code>b</code> which is <em>not</em> isomorphic to <code>List a</code>. If you squint and play a little loose with the type isomorphisms, this specializes <code>fmap :: (x -&gt; b) -&gt; List' a x -&gt; List' a b</code> to <code>(List a -&gt; b) -&gt; List' a x -&gt; List' a b</code>.</p>
@@ -169,135 +169,135 @@
 <h3 id="algebras">Algebras</h3>
 <p>An <code>f</code>-algebra is a function of type <code>forall z. f z -&gt; z</code>, which intuitively removes the structure of an <code>f</code>. If you think about it, this is spiritually what a fold does; it removes some structure as it reduces to some value.</p>
 <p>As it happens, the type of an <code>f</code>-algebra is identical to the parameters required by a catamorphism. Let’s look at <code>List' a</code>-algebras and see how the correspond with our previous examples of catamorphisms.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="fu">length</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="fu">length</span> <span class="ot">=</span> <span class="fu">foldr</span> (\_ n <span class="ot">-&gt;</span> n <span class="op">+</span> <span class="dv">1</span>) <span class="dv">0</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a><span class="ot">lengthAlgebra ::</span> <span class="dt">List&#39;</span> a <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a>lengthAlgebra <span class="dt">Nil&#39;</span>        <span class="ot">=</span> <span class="dv">0</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true"></a>lengthAlgebra (<span class="dt">Cons&#39;</span> _ n) <span class="ot">=</span> n <span class="op">+</span> <span class="dv">1</span></span></code></pre></div>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a><span class="fu">filter</span><span class="ot"> ::</span> <span class="kw">forall</span> a<span class="op">.</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> a</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true"></a><span class="fu">filter</span> p <span class="ot">=</span> <span class="fu">foldr</span> step <span class="dt">Nil</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true"></a>    step a as <span class="ot">=</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true"></a>      <span class="kw">if</span> p a</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true"></a>         <span class="kw">then</span> <span class="dt">Cons</span> a as</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true"></a>         <span class="kw">else</span> as</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true"></a></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true"></a><span class="ot">filterAlgebra ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">List&#39;</span> a (<span class="dt">List</span> a) <span class="ot">-&gt;</span> (<span class="dt">List</span> a)</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true"></a>filterAlgebra _  <span class="dt">Nil&#39;</span>        <span class="ot">=</span> <span class="dt">Nil</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true"></a>filterAlgebra p (<span class="dt">Cons&#39;</span> a as) <span class="ot">=</span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true"></a>  <span class="kw">if</span> p a</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true"></a>    <span class="kw">then</span> <span class="dt">Cons</span> a as</span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true"></a>    <span class="kw">else</span> as</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span><span class="ot"> ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span> <span class="ot">=</span> <span class="fu">foldr</span> (\_ n <span class="ot">-&gt;</span> n <span class="op">+</span> <span class="dv">1</span>) <span class="dv">0</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="ot">lengthAlgebra ::</span> <span class="dt">List&#39;</span> a <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>lengthAlgebra <span class="dt">Nil&#39;</span>        <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>lengthAlgebra (<span class="dt">Cons&#39;</span> _ n) <span class="ot">=</span> n <span class="op">+</span> <span class="dv">1</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span><span class="ot"> ::</span> <span class="kw">forall</span> a<span class="op">.</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> a</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span> p <span class="ot">=</span> <span class="fu">foldr</span> step <span class="dt">Nil</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    step a as <span class="ot">=</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> p a</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>         <span class="kw">then</span> <span class="dt">Cons</span> a as</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> as</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="ot">filterAlgebra ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">List&#39;</span> a (<span class="dt">List</span> a) <span class="ot">-&gt;</span> (<span class="dt">List</span> a)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>filterAlgebra _  <span class="dt">Nil&#39;</span>        <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>filterAlgebra p (<span class="dt">Cons&#39;</span> a as) <span class="ot">=</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> p a</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">then</span> <span class="dt">Cons</span> a as</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span> as</span></code></pre></div>
 <h3 id="coalgebras">Coalgebras</h3>
 <p><code>f</code>-algebras correspond succinctly to the parameters of catamorphisms over <code>f</code>s. Since catamorphisms are dual to anamorphisms, we should expect that by turning around an algebra we might get a representation of the anamorphism parameters.</p>
 <p>And we’d be right. Such a thing is called an <code>f</code>-coalgebra of type <code>forall z. z -&gt; f z</code>, and corresponds exactly to these parameters. Let’s look at our previous examples of anamorphisms through this lens:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a><span class="fu">zip</span><span class="ot"> ::</span> (<span class="dt">List</span> a, <span class="dt">List</span> b) <span class="ot">-&gt;</span> <span class="dt">List</span> (a, b)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true"></a><span class="fu">zip</span> <span class="ot">=</span> unfoldr produce</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true"></a>    produce (as, bs) <span class="ot">=</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true"></a>      <span class="kw">if</span> <span class="fu">null</span> as <span class="op">||</span> <span class="fu">null</span> bs</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true"></a>         <span class="kw">then</span> <span class="dt">Nothing</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true"></a>         <span class="kw">else</span> <span class="dt">Just</span> ((<span class="fu">head</span> as, <span class="fu">head</span> bs), (<span class="fu">tail</span> as, <span class="fu">tail</span> bs))</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true"></a></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true"></a><span class="ot">zipCoalgebra ::</span> ([a], [b]) <span class="ot">-&gt;</span> <span class="dt">List&#39;</span> (a, b) ([a], [b])</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true"></a>zipCoalgebra (as, bs) <span class="ot">=</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true"></a>  <span class="kw">if</span> <span class="fu">null</span> as <span class="op">||</span> <span class="fu">null</span> bs</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true"></a>     <span class="kw">then</span> <span class="dt">Nil&#39;</span></span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true"></a>     <span class="kw">else</span> <span class="dt">Cons</span> (<span class="fu">head</span> as, <span class="fu">head</span> bs) (<span class="fu">tail</span> as, <span class="fu">tail</span> bs)</span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a><span class="fu">iterate</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [a]</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true"></a><span class="fu">iterate</span> f <span class="ot">=</span> unfoldr (\a <span class="ot">-&gt;</span> <span class="dt">Just</span> (a, f a))</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true"></a></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true"></a><span class="ot">iterateAlgebra ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">List&#39;</span> a a</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true"></a>iterateAlgebra f a <span class="ot">=</span> <span class="dt">Cons</span> a (f a)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zip</span><span class="ot"> ::</span> (<span class="dt">List</span> a, <span class="dt">List</span> b) <span class="ot">-&gt;</span> <span class="dt">List</span> (a, b)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">zip</span> <span class="ot">=</span> unfoldr produce</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    produce (as, bs) <span class="ot">=</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">if</span> <span class="fu">null</span> as <span class="op">||</span> <span class="fu">null</span> bs</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>         <span class="kw">then</span> <span class="dt">Nothing</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>         <span class="kw">else</span> <span class="dt">Just</span> ((<span class="fu">head</span> as, <span class="fu">head</span> bs), (<span class="fu">tail</span> as, <span class="fu">tail</span> bs))</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ot">zipCoalgebra ::</span> ([a], [b]) <span class="ot">-&gt;</span> <span class="dt">List&#39;</span> (a, b) ([a], [b])</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>zipCoalgebra (as, bs) <span class="ot">=</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> <span class="fu">null</span> as <span class="op">||</span> <span class="fu">null</span> bs</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>     <span class="kw">then</span> <span class="dt">Nil&#39;</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>     <span class="kw">else</span> <span class="dt">Cons</span> (<span class="fu">head</span> as, <span class="fu">head</span> bs) (<span class="fu">tail</span> as, <span class="fu">tail</span> bs)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">iterate</span><span class="ot"> ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [a]</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">iterate</span> f <span class="ot">=</span> unfoldr (\a <span class="ot">-&gt;</span> <span class="dt">Just</span> (a, f a))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="ot">iterateAlgebra ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">List&#39;</span> a a</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>iterateAlgebra f a <span class="ot">=</span> <span class="dt">Cons</span> a (f a)</span></code></pre></div>
 <p>You might have noticed that these coalgebras don’t line up as nicely as the algebras did, due namely to the <code>produce</code> functions returning a type of <code>Maybe (a, b)</code>, while the coalgebras return a <code>List' a b</code>. Of course, these types are isomorphic (<code>Nothing &lt;=&gt; Nil'</code>, <code>Just (a, b) &lt;=&gt; Cons a b</code>), it’s just that the authors of <code>unfoldr</code> didn’t have our <code>List'</code> functor to play with.</p>
 <h3 id="from-algebras-to-catamorphisms">From Algebras to Catamorphisms</h3>
 <p>As we have seen, <code>f</code>-algebras correspond exactly to the parameters of a catamorphism over an <code>f</code>. But how can we actually implement the catamorphism? We’re almost there, but first we need some machinery.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">Fixable</span><span class="ot"> t ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">Fixable</span><span class="ot"> t ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span></span></code></pre></div>
 <p>The type family <code>Fixable</code> takes a type to its fixable functor representation. For example, we can use it to connect our <code>List a</code> type to <code>List' a</code>:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Fixable</span> (<span class="dt">List</span> a) <span class="ot">=</span> <span class="dt">List&#39;</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Fixable</span> (<span class="dt">List</span> a) <span class="ot">=</span> <span class="dt">List&#39;</span> a</span></code></pre></div>
 <p>Now, assuming we have a function <code>toFixable :: t -&gt; Fixable t t</code>, which for lists looks like this:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true"></a><span class="ot">toFixable ::</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">Fixable</span> (<span class="dt">List</span> a) (<span class="dt">List</span> a)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true"></a><span class="co">-- equivalently: toFixable :: List a -&gt; List&#39; a (List a)</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true"></a>toFixable <span class="dt">Nil</span>         <span class="ot">=</span> <span class="dt">Nil&#39;</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true"></a>toFixable (<span class="dt">Cons</span> a as) <span class="ot">=</span> <span class="dt">Cons&#39;</span> a as</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="ot">toFixable ::</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">Fixable</span> (<span class="dt">List</span> a) (<span class="dt">List</span> a)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- equivalently: toFixable :: List a -&gt; List&#39; a (List a)</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>toFixable <span class="dt">Nil</span>         <span class="ot">=</span> <span class="dt">Nil&#39;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>toFixable (<span class="dt">Cons</span> a as) <span class="ot">=</span> <span class="dt">Cons&#39;</span> a as</span></code></pre></div>
 <p>We can now write our catamorphism!</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a><span class="ot">cata ::</span> (<span class="dt">Fixable</span> t z <span class="ot">-&gt;</span> z) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> z)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true"></a>cata algebra <span class="ot">=</span> algebra</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true"></a>             <span class="op">.</span> <span class="fu">fmap</span> (cata algebra)</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true"></a>             <span class="op">.</span> toFixable</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cata ::</span> (<span class="dt">Fixable</span> t z <span class="ot">-&gt;</span> z) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> z)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>cata algebra <span class="ot">=</span> algebra</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>             <span class="op">.</span> <span class="fu">fmap</span> (cata algebra)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>             <span class="op">.</span> toFixable</span></code></pre></div>
 <p>Very cool. What we’ve built here is general machinery for tearing down any inductive data structure <code>t</code>. All we need to do it is its <code>Fixable t</code> representation, and a function <code>project :: t -&gt; Fixable t t</code>. These definitions turn out to be completely mechanical, and thankfully, <a href="https://hackage.haskell.org/package/recursion-schemes-5.0.2/docs/Data-Functor-Foldable-TH.html#v:makeBaseFunctor">can be automatically derived</a> for you via the <a href="https://hackage.haskell.org/package/recursion-schemes-5.0.2">recursion-schemes</a> package.</p>
 <h3 id="coalgebras-and-catamorphisms">Coalgebras and Catamorphisms</h3>
 <p>We can turn all of our machinery around in order to implement anamorphisms. We’ll present this material quickly without much commentary, since there are no new insights here.</p>
 <p>Given <code>fromFixable :: Fixable t t -&gt; t</code>, we can implement <code>ana</code>:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a><span class="ot">ana ::</span> (z <span class="ot">-&gt;</span> <span class="dt">Fixable</span> t z) <span class="ot">-&gt;</span> z <span class="ot">-&gt;</span> t</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a>ana coalgebra <span class="ot">=</span> fromFixable</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true"></a>              <span class="op">.</span> <span class="fu">fmap</span> (ana coalgebra)</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true"></a>              <span class="op">.</span> coalgebra</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="ot">ana ::</span> (z <span class="ot">-&gt;</span> <span class="dt">Fixable</span> t z) <span class="ot">-&gt;</span> z <span class="ot">-&gt;</span> t</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>ana coalgebra <span class="ot">=</span> fromFixable</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>              <span class="op">.</span> <span class="fu">fmap</span> (ana coalgebra)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>              <span class="op">.</span> coalgebra</span></code></pre></div>
 <h3 id="general-paramorphisms">General Paramorphisms</h3>
 <p>Because there is nothing interesting about hylomorphisms when viewed via our <code>Fixable</code> machinery, we skip directly to paramorphisms.</p>
 <p>Recall that a paramorphism is a fold that has access to both the accumulated value being constructed as well as the remainder of the structure at any given point in time. We can represent such a thing “algebraically:” <code>Fixable t (t, z) -&gt; z</code>. With a minor tweak to <code>cata</code>, we can get <code>para</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a><span class="ot">para ::</span> (<span class="dt">Fixable</span> t (t, z) <span class="ot">-&gt;</span> z) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> z</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a>para alg <span class="ot">=</span> teardown</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a>    teardown <span class="ot">=</span> alg</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>             <span class="op">.</span> <span class="fu">fmap</span> (\t <span class="ot">-&gt;</span> (t, teardown t))</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true"></a>             <span class="op">.</span> toFixable</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="ot">para ::</span> (<span class="dt">Fixable</span> t (t, z) <span class="ot">-&gt;</span> z) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> z</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>para alg <span class="ot">=</span> teardown</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    teardown <span class="ot">=</span> alg</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>             <span class="op">.</span> <span class="fu">fmap</span> (\t <span class="ot">-&gt;</span> (t, teardown t))</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>             <span class="op">.</span> toFixable</span></code></pre></div>
 <h2 id="miscellaneous-findings">Miscellaneous Findings</h2>
 <h3 id="all-injective-functions-are-catamorphisms">All Injective Functions are Catamorphisms</h3>
 <p>Meijer et al. make the somewhat-unsubstantiated claim that all injective functions are catamorphisms. We will reproduce their proof here, and then work through it to convince ourselves of its correctness.</p>
 <blockquote>
 <p>Let <code>f :: A -&gt; B</code> be a strict function with left-inverse <code>g</code>. Then for any <code>φ :: F A -&gt; A</code>, we have:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a>g <span class="op">.</span> f <span class="ot">=</span> <span class="fu">id</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>f <span class="op">.</span> cata φ <span class="ot">=</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>g <span class="op">.</span> f <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>f <span class="op">.</span> cata φ <span class="ot">=</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
 <p>Taking `φ = fromFixable$ we immediately get that any strict injective function can be written as a catamorphism:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a>f <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
 </blockquote>
 <p>Sounds, good? I guess? Meijer et al. must think I’m very smart, because it took me about a week of bashing my head against this proof before I got it. There were two stumbling blocks for me which we’ll tackle together.</p>
 <p>To jog our memories, we’ll look again at the definition of <code>cata</code>:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true"></a>cata φ <span class="ot">=</span> φ <span class="op">.</span> <span class="fu">fmap</span> (cata φ) <span class="op">.</span> toFixable</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>cata φ <span class="ot">=</span> φ <span class="op">.</span> <span class="fu">fmap</span> (cata φ) <span class="op">.</span> toFixable</span></code></pre></div>
 <p>There are two claims we need to tackle here, the first of which is that given <code>φ = fromFixable</code>:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true"></a>f <span class="op">.</span> cata φ <span class="ot">=</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">.</span> cata φ <span class="ot">=</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
 <p>We can show this by mathematical induction. We’ll first prove the base case, by analysis of the <code>[]</code> case over list-algebras.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true"></a>  cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g) []</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true"></a>  <span class="co">-- definition of cata</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">$</span> toFixable []</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true"></a>  <span class="co">-- definition of toFixable</span></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">$</span> <span class="dt">NilF</span></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true"></a>  <span class="co">-- fmap fusion</span></span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">$</span> <span class="dt">NilF</span></span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true"></a>  <span class="co">-- NilF is a constant functor</span></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">$</span> <span class="dt">NilF</span></span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true"></a>  <span class="co">-- substitute φ = fromFixable</span></span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">$</span> fromFixable <span class="dt">NilF</span></span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true"></a>  <span class="co">-- definition of fromFixable</span></span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true"></a><span class="ot">=</span> f []</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>  cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g) []</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- definition of cata</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">$</span> toFixable []</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- definition of toFixable</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">$</span> <span class="dt">NilF</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- fmap fusion</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">$</span> <span class="dt">NilF</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- NilF is a constant functor</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">$</span> <span class="dt">NilF</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- substitute φ = fromFixable</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">$</span> fromFixable <span class="dt">NilF</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- definition of fromFixable</span></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f []</span></code></pre></div>
 <p>Great! That’s the base case tackled. It’s easy to see why this generalizes away from lists to any data structure; the only way to terminate the recursion of a <code>cata</code> is for one of the type’s data constructors to not be recursive (such as <code>Nil</code>). If the data constructor isn’t recursive, its <code>Fixable</code> representation must be a constant functor, and thus the final <code>fmap</code> will always fizzle itself out.</p>
 <p>Let’s tackle the inductive case now. We’ll look at cases of <code>cata</code> that don’t fizzle out immediately:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true"></a>  cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true"></a>  <span class="co">-- definition of cata</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true"></a>  <span class="co">-- fmap fusion</span></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true"></a>  <span class="co">-- definition of cata</span></span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true"></a>  <span class="co">-- fmap fusion</span></span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true"></a>  <span class="co">-- g . f = id</span></span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (<span class="fu">id</span> <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true"></a>  <span class="co">-- definition of id</span></span>
-<span id="cb34-13"><a href="#cb34-13" aria-hidden="true"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>  cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- definition of cata</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- fmap fusion</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- definition of cata</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="fu">fmap</span> (cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- fmap fusion</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- g . f = id</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (<span class="fu">id</span> <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- definition of id</span></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> (φ <span class="op">.</span> <span class="fu">fmap</span> (g <span class="op">.</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)) <span class="op">.</span> toFixable) <span class="op">.</span> toFixable</span></code></pre></div>
 <p>As you can see here, subsequent expansions of <code>cata</code> line their <code>g</code>s and <code>f</code>s up in such a way that they cancel out. Also, we know from our experience looking at the base case that the final <code>g</code> will always sizzle out, and so we don’t need to worry about it only being a left-inverse.</p>
 <p>The other stumbling block for me was that <code>cata fromFixable = id</code>, but this turns out to be trivial:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true"></a>  cata fromFixable</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true"></a><span class="ot">=</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> (cata fromFixable) <span class="op">.</span> toFixable</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>  cata fromFixable</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> (cata fromFixable) <span class="op">.</span> toFixable</span></code></pre></div>
 <p>Eventually this will all bottom out when it hits the constant functor, which will give us a giant chain of <code>fromFixable . toFixable</code>s, which is obviously <code>id</code>.</p>
 <p>To circle back to our original claim that all injective functions are catamorphisms, we’re now ready to tackle it for real.</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true"></a>f <span class="op">.</span> cata φ           <span class="ot">=</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true"></a>f <span class="op">.</span> cata fromFixable <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true"></a>f <span class="op">.</span> <span class="fu">id</span>               <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true"></a>f                    <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">.</span> cata φ           <span class="ot">=</span> cata (f <span class="op">.</span> φ <span class="op">.</span> <span class="fu">fmap</span> g)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>f <span class="op">.</span> cata fromFixable <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>f <span class="op">.</span> <span class="fu">id</span>               <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>f                    <span class="ot">=</span> cata (f <span class="op">.</span> fromFixable <span class="op">.</span> <span class="fu">fmap</span> g)</span></code></pre></div>
 <p><span class="math inline">\(\blacksquare\)</span></p>
 <h3 id="all-surjective-functions-are-anamorphisms">All Surjective Functions are Anamorphisms</h3>
 <p>Anamorphisms are dual to catamorphisms, and surjective functions are dual (in <span class="math inline">\(\mathbb{Set}\)</span>) to injective functions. Therefore, we can get this proof via duality from the proof that injective functions are catamorphisms. <span class="math inline">\(\blacksquare\)</span></p>
@@ -358,7 +358,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 

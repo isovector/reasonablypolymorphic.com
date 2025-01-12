@@ -64,25 +64,25 @@
 <p>in a paramorphism, the algebra also gets the remainder of the list. This extra parameter can be seen as a form of an as-pattern and is typically used to match on more than one element at a time or to detect that we have reached the final element.</p>
 </blockquote>
 <p>That’s all well and good, but it’s unclear how this can help us. The difference between <code>naiveIns</code> and <code>ins</code> is:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>naiveIns</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a x)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a x)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>naiveIns <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>naiveIns (a <span class="op">:&gt;</span> <span class="dt">SNil</span>) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">UNil</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>naiveIns (a <span class="op">:&gt;</span> b <span class="op">:!</span> x)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> b <span class="op">:&gt;</span> x</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> a <span class="op">:&gt;</span> x</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>ins</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (c, <span class="dt">Sorted</span> a x)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> c (<span class="dt">Unsorted</span> a x))</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>ins <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>ins (a <span class="op">:&gt;</span> (x, <span class="dt">SNil</span>)) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>ins (a <span class="op">:&gt;</span> (x, b <span class="op">:!</span> x&#39;))</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> <span class="dt">Right</span> (a <span class="op">:&gt;</span> x&#39;)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>naiveIns</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (<span class="dt">Sorted</span> a x)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Unsorted</span> a x)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>naiveIns <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>naiveIns (a <span class="op">:&gt;</span> <span class="dt">SNil</span>) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">UNil</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>naiveIns (a <span class="op">:&gt;</span> b <span class="op">:!</span> x)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> b <span class="op">:&gt;</span> x</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> a <span class="op">:&gt;</span> x</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>ins</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Unsorted</span> a (c, <span class="dt">Sorted</span> a x)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Sorted</span> a (<span class="dt">Either</span> c (<span class="dt">Unsorted</span> a x))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>ins <span class="dt">UNil</span> <span class="ot">=</span> <span class="dt">SNil</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>ins (a <span class="op">:&gt;</span> (x, <span class="dt">SNil</span>)) <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>ins (a <span class="op">:&gt;</span> (x, b <span class="op">:!</span> x&#39;))</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> a <span class="op">&lt;=</span> b    <span class="ot">=</span> a <span class="op">:!</span> <span class="dt">Left</span> x</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> b <span class="op">:!</span> <span class="dt">Right</span> (a <span class="op">:&gt;</span> x&#39;)</span></code></pre></div>
 <p>Ignore the <code>Left/Right</code> stuff. The only difference here is whether we use <code>x</code> or <code>x'</code> in the last clause, where <code>x</code> is the original, unsorted tail, and <code>x'</code> is the somewhat-sorted tail. It’s unclear to me how this can possibly help improve performance; we still need to have traversed the entire tail in order to find the smallest element. Maybe there’s something about laziness here, in that we shouldn’t need to rebuild the tail, but we’re going to be sharing the tail-of-tail regardless, so I don’t think this buys us anything.</p>
 <p>And this squares with my confusion last week; this “caching” just doesn’t seem to do anything. In fact, the paper doesn’t even say it’s caching. All it has to say about our original <code>naiveIns</code>:</p>
 <blockquote>
@@ -170,7 +170,7 @@
         </ul>
     
         <p>
-        &copy; 2015-2022 Sandy Maguire
+        &copy; 2015-2025 Sandy Maguire
         </p>
     </nav>
 
