@@ -1,9 +1,9 @@
 ---
 layout: post
 title: A New Perspective on Lenses
-date: TO_BE_DETERMINED
+date: 2025-01-18 09:18
 comments: true
-tags: foo, bar
+tags: lenses, haskell, codegen
 ---
 
 I've always considered lenses to be a bit uncomfortable. While they're
