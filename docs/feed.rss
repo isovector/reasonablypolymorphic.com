@@ -7,13 +7,123 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2025-01-12T15:29:00Z</pubDate>
+  <pubDate>2025-01-18T09:18:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>A New Perspective on Lenses</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/code-lenses/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/code-lenses/index.html</guid>
+      <pubDate>2025-01-18T09:18:00Z</pubDate>
+      <content:encoded><![CDATA[
+        <p>I’ve always considered lenses to be a bit uncomfortable. While they’re occasionally useful for doing deeply nested record updates, they often seem to be more trouble than they’re worth. There’s a temptation in the novice programmer, to <code>^..</code> and <code>folded</code> their way to a solution that is much more naturally written merely as <code>toList</code>. And don’t get me started about the stateful operators like <code>&lt;&lt;+=</code> and their friends. Many programs which can be more naturally written functionally accidentally end up being imperative due to somebody finding a weird lens combinator and trying to use it in anger. Much like a serious drug collection, the tendency is to push it as far as you can.</p>
+<p>Thus, my response has usually been one of pushback and moderation. I don’t avoid lenses at all costs, but I do try to limit myself to the prime types (<code>Lens'</code>, <code>Prism'</code>, <code>Iso'</code>), and to the boring combinators (<code>view</code>, <code>set</code>, <code>over</code>). I feel like these give me most of the benefits of lenses, without sending me tumbling down the rabbit hole.</p>
+<p>All of this is to say that my grokkage of lenses has always been one of <em>generalized injections and projections</em>, for a rather shallow definition of “generalized”. That is, I’ve grown accustomed to thinking about <em>lenses</em> as getter/setter pairs for data structures—eg, I’ve got a big product type and I want to pull a smaller piece out of it, or modify a smaller piece in a larger structure. I think about prisms as the dual structure over coproducts—“generalized” injecting and pattern matching.</p>
+<p>And this is all true; but I’ve been missing the forest for the trees on this one. That’s not to say that I want to write <em>lensier</em> code, but that I should be taking the “generalized” part much more seriously.</p>
+<p>The big theme of my intellectual development over the last few years has been thinking about abstractions as <em>shared vocabularies.</em> Monoids are not <em>inherently</em> interesting; they’re interesting because of how they let you quotient seemingly-unrelated problems by their monoidal structure. Applicatives are cool <em>because</em> once you’ve grokked them, you begin to see them everywhere. Anywhere you’ve got conceptually-parallel, data-independent computations, you’ve got an applicative lurking somewhere under the surface (even if it happens to be merely the <code>Identity</code> applicative.)</p>
+<p>I’ve had a similar insight about lenses, and that’s what I wanted to write about today.</p>
+<h2 id="the-context">The Context</h2>
+<p>At work, I’ve been thinking a lot about compilers and memory layout lately. I won’t get into the specifics of why, but we can come up with an inspired example. Imagine we’d like to use Haskell to write a little eDSL that we will use to generate x86 machine code.</p>
+<p>The trick of course, is that we’re writing Haskell in order to <em>not</em> write machine code. So the goal is to design high-level combinators in Haskell that express our intent, while simultaneously generating machine code that faithfully implements the intention.</p>
+<p>One particularly desirable feature about eDSLs is that they allow us to reuse Haskell’s type system. Thus, imagine we have some type:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Code</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Code</span> a <span class="ot">=</span> <span class="dt">Code</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getMachineCode ::</span> [<span class="dt">X86OpCode</span>]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>Notice that the <code>a</code> parameter here is entirely phantom; it serves only to annotate the type of the value produced by executing <code>getMachineCode</code>. For today’s purpose, we’ll ignore all the details about calling conventions and register layout and what not; let’s just assume a <code>Code a</code> corresponds to a computation that leaves a value (or pointer) to something of type <code>a</code> in a well-known place, whether that be the top of the stack, or <code>eax</code> or something. It doesn’t matter!</p>
+<p>Since the type parameter to <code>Code</code> is phantom, we need to think about what <a href="https://reasonablypolymorphic.com/blog/roles/index.html">role</a> it should have. Keeping it at <code>phantom</code> would be disastrous, since this type isn’t used by <em>Haskell</em>, but it is certainly used to ensure our program is correct. Similarly, <code>representational</code> seems wrong, since <code>coerce</code> is meaningful only when thinking about Haskell; which this thing decidedly is not. Thus, our only other option is:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> role <span class="dt">Code</span> nominal</span></code></pre></div>
+<p>Frustratingly, due to very similar reasoning, <code>Code</code> cannot be a functor, because there’s no way<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to lift an arbitrary Haskell function <code>a -&gt; b</code> into a corresponding function <code>Code a -&gt; Code b</code>. If there were, we’d be in the clear! But alas, we are not.</p>
+<h2 id="the-problem">The Problem</h2>
+<p>All of the above is to say that we are reusing Haskell’s <em>type system</em>, but not its <em>values</em>. An expression of type <code>Code Bool</code> has <em>absolutely no relation</em> to the values <code>True</code> or <code>False</code>—except that we could write, by hand, a function <code>litBool :: Bool -&gt; Code Bool</code> which happened to do the right thing.</p>
+<p>It is tempting, however, to make new Haskell types in order to help constrain the assembly code we end up writing. For example, maybe we want to write a DSP for efficiently decoding audio. We can use Haskell’s types to organize our thoughts and prevent ourselves from making any stupid mistakes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Decoder</span> <span class="ot">=</span> <span class="dt">Decoder</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> format ::</span> <span class="dt">Format</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> seekPos ::</span> <span class="dt">Int</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> state ::</span> <span class="dt">ParserState</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Chunk</span> <span class="ot">=</span> <span class="op">...</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ot">createDecoder ::</span> <span class="dt">Code</span> <span class="dt">MediaHandle</span> <span class="ot">-&gt;</span> <span class="dt">Code</span> <span class="dt">Decoder</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeChunk ::</span> <span class="dt">Code</span> <span class="dt">Decoder</span> <span class="ot">-&gt;</span> (<span class="dt">Code</span> <span class="dt">Decoder</span>, <span class="dt">Code</span> <span class="dt">Chunk</span>)</span></code></pre></div>
+<p>We now have a nice interface in our eDSL to guide end-users along the blessed path of signal decoding. We have documented what we are trying to do, and how it can be used once it’s implemented. But due to our phantom, yet <code>nominal</code>, parameter to <code>Code</code>, this is all just make believe. There is absolutely no correlation between what we’ve written down and how we can use it. The problem arises when we go to implement <code>decodeChunk</code>. We’ll need to know what state we’re in, which means we’ll need some function:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decoderState ::</span> <span class="dt">Code</span> <span class="dt">Decoder</span> <span class="ot">-&gt;</span> <span class="dt">Code</span> <span class="dt">ParserState</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>decoderState <span class="ot">=</span> <span class="op">???</span></span></code></pre></div>
+<p>In a world where <code>Code</code> is a functor, this is implemented trivially as <code>fmap state</code>. <em>But <code>Code</code> is not a functor!</em> Alas! Woe! What ever can we do?</p>
+<h2 id="the-solution">The Solution</h2>
+<p>Lenses, my guy!</p>
+<p>Recall that <code>Code</code> is phantom in its argument, even if we use roles to restrict that fact. This means we can implement a safe-ish version of <code>unsafeCoerce</code>, that only fiddles with the paramater of our phantom type:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">unsafeCoerceCode ::</span> <span class="dt">Code</span> a <span class="ot">-&gt;</span> <span class="dt">Code</span> b</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>unsafeCoerceCode (<span class="dt">Code</span> ops) <span class="ot">=</span> <span class="dt">Code</span> ops</span></code></pre></div>
+<p>Judicious use of <code>unsafeCoerceCode</code> allows us to switch between a value’s type and its in-memory representation. For example, given a type:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Bytes</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Bytes</span> n</span></code></pre></div>
+<p>we can reinterpret a <code>Decode</code> as a sequence of bytes:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decoderRep ::</span> <span class="dt">Iso&#39;</span> (<span class="dt">Code</span> <span class="dt">Decoder</span>) (<span class="dt">Code</span> (<span class="dt">Bytes</span> (<span class="dv">32</span> <span class="op">+</span> <span class="dv">4</span> <span class="op">+</span> <span class="dv">1</span>)))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>decoderRep <span class="ot">=</span> iso unsafeCoerceCode unsafeCoerceCode</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">stateRep ::</span> <span class="dt">Iso&#39;</span> (<span class="dt">Code</span> <span class="dt">ParserState</span>) (<span class="dt">Code</span> (<span class="dt">Bytes</span> <span class="dv">1</span>))</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>stateRep <span class="ot">=</span> iso unsafeCoerceCode unsafeCoerceCode</span></code></pre></div>
+<p>which says we are considering our <code>Decoder</code> to be laid out in memory like:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Decoder <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> format<span class="op">[</span><span class="dv">32</span><span class="op">];</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int32_t</span> seekPos<span class="op">;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> state<span class="op">;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>Of course, this is a completely unsafe transformation, as far as the Haskell type system is aware. We’re in the wild west out here, well past any type theoretical life buoys. We’d better be right that this coercion is sound. But assuming this <em>is</em> in fact the in-memory representation of a <code>Decoder</code>, we are well justified in this transformation.</p>
+<p>Notice the phrasing of our <code>Iso'</code> above. It is not an iso between <code>Decoder</code> and <code>Bytes 37</code>, but between <em><code>Code</code>s</em> of such things. This witnesses the fact that it is not true in the Haskell embedding, merely in our <code>Code</code> domain. Of course, isos are like the least exciting optics, so let’s see what other neat things we can do.</p>
+<p>Imagine we have some primitives:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>slice</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> n <span class="op">&lt;=</span> m</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Int</span>     <span class="co">-- ^ offset</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Proxy</span> n <span class="co">-- ^ size</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> m)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> n)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>overwrite</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> n <span class="op">&lt;=</span> m</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Int</span>  <span class="co">-- ^ offset</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Bytes</span> n</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Bytes</span> m</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Bytes</span> m</span></code></pre></div>
+<p>which we can envision as Haskell bindings to the pseudo-C functions:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">const</span> <span class="dt">char</span><span class="op">[</span>n<span class="op">]</span> slice<span class="op">(</span><span class="dt">size_t</span> offset<span class="op">,</span> <span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> bytes<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">&amp;</span>bytes<span class="op">[</span>offset<span class="op">];</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> overwrite<span class="op">(</span><span class="dt">size_t</span> offset<span class="op">,</span> <span class="dt">char</span><span class="op">[</span>n<span class="op">]</span> value<span class="op">,</span> <span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> bytes<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> new_bytes <span class="op">=</span> malloc<span class="op">(</span>m<span class="op">);</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  memcpy<span class="op">(</span>new_bytes<span class="op">,</span> bytes<span class="op">,</span> m<span class="op">);</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  memcpy<span class="op">(&amp;</span>new_bytes<span class="op">[</span>offset<span class="op">],</span> value<span class="op">,</span> n<span class="op">);</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> new_bytes<span class="op">;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>We can use <code>slice</code> and <code>overwrite</code> to give a <code>Lens'</code> into <code>Bytes</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">slicing ::</span> n <span class="op">&lt;=</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> m) <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> n)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>slicing offset <span class="ot">=</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  lens</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    (slice offset <span class="dt">Proxy</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    (\orig new <span class="ot">-&gt;</span> overwrite offset new orig)</span></code></pre></div>
+<p>and finally, we can give an implementation of the desired <code>decoderState</code> above:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decoderState ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Code</span> <span class="dt">Decoder</span>) (<span class="dt">Code</span> <span class="dt">ParserState</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>decoderState <span class="ot">=</span> decoderRep <span class="op">.</span> slicing <span class="dv">36</span> <span class="op">.</span> from stateRep</span></code></pre></div>
+<p>Such a lens acts exactly as a record selector would, in that it allows us to <code>view</code>, <code>set</code>, and <code>over</code> a <code>ParserState</code> inside of a <code>Decoder</code>. But recall that <code>Code</code> is just a list of instructions we eventually want the machine to run. We’re using the shared vocabulary of lenses to <em>emit machine code!</em> What looks like using a data structure to us when viewed through the Haskell perspective, is instead invoking an assembler.</p>
+<h2 id="reflections">Reflections</h2>
+<p>Once the idea sinks in, you’ll start seeing all sorts of cool things you can do with optics to generate code. <code>Prism</code>s generalize running initializer code. A <code>Traversal</code> over <code>Code</code> can be implemented as a loop. And since all the sizes are known statically, if you’re feeling plucky, you can decide to unroll the loop right there in the lens.</p>
+<p>Outside of the context of <code>Code</code>, the realization that optics are <em>this general</em> is still doing my head in. Something I love about working in Haskell is that I’m still regularly having my mind blown, even after a decade.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Short of <a href="http://conal.net/papers/compiling-to-categories/compiling-to-categories.pdf">compiling to categories</a> via something like <a href="https://github.com/con-kitty/categorifier">categorifier</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Read the Code, Not the Profile</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -826,23 +936,6 @@
 <p>Anyway, here’s the plan going forwards—I’ve got some of this week to work on the book before getting married and starting grad school. The goal is to just keep on at this pace for as long as I possibly can until I die or real life gets in the way. It sucks and I’m exhausted and would like to be finished with this thing, but it’s not done with <em>me</em> yet. And so we go on.</p>
 <p>But maybe I’ll take tomorrow off because I need to sort out getting married, and I don’t think this kind of extreme focus is good for my mental health. It’s a bit of a balancing act though, because life is only going to get more busy after next week.</p>
 <p>Sorry for the bleak trail off here. I should go to bed.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Certainty by Construction Progress Report 8</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/cbc-report8/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/cbc-report8/index.html</guid>
-      <pubDate>2023-08-23T21:00:00Z</pubDate>
-      <content:encoded><![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>Eight days away from my deadline. How’s it going? Hectic.</p>
-<p>I’ve been in a flurry of editing for the last two weeks. As of right now, I’m currently editing page 138/252. At this rate, it’s not looking promising, but I did just buy a flat of Red Bull, so you never know.</p>
-<p>Besides editing, what’s new? Lots of minor typesetting stuff, like which paragraphs should be indented. I also did a pass through all the Agda modules with their new, final names, in easy searchable format. Along with that, the end of each chapter now has an explicit export list, which subsequent chapters import (rather than getting it from the stdlib.) This means you can see at a glance whether a chapter has prerequisites you need to read first! Minor stuff, but Nintendo polish nevertheless.</p>
-<p>I had to rewrite a good chunk of chapter 2, and a lot of the prose in chapter 3 is from a very early edition of the book, and doesn’t have the shine as the rest of it. So that’s getting reworked too. My hope is that the later chapters were written more recently, and therefore will require less elbow grease. It’s plausible, and would be greatly appreciated. But I fear that the setoids chapter needs a lot of work, and I’m just trying my best to ignore it. For now.</p>
-<p>In other news, I’m now uploading nightly builds to <a href="https://leanpub.com/certainty-by-construction">Leanpub</a> in order to keep myself honest. There’s no indication of which half of the book has been edited and which hasn’t, but that seems like a good idea I should adopt for the next build. That way particularly dedicated readers could follow along and see just how quickly I can get material cleaned up. And it will prevent me from accidentally forgetting where I was and re-editing it all again. Which has happened several times, somehow.</p>
-<p>Okay that’s enough of an update. Back to the grind. Love y’all.</p>
       ]]></content:encoded>
   </item>
 </channel>
