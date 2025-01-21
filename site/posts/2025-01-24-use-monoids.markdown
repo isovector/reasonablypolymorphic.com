@@ -1,9 +1,9 @@
 ---
 layout: post
-title: monoids
-date: TO_BE_DETERMINED
+title: Use Monoids for Construction
+date: 2025-01-24 09:35
 comments: true
-tags: foo, bar
+tags: haskell, monoids
 ---
 
 There's a common anti-pattern I see in beginner-to-intermediate Haskell

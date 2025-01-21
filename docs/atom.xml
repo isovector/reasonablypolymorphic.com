@@ -1,11 +1,138 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2025-01-18T09:18:00Z</updated>
+  <updated>2025-01-24T09:35:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='atom.xml'/>
 
+    <entry>
+      <title>Use Monoids for Construction</title>
+      <id>blog/use-monoids/index.html</id>
+      <link href='blog/use-monoids/index.html'/>
+      <published>2025-01-24T09:35:00Z</published>
+      <updated>2025-01-24T09:35:00Z</updated>
+
+      <content type="html">
+        <![CDATA[
+        <p>There’s a common anti-pattern I see in beginner-to-intermediate Haskell programmers that I wanted to discuss today. It’s the tendency to conceptualize the <em>creation</em> of an object by <em>repeated mutation.</em> Often this takes the form of repeated insertion into an empty container, but comes up under many other guises as well.</p>
+<p>This anti-pattern isn’t particularly surprising in its prevalence; after all, if you’ve got the usual imperative brainworms, this is just <em>how things get built.</em> The gang of four “builder pattern” is exactly this; you can build an empty object, and setters on such a thing change the state <em>but return the object itself.</em> Thus, you build things by chaning together setter methods:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Foo myFoo <span class="op">=</span> <span class="kw">new</span> <span class="fu">Foo</span><span class="op">().</span><span class="fu">setBar</span><span class="op">().</span><span class="fu">setQux</span><span class="op">(</span><span class="dv">17</span><span class="op">).</span><span class="fu">setZap</span><span class="op">(</span><span class="kw">true</span><span class="op">);</span></span></code></pre></div>
+<p>Even if you don’t ascribe to the whole OOP design principle thing, you’re still astronomically likely to think about building data structures like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Doodad doodad <span class="op">=</span> <span class="kw">new</span> Doodad<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">foreach</span> <span class="op">(</span>Widget widget in widgets<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  doodad<span class="op">.</span><span class="fu">addWidget</span><span class="op">(</span>widget<span class="op">);</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>To be more concrete, maybe instead of doodads and widgets you have <code>BST</code>s and <code>Node</code>s. Or dictionaries and key-value pairs. Or graphs and edges. Anywhere you look, you’ll probably find examples of this sort of code.</p>
+<p>Maybe you’re thinking to yourself “I’m a hairy-chested functional programmer and I scoff at patterns like these.” That might be true, but perhaps you too are guilty of writing code that looks like:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">foldr</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    (\(k, v) m <span class="ot">-&gt;</span> Map.insert k v m)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    Map.empty</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> toKVPairs something</span></code></pre></div>
+<p>Just because it’s dressed up with functional combinators <em>doesn’t mean</em> you’re not still writing C code. To my eye, the great promise of functional programming is its potential for conceptual clarity, and repeated mutation will always fall short of the mark.</p>
+<p>The complaint, as usual, is that repeated mutation tells you <em>how</em> to build something, rather than focusing on <em>what</em> it is you’re building. An algorithm cannot be correct in the absence of intention—after all, you must know what you’re trying to accomplish in order to know if you succeeded. What these builder patterns, for loops, and <code>foldr</code>s all have in common is that they are algorithms for strategies for building something.</p>
+<p>But you’ll notice none of them come with comments. And therefore we can only ever guess at what the original author intended, based on the context of the code we’re looking at.</p>
+<p>I’m sure this all sounds like splitting hairs, but that’s because the examples so far have been extremely simple. But what about this one?</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cgo ::</span> (a <span class="ot">-&gt;</span> (<span class="dt">UInt</span>, <span class="dt">UInt</span>)) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [<span class="dt">NonEmpty</span> a]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>cgo f <span class="ot">=</span> <span class="fu">foldr</span> step []</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    step a [] <span class="ot">=</span> [<span class="fu">pure</span> a]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    step a bss0<span class="op">@</span>((b <span class="op">:|</span> bs) <span class="op">:</span> bss)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="kw">let</span> (al, ac) <span class="ot">=</span> f a</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      , <span class="kw">let</span> (bl, bc) <span class="ot">=</span> f b</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      , al <span class="op">+</span> <span class="dv">1</span> <span class="op">==</span> bl <span class="op">&amp;&amp;</span> ac <span class="op">==</span> bc</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="ot">=</span> (a <span class="op">:|</span> b <span class="op">:</span> bs) <span class="op">:</span> bss</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> <span class="fu">pure</span> a <span class="op">:</span> bss0</span></code></pre></div>
+<p>which I found by grepping through <code>haskell-language-server</code> for <code>foldr</code>, and then mangled to remove the suggestive variable names. What does this one do? Based solely on the type we can presume it’s using that function to partition the list somehow. But how? And is it correct? We’ll never know—and the function doesn’t even come with any tests!</p>
+<h2 id="its-always-monoids">It’s Always Monoids</h2>
+<p>The shift in perspective necessary here is to reconceptualize building-by-repeated-mutation as building-by-combining. Rather than chiseling out the object you want, instead find a way of gluing it together from simple, obviously-correct pieces.</p>
+<p>The notion of “combining together” should evoke in you a cozy warm fuzzy feeling. Much like being in a secret pillow form. You must come to be one with the monoid. Once you have come to embrace monoids, you will have found inner programming happiness. Monoids are a sacred, safe place, at the fantastic intersection of “overwhelming powerful” and yet “hard to get wrong.”</p>
+<p>As an amazingly fast recap, a monoid is a collection of three things: some type <code>m</code>, some value of that type <code>mempty</code>, and binary operation over that type <code>(&lt;&gt;) :: m -&gt; m -&gt; m</code>, subject to a bunch of laws:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>∀a<span class="op">.</span> <span class="fu">mempty</span> <span class="op">&lt;&gt;</span> a <span class="ot">=</span> a <span class="ot">=</span> a <span class="op">&lt;&gt;</span> <span class="fu">mempty</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>∀a b c<span class="op">.</span> (a <span class="op">&lt;&gt;</span> b) <span class="op">&lt;&gt;</span> c <span class="ot">=</span> a <span class="op">&lt;&gt;</span> (b <span class="op">&lt;&gt;</span> c)</span></code></pre></div>
+<p>which is to say, <code>mempty</code> does nothing and <code>(&lt;&gt;)</code> doesn’t care where you stick the parentheses.</p>
+<p>If you’re going to memorize any two <em>particular</em> examples of monoids, it had better be these two:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> [a] <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> []</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  a <span class="op">&lt;&gt;</span> b <span class="ot">=</span> a <span class="op">++</span> b</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Monoid</span> a, <span class="dt">Monoid</span> b) <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (a, b) <span class="kw">where</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> (<span class="fu">mempty</span>, <span class="fu">mempty</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  (a1, b1) <span class="op">&lt;&gt;</span> (a2, b2) <span class="ot">=</span> (a1 <span class="op">&lt;&gt;</span> a2, b1 <span class="op">&lt;&gt;</span> b2)</span></code></pre></div>
+<p>The first says that lists form a monoid under the empty list and concatenation. The second says that products preserve monoids.</p>
+<p>The list monoid instance is responsible for the semantics of the ordered, “sequency” data structures. That is, if I have some sequential flavor of data structure, its monoid instance should probably satisfy the equation <code>toList a &lt;&gt; toList b = toList (a &lt;&gt; b)</code>. Sequency data structures are things like lists, vectors, queues, deques, that sort of thing. Data structures where, when you combine them, you assume there is no overlap.</p>
+<p>The second monoid instance here, over products, is responsible for pretty much all the other data structures. The first thing we can do with it is remember that functions are just really, really big product types, with one “slot” for every value in the domain. We can show an isomorphism between pairs and functions out of booleans, for example:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">from ::</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a, a)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>from f <span class="ot">=</span> (f <span class="dt">False</span>, f <span class="dt">True</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">to ::</span> (a, a) <span class="ot">-&gt;</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>to (a, _) <span class="dt">False</span> <span class="ot">=</span> a</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>to (_, a) <span class="dt">True</span>  <span class="ot">=</span> a</span></code></pre></div>
+<p>and under this isomorphism, we should thereby expect the <code>Monoid a =&gt; Monoid (Bool -&gt; a)</code> instance to agree with <code>Monoid a =&gt; Monoid (a, a)</code>. If you generalize this out, you get the following instance:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> \_ <span class="ot">-&gt;</span> <span class="fu">mempty</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  f <span class="op">&lt;&gt;</span> g <span class="ot">=</span> \x <span class="ot">-&gt;</span> f x <span class="op">&lt;&gt;</span> g x</span></code></pre></div>
+<p>which combines values in the codomain monoidally. We can show the equivalence between this monoid instance and our original product preservation:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  from f <span class="op">&lt;&gt;</span> from g</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> (f <span class="dt">False</span>,  f <span class="dt">True</span>) <span class="op">&lt;&gt;</span> (g <span class="dt">False</span>, g <span class="dt">True</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> (f <span class="dt">False</span> <span class="op">&lt;&gt;</span> g <span class="dt">False</span>, f <span class="dt">True</span> <span class="op">&lt;&gt;</span> g <span class="dt">True</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> ((f <span class="op">&lt;&gt;</span> g) <span class="dt">False</span>, (f <span class="op">&lt;&gt;</span> g) <span class="dt">True</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> from (f <span class="op">&lt;&gt;</span> g)</span></code></pre></div>
+<p>and</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  to (a11, a12) <span class="op">&lt;&gt;</span> to (a21, a22)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> to (a11, a12) x <span class="op">&lt;&gt;</span> to (a21, a22) x</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> to (a11, a12) <span class="dt">False</span> <span class="op">&lt;&gt;</span> to (a21, a22) <span class="dt">False</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> to (a11, a12) <span class="dt">True</span>  <span class="op">&lt;&gt;</span> to (a21, a22) <span class="dt">True</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> a11 <span class="op">&lt;&gt;</span> a21</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> a12 <span class="op">&lt;&gt;</span> a22</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> to (a11 <span class="op">&lt;&gt;</span> a21, a12 <span class="op">&lt;&gt;</span> a22) x</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> to (a11 <span class="op">&lt;&gt;</span> a21, a12 <span class="op">&lt;&gt;</span> a22)</span></code></pre></div>
+<p>which is a little proof that our function monoid agrees with the preservation-of-products monoid. The same argument works for any type <code>x</code> in the domain of the function, but showing it generically is challenging.</p>
+<p>Anyway, I digresss.</p>
+<p>The reason to memorize <em>this</em> <code>Monoid</code> instance is that it’s the monoid instance that every data structure is trying to be. Recall that <em>almost all</em> data structures are merely different encodings of functions, designed to make some operations more efficient than they would otherwise be.</p>
+<p>Don’t believe me? A <code>Map k v</code> is an encoding of the function <code>k -&gt; Maybe v</code> optimized to efficiently query which <code>k</code> values map to <code>Just</code> something. That is to say, it’s a sparse representation of a function.</p>
+<h2 id="from-theory-to-practice">From Theory to Practice</h2>
+<p>What does all of this look like in practice? Stuff like worrying about <code>foldr</code> is surely programming-in-the-small, which is worth knowing, but isn’t the sort of thing that turns the tides of a successful application.</p>
+<p>The reason I’ve been harping on about the function and product monoids is that they are compositional. The uninformed programmer will be surprised by just far one can get by composing these things.</p>
+<p>At work, we need to reduce a tree (+ nonlocal references) into an honest-to-goodness graph. While we’re doing it, we need to collect certain nodes. And the tree has a few constructors which semantically change the scope of their subtrees, so we need to preserve that information as well.</p>
+<p>It’s actually quite the exercise to sketch out an algorithm that will accomplish all of these goals when you’re thinking about explicit mutation. Our initial attempts at implementing this were clumsy. We’d fold the tree into a graph, adding fake nodes for the <code>Scope</code> construcotrs. Then we’d filter all the nodes in the graph, trying to find the ones we needed to collect. Then we’d do a graph traversal from the root, trying to find these <code>Scope</code> nodes, and propagating their information downstream.</p>
+<p>Rather amazingly, this implementation kinda sorta worked! But it was slow, and took <span class="math inline">\(O(10k)\)</span> SLOC to implement.</p>
+<p>The insight here is that everything we needed to collect was monoidal:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Solution</span> <span class="ot">=</span> <span class="dt">Solution</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> graph ::</span> <span class="dt">Graph</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> collectedNodes ::</span> <span class="dt">Set</span> <span class="dt">Node</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> metadata ::</span> <span class="dt">Map</span> <span class="dt">Node</span> <span class="dt">Metadata</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoidally</span>) via <span class="dt">Generically</span> <span class="dt">Solution</span></span></code></pre></div>
+<p>where the <code>deriving (Semigroup, Monoidally) via Generically Solution</code> stanza gives us the semigroup and monoid instances that we’d expect from <code>Solution</code> being the product of a bunch of other monoids.</p>
+<p>And now for the <em>coup de grace</em>: we hook everything up with the <code>Writer</code> monad. <code>Writer</code> is a chronically slept-on type, because most people seem to think it’s useful only for logging, and, underwhelming at doing logging compared to a real logger type. But the charm is in the details:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> w <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Writer</span> w)</span></code></pre></div>
+<p><code>Writer w</code> is a <em>monad</em> whenever <code>w</code> is a <em>monoid</em>, which makes it the perfect monad for solving data-structure-creation problems like the one we’ve got in mind. Such a thing gives rise to a few helper functions:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">collectNode ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Node</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>collectNode n <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { collectedNodes <span class="ot">=</span> Set.singleton n }</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ot">addMetadata ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Node</span> <span class="ot">-&gt;</span> <span class="dt">Metadata</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>addMetadata n m <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { metadata <span class="ot">=</span> Map.singleton n m }</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="ot">emitGraphFragment ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Graph</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>emitGraphFragment g <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { graph <span class="ot">=</span> g }</span></code></pre></div>
+<p>each of which is responsible for adding a little piece to the final solution. Our algorithm is thus a function of the type:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>algorithm</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Metadata</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ the current scope</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Tree</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ the tree we&#39;re reducing</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Writer</span> <span class="dt">Solution</span> <span class="dt">Node</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ our partial solution, and the node corresponding to the root of the tree</span></span></code></pre></div>
+<p>which traverses the <code>Tree</code>, recursing with a different <code>Metadata</code> whenever it comes across a <code>Scope</code> constructor, and calling our helper functions as it goes. At each step of the way, the only thing it needs to return is the root <code>Node</code> of the section of the graph it just built, which recursing calls can use to break up the problem into inductive pieces.</p>
+<p>This new implementation is roughly 20x smaller, coming in at <span class="citation" data-cites="O">@O</span>(500)@ SLOC, and was free of all the bugs we’d been dilligently trying to squash under the previous implementation.</p>
+<p>Chalk it down to another win for induction!</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>A New Perspective on Lenses</title>
       <id>blog/code-lenses/index.html</id>
@@ -930,33 +1057,6 @@
 <p>I just wrapped up the last proof in the book!!!!</p>
 <p>It’s taken me all week to put together these glorious 50 lines of Agda, but it makes for a damn fine finale for the book. So the game plan is now to delete that last chapter I’ve got hanging around that’s kinda about matrices, rewrite the prose on isomorphisms, and then do one final polish pass where I add things like indices and definitions.</p>
 <p>Grad school has been much busier than I was expecting it to be, but no matter! I will persevere. Being so close to the finish line is tantalizing and I expect I’ll just spend the next few days powering through it all. This thing is definitely going to be finished by the end of the year.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Certainty by Construction Progress Report 9</title>
-      <id>blog/cbc-report9/index.html</id>
-      <link href='blog/cbc-report9/index.html'/>
-      <published>2023-09-02T02:50:00Z</published>
-      <updated>2023-09-02T02:50:00Z</updated>
-
-      <content type="html">
-        <![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>It is now the wee hours of Sept 2, and it’s safe to say I did not make the deadline. The book is not yet finished come hell or high water. Damn. Here’s the state of the world:</p>
-<ul>
-<li>Everything up to page 203/296 has been aggressively edited, in terms of prose, code, general presentation, and overall topic order. There are still a few TODOs to write chapter summaries, but those aren’t the end of the world if they don’t happen.</li>
-<li>It’s now possible to build semi-readable epubs. Needing to run everything through the Agda compiler makes build pipelines surprisingly hard, but I think this should only require a couple of hours to get it into a good place.</li>
-<li>I have commissioned a contest of potential covers for the book; no results yet, but I expect to to have some things to look at by the end of this week.</li>
-<li>Since my last update, I realized I had accidentally lost the chapter on ring solving when doing my big refactor. I’ve since found it, but it’s no longer particularly motivated and is rather out of place, so I think it’s going to get cut. Kill your darlings and all that.</li>
-</ul>
-<p>All in all, I’m bummed I didn’t make the deadline, but the quality of the book is exponentially better, so I think it’s a worthwhile trade. I’ve got three/four chapters left to edit (depending on if ring solving gets cut), and I need to write a closing chapter to make the end less jarring.</p>
-<p>On a personal note, although the book is much longer in content than my other books, it’s packed much tighter and thus is going to be <em>physically</em> smaller when I get it printed. For some reason that is holding a lot of space in my head right now, and steering me away from cutting too much. I suppose I shouldn’t fret too much; there’s still an index and glossary I need to add which will probably add a bit of length. Also I know this doesn’t matter, but I care about it nevertheless.</p>
-<p>So why didn’t I get this done on time? The reason seems to be just that it was too ambitious a goal. I definitely underestimated the amount of polish required here. This month I put 65 hours of honest-to-goodness <em>work</em> into the book, which if you measure in terms of the 2.9h average hours of work that an officer worker does in a day is more than a full time job. It’s very late and I don’t know if that makes sense but I think it might.</p>
-<p>Anyway, here’s the plan going forwards—I’ve got some of this week to work on the book before getting married and starting grad school. The goal is to just keep on at this pace for as long as I possibly can until I die or real life gets in the way. It sucks and I’m exhausted and would like to be finished with this thing, but it’s not done with <em>me</em> yet. And so we go on.</p>
-<p>But maybe I’ll take tomorrow off because I need to sort out getting married, and I don’t think this kind of extreme focus is good for my mental health. It’s a bit of a balancing act though, because life is only going to get more busy after next week.</p>
-<p>Sorry for the bleak trail off here. I should go to bed.</p>
         ]]>
       </content>
     </entry>
