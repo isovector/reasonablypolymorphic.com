@@ -8,25 +8,21 @@
 module Main where
 
 import           Control.Arrow ((&&&))
-import           Control.Monad (join)
+import           Data.Foldable (for_)
 import           Data.List (sortBy)
 import qualified Data.Map as M
 import           Data.Maybe (isJust)
-import           Data.Monoid ((<>))
 import           Data.Ord (comparing, Down (..))
-import           Data.Set (insert)
 import           Data.Text (pack, unpack)
 import           Data.Text.Lens (_Text)
 import           Data.Time.Format (formatTime, defaultTimeLocale)
 import           Data.Time.Parse (strptime)
-import           Data.Traversable (for)
 import           Erdos
 import           GHC.Exts (fromList)
 import           SitePipe hiding (getTags)
 import           SitePipe.Readers
 import           Text.Pandoc
 import           Text.Pandoc.Highlighting
-import           Text.Pandoc.Options
 import           Utils
 
 
@@ -119,11 +115,6 @@ main = site $ do
         , "last_updated" .= (newest ^?! _Object . at "zulu" . _Just . _String)
         ]
 
-  writeTemplate' "post.html" . pure
-    $ newest
-      & _Object . at "url"        ?~ _String # "/index.html"
-      & _Object . at "page_title" ?~ _String # "Home"
-
   let byYear = reverse
               . flip groupOnKey (reverse posts)
               $ \x -> reverse
@@ -131,17 +122,18 @@ main = site $ do
                     . reverse
                     $ x ^?! _Object . at "date" . _Just . _String . _Text
 
-  writeTemplate' "archive.html" . pure
-    $ object
-      [ "url" .= ("/blog/archives/index.html" :: String)
-      , "page_title" .= ("Archives" :: String)
-      , "years" .= (flip fmap byYear $ \(year, ps) ->
-          object
-            [ "posts" .= ps
-            , "year"  .= year
-            ]
-        )
-      ]
+  for_ ["/index.html" :: String, "/blog/archives/index.html"] $ \url ->
+    writeTemplate' "archive.html" . pure
+      $ object
+        [ "url" .= url
+        , "page_title" .= ("Archives" :: String)
+        , "years" .= (flip fmap byYear $ \(year, ps) ->
+            object
+              [ "posts" .= ps
+              , "year"  .= year
+              ]
+          )
+        ]
 
   erdos <- sortBy (comparing $ Down
                              . read @Int . takeWhile (/= '-')
