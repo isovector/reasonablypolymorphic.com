@@ -21,7 +21,7 @@
       <link>{{domain}}/{{url}}</link>
       <guid>{{domain}}/{{url}}</guid>
       <pubDate>{{zulu}}</pubDate>
-      <content:encoded><![CDATA[
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
         {{{content}}}
       ]]></content:encoded>
   </item>

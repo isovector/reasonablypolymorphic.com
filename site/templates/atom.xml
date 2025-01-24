@@ -14,7 +14,7 @@
       <published>{{zulu}}</published>
       <updated>{{zulu}}</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         {{{content}}}
         ]]>
