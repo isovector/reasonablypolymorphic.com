@@ -13,7 +13,7 @@
       <published>2025-01-24T09:35:00Z</published>
       <updated>2025-01-24T09:35:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>There’s a common anti-pattern I see in beginner-to-intermediate Haskell programmers that I wanted to discuss today. It’s the tendency to conceptualize the <em>creation</em> of an object by <em>repeated mutation.</em> Often this takes the form of repeated insertion into an empty container, but comes up under many other guises as well.</p>
 <p>This anti-pattern isn’t particularly surprising in its prevalence; after all, if you’ve got the usual imperative brainworms, this is just <em>how things get built.</em> The gang of four “builder pattern” is exactly this; you can build an empty object, and setters on such a thing change the state <em>but return the object itself.</em> Thus, you build things by chaning together setter methods:</p>
@@ -140,7 +140,7 @@
       <published>2025-01-18T09:18:00Z</published>
       <updated>2025-01-18T09:18:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>I’ve always considered lenses to be a bit uncomfortable. While they’re occasionally useful for doing deeply nested record updates, they often seem to be more trouble than they’re worth. There’s a temptation in the novice programmer, to <code>^..</code> and <code>folded</code> their way to a solution that is much more naturally written merely as <code>toList</code>. And don’t get me started about the stateful operators like <code>&lt;&lt;+=</code> and their friends. Many programs which can be more naturally written functionally accidentally end up being imperative due to somebody finding a weird lens combinator and trying to use it in anger. Much like a serious drug collection, the tendency is to push it as far as you can.</p>
 <p>Thus, my response has usually been one of pushback and moderation. I don’t avoid lenses at all costs, but I do try to limit myself to the prime types (<code>Lens'</code>, <code>Prism'</code>, <code>Iso'</code>), and to the boring combinators (<code>view</code>, <code>set</code>, <code>over</code>). I feel like these give me most of the benefits of lenses, without sending me tumbling down the rabbit hole.</p>
@@ -253,7 +253,7 @@
       <published>2025-01-12T15:29:00Z</published>
       <updated>2025-01-12T15:29:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>At work a few weeks back, I found myself digging into profile reports, trying to determine why our program was running so slowly. Despite having the extremely obvious-in-retrospect data in front of me, I wasted a lot of time speeding up code that turned out to not move the needle at all.</p>
 <p>Although perhaps it will be interesting only to future me, I thought it would be a good exercise to write up the experience—if only so I learn the lesson about how to read profiles and not make the same mistake again.</p>
@@ -331,7 +331,7 @@
       <published>2024-05-18T18:03:00Z</published>
       <updated>2024-05-18T18:03:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>Today I want to talk about <a href="https://github.com/martinvonz/jj">jujutsu</a>, aka <code>jj</code>, which describes itself as being “a Git-compatible VCS that is both simple and powerful”. This is selling itself short. Picking up <code>jj</code> has been the best change I’ve made to my developer workflow in over a decade.</p>
 <p>Before <code>jj</code>, I was your ordinary git user. I did things on Github and knew a handful of git commands. Sometimes I did cherry picks. <em>Very</em> occasionally I’d do a non-trivial rebase, but I had learned to stay away from that unless necessary, because rebasing things was a perfect way of fucking up the git repo. And then, God forbid, I’d have to re-learn about the reflog and try to unhose myself.</p>
@@ -484,7 +484,7 @@
       <published>2023-12-26T16:03:00Z</published>
       <updated>2023-12-26T16:03:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>In the <a href="/blog/yampa-switching/">last post</a>, we investigated the <code>switch</code> combinator, and saw how it can give us the ability to work with “state machine”-sorts of things in our functionally reactive programs.</p>
 <p>Today we turn our attention towards game objects—that is, independently operating entities inside of the game, capable of behaving on their own and communicating with one another. I originally learned of this technique from the paper <a href="https://www.antonycourtney.com/pubs/hw03.pdf">The Yampa Arcade</a>, but haven’t looked at it in a few years, so any shortcomings here are my own.</p>
@@ -701,7 +701,7 @@
       <published>2023-12-24T00:12:00Z</published>
       <updated>2023-12-24T00:12:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p><a href="https://reasonablypolymorphic.com/blog/arrowized-frp">Yesterday</a> we looked at arrowized FRP in Yampa, and saw how it the <code>proc</code> notation is to arrows as <code>do</code> is for monads. While these syntaxes don’t give you any new power, notation nevertheless matters and helps us better structure our programs.</p>
 <p>So far all of our programs have consisted of a single signal function. We’ve sketched out how to build a lobotomized version of the Snake game, but real games have things like title screens and option menus as well as the actual gameplay component. If you were determined, you could probably figure out how to build these missing components with what we’ve seen so far, but it wouldn’t be fun.</p>
@@ -794,7 +794,7 @@
       <published>2023-12-22T22:56:00Z</published>
       <updated>2023-12-22T22:56:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>In the <a href="https://reasonablypolymorphic.com/blog/yampa-frp/index.html">last part</a>, we got a feel for how FRP can help us with real-time programming tasks, especially when contrasted against implicit models of time. However, the interface we looked at yesterday left much to be desired—stringing together long signal functions felt clunky, and since <code>SF</code>s don’t form a monad, we couldn’t alleviate the problem with do-notation.</p>
 <p>So today we’ll look at one of Haskell’s lesser-known features—arrow notation—and learn how it can help structure bigger reactive programs.</p>
@@ -896,7 +896,7 @@
       <published>2023-12-21T15:16:00Z</published>
       <updated>2023-12-21T15:16:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>I’ve been writing some Haskell lately, for the first time in a year, and it’s a total blast! In particular, school is out for the holidays, so I had some spare time, and thought I’d waste it by making a video game. In Haskell.</p>
 <p>It’s always more fun to make video games with other people, but the few people I pitched it to all had the same response—“I don’t know how to do that.” So it seemed like a good opportunity to dust off the old blog and write about how to make a video game in Haskell, using arrowized FRP.</p>
@@ -1027,7 +1027,7 @@
       <published>2023-10-30T13:55:00Z</published>
       <updated>2023-10-30T13:55:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>Happy days and happy news: it’s done.</p>
 <center>
@@ -1048,7 +1048,7 @@
       <published>2023-10-12T23:09:00Z</published>
       <updated>2023-10-12T23:09:00Z</updated>
 
-      <content type="html">
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
         <![CDATA[
         <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
 <hr />
