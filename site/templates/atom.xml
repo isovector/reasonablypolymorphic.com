@@ -4,7 +4,7 @@
   <updated>{{last_updated}}</updated>
   <author><name>Sandy Maguire</name></author>
   <id>{{domain}}</id>
-  <link rel='self' href='{{url}}'/>
+  <link rel='self' href='https://reasonablypolymorphic.com'/>
 
   {{#posts}}
     <entry>

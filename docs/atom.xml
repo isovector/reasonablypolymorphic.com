@@ -4,7 +4,7 @@
   <updated>2025-01-24T09:35:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
-  <link rel='self' href='atom.xml'/>
+  <link rel='self' href='https://reasonablypolymorphic.com'/>
 
     <entry>
       <title>Use Monoids for Construction</title>
