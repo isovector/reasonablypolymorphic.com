@@ -7,13 +7,75 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2025-01-24T09:35:00Z</pubDate>
+  <pubDate>2025-02-15T02:15:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Bidirectional Instance Contexts</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/bidirectional-instance-contexts/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/bidirectional-instance-contexts/index.html</guid>
+      <pubDate>2025-02-15T02:15:00Z</pubDate>
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
+        <p>Just a quick one today, but I wanted to point out a little trick you can do with Haskell’s typeclass inference.</p>
+<p>Imagine we have some little class, the details of which matter not in the least:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Foo</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Foo</span> a <span class="kw">where</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
+<p>We can give some instances of this type:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Int</span> <span class="kw">where</span> <span class="op">...</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Bool</span> <span class="kw">where</span> <span class="op">...</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> () <span class="kw">where</span> <span class="op">...</span></span></code></pre></div>
+<p>Regular, everyday stuff. But the instances for type constructors are more interesting, because they come with an instance context:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b) <span class="kw">where</span> <span class="op">...</span></span></code></pre></div>
+<p>Then, of course, if we know both <code>Foo a</code> and <code>Foo b</code>, we can infer <code>Foo (a, b)</code>. To make this fact overwhelmingly explicit, we can reify the usual constraint-solving logic by using the <code>Dict</code> type, and thus the following program will typecheck:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Constraint</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>forwards</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> a)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> b)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> (a, b))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>forwards <span class="dt">Dict</span> <span class="dt">Dict</span> <span class="ot">=</span> <span class="dt">Dict</span></span></code></pre></div>
+<p>Perhaps tipped off by the name here, the gentle reader is asked to notice the asymmetry here, since the converse program will not typecheck:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>backwards</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> (a, b))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (<span class="dt">Dict</span> (<span class="dt">Foo</span> a), <span class="dt">Dict</span> (<span class="dt">Foo</span> b))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>backwards <span class="dt">Dict</span> <span class="ot">=</span> (<span class="dt">Dict</span>, <span class="dt">Dict</span>)</span></code></pre></div>
+<p>But why should it not typecheck?<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Recall from the relevant instance definition that these instances must, in fact, exist:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b)</span></code></pre></div>
+<p>As a testament to <em>just</em> how good GHC is, we can support this bidirectionality via a minor tweak to the definition of class and its instances.</p>
+<p>The trick is to add an associated type family to <code>Foo</code>, and to <em>use it as a superclass constraint:</em></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Foo</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Evidence</span> a <span class="ot">=&gt;</span> <span class="dt">Foo</span> a <span class="kw">where</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span><span class="ot"> a ::</span> <span class="dt">Constraint</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span> a <span class="ot">=</span> ()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
+<p>Because we’ve given a default implementation of the type family, our existing simple instances work as before:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Int</span> <span class="kw">where</span> <span class="op">...</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Bool</span> <span class="kw">where</span> <span class="op">...</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> () <span class="kw">where</span> <span class="op">...</span></span></code></pre></div>
+<p>with the only change required coming from the type constructor instances:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b) <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span> (a, b) <span class="ot">=</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
+<p>or, if we you want to be cute about it:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Evidence</span> (a, b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b) <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span> (a, b) <span class="ot">=</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
+<p>By sticking <code>Evidence</code> into the superclass constraint, GHC knows that this dictionary is always available when you’ve got a <code>Foo</code> dictionary around. And our earlier <code>backwards</code> program now typechecks as expected.</p>
+<p><a href="https://play.haskell.org/saved/YjCfxwNy">This is all available in a play session</a> if you’d like to fool around with it.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Rhetorical question. I don’t want to hear about orphans or overlapping instances or whatever.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Use Monoids for Construction</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -1020,22 +1082,6 @@
 <p>If you’re the sort of person who would like to learn more math (including all the proof burden), and see how to apply it to writing real software, I think you’d groove on this book. If it sounds up your alley, I’d highly encourage you to <a href="https://leanpub.com/certainty-by-construction">give it a read</a>.</p>
 <p>I’m not much on social media these days, but if you are, I’d really appreciate a signal boost on this announcement! Thanks to everyone for their support and understanding over the last year. I love you all!</p>
 <p><a href="https://leanpub.com/certainty-by-construction">Go cop Certainty by Construction!</a></p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Certainty by Construction Progress Report 10</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/cbc-report10/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/cbc-report10/index.html</guid>
-      <pubDate>2023-10-12T23:09:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>The following is a progress report for <a href="https://leanpub.com/certainty-by-construction">Certainty by Construction</a>, a new book I’m writing on learning and effectively wielding Agda. Writing a book is a tedious and demoralizing process, so if this is the sort of thing you’re excited about, please do let me know!</p>
-<hr />
-<p>Thanks for all of your kind words of support after my last report. That’s the sort of thing that really helps keep me motivated. So thank you!</p>
-<p>BUT GOOD NEWS. HERE’S SOMETHING ELSE THAT ALSO HELPS TO KEEP ME MOTIVATED.</p>
-<p>I just wrapped up the last proof in the book!!!!</p>
-<p>It’s taken me all week to put together these glorious 50 lines of Agda, but it makes for a damn fine finale for the book. So the game plan is now to delete that last chapter I’ve got hanging around that’s kinda about matrices, rewrite the prose on isomorphisms, and then do one final polish pass where I add things like indices and definitions.</p>
-<p>Grad school has been much busier than I was expecting it to be, but no matter! I will persevere. Being so close to the finish line is tantalizing and I expect I’ll just spend the next few days powering through it all. This thing is definitely going to be finished by the end of the year.</p>
       ]]></content:encoded>
   </item>
 </channel>
