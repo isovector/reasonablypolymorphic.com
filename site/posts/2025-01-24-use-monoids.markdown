@@ -189,7 +189,7 @@ which is a little proof that our function monoid agrees with the
 preservation-of-products monoid. The same argument works for any type `x` in the
 domain of the function, but showing it generically is challenging.
 
-Anyway, I digresss.
+Anyway, I digress.
 
 The reason to memorize *this* `Monoid` instance is that it's the monoid instance
 that every data structure is trying to be. Recall that *almost all* data
@@ -208,8 +208,8 @@ is surely programming-in-the-small, which is worth knowing, but isn't the sort
 of thing that turns the tides of a successful application.
 
 The reason I've been harping on about the function and product monoids is that
-they are compositional. The uninformed programmer will be surprised by just far
-one can get by composing these things.
+they are compositional. The uninformed programmer will be surprised by just how
+far one can get by composing these things.
 
 At work, we need to reduce a tree (+ nonlocal references) into an
 honest-to-goodness graph. While we're doing it, we need to collect certain
@@ -219,7 +219,7 @@ of their subtrees, so we need to preserve that information as well.
 It's actually quite the exercise to sketch out an algorithm that will accomplish
 all of these goals when you're thinking about explicit mutation. Our initial
 attempts at implementing this were clumsy. We'd fold the tree into a graph,
-adding fake nodes for the `Scope` construcotrs. Then we'd filter all the nodes
+adding fake nodes for the `Scope` constructors. Then we'd filter all the nodes
 in the graph, trying to find the ones we needed to collect. Then we'd do a graph
 traversal from the root, trying to find these `Scope` nodes, and propagating
 their information downstream.
