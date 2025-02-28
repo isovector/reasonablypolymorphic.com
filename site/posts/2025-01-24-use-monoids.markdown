@@ -208,8 +208,8 @@ is surely programming-in-the-small, which is worth knowing, but isn't the sort
 of thing that turns the tides of a successful application.
 
 The reason I've been harping on about the function and product monoids is that
-they are compositional. The uninformed programmer will be surprised by just far
-one can get by composing these things.
+they are compositional. The uninformed programmer will be surprised by just how
+far one can get by composing these things.
 
 At work, we need to reduce a tree (+ nonlocal references) into an
 honest-to-goodness graph. While we're doing it, we need to collect certain
