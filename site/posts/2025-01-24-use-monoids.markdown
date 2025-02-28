@@ -236,10 +236,10 @@ data Solution = Solution
   , metadata :: Map Node Metadata
   }
   deriving stock (Generic)
-  deriving (Semigroup, Monoidally) via Generically Solution
+  deriving (Semigroup, Monoid) via Generically Solution
 ```
 
-where the `deriving (Semigroup, Monoidally) via Generically Solution` stanza
+where the `deriving (Semigroup, Monoid) via Generically Solution` stanza
 gives us the semigroup and monoid instances that we'd expect from `Solution`
 being the product of a bunch of other monoids.
 
