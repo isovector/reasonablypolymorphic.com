@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Using Obscure Graph Theory to solve PL Problems
-date: TO_BE_DETERMINED
+date: 2025-05-04 08:05
 comments: true
 tags: graph theory, development, haskell
 ---
