@@ -7,13 +7,95 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2025-05-04T08:05:00Z</pubDate>
+  <pubDate>2025-05-05T07:33:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Analyzing API Design via Algebraic Laws</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/api-analysis/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/api-analysis/index.html</guid>
+      <pubDate>2025-05-05T07:33:00Z</pubDate>
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
+        <p>The other day, someone asked:</p>
+<blockquote>
+<p>Why doesn’t [the Data.Map function] <code>unionWith :: (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Map k a</code> allow for different value types the way <code>intersectionWith :: (a -&gt; b -&gt; c) -&gt; Map k a -&gt; Map k b -&gt; Map k c</code> does?</p>
+</blockquote>
+<p>This is a very reasonable question, and it lead down an interesting rabbit hole of at the intersection of API design and efficient implementation.</p>
+<p>To answer the original question, what would the type of a different value type of <code>unionWith</code> look like? It would be something in the flavor of:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">unionWith ::</span> (<span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k b <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
+<p>But this new <code>Maybe a -&gt; Maybe b -&gt; c</code> parameter is somewhat lossy, in that it gives the impression that it could be called with <code>Nothing Nothing</code> as parameters, which doesn’t fit into the vibe of being a “union.”</p>
+<p>So instead we could restrict that possibility by using <code>These a b</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">These</span> a b <span class="ot">=</span> <span class="dt">This</span> a <span class="op">|</span> <span class="dt">That</span> b <span class="op">|</span> <span class="dt">These</span> a b</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">unionWith ::</span> (<span class="dt">These</span> a b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k b <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
+<p>which seems reasonable enough.</p>
+<hr />
+<p>But let’s take <em>reasonableness</em> out of the picture and start again from first principles. Instead let’s ask ourselves the deep philsophical question of <em>what even IS a map?</em></p>
+<p>A <code>Map k v</code> is a particularly efficient implementation of functions with type <code>k -&gt; Maybe v</code>. But why is this <code>Maybe</code> here? It’s really only to encode the “default” value of performing a lookup. Nothing goes wrong if we generalize this to be <code>Monoid v =&gt; k -&gt; v</code>. In fact, it helps us make sense of the right bias present in <code>Data.Map</code>, where we see:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (singleton k v1 <span class="op">&lt;&gt;</span> singleton k v2) <span class="ot">=</span> <span class="dt">Just</span> v2</span></code></pre></div>
+<p>This equality is hard to justify under the normal understanding of <code>Map k v</code> being an encoding of a function <code>k -&gt; Maybe v</code>. But under the general monoid interpretation, we get a nice semigroup homomorphism:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> m2) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> <span class="fu">lookup</span> k m2</span></code></pre></div>
+<p>where the monoid in question has been specialized to be <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Data-Monoid.html#t:Last"><code>Last</code></a>.</p>
+<p>Of course, we also have a monoid homomorphism:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k <span class="fu">mempty</span> <span class="ot">=</span> <span class="fu">mempty</span></span></code></pre></div>
+<p>Let’s re-evaluate the original question in terms of this newly-generalized <code>Map</code>. Now that we’ve removed all of the unnecessary baggage of <code>Maybe</code>, we can again think about the desired type of <code>unionWith</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>unionWith</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k b</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
+<p>which looks <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Prelude.html#v:liftA2">awfully familiar</a>. This new type signature automatically resolves our original concerns about “what should we do if the key isn’t present?”—just call the function with <code>mempty</code> as a parameter!</p>
+<p>We can give some semantics as to what <code>unionWith</code> ought to do again by relating it to the observation <code>lookup</code>. The relevant law here seems like it ought to be:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (unionWith f m n) <span class="ot">=</span> f (<span class="fu">lookup</span> k m) (<span class="fu">lookup</span> k n)</span></code></pre></div>
+<p>By choosing a degenerate function <code>f</code>, say, <code>\_ _ -&gt; nontrivial</code>, where <code>nontrivial</code> is some value that is <em>not</em> <code>mempty</code>, we can see the beginnings of a problem:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lookup</span> k (unionWith f m n)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  f (<span class="fu">lookup</span> k m) (<span class="fu">lookup</span> k n)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="op">&lt;</span><span class="kw">let</span> f <span class="ot">=</span> \_ _ <span class="ot">-&gt;</span> nontrivial<span class="op">&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  nontrivial</span></code></pre></div>
+<p>Regardless of the key we lookup in our <code>unionWith</code>ed <code>Map</code>, we need to get back <code>nontrivial</code>. How can we implement such a thing? I see only two ways:</p>
+<ol type="1">
+<li>explicitly associate every key in the map with <code>nontrivial</code>, or</li>
+<li>keep <code>nontrivial</code> around as a default value in the map</li>
+</ol>
+<p>#1 is clearly a non-starter, given that we want our <code>Map</code>s to be <em>efficient</em> encodings of functions, which leaves us with only #2. This is actually a pretty common construction, which stems immediately from the fact that a pair of monoids is itself a monoid. The construction would look something like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Map</span> k v <span class="ot">=</span> <span class="dt">Map</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> defaultValue ::</span> v</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> implementation ::</span> <span class="dt">Data.Map.Map</span> k v</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Generic</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via (<span class="dt">Generically</span> (<span class="dt">Map</span> k v))</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>unionWith</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k b</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>unionWith f (<span class="dt">Map</span> def1 imp1) (<span class="dt">Map</span> def2 imp2) <span class="ot">=</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Map</span> (f def1 def2) (liftA2 f imp1 imp2)</span></code></pre></div>
+<p>Seems fine, right? The nail in the coffin comes from when we reintroduce our semigroup homomorphism:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> m2) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> <span class="fu">lookup</span> k m2</span></code></pre></div>
+<p>Without loss of generalization, take <code>m2 = pure nontrivial</code> (where <code>pure</code> is just <code>unionWith</code> with a constant function.) This gives us:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> <span class="fu">pure</span> nontrivial) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> nontrivial</span></code></pre></div>
+<p>Making this thing efficient is a further complication! We again have two options:</p>
+<ol type="1">
+<li>modify the value at every key by multiplying in <code>nontrivial</code>, or</li>
+<li>finding a way of suspending this computation</li>
+</ol>
+<p>#1 clearly requires <span class="math inline">\(O(n)\)</span> work, which again forces us to look at #2. But #2 seems very challenging, because the monoidal values we need to suspend <em>need not</em> span the entire <code>Map</code>. For example, consider a <code>Map</code> constructed a la:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>((<span class="fu">pure</span> prefix1 <span class="op">&lt;&gt;</span> ((<span class="fu">pure</span> prefix2 <span class="op">&lt;&gt;</span> m) <span class="op">&lt;&gt;</span> n)) <span class="op">&lt;&gt;</span> (p <span class="op">&lt;&gt;</span> <span class="fu">pure</span> suffix)</span></code></pre></div>
+<p>Representing this thing efficiently certainly isn’t impossible, but you’re not going to be able to do it on the balanced binary search trees that underlie the implementation of <code>Data.Map.Map</code>.</p>
+<hr />
+<p>I find this quite an interesting result. I always assumed that <code>Data.Map.Map</code> (or at least, <code>Data.Map.Monoidal.MonoidalMap</code>) didn’t have an <code>Applicative</code> instance because it would require a <code>Monoid</code> constraint on its output—but that’s not the sort of thing we can express in Haskell.</p>
+<p>But the analysis above says that’s not actually the reason! It’s that there can be no efficient implementation of <code>Applicative</code>, even if we <em>could</em> constrain the result.</p>
+<p>What I find so cool about this style of analysis is that we didn’t actually write any code, nor did we peek into the implementation of <code>Data.Map</code> (except to know that it’s implemented as a balanced BST.) All we did was look at the obvious laws, instantiate them with degenerate inputs, and think about what would be required to to efficiently get the right answer.</p>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Using Obscure Graph Theory to solve PL Problems</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -1066,134 +1148,6 @@ expensive -&gt; {expensive}</code></pre>
 <p>because <code>x</code> simply <em>isn’t in scope</em> in the expression <code>bar x</code>. It’s the equivalent of designing a circuit board with <code>n</code> capacitors on it, where <code>n</code> will be determined by an input voltage supplied by the end-user. Completely nonsensical!</p>
 <h2 id="wrapping-up">Wrapping Up</h2>
 <p>That’s all for today, folks. The day caught me by surprise, so we’ll be back tomorrow to talk about building state machines in Yampa—something extremely important for making real video games.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>FRP in Yampa: Part 1</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/yampa-frp/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/yampa-frp/index.html</guid>
-      <pubDate>2023-12-21T15:16:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>I’ve been writing some Haskell lately, for the first time in a year, and it’s a total blast! In particular, school is out for the holidays, so I had some spare time, and thought I’d waste it by making a video game. In Haskell.</p>
-<p>It’s always more fun to make video games with other people, but the few people I pitched it to all had the same response—“I don’t know how to do that.” So it seemed like a good opportunity to dust off the old blog and write about how to make a video game in Haskell, using arrowized FRP.</p>
-<p>What the hell does that mean? Get ready to FIND OUT!</p>
-<h2 id="frp">FRP?</h2>
-<p>FRP is short for <em>functional reactive programming,</em> <a href="http://conal.net/papers/frp.html">originally invented by Conal Elliott</a>. The library we’ll be using today is called <a href="https://hackage.haskell.org/package/Yampa">Yampa</a>, which is certainly inspired by Elliott’s work, but my guess is it’s insufficiently true to the core idea for him to be excited about it.</p>
-<p>Nevertheless, even an imperfect implementation of the idea is still orders of magnitude for making real-time applications than doing everything by hand. And to this extent, Yampa is an excellent library.</p>
-<p>So what exactly is FRP? The core idea is that we want to talk about functions that are continuous in time, which give rise to extremely useful combinators-over-time. Real-time programs written as FRP are much easier to reason about, and significantly more expressive than you’d manage otherwise.</p>
-<h2 id="a-point-of-contrast">A Point of Contrast</h2>
-<p>It’s informative to compare what writing a video game looks like under an imperative style. The idea is that you have your <em>game loop</em> (a fancy name for “infinite loop”) running:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> main<span class="op">()</span> <span class="op">{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  setup<span class="op">();</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> <span class="op">(</span>true<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> delta_time <span class="op">=</span> waitForNextFrame<span class="op">();</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    updateGame<span class="op">(</span>delta_time<span class="op">);</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    renderFrame<span class="op">();</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>and this is kind of fine and manages to get the job done. But it’s inelegant for a few reasons. The biggest problem is that we are not actually modeling time here; we’re just running the game discretely, and time happens as a side effect of things changing. There’s this <code>delta_time</code> variable which counts how long it’s been since you last updated the game, which is to say it corresponds to “how much work you need to do <em>this</em> frame.”</p>
-<p>What goes wrong is when <code>updateGame</code> or <code>renderFrame</code> takes too long to run; in that case, you might get spikes in how long it’s been since you last updated. Procedurally-written games compensate by interpolating everything a little further on the next frame, which gives the player the perception that they’re actually experiencing time.</p>
-<p>But things can break down. If your last frame took too long, you need to simulate physics a little more this frame. In practice this usually means that you integrate your velocity a little more than usual—which really means your positions will teleport a little further than usual. This is a common bug in games, where it’s often easy to clip through obstacles when the frame-rate is too low.</p>
-<iframe width="600" height="451" src="https://www.youtube.com/embed/7-E5QFtCbtI" title="Lag Through Vertical Walls" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen>
-</iframe>
-<p>The other problem with modeling your time only incidentally is that it makes it really annoying to actually do anything. For example, when you read from the controller you will only get whether the buttons are down or up, but you won’t get whether the button was <em>just pressed this frame.</em> If you want to know that you’ll have to compute it yourself:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> last_a_button <span class="op">=</span> false<span class="op">;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> updateGame<span class="op">(</span><span class="dt">float</span> delta_time<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  controller ctrls <span class="op">=</span> getControllerState<span class="op">();</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>ctrls<span class="op">.</span>a_button <span class="op">&amp;&amp;</span> <span class="op">!</span>last_a_button<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle a press</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  last_a_button <span class="op">=</span> ctrls<span class="op">.</span>a_button<span class="op">;</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>It’s tedious, but it gets the job done. Another common pain point is when you want to do something five seconds in the future:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> timer<span class="op">;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> updateGame<span class="op">(</span><span class="dt">float</span> delta_time<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  timer <span class="op">-=</span> delta_time<span class="op">;</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>getWantsToStartTimer<span class="op">())</span> <span class="op">{</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    timer <span class="op">=</span> <span class="fl">5.0</span><span class="op">;</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>timer <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle timer finishing</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>Again, nothing you can’t tackle, but in aggregate, this all becomes very weighty. Not being able to model time explicitly is a real pain, and everywhere you go you need to simulate it by diddling state changes.</p>
-<h2 id="signal-functions">Signal Functions</h2>
-<p>If you’ve ever written a video game, it probably looked a lot like the examples from the previous section. That’s the sort of thing we’d like to abstract over, and work at a much higher level of detail than.</p>
-<p>Here comes FRP to the rescue.</p>
-<p>The core building block in Yampa is the “signal function”, written as <code>SF i o</code>. You can think of this as a transformer of signals of <code>i</code> into signals of <code>o</code>, where a signal is a function <code>Time -&gt; a</code>. Unwrapping all of this, an <code>SF i o</code> is a function <code>(Time -&gt; i) -&gt; (Time -&gt; o)</code>.</p>
-<p>That’s everything you need to know about what <code>SF</code>s <em>are</em>. I don’t know how they’re implemented, and I don’t need to, because the abstraction doesn’t leak. Being a haskell programmer, you’re probably looking at <code>SF i o</code> and thinking “that thing is clearly a <code>Functor</code>/<code>Applicative</code>/<code>Monad</code>.” Two out of three—it’s a functor and an applicative, but <em>not</em> a monad. We’ll come back to this momentarily.</p>
-<p>The trick to working in FRP is to think of continuous streams of values over time. Thus, we can think about the player’s controller as an <code>SF</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">controller ::</span> <span class="dt">SF</span> () <span class="dt">Controller</span></span></code></pre></div>
-<p>which is to say, a continuous stream of <code>Controller</code> values. By marking the input side of the <code>SF</code> as a unit, it means we don’t need to provide anything in order to get this value, which makes sense since the controller state is obviously at the very periphery of our program.</p>
-<p>Since <code>SF</code> is a functor, we can get the state of the A button by fmapping it:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">aState ::</span> <span class="dt">SF</span> () <span class="dt">Bool</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>aState <span class="ot">=</span> <span class="fu">fmap</span> a_button controller</span></code></pre></div>
-<p>which isn’t very surprising. But what’s more interesting are the SF-operating primitives that Yampa gives us. For example, there’s <code>delay</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">delay ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> a a</span></code></pre></div>
-<p>which delays a signal by the given time, using the <code>a</code> parameter as the value for the initial value of the stream. Thus, we can get the value of the A button two seconds ago via:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">aStateTwoSecondsAgo ::</span> <span class="dt">SF</span> () <span class="dt">Bool</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>aStateTwoSecondsAgo <span class="ot">=</span> aState <span class="op">&gt;&gt;&gt;</span> delay <span class="dv">2</span> <span class="dt">False</span></span></code></pre></div>
-<p>where <code>(&gt;&gt;&gt;) :: SF a b -&gt; SF b c -&gt; SF a c</code> is composition of <code>SF</code>s, analogous to function composition.</p>
-<p>Already we can see the benefit of this approach. While it’s not clear exactly <em>why</em> we might want to look at the state of the controller two seconds ago, it’s also non-obvious how you’d go about implementing such a thing procedurally with a game loop.</p>
-<p>One last signal function we might be interested for the time being is <code>integral</code>, which allows us to compute the integral of a stream:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">integral ::</span> <span class="dt">Fractional</span> a <span class="ot">=&gt;</span> <span class="dt">SF</span> a a</span></code></pre></div>
-<h2 id="events">Events</h2>
-<p><code>SF</code>s are transformers of continuous signals, but often we want to talk about discrete moments in time. For this, we’ve got the <code>Event</code> type, which is isomorphic to <code>Maybe</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Event</span> a</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Event</span> a</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">NoEvent</span></span></code></pre></div>
-<p>The interpretation you should have for an <code>Event</code> is that it’s a discrete piece of data arriving at a specific moment in time. In our earlier discussion of things you want to do in games, we’ve already seen two examples of events: when a timer expires, and when the player <em>presses</em> the A button. Under Yampa, the first is particularly easy to code up, by way of the <code>after</code> combinator:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">after ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">SF</span> a (<span class="dt">Event</span> b)</span></code></pre></div>
-<p>If we want to trigger a timer after 5 seconds, it’s just <code>after 5 () :: SF a (Event ())</code>, and we can listen to the output of this stream for an <code>Event ()</code> value in order to know when the timer has elapsed.</p>
-<p>Similarly, when we’re interested in the player pressing a button, what we’re really interested is in the <em>edges</em> of their button signal. We can get this functionality by way of the <code>edge</code> signal function:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">edge ::</span> <span class="dt">SF</span> <span class="dt">Bool</span> (<span class="dt">Event</span> ())</span></code></pre></div>
-<p>which generates an event whenever the input boolean goes from false to true.</p>
-<p>Of course, just being able to generate events isn’t very useful if we don’t have any means of subsequently eliminating them. A simple means of eliminating events is via <code>hold</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">hold ::</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) a</span></code></pre></div>
-<p>The <code>hold</code> function takes a stream of events, and holds onto the most recent value it received.</p>
-<h2 id="making-a-game-of-snake">Making a Game of Snake</h2>
-<p>We’ve already seen enough of FRP in order to make most of the old classic, Snake. In Snake, you are a snake who slithers around in a square, with a constant velocity, continuing in the direction you’re going until the player asks you to turn.</p>
-<p>Begin with a <code>Controller</code>, and an <code>SF</code> to read it:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Controller</span> <span class="ot">=</span> <span class="dt">Controller</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> ctrl_up    ::</span> <span class="dt">Bool</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> ctrl_down  ::</span> <span class="dt">Bool</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> ctrl_left  ::</span> <span class="dt">Bool</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> ctrl_right ::</span> <span class="dt">Bool</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ot">controller ::</span> <span class="dt">SF</span> () <span class="dt">Controller</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>controller <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
-<p>We can then write a little helper function to determine when a button has been pressed—tagging it with a particular value of our choice:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">onPress ::</span> (<span class="dt">Controller</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> a)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>onPress field a <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">fmap</span> (<span class="fu">const</span> a)) <span class="op">$</span> <span class="fu">fmap</span> field controller <span class="op">&gt;&gt;&gt;</span> edge</span></code></pre></div>
-<p>Next, we can sum up an <code>onPress</code> for each direction on the controller, mapping them into direction vectors:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">arrowEvents ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">SF</span> () (<span class="dt">Event</span> (<span class="dt">V2</span> a))</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>arrowEvents <span class="ot">=</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  (\u d l r <span class="ot">-&gt;</span> asum [u, d, l r])</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;$&gt;</span> onPress ctrl_up    (<span class="dt">V2</span> <span class="dv">0</span> (<span class="op">-</span><span class="dv">1</span>))</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_down  (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_left  (<span class="dt">V2</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">0</span>)</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;*&gt;</span> onPress ctrl_right (<span class="dt">V2</span> <span class="dv">1</span>    <span class="dv">0</span>)</span></code></pre></div>
-<p>Above, the use of <code>asum</code> allows us to combine these four events into one, meaning that if the player presses two directions at exactly the same moment, we will prefer <code>up</code> over <code>down</code>, and <code>down</code> over <code>left</code>, etc.</p>
-<p>By <code>hold</code>ing onto the most recent arrow event, we can get the current direction our snake is facing:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">snakeDirection ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>snakeDirection <span class="ot">=</span> arrowEvents <span class="op">&gt;&gt;&gt;</span> hold (<span class="dt">V2</span> <span class="dv">0</span> <span class="dv">1</span>)</span></code></pre></div>
-<p>which we can then integrate in order to have the snake move around:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">snakePosition ::</span> <span class="dt">SF</span> () (<span class="dt">V2</span> <span class="dt">Float</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>snakePosition <span class="ot">=</span> snakeDirection <span class="op">&gt;&gt;&gt;</span> integral</span></code></pre></div>
-<p>Not too shabby at all! This particular snake will move at a rate of 1 unit per second, but we could make him faster by scaling up <code>snakeDirection</code> before taking its <code>integral</code>.</p>
-<h2 id="wrapping-up">Wrapping Up</h2>
-<p>Hopefully I’ve given you a taste of how FRP can radically simplify the implementation of real-time applications. Tomorrow we’ll look into arrowized FRP, and get a sense of how to build bigger, more interesting programs.</p>
       ]]></content:encoded>
   </item>
 </channel>

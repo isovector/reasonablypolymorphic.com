@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Analyzing API Design via Algebraic Laws :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/api-analysis">Analyzing API Design via Algebraic Laws</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/solving-lcsa">&larr;</a>
+    </span>
+    <time>May  5, 2025</time>
+
+    <span class="tags">
+        <a href="/tags/foo.html">foo</a>, <a href="/tags/bar.html">bar</a>
+    </span>
+</p>
+<div class="content">
+    <p>The other day, someone asked:</p>
+<blockquote>
+<p>Why doesn’t [the Data.Map function] <code>unionWith :: (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Map k a</code> allow for different value types the way <code>intersectionWith :: (a -&gt; b -&gt; c) -&gt; Map k a -&gt; Map k b -&gt; Map k c</code> does?</p>
+</blockquote>
+<p>This is a very reasonable question, and it lead down an interesting rabbit hole of at the intersection of API design and efficient implementation.</p>
+<p>To answer the original question, what would the type of a different value type of <code>unionWith</code> look like? It would be something in the flavor of:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">unionWith ::</span> (<span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k b <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
+<p>But this new <code>Maybe a -&gt; Maybe b -&gt; c</code> parameter is somewhat lossy, in that it gives the impression that it could be called with <code>Nothing Nothing</code> as parameters, which doesn’t fit into the vibe of being a “union.”</p>
+<p>So instead we could restrict that possibility by using <code>These a b</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">These</span> a b <span class="ot">=</span> <span class="dt">This</span> a <span class="op">|</span> <span class="dt">That</span> b <span class="op">|</span> <span class="dt">These</span> a b</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">unionWith ::</span> (<span class="dt">These</span> a b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k b <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
+<p>which seems reasonable enough.</p>
+<hr />
+<p>But let’s take <em>reasonableness</em> out of the picture and start again from first principles. Instead let’s ask ourselves the deep philsophical question of <em>what even IS a map?</em></p>
+<p>A <code>Map k v</code> is a particularly efficient implementation of functions with type <code>k -&gt; Maybe v</code>. But why is this <code>Maybe</code> here? It’s really only to encode the “default” value of performing a lookup. Nothing goes wrong if we generalize this to be <code>Monoid v =&gt; k -&gt; v</code>. In fact, it helps us make sense of the right bias present in <code>Data.Map</code>, where we see:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (singleton k v1 <span class="op">&lt;&gt;</span> singleton k v2) <span class="ot">=</span> <span class="dt">Just</span> v2</span></code></pre></div>
+<p>This equality is hard to justify under the normal understanding of <code>Map k v</code> being an encoding of a function <code>k -&gt; Maybe v</code>. But under the general monoid interpretation, we get a nice semigroup homomorphism:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> m2) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> <span class="fu">lookup</span> k m2</span></code></pre></div>
+<p>where the monoid in question has been specialized to be <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Data-Monoid.html#t:Last"><code>Last</code></a>.</p>
+<p>Of course, we also have a monoid homomorphism:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k <span class="fu">mempty</span> <span class="ot">=</span> <span class="fu">mempty</span></span></code></pre></div>
+<p>Let’s re-evaluate the original question in terms of this newly-generalized <code>Map</code>. Now that we’ve removed all of the unnecessary baggage of <code>Maybe</code>, we can again think about the desired type of <code>unionWith</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>unionWith</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k b</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
+<p>which looks <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Prelude.html#v:liftA2">awfully familiar</a>. This new type signature automatically resolves our original concerns about “what should we do if the key isn’t present?”—just call the function with <code>mempty</code> as a parameter!</p>
+<p>We can give some semantics as to what <code>unionWith</code> ought to do again by relating it to the observation <code>lookup</code>. The relevant law here seems like it ought to be:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (unionWith f m n) <span class="ot">=</span> f (<span class="fu">lookup</span> k m) (<span class="fu">lookup</span> k n)</span></code></pre></div>
+<p>By choosing a degenerate function <code>f</code>, say, <code>\_ _ -&gt; nontrivial</code>, where <code>nontrivial</code> is some value that is <em>not</em> <code>mempty</code>, we can see the beginnings of a problem:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lookup</span> k (unionWith f m n)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  f (<span class="fu">lookup</span> k m) (<span class="fu">lookup</span> k n)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="op">&lt;</span><span class="kw">let</span> f <span class="ot">=</span> \_ _ <span class="ot">-&gt;</span> nontrivial<span class="op">&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  nontrivial</span></code></pre></div>
+<p>Regardless of the key we lookup in our <code>unionWith</code>ed <code>Map</code>, we need to get back <code>nontrivial</code>. How can we implement such a thing? I see only two ways:</p>
+<ol type="1">
+<li>explicitly associate every key in the map with <code>nontrivial</code>, or</li>
+<li>keep <code>nontrivial</code> around as a default value in the map</li>
+</ol>
+<p>#1 is clearly a non-starter, given that we want our <code>Map</code>s to be <em>efficient</em> encodings of functions, which leaves us with only #2. This is actually a pretty common construction, which stems immediately from the fact that a pair of monoids is itself a monoid. The construction would look something like this:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Map</span> k v <span class="ot">=</span> <span class="dt">Map</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> defaultValue ::</span> v</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> implementation ::</span> <span class="dt">Data.Map.Map</span> k v</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Generic</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via (<span class="dt">Generically</span> (<span class="dt">Map</span> k v))</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>unionWith</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k b</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>unionWith f (<span class="dt">Map</span> def1 imp1) (<span class="dt">Map</span> def2 imp2) <span class="ot">=</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Map</span> (f def1 def2) (liftA2 f imp1 imp2)</span></code></pre></div>
+<p>Seems fine, right? The nail in the coffin comes from when we reintroduce our semigroup homomorphism:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> m2) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> <span class="fu">lookup</span> k m2</span></code></pre></div>
+<p>Without loss of generalization, take <code>m2 = pure nontrivial</code> (where <code>pure</code> is just <code>unionWith</code> with a constant function.) This gives us:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> <span class="fu">pure</span> nontrivial) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> nontrivial</span></code></pre></div>
+<p>Making this thing efficient is a further complication! We again have two options:</p>
+<ol type="1">
+<li>modify the value at every key by multiplying in <code>nontrivial</code>, or</li>
+<li>finding a way of suspending this computation</li>
+</ol>
+<p>#1 clearly requires <span class="math inline">\(O(n)\)</span> work, which again forces us to look at #2. But #2 seems very challenging, because the monoidal values we need to suspend <em>need not</em> span the entire <code>Map</code>. For example, consider a <code>Map</code> constructed a la:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>((<span class="fu">pure</span> prefix1 <span class="op">&lt;&gt;</span> ((<span class="fu">pure</span> prefix2 <span class="op">&lt;&gt;</span> m) <span class="op">&lt;&gt;</span> n)) <span class="op">&lt;&gt;</span> (p <span class="op">&lt;&gt;</span> <span class="fu">pure</span> suffix)</span></code></pre></div>
+<p>Representing this thing efficiently certainly isn’t impossible, but you’re not going to be able to do it on the balanced binary search trees that underlie the implementation of <code>Data.Map.Map</code>.</p>
+<hr />
+<p>I find this quite an interesting result. I always assumed that <code>Data.Map.Map</code> (or at least, <code>Data.Map.Monoidal.MonoidalMap</code>) didn’t have an <code>Applicative</code> instance because it would require a <code>Monoid</code> constraint on its output—but that’s not the sort of thing we can express in Haskell.</p>
+<p>But the analysis above says that’s not actually the reason! It’s that there can be no efficient implementation of <code>Applicative</code>, even if we <em>could</em> constrain the result.</p>
+<p>What I find so cool about this style of analysis is that we didn’t actually write any code, nor did we peek into the implementation of <code>Data.Map</code> (except to know that it’s implemented as a balanced BST.) All we did was look at the obvious laws, instantiate them with degenerate inputs, and think about what would be required to to efficiently get the right answer.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/solving-lcsa">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

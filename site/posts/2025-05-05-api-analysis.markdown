@@ -1,7 +1,7 @@
 ---
 layout: post
-title: liftA2 on Maps
-date: TO_BE_DETERMINED
+title: Analyzing API Design via Algebraic Laws
+date: 2025-05-05 07:33
 comments: true
 tags: foo, bar
 ---
