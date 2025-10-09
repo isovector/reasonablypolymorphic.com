@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Theorems for Free Redux :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/theorems-for-free-redux">Theorems for Free Redux</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/api-analysis">&larr;</a>
+    </span>
+    <time>October  9, 2025</time>
+
+    <span class="tags">
+        <a href="/tags/foo.html">foo</a>, <a href="/tags/bar.html">bar</a>
+    </span>
+</p>
+<div class="content">
+    <p>A reader recently got in touch with me regarding my 2017 blog post <a href="/blog/theorems-for-free/">Review: Theorems for Free</a>. He had some questions about the paper/my review, and upon revisiting it, I realized that I had no idea how the paper worked anymore.</p>
+<p>So I decided to rehash my understanding, and came up with something much conceptually clearer about what is happening and why.</p>
+<p>A quick summary of <em>Theorems for Free</em>:</p>
+<blockquote>
+<p>For any polymorphic type, we can generate a law that must hold for any value of that type.</p>
+</blockquote>
+<p>One the examples given is for the function <code>length :: forall a. [a] -&gt; Int</code>, which states that <code>forall f l. length (fmap f l) = length l</code>—namely, that <code>fmap</code> doesn’t change the length of the list.</p>
+<p><em>Theorems for Free</em> gives a roundabout and obtuse set of rules for computing these free theorems. But, as usual, the clarity of the idea is obscured by the encoding details.</p>
+<p>The actual idea is this:</p>
+<blockquote>
+<p>Parametrically-polymorphic functions can’t branch on the specific types they are instantiated at.</p>
+</blockquote>
+<p>Because of this fact, functions must behave the same way, regardless of the type arguments passed to them. So all of the free theorems have the form “replacing the type variables <em>before</em> calling the function is the same as replacing the type variables <em>after</em> calling the function.”</p>
+<p>What does it mean to replace a type variable? Well, if we want to replace a type variable <code>a</code> with <code>a'</code>, we will generate a fresh function <code>f :: a -&gt; a'</code>, and then stick it wherever we need to.</p>
+<p>For example, given the function <code>id :: a -&gt; a</code>, we generate the free theorem:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> f a<span class="op">.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  f (<span class="fu">id</span> a) <span class="ot">=</span> <span class="fu">id</span> (f a)</span></code></pre></div>
+<p>or, for the function <code>fromJust :: Maybe a -&gt; a</code>, we get:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> f ma<span class="op">.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  f (fromJust ma) <span class="ot">=</span> fromJust (<span class="fu">fmap</span> f ma)</span></code></pre></div>
+<p>This scheme also works for functions in multiple type parameters. Given the function <code>swap :: (a, b) -&gt; (b, a)</code>, we must replace both <code>a</code> and <code>b</code>, giving the free theorem:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">f ::</span> a <span class="ot">-&gt;</span> a&#39;)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">g ::</span> b <span class="ot">-&gt;</span> b&#39;)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">p ::</span> (a, b))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  swap (bimap f g p) <span class="ot">=</span> bimap g f (swap p)</span></code></pre></div>
+<p>In the special case where there are no type parameters, we don’t need to do anything. This is what’s happening in the <code>length</code> example given in the introduction.</p>
+<p>Simple stuff, right? The obfuscation in the paper comes from the actual technique given to figure out where to apply these type substitutions. The paper is not fully general here, in that it only gives rules for the <code>[]</code> and <code>(-&gt;)</code> type constructors (if I recall correctly.) These rules are further obscured in that they inline the definitions of <code>fmap</code>, rather than writing <code>fmap</code> directly.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> But for types in one variable, <code>fmap</code> is exactly the function that performs type substitution.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Perhaps this paper predates typeclasses? Very possible.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/api-analysis">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
