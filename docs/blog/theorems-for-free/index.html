@@ -55,7 +55,8 @@
     </span>
 </p>
 <div class="content">
-    <p>I’ve been reading through <a href="https://homepages.inf.ed.ac.uk/wadler/">Wadler’s</a> classic paper “<a href="http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf">Theorems for Free</a>”.</p>
+    <p><strong>Update 2025-10-09:</strong> I’ve written a <a href="/blog/theorems-for-free-redux/">much clearer explanation</a> of what’s going on in this paper.</p>
+<p>I’ve been reading through <a href="https://homepages.inf.ed.ac.uk/wadler/">Wadler’s</a> classic paper “<a href="http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf">Theorems for Free</a>”.</p>
 <p>The thesis of the paper is that given a most-general (taking as few constraints on its values as possible) polymorphic type signature, we can generate for free a theorem to which any inhabitant of such a type must adhere.</p>
 <p>Translating into familiar Haskell notation, Wadler gives the following example:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">r ::</span> [x] <span class="ot">-&gt;</span> [x]</span></code></pre></div>

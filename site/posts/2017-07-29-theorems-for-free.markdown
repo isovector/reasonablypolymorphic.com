@@ -6,6 +6,9 @@ comments: true
 tags: papers, review, wadler, haskell, category theory
 ---
 
+**Update 2025-10-09:** I've written a [much clearer
+explanation](/blog/theorems-for-free-redux/) of what's going on in this paper.
+
 I've been reading through [Wadler's][wadler] classic paper "[Theorems for
 Free][tff]".
 
