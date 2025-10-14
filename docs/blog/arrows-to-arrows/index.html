@@ -1,27 +1,58 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
-<channel>
-  <title>Reasonably Polymorphic</title>
-  <link>http://reasonablypolymorphic.com</link>
-  <atom:link href="http://reasonablypolymorphic.com/feed.rss" rel="self" type="application/rss+xml" />
-  <description>There will be math and Haskell and it will be in ya face.</description>
-  <category>Life</category>
-  <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2025-10-14T14:31:00Z</pubDate>
-  <language>en-us</language>
-  <image>
-      <url>http://reasonablypolymorphic.com/images/favicon.png</url>
-    <title>Sandy Maguire</title>
-    <link>http://reasonablypolymorphic.com</link>
-  </image>
-  <item>
-      <title>Arrows to Arrows, Categories to Queries</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/arrows-to-arrows/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/arrows-to-arrows/index.html</guid>
-      <pubDate>2025-10-14T14:31:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>I’ve had a little time off of work as of late, and been spending it in characteristically unwise ways. In particular, I’ve written a <a href="https://github.com/isovector/catlang">little programming language that compiles to SQL</a>. I call it <em>catlang</em>. That’s not to say that I’ve written a new query language. It’s a programming language, whose compiler spits out one giant <code>SELECT</code> statement. When you run that query in postgres, you get the output of your program.</p>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Arrows to Arrows, Categories to Queries :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/arrows-to-arrows">Arrows to Arrows, Categories to Queries</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/theorems-for-free-redux">&larr;</a>
+    </span>
+    <time>October 14, 2025</time>
+
+    <span class="tags">
+        <a href="/tags/haskell.html">haskell</a>, <a href="/tags/category theory.html">category theory</a>, <a href="/tags/programming.html">programming</a>, <a href="/tags/catlang.html">catlang</a>
+    </span>
+</p>
+<div class="content">
+    <p>I’ve had a little time off of work as of late, and been spending it in characteristically unwise ways. In particular, I’ve written a <a href="https://github.com/isovector/catlang">little programming language that compiles to SQL</a>. I call it <em>catlang</em>. That’s not to say that I’ve written a new query language. It’s a programming language, whose compiler spits out one giant <code>SELECT</code> statement. When you run that query in postgres, you get the output of your program.</p>
 <p>Why have I done this? Because I needed a funny compilation target to test out the actual features of the language, which is that its intermediary language is a bunch of abstract category theory nonsense. Which I’ll get to. But I’m sure you first want to see this bad boy in action.</p>
 <p>Behold, the function that returns 100 regardless of what input you give it. But it does it with the equivalent of a while loop:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>count <span class="op">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
@@ -1061,997 +1092,66 @@ Ungodly Compiled SQL
 <li id="fn1" role="doc-endnote"><p>When looking at the types of arrows in this essay, we make the distinction that <code>~&gt;</code> are arrows that we can write in catlang, while <code>-&gt;</code> exist in the metatheory.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Theorems for Free Redux</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/theorems-for-free-redux/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/theorems-for-free-redux/index.html</guid>
-      <pubDate>2025-10-09T11:27:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>A reader recently got in touch with me regarding my 2017 blog post <a href="/blog/theorems-for-free/">Review: Theorems for Free</a>. He had some questions about the paper/my review, and upon revisiting it, I realized that I had no idea how the paper worked anymore.</p>
-<p>So I decided to rehash my understanding, and came up with something much conceptually clearer about what is happening and why.</p>
-<p>A quick summary of <em>Theorems for Free</em>:</p>
-<blockquote>
-<p>For any polymorphic type, we can generate a law that must hold for any value of that type.</p>
-</blockquote>
-<p>One the examples given is for the function <code>length :: forall a. [a] -&gt; Int</code>, which states that <code>forall f l. length (fmap f l) = length l</code>—namely, that <code>fmap</code> doesn’t change the length of the list.</p>
-<p><em>Theorems for Free</em> gives a roundabout and obtuse set of rules for computing these free theorems. But, as usual, the clarity of the idea is obscured by the encoding details.</p>
-<p>The actual idea is this:</p>
-<blockquote>
-<p>Parametrically-polymorphic functions can’t branch on the specific types they are instantiated at.</p>
-</blockquote>
-<p>Because of this fact, functions must behave the same way, regardless of the type arguments passed to them. So all of the free theorems have the form “replacing the type variables <em>before</em> calling the function is the same as replacing the type variables <em>after</em> calling the function.”</p>
-<p>What does it mean to replace a type variable? Well, if we want to replace a type variable <code>a</code> with <code>a'</code>, we will generate a fresh function <code>f :: a -&gt; a'</code>, and then stick it wherever we need to.</p>
-<p>For example, given the function <code>id :: a -&gt; a</code>, we generate the free theorem:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> f a<span class="op">.</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  f (<span class="fu">id</span> a) <span class="ot">=</span> <span class="fu">id</span> (f a)</span></code></pre></div>
-<p>or, for the function <code>fromJust :: Maybe a -&gt; a</code>, we get:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> f ma<span class="op">.</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  f (fromJust ma) <span class="ot">=</span> fromJust (<span class="fu">fmap</span> f ma)</span></code></pre></div>
-<p>This scheme also works for functions in multiple type parameters. Given the function <code>swap :: (a, b) -&gt; (b, a)</code>, we must replace both <code>a</code> and <code>b</code>, giving the free theorem:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">f ::</span> a <span class="ot">-&gt;</span> a&#39;)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">g ::</span> b <span class="ot">-&gt;</span> b&#39;)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">p ::</span> (a, b))</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  swap (bimap f g p) <span class="ot">=</span> bimap g f (swap p)</span></code></pre></div>
-<p>In the special case where there are no type parameters, we don’t need to do anything. This is what’s happening in the <code>length</code> example given in the introduction.</p>
-<p>Simple stuff, right? The obfuscation in the paper comes from the actual technique given to figure out where to apply these type substitutions. The paper is not fully general here, in that it only gives rules for the <code>[]</code> and <code>(-&gt;)</code> type constructors (if I recall correctly.) These rules are further obscured in that they inline the definitions of <code>fmap</code>, rather than writing <code>fmap</code> directly.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> But for types in one variable, <code>fmap</code> is exactly the function that performs type substitution.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>Perhaps this paper predates typeclasses? Very possible.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Analyzing API Design via Algebraic Laws</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/api-analysis/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/api-analysis/index.html</guid>
-      <pubDate>2025-05-05T07:33:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>The other day, someone asked:</p>
-<blockquote>
-<p>Why doesn’t [the Data.Map function] <code>unionWith :: (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Map k a</code> allow for different value types the way <code>intersectionWith :: (a -&gt; b -&gt; c) -&gt; Map k a -&gt; Map k b -&gt; Map k c</code> does?</p>
-</blockquote>
-<p>This is a very reasonable question, and it lead down an interesting rabbit hole of at the intersection of API design and efficient implementation.</p>
-<p>To answer the original question, what would the type of a different value type of <code>unionWith</code> look like? It would be something in the flavor of:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">unionWith ::</span> (<span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k b <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
-<p>But this new <code>Maybe a -&gt; Maybe b -&gt; c</code> parameter is somewhat lossy, in that it gives the impression that it could be called with <code>Nothing Nothing</code> as parameters, which doesn’t fit into the vibe of being a “union.”</p>
-<p>So instead we could restrict that possibility by using <code>These a b</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">These</span> a b <span class="ot">=</span> <span class="dt">This</span> a <span class="op">|</span> <span class="dt">That</span> b <span class="op">|</span> <span class="dt">These</span> a b</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">unionWith ::</span> (<span class="dt">These</span> a b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Map</span> k a <span class="ot">-&gt;</span> <span class="dt">Map</span> k b <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
-<p>which seems reasonable enough.</p>
-<hr />
-<p>But let’s take <em>reasonableness</em> out of the picture and start again from first principles. Instead let’s ask ourselves the deep philsophical question of <em>what even IS a map?</em></p>
-<p>A <code>Map k v</code> is a particularly efficient implementation of functions with type <code>k -&gt; Maybe v</code>. But why is this <code>Maybe</code> here? It’s really only to encode the “default” value of performing a lookup. Nothing goes wrong if we generalize this to be <code>Monoid v =&gt; k -&gt; v</code>. In fact, it helps us make sense of the right bias present in <code>Data.Map</code>, where we see:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (singleton k v1 <span class="op">&lt;&gt;</span> singleton k v2) <span class="ot">=</span> <span class="dt">Just</span> v2</span></code></pre></div>
-<p>This equality is hard to justify under the normal understanding of <code>Map k v</code> being an encoding of a function <code>k -&gt; Maybe v</code>. But under the general monoid interpretation, we get a nice semigroup homomorphism:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> m2) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> <span class="fu">lookup</span> k m2</span></code></pre></div>
-<p>where the monoid in question has been specialized to be <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Data-Monoid.html#t:Last"><code>Last</code></a>.</p>
-<p>Of course, we also have a monoid homomorphism:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k <span class="fu">mempty</span> <span class="ot">=</span> <span class="fu">mempty</span></span></code></pre></div>
-<p>Let’s re-evaluate the original question in terms of this newly-generalized <code>Map</code>. Now that we’ve removed all of the unnecessary baggage of <code>Maybe</code>, we can again think about the desired type of <code>unionWith</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>unionWith</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k b</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span></code></pre></div>
-<p>which looks <a href="https://hackage.haskell.org/package/base-4.21.0.0/docs/Prelude.html#v:liftA2">awfully familiar</a>. This new type signature automatically resolves our original concerns about “what should we do if the key isn’t present?”—just call the function with <code>mempty</code> as a parameter!</p>
-<p>We can give some semantics as to what <code>unionWith</code> ought to do again by relating it to the observation <code>lookup</code>. The relevant law here seems like it ought to be:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (unionWith f m n) <span class="ot">=</span> f (<span class="fu">lookup</span> k m) (<span class="fu">lookup</span> k n)</span></code></pre></div>
-<p>By choosing a degenerate function <code>f</code>, say, <code>\_ _ -&gt; nontrivial</code>, where <code>nontrivial</code> is some value that is <em>not</em> <code>mempty</code>, we can see the beginnings of a problem:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lookup</span> k (unionWith f m n)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  f (<span class="fu">lookup</span> k m) (<span class="fu">lookup</span> k n)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="op">&lt;</span><span class="kw">let</span> f <span class="ot">=</span> \_ _ <span class="ot">-&gt;</span> nontrivial<span class="op">&gt;</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  nontrivial</span></code></pre></div>
-<p>Regardless of the key we lookup in our <code>unionWith</code>ed <code>Map</code>, we need to get back <code>nontrivial</code>. How can we implement such a thing? I see only two ways:</p>
-<ol type="1">
-<li>explicitly associate every key in the map with <code>nontrivial</code>, or</li>
-<li>keep <code>nontrivial</code> around as a default value in the map</li>
-</ol>
-<p>#1 is clearly a non-starter, given that we want our <code>Map</code>s to be <em>efficient</em> encodings of functions, which leaves us with only #2. This is actually a pretty common construction, which stems immediately from the fact that a pair of monoids is itself a monoid. The construction would look something like this:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Map</span> k v <span class="ot">=</span> <span class="dt">Map</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> defaultValue ::</span> v</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> implementation ::</span> <span class="dt">Data.Map.Map</span> k v</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Generic</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via (<span class="dt">Generically</span> (<span class="dt">Map</span> k v))</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>unionWith</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k a</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k b</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Map</span> k c</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>unionWith f (<span class="dt">Map</span> def1 imp1) (<span class="dt">Map</span> def2 imp2) <span class="ot">=</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Map</span> (f def1 def2) (liftA2 f imp1 imp2)</span></code></pre></div>
-<p>Seems fine, right? The nail in the coffin comes from when we reintroduce our semigroup homomorphism:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> m2) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> <span class="fu">lookup</span> k m2</span></code></pre></div>
-<p>Without loss of generalization, take <code>m2 = pure nontrivial</code> (where <code>pure</code> is just <code>unionWith</code> with a constant function.) This gives us:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span> k (m1 <span class="op">&lt;&gt;</span> <span class="fu">pure</span> nontrivial) <span class="ot">=</span> <span class="fu">lookup</span> k m1 <span class="op">&lt;&gt;</span> nontrivial</span></code></pre></div>
-<p>Making this thing efficient is a further complication! We again have two options:</p>
-<ol type="1">
-<li>modify the value at every key by multiplying in <code>nontrivial</code>, or</li>
-<li>finding a way of suspending this computation</li>
-</ol>
-<p>#1 clearly requires <span class="math inline">\(O(n)\)</span> work, which again forces us to look at #2. But #2 seems very challenging, because the monoidal values we need to suspend <em>need not</em> span the entire <code>Map</code>. For example, consider a <code>Map</code> constructed a la:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>((<span class="fu">pure</span> prefix1 <span class="op">&lt;&gt;</span> ((<span class="fu">pure</span> prefix2 <span class="op">&lt;&gt;</span> m) <span class="op">&lt;&gt;</span> n)) <span class="op">&lt;&gt;</span> (p <span class="op">&lt;&gt;</span> <span class="fu">pure</span> suffix)</span></code></pre></div>
-<p>Representing this thing efficiently certainly isn’t impossible, but you’re not going to be able to do it on the balanced binary search trees that underlie the implementation of <code>Data.Map.Map</code>.</p>
-<hr />
-<p>I find this quite an interesting result. I always assumed that <code>Data.Map.Map</code> (or at least, <code>Data.Map.Monoidal.MonoidalMap</code>) didn’t have an <code>Applicative</code> instance because it would require a <code>Monoid</code> constraint on its output—but that’s not the sort of thing we can express in Haskell.</p>
-<p>But the analysis above says that’s not actually the reason! It’s that there can be no efficient implementation of <code>Applicative</code>, even if we <em>could</em> constrain the result.</p>
-<p>What I find so cool about this style of analysis is that we didn’t actually write any code, nor did we peek into the implementation of <code>Data.Map</code> (except to know that it’s implemented as a balanced BST.) All we did was look at the obvious laws, instantiate them with degenerate inputs, and think about what would be required to to efficiently get the right answer.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Using Obscure Graph Theory to solve PL Problems</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/solving-lcsa/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/solving-lcsa/index.html</guid>
-      <pubDate>2025-05-04T08:05:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>Usually I write about <em>solutions</em> to problems I’ve worked out, but I’ve found myself increasingly becoming interesting in <em>where solutions come from.</em> Maybe it’s because I’ve been reading Boorstin’s excellent <a href="https://en.wikipedia.org/wiki/The_Discoverers">The Discoverers</a>, which I’d strongly recommend.</p>
-<p>Regardless of why, I thought I’d switch up the usual dance step today, and discuss what solving my most-recent-big-problem actually looked like, in terms of what I tried, where I looked, and what the timeline was.</p>
-<h2 id="the-problem">The Problem</h2>
-<p>The problem is to serialize a program graph into a series of let-bindings. For example, given the following graph:</p>
-<pre><code>      +
-    /   \
-  f ---&gt; g
-  |     / \
-  a     \ /
-      expensive</code></pre>
-<p>which represents the program:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>f a (g expensive expensive) <span class="op">+</span> g expensive expensive</span></code></pre></div>
-<p>Unfortunately, this is a naive representation of the program, since it duplicates the work required to compute <code>expensive</code> four times, and <code>g expensive expensive</code> twice. Instead, we would prefer to generate the equivalent-but-more-efficient program:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> <span class="op">$</span><span class="dv">0</span> <span class="ot">=</span> expensive</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span><span class="dv">1</span> <span class="ot">=</span> g <span class="op">$</span><span class="dv">0</span> <span class="op">$</span><span class="dv">0</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a> <span class="kw">in</span> f a <span class="op">$</span><span class="dv">1</span> <span class="op">+</span> <span class="op">$</span><span class="dv">1</span></span></code></pre></div>
-<p>This transformation is affectionately known as <em>sharing</em>, since it shares the computed answer whenever there is repeated work to be done.</p>
-<p>So this is what we’re trying to do. Given the original graph, determine the best place to insert these let-bindings, for some reasonable definition of “best.” We can assume there are no side effects involved, so any place that an expression is well-scoped is an acceptable solution.</p>
-<p>In order to understand some of my attempted solutions, it’s worth noting that our final solution should build something of type <code>Expr</code>, and the original graph is represented as a <code>IntMap (ExprF Int)</code>. <code>ExprF</code> is the <a href="https://hackage.haskell.org/package/recursion-schemes-5.2.3/docs/Data-Functor-Foldable.html#t:Base"><code>Base</code></a> functor of <code>Expr</code>, with all of its self-references replaced by some type variable, in this case <code>Int</code>. Thus, the graph above looks much more like:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_ <span class="op">:</span> <span class="dt">IntMap</span> (<span class="dt">ExprF</span> <span class="dt">Int</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>_ <span class="ot">=</span> IM.fromList</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  [ (<span class="dv">0</span>, <span class="dt">Apply</span> <span class="st">&quot;+&quot;</span> [<span class="dv">1</span>, <span class="dv">3</span>])</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  , (<span class="dv">1</span>, <span class="dt">Apply</span> <span class="st">&quot;f&quot;</span> [<span class="dv">2</span>, <span class="dv">3</span>]</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  , (<span class="dv">2</span>, <span class="op">...</span>)  <span class="co">-- a</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  , (<span class="dv">3</span>, <span class="dt">Apply</span> <span class="st">&quot;g&quot;</span> [<span class="dv">4</span>, <span class="dv">4</span>])</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  , (<span class="dv">4</span>, <span class="op">...</span>)  <span class="co">-- expensive</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  ]</span></code></pre></div>
-<h2 id="the-original-solution">The Original Solution</h2>
-<p>I spent over a year trying to solve this problem, with various mostly-working solutions during that time. My strategy here was to think really hard, write up some algorithm that seemed plausible, and then run it against our (small) battery of integration tests to make sure it got the same answer as before.</p>
-<p>Why not property test it? I tried, but found it very challenging to implement well-typed generators that would reliably introduce shared thunks. But maybe there’s a different lesson to be learned here about writing good generators.</p>
-<p>Anyway. For eight months, one of these think-really-hard algorithms fit the bill and didn’t give us any problems. It was a weird, bespoke solution to the problem that independetly kept track of all of the free variables in every graph fragment, and tried to let-bind a fragment as soon as we landed in a context where all of the free variables were in scope. It seemed to work, but it was extremely messy and unmaintainable.</p>
-<p>At the time of writing, this sharing algorithm was the only source of let-binds in our entire language, which meant that it didn’t need to account for let-binds <em>in</em> the program.</p>
-<p>Of course, that invariant eventually changed. We added a way in the source langauge to introduce <code>let</code>s, which meant my algorithm was wrong. And I had written it sufficiently long ago that I no longer remembered <em>exactly why it worked.</em> Which meant the <a href="https://pages.cs.wisc.edu/~remzi/Naur.pdf">theory of my program was lost, and thus that we ought to rewrite it.</a></p>
-<h2 id="unfolding-a-solution">Unfolding a Solution</h2>
-<p>I went back to the problem statement, and stared at it for a long time (back to the think-really-hard algorithm!) Upon staring at the problem, I realized that what I was really trying to do was determine where diamond patterns arose in the propgram graph.</p>
-<p>Recall our original graph:</p>
-<pre><code>      +
-    /   \
-  f ---&gt; g
-  |     / \
-  a     \ /
-      expensive</code></pre>
-<p>If we redraw it such that <code>g</code> is on a different rank than <code>f</code>, then the two diamond patterns become much clearer:</p>
-<pre><code>      +
-    /  \
-  f     |
-  | \   |
-  a  \ /
-      g
-     / \
-     \ /
-   expensive</code></pre>
-<p>The insight I came up with is that if a node <code>n</code> is the source of a diamond, then we must let-bind the sink of the diamond immediately before inlining the definition of <code>n</code>.</p>
-<p>This gives rise to the question of “how do we identify a diamond?” What we can do is give a mapping from each node to its reachable set of nodes. For example, in the above, we’d compute the map:</p>
-<pre><code>+         -&gt; {+, f, a, g, expensive}
-f         -&gt; {f, a, g, expensive}
-a         -&gt; {a}
-g         -&gt; {g, expensive}
-expensive -&gt; {expensive}</code></pre>
-<p>Then when we go to inline a node, say, <code>+</code>, we can look for any nodes that are reachable via more than one of its immediate subterms. Since the immediate subterms of <code>+</code> are <code>f</code> and <code>g</code>, we can take the intersections of their reachable sets:</p>
-<pre><code>{f, a, g, expensive} union {g, expensive}</code></pre>
-<p>giving us</p>
-<pre><code>{g, expensive}</code></pre>
-<p>which is exactly the set of nodes that we need to perform sharing on. If you topologically sort this set, it gives you the order that you should perform your let bindings.</p>
-<p>EXCEPT there’s a kink in the whole thing. What happens if one of the terms in this diamond contains free variables? In particular, we might have something like this:</p>
-<pre><code>      +
-    /  \
-  f     |
-  | \   |
-  a  \ /
-      λx
-     / \
-     \ /
-   expensive
-      |
-      x</code></pre>
-<p>This gives us an analogous set of reachable nodes when we look at <code>+</code>, but we obviously can’t lift <code>expensive x</code> above the lambda.</p>
-<p>Resolving this problem required giving up on the notion of memoizing the entire reachable set of nodes, and to instead crawl the graph ensuring that everything is well-scoped.</p>
-<h2 id="performance-woes">Performance Woes</h2>
-<p>My algorithm looked fine, and, importantly, got the right answer in a reasonable amount of time on our (small) battery of integration tests. So I shipped it, commended myself on a job well done, and thought nothing more about it. For about a week, until a bug report came in saying that our compiler now seemed to hang on big programs.</p>
-<p>Which was something I hadn’t noticed, since we didn’t have any big programs in our integration tests.</p>
-<p>Damn!</p>
-<p>Upon digging in to what exactly was so slow, I noticed that my algorithm was <a href="https://accidentallyquadratic.tumblr.com/">accidentally quadratic</a>. I needed to fold over every node in the graph, and that required looking at the entire reachable set underneath it. I had put in some of the obvious safeguards, hoping that they would prune the search tree early, but it wasn’t enough sacrifice for the Great God of Asymptotes.</p>
-<p>Did I mention that at this point in the story, having this algorithm working fast was on the critical path of the company? Everybody else was blocked on me figuring this out. Talk about pressure!</p>
-<p>Anyway. You’ll notice above that in my description of the algorithm, everything sounds fine. But the juice is in the details, as the common saying goes. Computing reachability isn’t quite the right thing to be using here, as it gave us the wrong answer for the lambda example above. Which is unfortunate because reachability is something we can do in linear time.</p>
-<p>And then when reachability didn’t work, I just threw away the fast performance and hoped my bespoke algorithm would do the job. My only redemption comes from the fact that at least it got the right answer, even if it did so very slowly.</p>
-<h2 id="finding-the-kernel">Finding the Kernel</h2>
-<p>Back to the drawing board.</p>
-<p>Whenever I have graph theory problems, I call up my boy Vikrem. He’s good at nerd stuff like this.</p>
-<p>We <a href="https://en.wikipedia.org/wiki/Rubber_duck_debugging">rubberducked</a> the problem, and tried to reframe the problem in the language of graph theory. We had a Merkiv–Maguire moment where we indepdently realized that the goal was somehow related to finding the <em>lowest common ancestor</em> (LCA) of a node.</p>
-<p>Which is to say, roughly, that we are looking for forks in the diamond diagram. Which we already knew, but it was nice to have some language for.</p>
-<p>Our new problem is that LCA is defined only over trees. There are some extensions to DAGs, but none of them seem to be particularly well founded. However, searching for exactly that brought me to <a href="https://stackoverflow.com/questions/14865081/algorithm-to-find-lowest-common-ancestor-in-directed-acyclic-graph">this stackoverflow question</a>, where nestled in the comments is someone suggesting that the poster isn’t looking for LCA, but instead for a related notion the <em>lowest <strong>single</strong> common ancestor.</em> LSCA is defined in a 2010 paper <a href="https://www.sciencedirect.com/science/article/abs/pii/S0020019010000487">New common ancestor problems in trees and directed acyclic graphs</a>.</p>
-<p>The standard definition of <code>LCA(x, y) = l</code> is that “<code>l</code> is an ancestor of <code>x</code> and of <code>y</code>, and that no descendent of <code>l</code> has this property.”</p>
-<p>But the definition of <code>LSCA(x, y) = l</code> is that “<code>l</code> lies on all root-to-<code>x</code> paths, and that <code>l</code> lies on all root-to-<code>y</code> paths, and that no descendent of <code>l</code> has this property.”</p>
-<p>The distinction between the two is easily seen in the following graph:</p>
-<pre><code>  0
- / \
-1   2
-| X |
-3   4</code></pre>
-<p>Under the standard definition, LCA is not uniquely defined for DAGs. That is, <code>LCA(3, 4) = {1, 2}</code>. But neither 1 nor 2 lies on <em>all</em> paths from the root. Under LSCA therefore we get <code>LSCA(3, 4) = 0</code>, which is the obviously-correct place to let-bind 3 and 4.</p>
-<p>The paper gives a preprocessing scheme for computing LSCA by building a “lowest single ancestor” (LSA) tree. The LSA of a node is the LSCA of all of its in-edges. This definition cashes out to mean “the most immediate diamond above any node.” Finally! This is exactly what we’re looking for, since this is where we must insert our let-bindings! Even better, the paper gives us an algorithm for computing the LSA tree in linear time!</p>
-<h2 id="the-first-implementer">The First Implementer</h2>
-<p>Of course, I’m lazy and would prefer not to implement this thing. So instead I searched on hackage for <code>lsca</code>, and found nothing. But then I searched for <code>lca</code> and found that, like always, <a href="https://hackage.haskell.org/package/lca">Ed Kmett was 13 years ahead of me.</a></p>
-<p>The <code>lca</code> package implements an <span class="math inline">\(O(log n)\)</span> algorithm for computing the LCA of any two nodes in a graph. Which is very convenient for me, since the LSCA algorithm requires being able to do this.</p>
-<p>Time to roll up the sleeves and get cracking I suppose.</p>
-<p>The paper was surprisingly straightforward, and my first attempt implemented the (imperative) algorithms as given (imperatively.) The first step is to do a topological sort on the DAG in order to know in which order one ought to unfold the LSA tree.</p>
-<p>But as is so often the case, this topological sort isn’t actually relevant to the algorithm; it’s just an encoding detail of expressing the algorithm imperatively. But you don’t need that when you’ve got laziness on your side! Instead you can just tie the know and do something cool like this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">lsaTree ::</span> <span class="dt">Ord</span> v <span class="ot">=&gt;</span> <span class="dt">Map</span> v (<span class="dt">Set</span> v) <span class="ot">-&gt;</span> <span class="dt">Map</span> v (<span class="dt">Path</span> v)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>lsaTree input <span class="ot">=</span> fix <span class="op">$</span> \result <span class="ot">-&gt;</span> M.fromList <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  (node, parents) <span class="ot">&lt;-</span> M.toList input</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> parentResults <span class="ot">=</span> <span class="fu">fmap</span> (result <span class="op">M.!</span>) parents</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
-<p>Notice how we use <code>fix</code> to bind the eventual result of the final computation. Then we can chase pointers by looking them up in <code>result</code>—even though it’s not yet “computed.” Who cares what order the computer does it in. Why is that a thing I should need to specify?</p>
-<p>Anyway. The exact details of implementing LSA are not particularly important for the remainder of this blog post. If you’re interested, you can peep the PR, which is <a href="https://github.com/ekmett/lca/pull/8">delightfully small</a>.</p>
-<h2 id="tying-it-all-back-together">Tying It All Back Together</h2>
-<p>Equipped with my LSA tree, I was now ready to go back and solve the original problem of figuring out where to stick let-bindings. It’s easy now. Given the original program graph, find the LSA for each node. The LSA is the place you should insert the let binding.</p>
-<p>So given the map of nodes to their LSAs, invert that map and get back a map of nodes to descendents who have this node as an LSA. Now when you go to inline a node, just look up everything in this map and inline it first.</p>
-<p>It turns out to be a very elegant solution. It’s one third of the length of my horrible ad-hoc implementations, and it runs in linear time of the number of nodes in the graph. All in all, very good.</p>
-<p>More often than I’m comfortable about, people will ask me how I can have so many good ideas. And what I like about this story is that it’s pretty typical of how I actually “have” “good” ideas. I’m reminded of the fact that <a href="https://fs.blog/great-talks/richard-hamming-your-research/">luck favors the prepared mind</a>. Attentive readers will notice that <em>none</em> of this process was due to brilliance on my part. I happened to know Vikrem who’s a genius. Together we pulled at some ancient graph theory strings and remembered a fact that someone else had thought important to teach us. That wasn’t actually the right path, but it lead us to stackoverflow where someone had linked to a relevant paper. I implemented the paper using a library that someone else had done the heavy lifting on, and simplified the implementation using this knot-tying trick I picked up somewhere along the way.</p>
-<p>Also, I’m just really pleased that the solution came from trying to reverse engineer the relevant graph-theory search terms. Maybe that’s the actual takeaway here.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Bidirectional Instance Contexts</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/bidirectional-instance-contexts/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/bidirectional-instance-contexts/index.html</guid>
-      <pubDate>2025-02-15T02:15:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>Just a quick one today, but I wanted to point out a little trick you can do with Haskell’s typeclass inference.</p>
-<p>Imagine we have some little class, the details of which matter not in the least:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Foo</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Foo</span> a <span class="kw">where</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
-<p>We can give some instances of this type:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Int</span> <span class="kw">where</span> <span class="op">...</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Bool</span> <span class="kw">where</span> <span class="op">...</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> () <span class="kw">where</span> <span class="op">...</span></span></code></pre></div>
-<p>Regular, everyday stuff. But the instances for type constructors are more interesting, because they come with an instance context:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b) <span class="kw">where</span> <span class="op">...</span></span></code></pre></div>
-<p>Then, of course, if we know both <code>Foo a</code> and <code>Foo b</code>, we can infer <code>Foo (a, b)</code>. To make this fact overwhelmingly explicit, we can reify the usual constraint-solving logic by using the <code>Dict</code> type, and thus the following program will typecheck:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Constraint</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>forwards</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> a)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> b)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> (a, b))</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>forwards <span class="dt">Dict</span> <span class="dt">Dict</span> <span class="ot">=</span> <span class="dt">Dict</span></span></code></pre></div>
-<p>Perhaps tipped off by the name here, the gentle reader is asked to notice the asymmetry here, since the converse program will not typecheck:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>backwards</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Dict</span> (<span class="dt">Foo</span> (a, b))</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (<span class="dt">Dict</span> (<span class="dt">Foo</span> a), <span class="dt">Dict</span> (<span class="dt">Foo</span> b))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>backwards <span class="dt">Dict</span> <span class="ot">=</span> (<span class="dt">Dict</span>, <span class="dt">Dict</span>)</span></code></pre></div>
-<p>But why should it not typecheck?<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Recall from the relevant instance definition that these instances must, in fact, exist:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b)</span></code></pre></div>
-<p>As a testament to <em>just</em> how good GHC is, we can support this bidirectionality via a minor tweak to the definition of class and its instances.</p>
-<p>The trick is to add an associated type family to <code>Foo</code>, and to <em>use it as a superclass constraint:</em></p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Foo</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Constraint</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Evidence</span> a <span class="ot">=&gt;</span> <span class="dt">Foo</span> a <span class="kw">where</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span><span class="ot"> a ::</span> <span class="dt">Constraint</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span> a <span class="ot">=</span> ()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
-<p>Because we’ve given a default implementation of the type family, our existing simple instances work as before:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Int</span> <span class="kw">where</span> <span class="op">...</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> <span class="dt">Bool</span> <span class="kw">where</span> <span class="op">...</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foo</span> () <span class="kw">where</span> <span class="op">...</span></span></code></pre></div>
-<p>with the only change required coming from the type constructor instances:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b) <span class="kw">where</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span> (a, b) <span class="ot">=</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
-<p>or, if we you want to be cute about it:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Evidence</span> (a, b) <span class="ot">=&gt;</span> <span class="dt">Foo</span> (a, b) <span class="kw">where</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Evidence</span> (a, b) <span class="ot">=</span> (<span class="dt">Foo</span> a, <span class="dt">Foo</span> b)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
-<p>By sticking <code>Evidence</code> into the superclass constraint, GHC knows that this dictionary is always available when you’ve got a <code>Foo</code> dictionary around. And our earlier <code>backwards</code> program now typechecks as expected.</p>
-<p><a href="https://play.haskell.org/saved/YjCfxwNy">This is all available in a play session</a> if you’d like to fool around with it.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>Rhetorical question. I don’t want to hear about orphans or overlapping instances or whatever.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Use Monoids for Construction</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/use-monoids/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/use-monoids/index.html</guid>
-      <pubDate>2025-01-24T09:35:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>There’s a common anti-pattern I see in beginner-to-intermediate Haskell programmers that I wanted to discuss today. It’s the tendency to conceptualize the <em>creation</em> of an object by <em>repeated mutation.</em> Often this takes the form of repeated insertion into an empty container, but comes up under many other guises as well.</p>
-<p>This anti-pattern isn’t particularly surprising in its prevalence; after all, if you’ve got the usual imperative brainworms, this is just <em>how things get built.</em> The gang of four “builder pattern” is exactly this; you can build an empty object, and setters on such a thing change the state <em>but return the object itself.</em> Thus, you build things by chaning together setter methods:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Foo myFoo <span class="op">=</span> <span class="kw">new</span> <span class="fu">Foo</span><span class="op">().</span><span class="fu">setBar</span><span class="op">().</span><span class="fu">setQux</span><span class="op">(</span><span class="dv">17</span><span class="op">).</span><span class="fu">setZap</span><span class="op">(</span><span class="kw">true</span><span class="op">);</span></span></code></pre></div>
-<p>Even if you don’t ascribe to the whole OOP design principle thing, you’re still astronomically likely to think about building data structures like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Doodad doodad <span class="op">=</span> <span class="kw">new</span> Doodad<span class="op">;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">foreach</span> <span class="op">(</span>Widget widget in widgets<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  doodad<span class="op">.</span><span class="fu">addWidget</span><span class="op">(</span>widget<span class="op">);</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>To be more concrete, maybe instead of doodads and widgets you have <code>BST</code>s and <code>Node</code>s. Or dictionaries and key-value pairs. Or graphs and edges. Anywhere you look, you’ll probably find examples of this sort of code.</p>
-<p>Maybe you’re thinking to yourself “I’m a hairy-chested functional programmer and I scoff at patterns like these.” That might be true, but perhaps you too are guilty of writing code that looks like:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">foldr</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    (\(k, v) m <span class="ot">-&gt;</span> Map.insert k v m)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    Map.empty</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> toKVPairs something</span></code></pre></div>
-<p>Just because it’s dressed up with functional combinators <em>doesn’t mean</em> you’re not still writing C code. To my eye, the great promise of functional programming is its potential for conceptual clarity, and repeated mutation will always fall short of the mark.</p>
-<p>The complaint, as usual, is that repeated mutation tells you <em>how</em> to build something, rather than focusing on <em>what</em> it is you’re building. An algorithm cannot be correct in the absence of intention—after all, you must know what you’re trying to accomplish in order to know if you succeeded. What these builder patterns, for loops, and <code>foldr</code>s all have in common is that they are algorithms for strategies for building something.</p>
-<p>But you’ll notice none of them come with comments. And therefore we can only ever guess at what the original author intended, based on the context of the code we’re looking at.</p>
-<p>I’m sure this all sounds like splitting hairs, but that’s because the examples so far have been extremely simple. But what about this one?</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cgo ::</span> (a <span class="ot">-&gt;</span> (<span class="dt">UInt</span>, <span class="dt">UInt</span>)) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [<span class="dt">NonEmpty</span> a]</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>cgo f <span class="ot">=</span> <span class="fu">foldr</span> step []</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    step a [] <span class="ot">=</span> [<span class="fu">pure</span> a]</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    step a bss0<span class="op">@</span>((b <span class="op">:|</span> bs) <span class="op">:</span> bss)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="kw">let</span> (al, ac) <span class="ot">=</span> f a</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      , <span class="kw">let</span> (bl, bc) <span class="ot">=</span> f b</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      , al <span class="op">+</span> <span class="dv">1</span> <span class="op">==</span> bl <span class="op">&amp;&amp;</span> ac <span class="op">==</span> bc</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="ot">=</span> (a <span class="op">:|</span> b <span class="op">:</span> bs) <span class="op">:</span> bss</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> <span class="fu">pure</span> a <span class="op">:</span> bss0</span></code></pre></div>
-<p>which I found by grepping through <code>haskell-language-server</code> for <code>foldr</code>, and then mangled to remove the suggestive variable names. What does this one do? Based solely on the type we can presume it’s using that function to partition the list somehow. But how? And is it correct? We’ll never know—and the function doesn’t even come with any tests!</p>
-<h2 id="its-always-monoids">It’s Always Monoids</h2>
-<p>The shift in perspective necessary here is to reconceptualize building-by-repeated-mutation as building-by-combining. Rather than chiseling out the object you want, instead find a way of gluing it together from simple, obviously-correct pieces.</p>
-<p>The notion of “combining together” should evoke in you a cozy warm fuzzy feeling. Much like being in a secret pillow form. You must come to be one with the monoid. Once you have come to embrace monoids, you will have found inner programming happiness. Monoids are a sacred, safe place, at the fantastic intersection of “overwhelming powerful” and yet “hard to get wrong.”</p>
-<p>As an amazingly fast recap, a monoid is a collection of three things: some type <code>m</code>, some value of that type <code>mempty</code>, and binary operation over that type <code>(&lt;&gt;) :: m -&gt; m -&gt; m</code>, subject to a bunch of laws:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>∀a<span class="op">.</span> <span class="fu">mempty</span> <span class="op">&lt;&gt;</span> a <span class="ot">=</span> a <span class="ot">=</span> a <span class="op">&lt;&gt;</span> <span class="fu">mempty</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>∀a b c<span class="op">.</span> (a <span class="op">&lt;&gt;</span> b) <span class="op">&lt;&gt;</span> c <span class="ot">=</span> a <span class="op">&lt;&gt;</span> (b <span class="op">&lt;&gt;</span> c)</span></code></pre></div>
-<p>which is to say, <code>mempty</code> does nothing and <code>(&lt;&gt;)</code> doesn’t care where you stick the parentheses.</p>
-<p>If you’re going to memorize any two <em>particular</em> examples of monoids, it had better be these two:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> [a] <span class="kw">where</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> []</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  a <span class="op">&lt;&gt;</span> b <span class="ot">=</span> a <span class="op">++</span> b</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Monoid</span> a, <span class="dt">Monoid</span> b) <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (a, b) <span class="kw">where</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> (<span class="fu">mempty</span>, <span class="fu">mempty</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  (a1, b1) <span class="op">&lt;&gt;</span> (a2, b2) <span class="ot">=</span> (a1 <span class="op">&lt;&gt;</span> a2, b1 <span class="op">&lt;&gt;</span> b2)</span></code></pre></div>
-<p>The first says that lists form a monoid under the empty list and concatenation. The second says that products preserve monoids.</p>
-<p>The list monoid instance is responsible for the semantics of the ordered, “sequency” data structures. That is, if I have some sequential flavor of data structure, its monoid instance should probably satisfy the equation <code>toList a &lt;&gt; toList b = toList (a &lt;&gt; b)</code>. Sequency data structures are things like lists, vectors, queues, deques, that sort of thing. Data structures where, when you combine them, you assume there is no overlap.</p>
-<p>The second monoid instance here, over products, is responsible for pretty much all the other data structures. The first thing we can do with it is remember that functions are just really, really big product types, with one “slot” for every value in the domain. We can show an isomorphism between pairs and functions out of booleans, for example:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">from ::</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a, a)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>from f <span class="ot">=</span> (f <span class="dt">False</span>, f <span class="dt">True</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">to ::</span> (a, a) <span class="ot">-&gt;</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>to (a, _) <span class="dt">False</span> <span class="ot">=</span> a</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>to (_, a) <span class="dt">True</span>  <span class="ot">=</span> a</span></code></pre></div>
-<p>and under this isomorphism, we should thereby expect the <code>Monoid a =&gt; Monoid (Bool -&gt; a)</code> instance to agree with <code>Monoid a =&gt; Monoid (a, a)</code>. If you generalize this out, you get the following instance:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> \_ <span class="ot">-&gt;</span> <span class="fu">mempty</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  f <span class="op">&lt;&gt;</span> g <span class="ot">=</span> \x <span class="ot">-&gt;</span> f x <span class="op">&lt;&gt;</span> g x</span></code></pre></div>
-<p>which combines values in the codomain monoidally. We can show the equivalence between this monoid instance and our original product preservation:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  from f <span class="op">&lt;&gt;</span> from g</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> (f <span class="dt">False</span>,  f <span class="dt">True</span>) <span class="op">&lt;&gt;</span> (g <span class="dt">False</span>, g <span class="dt">True</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> (f <span class="dt">False</span> <span class="op">&lt;&gt;</span> g <span class="dt">False</span>, f <span class="dt">True</span> <span class="op">&lt;&gt;</span> g <span class="dt">True</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> ((f <span class="op">&lt;&gt;</span> g) <span class="dt">False</span>, (f <span class="op">&lt;&gt;</span> g) <span class="dt">True</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> from (f <span class="op">&lt;&gt;</span> g)</span></code></pre></div>
-<p>and</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  to (a11, a12) <span class="op">&lt;&gt;</span> to (a21, a22)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> to (a11, a12) x <span class="op">&lt;&gt;</span> to (a21, a22) x</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> to (a11, a12) <span class="dt">False</span> <span class="op">&lt;&gt;</span> to (a21, a22) <span class="dt">False</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> to (a11, a12) <span class="dt">True</span>  <span class="op">&lt;&gt;</span> to (a21, a22) <span class="dt">True</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> a11 <span class="op">&lt;&gt;</span> a21</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> a12 <span class="op">&lt;&gt;</span> a22</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> to (a11 <span class="op">&lt;&gt;</span> a21, a12 <span class="op">&lt;&gt;</span> a22) x</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> to (a11 <span class="op">&lt;&gt;</span> a21, a12 <span class="op">&lt;&gt;</span> a22)</span></code></pre></div>
-<p>which is a little proof that our function monoid agrees with the preservation-of-products monoid. The same argument works for any type <code>x</code> in the domain of the function, but showing it generically is challenging.</p>
-<p>Anyway, I digresss.</p>
-<p>The reason to memorize <em>this</em> <code>Monoid</code> instance is that it’s the monoid instance that every data structure is trying to be. Recall that <em>almost all</em> data structures are merely different encodings of functions, designed to make some operations more efficient than they would otherwise be.</p>
-<p>Don’t believe me? A <code>Map k v</code> is an encoding of the function <code>k -&gt; Maybe v</code> optimized to efficiently query which <code>k</code> values map to <code>Just</code> something. That is to say, it’s a sparse representation of a function.</p>
-<h2 id="from-theory-to-practice">From Theory to Practice</h2>
-<p>What does all of this look like in practice? Stuff like worrying about <code>foldr</code> is surely programming-in-the-small, which is worth knowing, but isn’t the sort of thing that turns the tides of a successful application.</p>
-<p>The reason I’ve been harping on about the function and product monoids is that they are compositional. The uninformed programmer will be surprised by just far one can get by composing these things.</p>
-<p>At work, we need to reduce a tree (+ nonlocal references) into an honest-to-goodness graph. While we’re doing it, we need to collect certain nodes. And the tree has a few constructors which semantically change the scope of their subtrees, so we need to preserve that information as well.</p>
-<p>It’s actually quite the exercise to sketch out an algorithm that will accomplish all of these goals when you’re thinking about explicit mutation. Our initial attempts at implementing this were clumsy. We’d fold the tree into a graph, adding fake nodes for the <code>Scope</code> construcotrs. Then we’d filter all the nodes in the graph, trying to find the ones we needed to collect. Then we’d do a graph traversal from the root, trying to find these <code>Scope</code> nodes, and propagating their information downstream.</p>
-<p>Rather amazingly, this implementation kinda sorta worked! But it was slow, and took <span class="math inline">\(O(10k)\)</span> SLOC to implement.</p>
-<p>The insight here is that everything we needed to collect was monoidal:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Solution</span> <span class="ot">=</span> <span class="dt">Solution</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> graph ::</span> <span class="dt">Graph</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> collectedNodes ::</span> <span class="dt">Set</span> <span class="dt">Node</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> metadata ::</span> <span class="dt">Map</span> <span class="dt">Node</span> <span class="dt">Metadata</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">Generically</span> <span class="dt">Solution</span></span></code></pre></div>
-<p>where the <code>deriving (Semigroup, Monoid) via Generically Solution</code> stanza gives us the semigroup and monoid instances that we’d expect from <code>Solution</code> being the product of a bunch of other monoids.</p>
-<p>And now for the <em>coup de grace</em>: we hook everything up with the <code>Writer</code> monad. <code>Writer</code> is a chronically slept-on type, because most people seem to think it’s useful only for logging, and, underwhelming at doing logging compared to a real logger type. But the charm is in the details:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> w <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Writer</span> w)</span></code></pre></div>
-<p><code>Writer w</code> is a <em>monad</em> whenever <code>w</code> is a <em>monoid</em>, which makes it the perfect monad for solving data-structure-creation problems like the one we’ve got in mind. Such a thing gives rise to a few helper functions:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">collectNode ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Node</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>collectNode n <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { collectedNodes <span class="ot">=</span> Set.singleton n }</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ot">addMetadata ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Node</span> <span class="ot">-&gt;</span> <span class="dt">Metadata</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>addMetadata n m <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { metadata <span class="ot">=</span> Map.singleton n m }</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="ot">emitGraphFragment ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Graph</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>emitGraphFragment g <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { graph <span class="ot">=</span> g }</span></code></pre></div>
-<p>each of which is responsible for adding a little piece to the final solution. Our algorithm is thus a function of the type:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>algorithm</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Metadata</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ the current scope</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Tree</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ the tree we&#39;re reducing</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Writer</span> <span class="dt">Solution</span> <span class="dt">Node</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ our partial solution, and the node corresponding to the root of the tree</span></span></code></pre></div>
-<p>which traverses the <code>Tree</code>, recursing with a different <code>Metadata</code> whenever it comes across a <code>Scope</code> constructor, and calling our helper functions as it goes. At each step of the way, the only thing it needs to return is the root <code>Node</code> of the section of the graph it just built, which recursing calls can use to break up the problem into inductive pieces.</p>
-<p>This new implementation is roughly 20x smaller, coming in at <span class="citation" data-cites="O">@O</span>(500)@ SLOC, and was free of all the bugs we’d been dilligently trying to squash under the previous implementation.</p>
-<p>Chalk it down to another win for induction!</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>A New Perspective on Lenses</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/code-lenses/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/code-lenses/index.html</guid>
-      <pubDate>2025-01-18T09:18:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>I’ve always considered lenses to be a bit uncomfortable. While they’re occasionally useful for doing deeply nested record updates, they often seem to be more trouble than they’re worth. There’s a temptation in the novice programmer, to <code>^..</code> and <code>folded</code> their way to a solution that is much more naturally written merely as <code>toList</code>. And don’t get me started about the stateful operators like <code>&lt;&lt;+=</code> and their friends. Many programs which can be more naturally written functionally accidentally end up being imperative due to somebody finding a weird lens combinator and trying to use it in anger. Much like a serious drug collection, the tendency is to push it as far as you can.</p>
-<p>Thus, my response has usually been one of pushback and moderation. I don’t avoid lenses at all costs, but I do try to limit myself to the prime types (<code>Lens'</code>, <code>Prism'</code>, <code>Iso'</code>), and to the boring combinators (<code>view</code>, <code>set</code>, <code>over</code>). I feel like these give me most of the benefits of lenses, without sending me tumbling down the rabbit hole.</p>
-<p>All of this is to say that my grokkage of lenses has always been one of <em>generalized injections and projections</em>, for a rather shallow definition of “generalized”. That is, I’ve grown accustomed to thinking about <em>lenses</em> as getter/setter pairs for data structures—eg, I’ve got a big product type and I want to pull a smaller piece out of it, or modify a smaller piece in a larger structure. I think about prisms as the dual structure over coproducts—“generalized” injecting and pattern matching.</p>
-<p>And this is all true; but I’ve been missing the forest for the trees on this one. That’s not to say that I want to write <em>lensier</em> code, but that I should be taking the “generalized” part much more seriously.</p>
-<p>The big theme of my intellectual development over the last few years has been thinking about abstractions as <em>shared vocabularies.</em> Monoids are not <em>inherently</em> interesting; they’re interesting because of how they let you quotient seemingly-unrelated problems by their monoidal structure. Applicatives are cool <em>because</em> once you’ve grokked them, you begin to see them everywhere. Anywhere you’ve got conceptually-parallel, data-independent computations, you’ve got an applicative lurking somewhere under the surface (even if it happens to be merely the <code>Identity</code> applicative.)</p>
-<p>I’ve had a similar insight about lenses, and that’s what I wanted to write about today.</p>
-<h2 id="the-context">The Context</h2>
-<p>At work, I’ve been thinking a lot about compilers and memory layout lately. I won’t get into the specifics of why, but we can come up with an inspired example. Imagine we’d like to use Haskell to write a little eDSL that we will use to generate x86 machine code.</p>
-<p>The trick of course, is that we’re writing Haskell in order to <em>not</em> write machine code. So the goal is to design high-level combinators in Haskell that express our intent, while simultaneously generating machine code that faithfully implements the intention.</p>
-<p>One particularly desirable feature about eDSLs is that they allow us to reuse Haskell’s type system. Thus, imagine we have some type:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Code</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Code</span> a <span class="ot">=</span> <span class="dt">Code</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getMachineCode ::</span> [<span class="dt">X86OpCode</span>]</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>Notice that the <code>a</code> parameter here is entirely phantom; it serves only to annotate the type of the value produced by executing <code>getMachineCode</code>. For today’s purpose, we’ll ignore all the details about calling conventions and register layout and what not; let’s just assume a <code>Code a</code> corresponds to a computation that leaves a value (or pointer) to something of type <code>a</code> in a well-known place, whether that be the top of the stack, or <code>eax</code> or something. It doesn’t matter!</p>
-<p>Since the type parameter to <code>Code</code> is phantom, we need to think about what <a href="https://reasonablypolymorphic.com/blog/roles/index.html">role</a> it should have. Keeping it at <code>phantom</code> would be disastrous, since this type isn’t used by <em>Haskell</em>, but it is certainly used to ensure our program is correct. Similarly, <code>representational</code> seems wrong, since <code>coerce</code> is meaningful only when thinking about Haskell; which this thing decidedly is not. Thus, our only other option is:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> role <span class="dt">Code</span> nominal</span></code></pre></div>
-<p>Frustratingly, due to very similar reasoning, <code>Code</code> cannot be a functor, because there’s no way<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> to lift an arbitrary Haskell function <code>a -&gt; b</code> into a corresponding function <code>Code a -&gt; Code b</code>. If there were, we’d be in the clear! But alas, we are not.</p>
-<h2 id="the-problem">The Problem</h2>
-<p>All of the above is to say that we are reusing Haskell’s <em>type system</em>, but not its <em>values</em>. An expression of type <code>Code Bool</code> has <em>absolutely no relation</em> to the values <code>True</code> or <code>False</code>—except that we could write, by hand, a function <code>litBool :: Bool -&gt; Code Bool</code> which happened to do the right thing.</p>
-<p>It is tempting, however, to make new Haskell types in order to help constrain the assembly code we end up writing. For example, maybe we want to write a DSP for efficiently decoding audio. We can use Haskell’s types to organize our thoughts and prevent ourselves from making any stupid mistakes:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Decoder</span> <span class="ot">=</span> <span class="dt">Decoder</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> format ::</span> <span class="dt">Format</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> seekPos ::</span> <span class="dt">Int</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> state ::</span> <span class="dt">ParserState</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Chunk</span> <span class="ot">=</span> <span class="op">...</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ot">createDecoder ::</span> <span class="dt">Code</span> <span class="dt">MediaHandle</span> <span class="ot">-&gt;</span> <span class="dt">Code</span> <span class="dt">Decoder</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeChunk ::</span> <span class="dt">Code</span> <span class="dt">Decoder</span> <span class="ot">-&gt;</span> (<span class="dt">Code</span> <span class="dt">Decoder</span>, <span class="dt">Code</span> <span class="dt">Chunk</span>)</span></code></pre></div>
-<p>We now have a nice interface in our eDSL to guide end-users along the blessed path of signal decoding. We have documented what we are trying to do, and how it can be used once it’s implemented. But due to our phantom, yet <code>nominal</code>, parameter to <code>Code</code>, this is all just make believe. There is absolutely no correlation between what we’ve written down and how we can use it. The problem arises when we go to implement <code>decodeChunk</code>. We’ll need to know what state we’re in, which means we’ll need some function:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decoderState ::</span> <span class="dt">Code</span> <span class="dt">Decoder</span> <span class="ot">-&gt;</span> <span class="dt">Code</span> <span class="dt">ParserState</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>decoderState <span class="ot">=</span> <span class="op">???</span></span></code></pre></div>
-<p>In a world where <code>Code</code> is a functor, this is implemented trivially as <code>fmap state</code>. <em>But <code>Code</code> is not a functor!</em> Alas! Woe! What ever can we do?</p>
-<h2 id="the-solution">The Solution</h2>
-<p>Lenses, my guy!</p>
-<p>Recall that <code>Code</code> is phantom in its argument, even if we use roles to restrict that fact. This means we can implement a safe-ish version of <code>unsafeCoerce</code>, that only fiddles with the paramater of our phantom type:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">unsafeCoerceCode ::</span> <span class="dt">Code</span> a <span class="ot">-&gt;</span> <span class="dt">Code</span> b</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>unsafeCoerceCode (<span class="dt">Code</span> ops) <span class="ot">=</span> <span class="dt">Code</span> ops</span></code></pre></div>
-<p>Judicious use of <code>unsafeCoerceCode</code> allows us to switch between a value’s type and its in-memory representation. For example, given a type:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Bytes</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Bytes</span> n</span></code></pre></div>
-<p>we can reinterpret a <code>Decode</code> as a sequence of bytes:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decoderRep ::</span> <span class="dt">Iso&#39;</span> (<span class="dt">Code</span> <span class="dt">Decoder</span>) (<span class="dt">Code</span> (<span class="dt">Bytes</span> (<span class="dv">32</span> <span class="op">+</span> <span class="dv">4</span> <span class="op">+</span> <span class="dv">1</span>)))</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>decoderRep <span class="ot">=</span> iso unsafeCoerceCode unsafeCoerceCode</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">stateRep ::</span> <span class="dt">Iso&#39;</span> (<span class="dt">Code</span> <span class="dt">ParserState</span>) (<span class="dt">Code</span> (<span class="dt">Bytes</span> <span class="dv">1</span>))</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>stateRep <span class="ot">=</span> iso unsafeCoerceCode unsafeCoerceCode</span></code></pre></div>
-<p>which says we are considering our <code>Decoder</code> to be laid out in memory like:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Decoder <span class="op">{</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> format<span class="op">[</span><span class="dv">32</span><span class="op">];</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int32_t</span> seekPos<span class="op">;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span> state<span class="op">;</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
-<p>Of course, this is a completely unsafe transformation, as far as the Haskell type system is aware. We’re in the wild west out here, well past any type theoretical life buoys. We’d better be right that this coercion is sound. But assuming this <em>is</em> in fact the in-memory representation of a <code>Decoder</code>, we are well justified in this transformation.</p>
-<p>Notice the phrasing of our <code>Iso'</code> above. It is not an iso between <code>Decoder</code> and <code>Bytes 37</code>, but between <em><code>Code</code>s</em> of such things. This witnesses the fact that it is not true in the Haskell embedding, merely in our <code>Code</code> domain. Of course, isos are like the least exciting optics, so let’s see what other neat things we can do.</p>
-<p>Imagine we have some primitives:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>slice</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> n <span class="op">&lt;=</span> m</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Int</span>     <span class="co">-- ^ offset</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Proxy</span> n <span class="co">-- ^ size</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> m)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> n)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>overwrite</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> n <span class="op">&lt;=</span> m</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Int</span>  <span class="co">-- ^ offset</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Bytes</span> n</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Bytes</span> m</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Bytes</span> m</span></code></pre></div>
-<p>which we can envision as Haskell bindings to the pseudo-C functions:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">const</span> <span class="dt">char</span><span class="op">[</span>n<span class="op">]</span> slice<span class="op">(</span><span class="dt">size_t</span> offset<span class="op">,</span> <span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> bytes<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">&amp;</span>bytes<span class="op">[</span>offset<span class="op">];</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> overwrite<span class="op">(</span><span class="dt">size_t</span> offset<span class="op">,</span> <span class="dt">char</span><span class="op">[</span>n<span class="op">]</span> value<span class="op">,</span> <span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> bytes<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">char</span><span class="op">[</span>m<span class="op">]</span> new_bytes <span class="op">=</span> malloc<span class="op">(</span>m<span class="op">);</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  memcpy<span class="op">(</span>new_bytes<span class="op">,</span> bytes<span class="op">,</span> m<span class="op">);</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  memcpy<span class="op">(&amp;</span>new_bytes<span class="op">[</span>offset<span class="op">],</span> value<span class="op">,</span> n<span class="op">);</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> new_bytes<span class="op">;</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>We can use <code>slice</code> and <code>overwrite</code> to give a <code>Lens'</code> into <code>Bytes</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">slicing ::</span> n <span class="op">&lt;=</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> m) <span class="ot">-&gt;</span> <span class="dt">Code</span> (<span class="dt">Bytes</span> n)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>slicing offset <span class="ot">=</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  lens</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    (slice offset <span class="dt">Proxy</span>)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    (\orig new <span class="ot">-&gt;</span> overwrite offset new orig)</span></code></pre></div>
-<p>and finally, we can give an implementation of the desired <code>decoderState</code> above:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decoderState ::</span> <span class="dt">Lens&#39;</span> (<span class="dt">Code</span> <span class="dt">Decoder</span>) (<span class="dt">Code</span> <span class="dt">ParserState</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>decoderState <span class="ot">=</span> decoderRep <span class="op">.</span> slicing <span class="dv">36</span> <span class="op">.</span> from stateRep</span></code></pre></div>
-<p>Such a lens acts exactly as a record selector would, in that it allows us to <code>view</code>, <code>set</code>, and <code>over</code> a <code>ParserState</code> inside of a <code>Decoder</code>. But recall that <code>Code</code> is just a list of instructions we eventually want the machine to run. We’re using the shared vocabulary of lenses to <em>emit machine code!</em> What looks like using a data structure to us when viewed through the Haskell perspective, is instead invoking an assembler.</p>
-<h2 id="reflections">Reflections</h2>
-<p>Once the idea sinks in, you’ll start seeing all sorts of cool things you can do with optics to generate code. <code>Prism</code>s generalize running initializer code. A <code>Traversal</code> over <code>Code</code> can be implemented as a loop. And since all the sizes are known statically, if you’re feeling plucky, you can decide to unroll the loop right there in the lens.</p>
-<p>Outside of the context of <code>Code</code>, the realization that optics are <em>this general</em> is still doing my head in. Something I love about working in Haskell is that I’m still regularly having my mind blown, even after a decade.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>Short of <a href="http://conal.net/papers/compiling-to-categories/compiling-to-categories.pdf">compiling to categories</a> via something like <a href="https://github.com/con-kitty/categorifier">categorifier</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Read the Code, Not the Profile</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/read-the-code/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/read-the-code/index.html</guid>
-      <pubDate>2025-01-12T15:29:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>At work a few weeks back, I found myself digging into profile reports, trying to determine why our program was running so slowly. Despite having the extremely obvious-in-retrospect data in front of me, I wasted a lot of time speeding up code that turned out to not move the needle at all.</p>
-<p>Although perhaps it will be interesting only to future me, I thought it would be a good exercise to write up the experience—if only so I learn the lesson about how to read profiles and not make the same mistake again.</p>
-<h2 id="some-context">Some Context</h2>
-<p>I’m currently employed to work on a compiler. The performance has never been stellar, in that we were usually seeing about 5s to compile programs, even trivially small ones consisting of less than a hundred instructions. It was painful, but not <em>that</em> painful, since the test suite still finished in a minute or two. It was a good opportunity to get a coffee. I always assumed that the time penalties we were seeing were constant factors; perhaps it took a second or two to connect to Z3 or something like that.</p>
-<p>But then we started unrolling loops, which turned <em>trivially</em> small programs into <em>merely</em> small programs, and our performance ballooned. Now we were looking at 45s for some of our tests! Uh oh! That’s no longer in the real of constant factors, and it was clear that something asymptotically was wrong.</p>
-<p>So I fired up GHC with the trusty old <code>-prof</code> flag, and ran the test suite in <code>+RTS -p</code> mode, which instruments the program with all sorts of profiling goodies. After a few minutes, the test suite completed, and left a <code>test-suite.prof</code> file laying around in the current directory. You can inspect such things by hand, but tools like <a href="https://github.com/jaspervdj/profiteur">profiteur</a> make the experience much nicer.</p>
-<p>Without further ado, here’s what our profile looked like:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>Well, that’s not very helpful. Of course <code>MAIN</code> takes 100% of the time. So I expanded that, and saw:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>No clearer. Opening up <code>main</code>:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>Sheesh.</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
-    └ getTest  . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>OH MY GOD. JUST TELL ME SOMETHING ALREADY.</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
-    └ getTest  . . . . . . . . . . . . . . . . . . . 100%
-      └ test . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>Fast forwarding for <em>quite</em> a while, I opened up the entire stack until I got to something that <em>didn’t</em> take 100% of the program’s runtime:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
-    └ getTest  . . . . . . . . . . . . . . . . . . . 100%
-      └ test . . . . . . . . . . . . . . . . . . . . 100%
-        └ makeTest . . . . . . . . . . . . . . . . . 100%
-          └ makeTest.\ . . . . . . . . . . . . . . . 100%
-            └ compileProgram . . . . . . . . . . . . 100%
-              └ evalAppT . . . . . . . . . . . . . . 100%
-                └ runAppT  . . . . . . . . . . . . . 100%
-                  └ runAppT&#39; . . . . . . . . . . . . 100%
-                    └ withLogging  . . . . . . . . . 100%
-                      └ transformSSA . . . . . . . . 100%
-                        └ &gt;&gt;=  . . . . . . . . . . . 100%
-                          └ &gt;&gt;&gt;= . . . . . . . . . . 100%
-                            └ ibind  . . . . . . . . 100%
-                              └ ibind.\  . . . . . . 100%
-                                └ ibind.\.\  . . . . 100%
-                                  ├ toSSA  . . . . . 15%
-                                  ├ transform1 . . . 15%
-                                  ├ transform2 . . . 10%
-                                  ├ transform3 . . . 10%
-                                  ├ transform4 . . . 20%
-                                  └ collectGarbage . 30%</code></pre>
-<p>Now we’re in business. I dutifully dug into <code>toSSA</code>, the transforms, and <code>collectGarbage</code>. I cached some things, used better data structures, stopped appending lists, you know, the usual Haskell tricks. My work was rewarded, in that I managed to shave 80% off the runtime of our program.</p>
-<p>A few months later, we wrote a bigger program and fed it to the compiler. This one didn’t stop compiling. We left it overnight.</p>
-<p>Uh oh. Turns out I hadn’t fixed the problem. I’d only papered over it.</p>
-<h2 id="retrospective">Retrospective</h2>
-<p>So what went wrong here? Quite a lot, in fact! And worse, I had all of the information all along, but managed to misinterpret it at several steps of the process.</p>
-<p>Unwinding the story stack, the most salient aspect of having not solved the problem was reducing the runtime by <em>only</em> 80%. Dramatic percentages <em>feel</em> like amazing improvements, but that’s because human brains are poorly designed for building software. In the real world, big percentages are fantastic. In software, they are <em>linear</em> improvements.</p>
-<p>That is to say that a percentage-based improvement is <span class="math inline">\(O(n)\)</span> faster in the best case. My efforts improved our runtime from 45s to 9s. Which feels great, but the <em>real</em> problem is that this program is <em>measured in seconds</em> at all.</p>
-<p>It’s more informative to think in terms of orders of magnitude. Taking 45s on a ~3GHz processor is on the order of 10<sup>11</sup> instructions, while 9s is 10<sup>10</sup>. How the <em>hell</em> is it taking us TEN BILLION instructions to compile a dinky little program? That’s the <em>real problem.</em> Improving things from one hundred billion down to ten billion is no longer very impressive at all.</p>
-<p>To get a sense of the scale here, even if we spent 1M cycles (which feels conservatively expensive) for each instruction we wanted to compile, we should <em>still</em> be looking at &lt; 0.1s. Somehow we are over 1000x worse than that.</p>
-<p>So that’s one mistake I made: being impressed by extremely marginal improvements. Bad Sandy.</p>
-<p>The other mistake came from my interpretation of the profile. As a quick pop quiz, scroll back up to the profile and see if you can spot where the problem is.</p>
-<p>After expanding a few obviously-not-the-problem call centers that each were 100% of the runtime, I turned my brain off and opened <em>all</em> of the 100% nodes. But in doing so, I accidentally breezed past the real problem. The <em>real</em> problem is either that <code>compileProgram</code> takes 100% of the time of the test, or that <code>transformSSA</code> takes 100% of compiling the program. Why’s that? Because unlike <code>main</code> and co, <code>test</code> does more work than just compiling the program. It also does non-trivial IO to produce debugging outputs, and property checks the resulting programs. Similarly for <code>compileProgram</code>, which does a great deal more than <code>transformSSA</code>.</p>
-<p>This is somewhat of a philosophical enlightenment. The program execution hasn’t changed at all, but our perspective has. Rather than micro-optimizing the code that <em>is</em> running, this new perspective suggests we should focus our effort on determining <em>why that code is running in the first place.</em></p>
-<p>Digging through <code>transformSSA</code> made it <em>very obvious</em> the problem was an algorithmic one—we were running an unbounded loop that terminated on convergence, where each step it took <span class="citation" data-cites="O">@O</span>(n^2)@ work to make a single step. When I stopped to actually <em>read</em> the code, the problem was immediate, and the solution obvious.</p>
-<p>The lesson? Don’t read the profile. Read the code. Use the profile to focus your attention.</p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Jujutsu Strategies</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/jj-strategy/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/jj-strategy/index.html</guid>
-      <pubDate>2024-05-18T18:03:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>Today I want to talk about <a href="https://github.com/martinvonz/jj">jujutsu</a>, aka <code>jj</code>, which describes itself as being “a Git-compatible VCS that is both simple and powerful”. This is selling itself short. Picking up <code>jj</code> has been the best change I’ve made to my developer workflow in over a decade.</p>
-<p>Before <code>jj</code>, I was your ordinary git user. I did things on Github and knew a handful of git commands. Sometimes I did cherry picks. <em>Very</em> occasionally I’d do a non-trivial rebase, but I had learned to stay away from that unless necessary, because rebasing things was a perfect way of fucking up the git repo. And then, God forbid, I’d have to re-learn about the reflog and try to unhose myself.</p>
-<p>You know. Just everyday git stuff.</p>
-<p>What I hadn’t realized until picking up <code>jj</code> was just how awful the whole git experience is. Like, everything about it sucks. With git, you need to pick a branch name for your feature <em>before</em> you’ve made the feature. What if while doing the work you come up with a better understanding of the problem?</p>
-<p>With git, you <em>can</em> stack PRs, but if you do, you’d better hope the reviewers don’t want any non-trivial changes in the first PR, or else you’ll be playing commit tag, trying to make sure all of your branches agree on the state of the world.</p>
-<p>With git, you can do an interactive rebase and move things relative to a merge commit, but you’d better make sure you know how <code>rerere</code> works, or else you’re going to spend the next several hours resolving the same conflicts across <strong>every single commit</strong> from the merge.</p>
-<p>We all know our commit history should tell the story of how our code has evolved. But with git, we all feel a little bit ashamed that our commit histories <em>don’t</em>, because doing so requires a huge amount of extra work after the fact, and means you’ll probably run into all of the problems listed above.</p>
-<p>Somehow, that’s just the state of the world that we all take for granted. Version control Stockholm syndrome. Git sucks.</p>
-<p>And jujutsu is the answer.</p>
-<p>The first half of this post is an amuse bouche to pique your interest, and hopefully convince you to give <code>jj</code> a go. You won’t regret it. The second half is on effective strategies I’ve found for using <code>jj</code> in my day to day job.</p>
-<h2 id="changes-vs-commits">Changes vs Commits</h2>
-<p>In git, the default unit of work is a “commit.” In <code>jj</code>, it’s a “change.” In practice, the two are interchangeable. The difference is all in the perspective.</p>
-<p>A commit is a unit of work that you’ve committed to the git log. And having done that, you’re <em>committed</em> to it. If that unit of work turns out to not have been the entire story (and it rarely is), you must make another commit on top that fixes the problem. The only choice you have is whether or not you want to squash rebase it on top of the original change.</p>
-<p>A change, on the other hand, is just a unit of work. If you want, you can pretend it’s a commit. But the difference is that you can always go back and edit it. At any time. When you’re done, <code>jj</code> automatically rebases all subsequent changes on top of it. It’s amazing, and makes you feel like a time traveler.</p>
-<p>Let’s take a real example from my day job. At work, I’m currently finessing a giant refactor, which involves reverse engineering what the code currently does, making a generic interface for that operation, pulling apart the inline code into instances of that interface, and then rewriting the original callsite against the interface. After an honest day’s work, my <code>jj log</code> looked something like this:</p>
-<pre><code>@  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-◉  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>This is the <code>jj</code> version of the <code>git log</code>. On the left, we see a (linear) ascii tree of changes, with the most recent being at the top. The current change, marked with <code>@</code> has id <code>qq</code> and description <code>Rewrite first callsite</code>. I’m now ready to add a new change, which I can do via <code>jj new -m 'Rewrite second callsite'</code>:</p>
-<pre><code>@  rr
-│  Rewrite second callsite
-◉  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-◉  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>I then went on my merry way, rewriting the second callsite. And then, suddenly, out of nowhere, DISASTER. While working on the second callsite, I realized my original <code>FileIO</code> abstraction didn’t actually help at callsite 2. I had gotten the interface wrong.</p>
-<p>In git land, situations like these are hard. Do you just add a new commit, changing the interface, and hope your coworkers don’t notice lest they look down on you? Or do you do a rebase? Or do you just abandon the branch entirely, and hope that you can cherry pick the intermediary commits.</p>
-<p>In <code>jj</code>, you just go fix the <code>Add interface for FileIO</code> change via <code>jj edit nn</code>:</p>
-<pre><code>◉  rr
-│  Rewrite second callsite
-◉  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-@  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>and then you update your interface before jumping back (<code>jj edit rr</code>) to get the job done. Honestly, time traveler stuff.</p>
-<p>Of course, sometimes doing this results in a conflict, but <code>jj</code> is happy to just keep the conflict markers around for you. It’s much, much less traumatic than in git.</p>
-<h2 id="stacked-prs">Stacked PRs</h2>
-<p>Branches play a much diminished role in <code>jj</code>. Changes don’t need to be associated to any branch, which means you’re usually working in what git calls a <em>detached head</em> state. This probably makes you nervous if you’ve still got the git Stockholm syndrome, but it’s not a big deal in <code>jj</code>. In <code>jj</code>, the only reason you need branches is to ship code off to your git-loving colleagues.</p>
-<p>Because changes don’t need to be associated to a branch, this allows for workflows that git might consider “unnatural,” or at least unwieldy. For example, I’ll often just do a bunch of work (rewriting history as I go), and figure out how to split it into PRs after the fact. Once I’m ~ten changes away from an obvious stopping point, I’ll go back, mark one of the change as the head of a branch <code>jj branch create -r rr feat-fileio</code>, and then continue on my way.</p>
-<p>This marks change <code>rr</code> as the head of a branch <code>feat-fileio</code>, but this action doesn’t otherwise have any significance to <code>jj</code>; my change tree hasn’t changed in the slightest. It now looks like this:</p>
-<pre><code>@  uu
-|  Update ObjectName
-◉  tt
-|  Changes to pubsub
-◉  ss
-|  Fix shape policy
-◉  rr feat-fileio
-│  Rewrite second callsite
-◉  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-◉  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>where the only difference is the line <code>◉  rr feat-fileio</code>. Now when <code>jj</code> sends this off to git, the branch <code>feat-fileio</code> will have one commit for each change in <code>mm..rr</code>. If my colleagues ask for changes during code review, I just add the change somewhere in my change tree, and it automatically propagates downstream to the changes that will be in my next PR. No more cherry picking. No more inter-branch merge commits. I use the same workflow I would in <code>jj</code> that I would if there weren’t a PR in progress. It just works. It’s amazing.</p>
-<h2 id="the-dev-branch">The Dev Branch</h2>
-<p><a href="https://qword.net/2023/10/22/the-use-and-abuse-of-the-dev-branch">The use and abuse of the dev branch pattern</a>, makes a great argument for a particular git workflow in which you have all of your branches based on a local <code>dev</code> branch. Inside of this <code>dev</code> branch, you make any changes relevant to your local developer experience, where you change default configuration options, or add extra logging, or whatever. The idea is that you want to keep all of your private changes somewhere organized, but not have to worry about those changes accidentally ending up in your PRs.</p>
-<p>I’ve never actually used this in a git workflow, but it makes even more sense in a <code>jj</code> repository. At time of writing, my change tree at work looks something like the following:</p>
-<pre><code>◉  wq
-╷  reactor: Cleanup singleton usage
-╷ ◉  pv
-╭─╯  feat: Optimize image rendering
-╷ ◉  u
-╷ |  fix: Fix bug in networking code
-╷ | ◉  wo
-╷ ╭─╯  feat: Finish porting to FileIO
-╷ ◉  rr
-╭─╯  feat: Add interface for FileIO
-@  dev
-│  (empty) ∅
-◉  main@origin
-│  Remove unused actions (#1074)</code></pre>
-<p>Here you can see I’ve got quite a few things on the go! <code>wq</code>, <code>pv</code> and <code>rr</code> are all branched directly off of <code>dev</code>, which correspond to PRs I currently have waiting for review. <code>u</code> and <code>wo</code> are stacked changes, waiting on <code>rr</code> to land. The ascii tree here is worth its weight in gold in keeping track of where all my changes are.</p>
-<p>You’ll notice that my <code>dev</code> branch is labeled as <code>(empty)</code>, which is to say it’s a change with no diff. But even so, I’ve found it immensely helpful to keep around. Because when my coworkers’ changes land in <code>main</code>, I need only rebase <code>dev</code> on top of the new changes to <code>main</code>, and <code>jj</code> will do the rest. Let’s say <code>rr</code> now has conflicts. I can just go and edit <code>rr</code> to fix the conflicts, and that fix will be propagated to <code>u</code> and <code>wo</code>!!!!</p>
-<p>YOU JUST FIX THE CONFLICT ONCE, FOR ALL OF YOUR PULL REQUESTS. IT’S ACTUALLY AMAZING.</p>
-<h2 id="revsets">Revsets</h2>
-<p>In <code>jj</code>, sets of changes are first class objects, known (somewhat surprisingly) as <em>revsets.</em> Revsets are created algebraically by way of a little, purely functional language that manipulates sets. The id of any change is a singleton revset. We can take the union of two revsets with <code>|</code>, and the intersection with <code>&amp;</code>. We can take the complement of a revset via <code>~</code>. We can get descendants of a revset <code>x</code> via <code>x::</code>, and its ancestors in the obvious way.</p>
-<p>Revsets took me a little work to wrap my head around, but it’s been well worth the investment. Yesterday I somehow borked my <code>dev</code> change (????), so I just made <code>new-dev</code>, and then reparented the immediate children of <code>dev</code> over to <code>new-dev</code> in one go. You can get the children of a revset <code>x</code> via <code>x+</code>, so this was done via <code>jj rebase -s dev+ -d new-dev</code>.</p>
-<p>Stuff like that is kinda neat, but the best use of revsets in my opinion is to customize the <code>jj</code> experience in exactly the right way for you. For example, I do a lot of stacked PRs, and I want my <code>jj log</code> to reflect that. So my default revset for <code>jj log</code> only shows me the changes that are in my “current PR”. It’s a bit hard to explain, but it works like an accordion. I mark my PRs with branches, and my revset will only show me the changes from the most immediate ancestral branch to the most immediate descendant branch. That is, my log acts as an accordion, and collapses any changes that are not part of the PR I’m currently looking at.</p>
-<p>But, it’s helpful to keep track of where I am in the bigger change tree, so my default revset will also show me how my PR is related to all of my other PRs. The tree we looked at earlier is in fact the closed version of this accordion. When you change <code>@</code> to be inside of one of the PRs, it immediately expands to give you all of the local context, without sacrificing how it fits into the larger whole:</p>
-<pre><code>◉  wq
-╷  reactor: Cleanup singleton usage
-╷ ◉  pv
-╭─╯  feat: Optimize image rendering
-╷ ◉  u
-╷ |  fix: Fix bug in networking code
-╷ | ◉  wo
-╷ | |  feat: Finish porting to FileIO
-╷ | ◉  sn
-╷ | |  Newtype deriving for Tracker
-╷ | @  pm
-╷ | |  Add dependency on monoidal-map
-╷ | ◉  vw
-╷ | |  Fix bamboozler
-╷ | ◉  ozy
-╷ ╭─╯  update InClientRam
-╷ ◉  rr
-╭─╯  feat: Add interface for FileIO
-◉  dev
-│  (empty) ∅</code></pre>
-<p>The coolest part about the revset UI is that you can make your own named revsets, by adding them as aliases to <code>jj/config.toml</code>. Here’s the definition of my accordioning revset:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode toml"><code class="sourceCode toml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[</span><span class="dt">revsets</span><span class="kw">]</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">log</span> <span class="op">=</span> <span class="st">&quot;@ | bases | branches | curbranch::@ | @::nextbranch | downstream(@, branchesandheads)&quot;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">[</span><span class="dt">revset-aliases</span><span class="kw">]</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;bases&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">dev</span><span class="st">&#39;</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;downstream(x,y)&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">(x::y) &amp; y</span><span class="st">&#39;</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;branches&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">downstream(trunk(), branches()) &amp; mine()</span><span class="st">&#39;</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;branchesandheads&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">branches | (heads(trunk()::) &amp; mine())</span><span class="st">&#39;</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;curbranch&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">latest(branches::@- &amp; branches)</span><span class="st">&#39;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;nextbranch&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">roots(@:: &amp; branchesandheads)</span><span class="st">&#39;</span></span></code></pre></div>
-<p>You can see from <code>log</code> that we always show <code>@</code> (the current edit), all of the named bases (currently just <code>dev</code>, but you might want to add <code>main</code>), and all of the named branches. It then shows everything from <code>curbranch</code> to <code>@</code>, which is to say, the changes in the branch leading up to <code>@</code>, as well as everything from <code>@</code> to the beginning of the next (stacked) branch. Finally, we show all the leafs of the change tree downstream of <code>@</code>, which is nice when you haven’t yet done enough work to consider sending off a PR.</p>
-<h2 id="conclusion">Conclusion</h2>
-<p>Jujutsu is absolutely amazing, and is well worth the four hours of your life it will take you to pick up. If you’re looking for some more introductory material, look at <a href="https://v5.chriskrycho.com/essays/jj-init/">jj init</a> and <a href="https://steveklabnik.github.io/jujutsu-tutorial/">Steve’s jujutsu tutorial</a></p>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>FRP in Yampa: Part 4: Routing</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/yampa-routing/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/yampa-routing/index.html</guid>
-      <pubDate>2023-12-26T16:03:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>In the <a href="/blog/yampa-switching/">last post</a>, we investigated the <code>switch</code> combinator, and saw how it can give us the ability to work with “state machine”-sorts of things in our functionally reactive programs.</p>
-<p>Today we turn our attention towards game objects—that is, independently operating entities inside of the game, capable of behaving on their own and communicating with one another. I originally learned of this technique from the paper <a href="https://www.antonycourtney.com/pubs/hw03.pdf">The Yampa Arcade</a>, but haven’t looked at it in a few years, so any shortcomings here are my own.</p>
-<p>Nevertheless, the material presented here does in fact work—I’ve actually <a href="https://github.com/isovector/ld52/releases/tag/publish">shipped a game</a> using this exact technique!</p>
-<h2 id="game-objects">Game Objects</h2>
-<p>Before we dive into the Yampa, it’s worth taking some time to think about what it is we’re actually trying to accomplish. There are a series of constraints necessary to get everything working, and we’ll learn a lot about the problem domain by solving those constraints simultaneously.</p>
-<p>The problem: we’d like several <code>Object</code>s running around, which we’d like to program independently, but which behave compositionally. There are going to be a lot of moving pieces here—not only in our game, but also in our solution—so let’s take a moment to define a type synonym for ourselves:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Object</span> <span class="ot">=</span> <span class="dt">SF</span> <span class="dt">ObjectInput</span> <span class="dt">ObjectOutput</span></span></code></pre></div>
-<p>Of course, we haven’t yet defined <code>ObjectInput</code> or <code>ObjectOutput</code>, but that’s OK! They will be subject to a boatload of constraints, so we’ll sort them out as we go. At the very least, we will need the ability for an <code>Object</code> to render itself, so we can add a <code>Render</code> field:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render ::</span> <span class="dt">Render</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  , <span class="op">...</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>We would like <code>Object</code>s to be able to interact with one another. The usual functional approach to this problem is to use message passing—that is, <code>Object</code>s can send values of some message type to one another. Those messages could be things like “I shot you!” or “teleport to me,” or any sort of crazy game-specific behavior you’d like.</p>
-<p>In order to do this, we’ll need some sort of <code>Name</code> for each <code>Object</code>. The exact structure of this type depends on your game. For the purposes of this post we’ll leave the thing abstract:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Name</span> <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
-<p>We’ll also need a <code>Message</code> type, which again we leave abstract:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Message</span> <span class="ot">=</span> <span class="op">...</span></span></code></pre></div>
-<p>Sending messages is clearly an <em>output</em> of the <code>Object</code>, so we will add them to <code>ObjectOutput</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render ::</span> <span class="dt">Render</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_outbox ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  , <span class="op">...</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>There are actions we’d like to perform in the world which are not messages we want to send to anyone; particularly things like “kill my <code>Object</code>” or “start a new <code>Object</code>.” These two are particularly important, but you could imagine updating global game state or something else here.</p>
-<pre class="haskel"><code>data Command
-  = Die
-  | Spawn Name ObjectState Object
-  | ...</code></pre>
-<p>Commands are also outputs:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render   ::</span> <span class="dt">Render</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_outbox   ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_commands ::</span> [<span class="dt">Command</span>]</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  , <span class="op">...</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>Finally, it’s often helpful to have some common pieces of state that belong to all <code>Object</code>s—things like their current position, and hot boxes, and anything else that might make sense to track in your game. We’ll leave this abstract:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjecState</span> <span class="ot">=</span> <span class="op">...</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectOutput</span> <span class="ot">=</span> <span class="dt">ObjectOutput</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oo_render   ::</span> <span class="dt">Render</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_outbox   ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_commands ::</span> [<span class="dt">Command</span>]</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oo_state    ::</span> <span class="dt">ObjectState</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>Let’s turn our attention now to the input side. It’s pretty clear we’re going to want incoming messages, and our current state:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectInput</span> <span class="ot">=</span> <span class="dt">ObjectInput</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oi_inbox ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oi_state ::</span> <span class="dt">ObjectState</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>What’s more interesting, however, than knowing our own state is knowing everyone’s state. Once we have that, we can re-derive <code>oi_state</code> if we know our own <code>Name</code>. Thus, instead:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectInput</span> <span class="ot">=</span> <span class="dt">ObjectInput</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> oi_inbox    ::</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oi_me       ::</span> <span class="dt">Name</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> oi_everyone ::</span> <span class="dt">Map</span> <span class="dt">Name</span> <span class="dt">ObjectState</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ot">oi_state ::</span> <span class="dt">ObjectInput</span> <span class="ot">-&gt;</span> <span class="dt">ObjectState</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>oi_state oi</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=</span> fromMaybe (<span class="fu">error</span> <span class="st">&quot;impossible!&quot;</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> Data.Map.lookup (oi_me oi)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> oi_everyone oi</span></code></pre></div>
-<h2 id="parallel-switching">Parallel Switching</h2>
-<p>Armed with our input and output types, we need now figure out how to implement any of this. The relevant combinator is Yampa’s <code>pSwitch</code>, with the ridiculous type:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pSwitch</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Functor</span> col</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=&gt;</span> (<span class="kw">forall</span> sf<span class="op">.</span> gi <span class="ot">-&gt;</span> col sf <span class="ot">-&gt;</span> col (li, sf))</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> col (<span class="dt">SF</span> li o)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> (gi, col o) (<span class="dt">Event</span> e)</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (col (<span class="dt">SF</span> li o) <span class="ot">-&gt;</span> e <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col o))</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col o)</span></code></pre></div>
-<p>Yes, there are five type variables here (six, if you include the rank-2 type.) In order, they are:</p>
-<ol type="1">
-<li><code>col</code>: the data structure we’d like to store everything in</li>
-<li><code>gi</code>: the <em>global</em> input, fed to the eventual signal</li>
-<li><code>li</code>: the <em>local</em> input, fed to each object</li>
-<li><code>o</code>: the output of each object signal</li>
-<li><code>e</code>: the type we will use to articulate desired changes to the world</li>
-</ol>
-<p>Big scary types like these are an excellent opportunity to turn on <code>-XTypeApplications</code>, and explicitly fill out the type parameters. From our work earlier, we know the types of <code>li</code> and <code>o</code>—they ought to be <code>ObjectInput</code> and <code>ObjectOutput</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pSwitch <span class="op">@</span>_</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>_</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectInput</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectOutput</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>_</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Functor</span> col</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=&gt;</span> (<span class="kw">forall</span> sf<span class="op">.</span> gi <span class="ot">-&gt;</span> col sf <span class="ot">-&gt;</span> col (<span class="dt">ObjectInput</span>, sf))</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> col (<span class="dt">SF</span> <span class="dt">ObjectInput</span> <span class="dt">ObjectOutput</span>)</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> (gi, col <span class="dt">ObjectOutput</span>) (<span class="dt">Event</span> e)</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (col (<span class="dt">SF</span> <span class="dt">ObjectInput</span> <span class="dt">ObjectOutput</span>) <span class="ot">-&gt;</span> e <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col <span class="dt">ObjectOutput</span>))</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (col <span class="dt">ObjectOutput</span>)</span></code></pre></div>
-<p>It’s a little clearer what’s going on here. We can split it up by its four parameters:</p>
-<ol type="1">
-<li>The first (value) parameter is this rank-2 function which is responsible for splitting the global input into a local input for each object.</li>
-<li>The second parameter is the collection of starting objects.</li>
-<li>The third parameter extracts the desired changes from the collection of outputs</li>
-<li>The final parameter applies the desired changes, resulting in a new signal of collections.</li>
-</ol>
-<p>We are left with a few decisions, the big ones are: what should <code>col</code> be, and what should <code>e</code> be? My answer for the first is:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ObjectMap</span> a <span class="ot">=</span> <span class="dt">ObjectMap</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> om_objects  ::</span> <span class="dt">Map</span> <span class="dt">Name</span> (<span class="dt">ObjectState</span>, a)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> om_messages ::</span> <span class="dt">MonoidalMap</span> <span class="dt">Name</span> [(<span class="dt">Name</span>, <span class="dt">Message</span>)]</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Functor</span></span></code></pre></div>
-<p>which not only conveniently associates names with their corresponding objects and states, but also keeps track of the messages which haven’t yet been delivered. We’ll investigate this further momentarily.</p>
-<p>For maximum switching power, we can therefore make our event type be <code>ObjectMap Object -&gt; ObjectMap Object</code>. Filling all the types in, we get:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>_</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectInput</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span><span class="dt">ObjectOutput</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> (<span class="kw">forall</span> sf<span class="op">.</span> gi <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> sf <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> (<span class="dt">ObjectInput</span>, sf))</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> (gi, <span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        (<span class="dt">Event</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>))</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> ( <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>     )</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span></code></pre></div>
-<p>which is something that feels almost reasonable. Let’s write a function that calls <code>pSwitch</code> at these types. Thankfully, we can immediately fill in two of these parameters:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>router</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>router objs <span class="ot">=</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>_</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectInput</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectOutput</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    _</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    objs</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    _</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    (\om f <span class="ot">-&gt;</span> router&#39; <span class="op">$</span> (f om) { om_messages <span class="ot">=</span> <span class="fu">mempty</span> })</span></code></pre></div>
-<p>We are left with two holes: one which constructs <code>ObjectInput</code>s, the other which destructs <code>ObjectOutput</code>s. The first is simple enough:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">routeInput ::</span> gi <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> sf <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> (<span class="dt">ObjectInput</span>, sf)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>routeInput gi om<span class="op">@</span>(<span class="dt">ObjectMap</span> objs msgs) <span class="ot">=</span> om</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  { om_objects <span class="ot">=</span> <span class="fu">flip</span> Data.Map.mapWithKey objs <span class="op">$</span> \name (_, sf) <span class="ot">-&gt;</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      (, sf) <span class="op">$</span> <span class="dt">ObjectInput</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        { oi_inbox    <span class="ot">=</span> fromMaybe <span class="fu">mempty</span> <span class="op">$</span> Data.MonoidalMap.lookup name msgs</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        , oi_me       <span class="ot">=</span> name</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        , oi_everyone <span class="ot">=</span> <span class="fu">fmap</span> <span class="fu">fst</span> objs</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>Writing <code>decodeOutput</code> is a little more work—we need to accumulate every change that <code>ObjectOutput</code> might want to enact:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeOutput ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">ObjectOutput</span> <span class="ot">-&gt;</span> <span class="dt">Endo</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>decodeOutput from (<span class="dt">ObjectOutput</span> _ msgs cmds _) <span class="ot">=</span> <span class="fu">mconcat</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  [ <span class="fu">flip</span> <span class="fu">foldMap</span> msgs <span class="op">$</span> <span class="fu">uncurry</span> <span class="op">$</span> send from</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  , <span class="fu">flip</span> <span class="fu">foldMap</span> cmds <span class="op">$</span> decodeCommand from</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  ]</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="ot">send ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Message</span> <span class="ot">-&gt;</span> <span class="dt">Endo</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>send from to msg</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Endo</span> <span class="op">$</span> <span class="op">#</span>om_messages <span class="op">&lt;&gt;~</span> Data.MonoidalMap.singleton to [(from, msg)]</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeCommand ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Command</span> <span class="ot">-&gt;</span> <span class="dt">Endo</span> (<span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>decodeCommand _ (<span class="dt">Spawn</span> name st obj)</span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Endo</span> <span class="op">$</span> <span class="op">#</span>om_objects <span class="op">.</span> at name <span class="op">?~</span> (st, obj)</span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>decodeCommand who <span class="dt">Die</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Endo</span> <span class="op">$</span> <span class="op">#</span>om_objects <span class="op">%~</span> Data.Map.delete who</span></code></pre></div>
-<p>There’s quite a lot going on here. Rather than dealing with <code>ObjectMap Object -&gt; ObjectMap Object</code> directly, we instead work with <code>Endo (ObjectMap Object)</code> which gives us a nice monoid for combining endomorphisms. Then by exploiting <code>mconcat</code> and <code>foldMap</code>, we can split up all of the work of building the total transformation into pieces. Then <code>send</code> handles sending a message from one object to another, while also <code>decodeCommand</code> transforms each <code>Command</code> into an endomap.</p>
-<p>We can tie everything together:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>router</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>router objs <span class="ot">=</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>_</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectInput</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectOutput</span></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    routeInput</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    objs</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    (arr <span class="op">$</span> <span class="dt">Event</span></span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> appEndo</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">foldMap</span> (<span class="fu">uncurry</span> decodeOutput)</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> Data.Map.assocs</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> om_objects</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">snd</span></span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>         )</span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    (\om f <span class="ot">-&gt;</span> router&#39; <span class="op">$</span> (f om) { om_messages <span class="ot">=</span> <span class="fu">mempty</span> })</span></code></pre></div>
-<p>Notice that we’ve again done the monoid trick to run <code>decodeOutput</code> on every output in the <code>ObjectMap</code>. If you’re not already on the monoid bandwagon, hopefully this point will help to change your mind about that!</p>
-<p>So our router is finally done! Except not quite. For some reason I don’t understand, <code>pSwitch</code> is capable of <em>immediately</em> switching if the <code>Event</code> you generate for <code>decodeOutput</code> immediately fires. This makes sense, but means Yampa will happily get itself into an infinite loop. The solution is to delay the event by an infinitesimal amount:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>router</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">SF</span> gi (<span class="dt">ObjectMap</span> <span class="dt">ObjectOutput</span>)</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>router objs <span class="ot">=</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  pSwitch <span class="op">@</span><span class="dt">ObjectMap</span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>_</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectInput</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span><span class="dt">ObjectOutput</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>          <span class="op">@</span>(<span class="dt">ObjectMap</span> <span class="dt">Object</span> <span class="ot">-&gt;</span> <span class="dt">ObjectMap</span> <span class="dt">Object</span>)</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    routeInput</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    objs</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    ((arr <span class="op">$</span> <span class="dt">Event</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> appEndo</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">foldMap</span> (<span class="fu">uncurry</span> decodeOutput)</span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> Data.Map.assocs</span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> om_objects</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>         <span class="op">.</span> <span class="fu">snd</span></span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>         ) <span class="op">&gt;&gt;&gt;</span> notYet)</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    (\om f <span class="ot">-&gt;</span> router&#39; <span class="op">$</span> (f om) { om_messages <span class="ot">=</span> <span class="fu">mempty</span> })</span></code></pre></div>
-<p>There’s probably a more elegant solution to this problem, and if you know it, please do get in touch!</p>
-<h2 id="wrapping-up">Wrapping Up</h2>
-<p>Today we saw how to use the <code>pSwitch</code> combinator in order to build a router capable of managing independent objects, implementing message passing between them in the process.</p>
-<p>You should now have enough knowledge of Yampa to get real tasks done, although if I’m feeling inspired, I might write one more post on integrating a Yampa stream into your <code>main</code> function, and doing all the annoying boilerplate like setting up a game window. Maybe! Watch this space for updates!</p>
-      ]]></content:encoded>
-  </item>
-</channel>
-</rss>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/theorems-for-free-redux">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
