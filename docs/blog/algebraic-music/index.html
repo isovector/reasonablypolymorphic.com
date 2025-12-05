@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Struggling Towards an Algebraic Theory of Music :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/algebraic-music">Struggling Towards an Algebraic Theory of Music</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/arrows-to-arrows">&larr;</a>
+    </span>
+    <time>December  4, 2025</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/haskell.html">haskell</a>, <a href="/tags/denotational design.html">denotational design</a>, <a href="/tags/functional programming.html">functional programming</a>, <a href="/tags/types.html">types</a>
+    </span>
+</p>
+<div class="content">
+    <p>For the last few months, I’ve been trying to come up with a nice, denotational basis for what music <em>is.</em> But I’m running out of steam on the project, so I thought I’d write what I’ve figured out, and what I’ve tried but doesn’t work. Hopefully this will inspire someone to come tell me what I’m being stupid about and help get the whole process unstuck.</p>
+<h2 id="what-music-is-not">What Music Is Not</h2>
+<p>It’s tempting to gesticulate wildly, saying that music is merely a function from time to wave amplitudes, eg something of the form:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>μ <span class="dt">Music</span> <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Amplitude</span></span></code></pre></div>
+<p>While I think it’s fair to say that this is indeed the underlying denotation of <em>sound,</em> this is clearly not the denotation of <em>music.</em> For example, we can transpose a song up a semitone without changing the speed—something that’s very challenging without a great deal of in the waveform representation. And we can play a musical phrase backwards, which is probably impossible in a waveform for any timbral envelope.</p>
+<p>Since we have now two examples of “reasonable to want to do” with musical objects, which cannot be expressed in terms of a function <code>Time -&gt; Amplitude</code>, we must conceed that waveforms-over-time cannot be the denotation of music.</p>
+<h2 id="what-music-might-be">What Music Might Be</h2>
+<p>Music is obviously temporal, so keeping the “function from time” part seems relevant. But a function from time to what? As a first attempt:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Note</span> <span class="ot">=</span> <span class="dt">Note</span> <span class="dt">Pitch</span> <span class="dt">Timbre</span> <span class="dt">Volume</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>μ <span class="dt">Music</span> <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Duration</span>, <span class="dt">Note</span>)</span></code></pre></div>
+<p>which, for a given time, returns a set of notes starting at that time, and how long they ought to be played for. An immediate improvement would be to parameterize the above over notes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Duration</span>, a)</span></code></pre></div>
+<p>It’s tempting to try to eliminate more of the structure here with our parametricity, but I was unable to do so. In contrapuntal music, we will want to be able to express two notes starting at the same moment, but ending at different times.</p>
+<p>One alluring path here could to write monophonic voices, and combine them together for polyphony:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Voice</span> a) <span class="ot">=</span> <span class="co">{- something like -}</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> (<span class="dt">Duration</span>, a)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Voice</span> a)</span></code></pre></div>
+<p>Such an encoding has many unfavorable traits. First, it just feels yucky. Why are there two layers of <code>Time</code>? Second, now I-as-a-composer need to make a choice of which voice I put each note in, despite the fact that this is merely an encoding quirk. So no, I don’t think this is a viable path forward.</p>
+<p>So let’s return to our best contender:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Duration</span>, a)</span></code></pre></div>
+<p>This definition is trivially a monoid, pointwise over the time structure:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a <span class="op">&lt;&gt;</span> <span class="dt">Music</span> b) <span class="ot">=</span> <span class="dt">Music</span> (μ a <span class="op">&lt;&gt;</span> μ b)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>μ <span class="fu">mempty</span> <span class="ot">=</span> <span class="dt">Music</span> <span class="fu">mempty</span></span></code></pre></div>
+<p>If we think about abstract sets here, rather than <code>Data.Set.Set</code>, such an object is clearly a functor. There are many possible applicatives here, but the pointwise zipper seems most compelling to me. Pictorally:</p>
+<pre><code>pure a
+=
+  |----- a ----forever...
+
+
+liftA2 f
+  |---- a ----|-- b --|
+  |-- x --|---- y ----|
+=
+  |- fax -|fay|- fby -|</code></pre>
+<p>Such an applicative structure is quite nice! It would allow us to “stamp” a rhythm on top of a pure representation of a melody.</p>
+<p>However, the desirability of this instance is a point <em>against</em> <code>μ (Music a) = Time -&gt; Set (Duration, a)</code>, since by <a href="http://conal.net/papers/type-class-morphisms/">Conal Elliott’s typeclass morphism rule</a>, the meaning of the applicative here ought to be the applicative of the meaning. Nevertheless, any other applicative structure would be effecitvely useless, since it would require the notes on one side to begin at the same time as the notes on the other. To sketch:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- bad instance!</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>liftA2 f (<span class="dt">Music</span> a) (<span class="dt">Music</span> b) <span class="ot">=</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Music</span> (liftA2 (\(d1, m) (d2, n) <span class="ot">-&gt;</span> (d1 <span class="op">&lt;&gt;</span> d2, f m n)) a b)</span></code></pre></div>
+<p>Good luck finding a musically meaningful <code>pure</code> for such a thing!</p>
+<p>Ok, so let’s say we commit to the pointwise zippy instance as our applicative instance. Is there a corresponding monad? Such a thing would substitute notes with more music. My first idea of what to do with such a thing would be to replace chords with texture. For example, we could replace chords with broken chords, or with basslines that target the same notes.</p>
+<p>Anyway, the answer is yes, there is such a monad. But it’s musically kinda troublesome. Assume we have the following function:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">notes ::</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> [(<span class="dt">Maybe</span> <span class="dt">Interval</span>, a)]</span></code></pre></div>
+<p>which will convert a <code>Music a</code> into its notes and an optional temporal interval (optional because <code>pure</code> goes on forever.) Then, we can write our bind as:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>m <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="fu">flip</span> <span class="fu">foldMap</span> (notes m) \<span class="kw">case</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">Nothing</span>, a) <span class="ot">-&gt;</span> f a</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">Just</span> (start, duration), a) <span class="ot">-&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    offset start <span class="op">$</span> _ duration <span class="op">$</span> f a</span></code></pre></div>
+<p>where <code>offset</code> changes when a piece of music occurs. We are left with a hole of type:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Duration</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> a</span></code></pre></div>
+<p>whose semantics sure better be that it forces the given <code>Music</code> to fit in the alotted time. There are two reasonable candidates here:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">scaleTo  ::</span> <span class="dt">Duration</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> a</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">truncate</span><span class="ot"> ::</span> <span class="dt">Duration</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> a</span></code></pre></div>
+<p>where <code>scaleTo</code> changes the local interpretation of time such that the entire musical argument is played within the given duration, and <code>truncate</code> just takes the first <code>Duration</code>’s worth of time. Truncate is too obviously unhelpful here, since the <code>&gt;&gt;=</code> continuation doesn’t know how much time it’s been given, and thus most binds will drop almost all of their resulting music.</p>
+<p>Therefore we will go with <code>scaleTo</code>. Which satisfies all of the algebraic (monad) laws, but results in some truly mystifying tunes. The problem here is that this is not an operation which respects musical meter. Each subsequent bind results in a correspondingly smaller share of the pie. Thus by using only bind and mconcat, it’s easy to get a bar full of quarter notes, followed by a bar of sixty-fourth notes, followed by two bars full of of 13-tuplets. If you want to get a steady rhythm out of the whole thing, you need a global view on how many binds deep you’re ever going to go, and you need to ensure locally that you only produce a small powers-of-two number of notes, or else you will accidentally introduce tuplets.</p>
+<p>It’s a mess. But algebraically it’s fine.</p>
+<h2 id="what-music-seems-like-it-should-be">What Music Seems Like It Should Be</h2>
+<p>The above foray into monads seems tentatively promising for amateur would-be algorithmic composers (read: people like me.) But I have been reading <a href="https://www.goodreads.com/book/show/36288013-musical-composition">several</a> <a href="https://www.goodreads.com/book/show/890009.Twentieth_Century_Harmony">books</a> on musical composition lately, and my big takeaway from them is <em>just how damn contextual notes are.</em></p>
+<p>So maybe this means we want more of a comonadic interface. One in which you can <code>extend</code> every note, by taking into account all of the notes in its local vicinity. This feels just as right as the monadic approach does, albeit in a completely different way. Being able to give a comonad instance for <code>Music</code> would require us to somehow reckon with having only a single <code>a</code> at any given time. Which appeals to my functional programmer soul, but again, I don’t know how to do it.</p>
+<p>But imagine if we did have a comonadic instance. We could perform voice leading by inspecting what the next note was, and by futzing around with our pitch. We could do some sort of reharmonization by shifting notes around according to what else is happening.</p>
+<p>But maybe all of this is just folly.</p>
+<p>Music as it’s actually practiced doesn’t seem to have much of the functionaly-compositional properties we like—ie, that we can abstract and encapsulate. But music doesn’t appear to be like that! Instead, a happy melody takes a different character when played on major vs minor chords. Adding a dissonant interval can completely reconceptualize other notes.</p>
+<p>It feels like a bit of a bummer to end like this, but I don’t really know where to go from here. I’ve worked something like six completely-different approaches over the last few months, and what’s documented here is the most promising bits and pieces. My next thought is that maybe music actually forms a <a href="https://reasonablypolymorphic.com/blog/review-sheafs/">sheaf</a>, which is to say that it is a global solution that respects many local constraints.</p>
+<p>All of this research into music has given me much more thoughts about <em>music qua music</em> which I will try to articulate the next time I have an evening to myself. Until then.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/arrows-to-arrows">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>sandy</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Book <a href="/book/preface.html">archive</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li><a href="/erdos">Erdos Project</a></li>
+            <li>Music at <a href="http://last.fm/user/Paamayim">last.fm</a></li>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+            <li>Papers at <a href="https://www.mendeley.com/groups/7295141/read/papers/">mendeley</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2025 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
