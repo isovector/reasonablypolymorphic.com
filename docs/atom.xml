@@ -1,11 +1,154 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2025-12-04T20:15:00Z</updated>
+  <updated>2026-01-02T14:27:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com'/>
 
+    <entry>
+      <title>An Algebraic Theory of Music</title>
+      <id>blog/more-algebraic-music/index.html</id>
+      <link href='blog/more-algebraic-music/index.html'/>
+      <published>2026-01-02T14:27:00Z</published>
+      <updated>2026-01-02T14:27:00Z</updated>
+
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
+        <![CDATA[
+        <p>In my last post, I was <a href="/blog/algebraic-music/">struggling towards an algebraic theory of music.</a> This idea has been burning in my mind ever since, and I wanted to give some updates with where I’ve landed.</p>
+<h2 id="differentiating-voices-from-music">Differentiating Voices from Music</h2>
+<p>We begin by modeling a <a href="https://en.wikipedia.org/wiki/Part_(music)#Polyphony_and_part-writing">musical voice</a>, which is, roughly speaking, the abstract version of a human voice. The voice can be doing one thing at a time, or can choose to not be doing anything.</p>
+<p>Voices are modeled by <a href="https://hackage.haskell.org/package/step-function">step functions</a>, which are divisions of the real line into discrete chunks. We interpret each discrete chunk as a note being played by the voice for the duration of the chunk.</p>
+<p>This gives rise to a nice applicative structure that I alluded to in my previous post:</p>
+<pre><code>liftA2 f
+  |---- a ----|-- b --|
+  |-- x --|---- y ----|
+=
+  |- fax -|fay|- fby -|</code></pre>
+<p>where we take the union of the note boundaries in order to form the applicative. If either voice is resting, so too is the applicative. There is also an <code>Alternative</code> instance here, which chooses the first non-rest.</p>
+<p>There is a similar monoidal structure here, where multiplication is given by “play these two things simultaneously,” relying on an underlying <code>Semigroup</code> instance for the meaning of “play these two things:”</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Voice</span> a)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Voice</span> a)</span></code></pre></div>
+<p>If either voice is resting, we treat its value as <code>mempty</code>, and can happily combine the two parts in parallel.</p>
+<p>All of this gives rise to the following rich structure:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Voice</span> a <span class="ot">=</span> <span class="dt">Voice</span> {<span class="ot"> unVoice ::</span> <span class="dt">SF</span> <span class="dt">Time</span> (<span class="dt">Maybe</span> a) }</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Functor</span>, <span class="dt">Foldable</span>, <span class="dt">Traversable</span>, <span class="dt">Generic</span>, <span class="dt">Generic1</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Applicative</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Compose</span> (<span class="dt">SF</span> <span class="dt">Time</span>) <span class="dt">Maybe</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Filterable</span> <span class="dt">Voice</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Witherable</span> <span class="dt">Voice</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Alternative</span> <span class="dt">Voice</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Delay a voice by some amount of time.</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="ot">delayV ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Voice</span> a <span class="ot">-&gt;</span> <span class="dt">Voice</span> a</span></code></pre></div>
+<h2 id="from-voices-to-music">From Voices to Music</h2>
+<p>Voices, therefore, give us our primitive notion of monophony. But real music usually has many voices doing many things, independently. This was a point in which I got stuck in my previous post.</p>
+<p>The solution here, is surprisingly easy. Assign a <code>Voice</code> to each voice name:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Music</span> v a <span class="ot">=</span> <span class="dt">Music</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getVoices ::</span> v <span class="ot">-&gt;</span> <span class="dt">Voice</span> a</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Functor</span>, <span class="dt">Generic</span>, <span class="dt">Functor</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Applicative</span>, <span class="dt">Alternative</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Compose</span> ((<span class="ot">-&gt;</span>) v) <span class="dt">Voice</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Profunctor</span> <span class="dt">Music</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Finite</span> v <span class="ot">=&gt;</span> <span class="dt">Foldable</span> (<span class="dt">Music</span> v)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Finite</span> v <span class="ot">=&gt;</span> <span class="dt">Traversable</span> (<span class="dt">Music</span> v)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Filterable</span> (<span class="dt">Music</span> v)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Finite</span> v <span class="ot">=&gt;</span> <span class="dt">Witherable</span> (<span class="dt">Music</span> v)</span></code></pre></div>
+<p>We get an extremely rich structure here completely for free. Our monoid combines all voices in parallel; our applicative combines voices pointwise; etc. However, we also have a new <code>Profunctor Music</code> instance, whose characteristic <code>lmap :: (b -&gt; c) -&gt; Music c a -&gt; Music b a</code> method allows us to trade lines between voices.</p>
+<p>In addition to the <em>in-parallel</em> monoid instance, we can also define a <a href="https://dl.acm.org/doi/10.1145/2633638.2633649">tile product</a> operator over <code>Music v a</code>, which composes things sequentially<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">duration ::</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Time</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ot">(##) ::</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>m<span class="op">@</span>(<span class="dt">Music</span> m1) <span class="op">##</span> <span class="dt">Music</span> m2 <span class="ot">=</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Music</span> <span class="op">$</span> liftA2 (<span class="op">&lt;&gt;</span>) m1 <span class="op">$</span> <span class="fu">fmap</span> (delayV <span class="op">$</span> duration m) m2</span></code></pre></div>
+<p>The <code>Semigroup a</code> constraint on <code>(##)</code> arises from the fact that the pieces of music might extend off to infinity in either direction (which <code>pure @Voice</code> must do), and we need to deal with that.</p>
+<p>There are a few other combinators we care about. First, we can lift anonymous voices (colloquially “tunes”) into multi-part <code>Music</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">voice ::</span> <span class="dt">Eq</span> v <span class="ot">=&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Music</span> () a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>voice v (<span class="dt">Music</span> sf) <span class="ot">=</span> <span class="dt">Music</span> <span class="op">$</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  \<span class="kw">case</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    ((<span class="op">==</span> v) <span class="ot">-&gt;</span> <span class="dt">True</span>) <span class="ot">-&gt;</span> sf ()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="fu">mempty</span></span></code></pre></div>
+<p>and we can assign the same line to everyone:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">everyone ::</span> <span class="dt">Music</span> () a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>everyone (<span class="dt">Music</span> m) <span class="ot">=</span> <span class="dt">Music</span> <span class="op">$</span> <span class="fu">const</span> <span class="op">$</span> m ()</span></code></pre></div>
+<h2 id="writing-lines">Writing Lines</h2>
+<p>The primitives for building little tunes are</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">note ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> () a</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">rest ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> () a</span></code></pre></div>
+<p>which you can then compose sequentially via <code>(##)</code>, and assign to voices via <code>voice</code>.</p>
+<h2 id="harmonic-constraints">Harmonic Constraints</h2>
+<p>One of the better responses to my last blog post was a link to <a href="https://dmitri.mycpanel.princeton.edu/index.html">Dmitri Tymoczko</a>’s <a href="https://www.youtube.com/watch?v=yp5Eys2L_04">FARM 2024 talk</a>.</p>
+<p>There’s much more in this video than I can possibly due justice to here, but my big takeaway was that this guy is thinking about the same sorts of things that I am. So I dove into his work, and that lead to his <a href="https://www.madmusicalscience.com/quadruple.mp4">quadruple hierarchy</a>:</p>
+<blockquote>
+<p>Voices move within chords, which move within scales, which move within macro-harmonies.</p>
+</blockquote>
+<p>Tymoczko presents a <code>T</code> algebra which is a geometric space for reasoning about voice leadings. He’s got a lot of fun websites for exploring the ideas, but I couldn’t find an actual implementation of the idea anywhere, so I <a href="https://github.com/isovector/denomusic/blob/6a313a546cc376bb22f37cec55d76518bff40acd/src/DenoMusic/Harmony.hs">cooked one up</a> myself.</p>
+<p>The idea here is that we have some <code>T :: [Nat] -&gt; Type</code> which describes a hierarchy of abstract scales moving with respect to one another. For example, the Western traditional of having triads move within the diatonic scale, which moves within the chromatic scale, would be represented as <code>T '[3, 7, 12]</code>. <code>T</code> forms a monoid, and has some simple generators that give rise to smooth voice leadings (chord changes.)</p>
+<p>Having a model for smooth harmonic transformations means we can use it constructively. I am still working out the exact details here, but the rough shape of the idea is to build an underlying field of key changes (represented as smooth voice leadings in <code>T '[7, 12]</code>):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">keyChanges ::</span> <span class="dt">Music</span> () (<span class="dt">T</span> &#39;[<span class="dv">7</span>, <span class="dv">12</span>])</span></code></pre></div>
+<p>We can then make an underlying field of functional harmonic changes (chord changes), modeled as smooth voice leadings in <code>T '[3, 7]</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">chordChanges ::</span> <span class="dt">Music</span> () (<span class="dt">T</span> &#39;[<span class="dv">3</span>, <span class="dv">7</span>])</span></code></pre></div>
+<p>Our voices responsible for harmony can now be written as values of type</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">harmonicVoices ::</span> <span class="dt">Music</span> h (<span class="dt">Set</span> (<span class="dt">T</span> &#39;[<span class="dv">3</span>]))</span></code></pre></div>
+<p>and we can use the applicative musical structure to combine the elements together:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ApplicativeDo #-}</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ot">extend ::</span> <span class="dt">T</span> ns <span class="ot">-&gt;</span> <span class="dt">T</span> (ns <span class="op">++</span> ms)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ot">sink   ::</span> <span class="dt">T</span> ns <span class="ot">-&gt;</span> <span class="dt">T</span> (n &#39;<span class="op">:</span> ns)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">harmony ::</span> <span class="dt">Music</span> h (<span class="dt">Set</span> (<span class="dt">T</span> &#39;[<span class="dv">3</span>, <span class="dv">7</span>, <span class="dv">12</span>]))</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>harmony <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> everyone keyChanges</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> everyone chordChanges</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> harmonicVoices</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> extend m <span class="op">&lt;&gt;</span> extend c <span class="op">&lt;&gt;</span> sink k</span></code></pre></div>
+<p>which we can later <code>fmap</code> out into concrete pitches. The result is that we can completely isolate the following pieces:</p>
+<ul>
+<li>key changes</li>
+<li>chord changes</li>
+<li>how voices express the current harmony</li>
+<li>the rhythms of all of the above</li>
+</ul>
+<p>and the result is guaranteed to compose in a way that the ear can interpret as music. Not necessarily <em>good music,</em> but undeniably as <em>music.</em></p>
+<p>The type indices on <code>T</code> are purely for my book-keeping, and nothing requires them to be there. Which means we could also use the applicative structure to modulate over different sorts of harmony (eg, move from triads to seventh chords.)</p>
+<h2 id="melody-still-an-open-question">Melody: Still an Open Question</h2>
+<p>I haven’t quite gotten a feel for melody yet; I think it’s probably in <code>T '[7, 12]</code>, but it would be nice to be able to target chord tones as well. Please let me know in the comments if you have any insight here.</p>
+<p>However, I have been thinking about contouring, which is the overall “shape” of a musical line. Does it go up, and peak in the middle, and then come down again? Or maybe it smoothly descends down.</p>
+<p>We can use the discrete intervals intrinsic inside of <code>Voice</code>s to find “reasonable” times to sample them. In essence this assigns a <code>Time</code> to each segment:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">timed ::</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v (<span class="dt">Time</span>, a)</span></code></pre></div>
+<p>and we can then use these times to then sample a function <code>Time -&gt; b</code>. This then allows us to apply contours (given as regular <code>Real -&gt; Real</code> functions) to arbitrary rhythms. I currently have this typed as</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">contour ::</span> <span class="dt">Group</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> (<span class="dt">Real</span> <span class="ot">-&gt;</span> <span class="dt">Real</span>) <span class="ot">-&gt;</span> <span class="dt">Music</span> v () <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span></code></pre></div>
+<p>where <code>a ~ T something</code>, and the outputted <code>Real</code>s get rounded to their nearest integer values. I’m not deeply in love with this type, but the rough idea is great—turn arbitrary real-valued functions into musical lines. This generalizes contouring, as well as scale runs.</p>
+<h2 id="next-steps">Next Steps?</h2>
+<p>I’m writing all of this up because I go back to work on Monday and life is going to get very busy soon. I’m afraid I won’t be able to finish all of this!</p>
+<p>The types above I’m pretty certain are relatively close to perfect. They seem to capture everything I could possibly want, and nothing I don’t want. Assuming I’m right about that, they must make up the basis of musical composition.</p>
+<p>The next step therefore is to build musical combinators on top. One particular combinator I’ve got my eye on is some sort of general <code>~&gt;</code> “get from here to there” operator:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">(~&gt;) ::</span> (<span class="dt">Semigroup</span> a, <span class="op">???</span>) <span class="ot">=&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span></code></pre></div>
+<p>which I imagine would bridge a gap between the end of one piece of music with beginning of another. I think this would be roughly as easy as moving each voice linearly in <code>T</code> space from where it was to where it needs to be. This might need to be a ternary operation in order to also associate a rhythmic pattern to use for the bridge.</p>
+<p>But I imagine <code>(~&gt;)</code> would be great for lots of dumb little musical things. Like when applied over the chord dimension, it would generate arpeggios. Over the scale dimension, it would generate runs. And it would make chromatic moves in the chroma dimension.</p>
+<p>Choosing exactly what moves to make for <code>T</code>s consisting of components in multiple axes might just be some bespoke order, or could do something more intelligent. I think the right approach would be to steal <code>diagrams</code>’ idea of an <code>Envelope</code>, and attach some relevant metadata to each <code>Music</code>. We could then write <code>(~&gt;)</code> as a function of those envelopes, but I must admit I don’t quite know what this would look like.</p>
+<p>As usual, I’d love any insight you have! Please leave it in the comments. Although I must admit I appreciate comments of the form “have you tried $X” much more than of the form “music is sublime and you’re an idiot for even trying this.”</p>
+<p>Happy new year!</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Strictly speaking, the tile product can also do parallel composition, as well as sychronizing composition, but that’s not super important right now.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Struggling Towards an Algebraic Theory of Music</title>
       <id>blog/algebraic-music/index.html</id>
@@ -1778,159 +1921,6 @@ expensive -&gt; {expensive}</code></pre>
 <p>This is somewhat of a philosophical enlightenment. The program execution hasn’t changed at all, but our perspective has. Rather than micro-optimizing the code that <em>is</em> running, this new perspective suggests we should focus our effort on determining <em>why that code is running in the first place.</em></p>
 <p>Digging through <code>transformSSA</code> made it <em>very obvious</em> the problem was an algorithmic one—we were running an unbounded loop that terminated on convergence, where each step it took <span class="citation" data-cites="O">@O</span>(n^2)@ work to make a single step. When I stopped to actually <em>read</em> the code, the problem was immediate, and the solution obvious.</p>
 <p>The lesson? Don’t read the profile. Read the code. Use the profile to focus your attention.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Jujutsu Strategies</title>
-      <id>blog/jj-strategy/index.html</id>
-      <link href='blog/jj-strategy/index.html'/>
-      <published>2024-05-18T18:03:00Z</published>
-      <updated>2024-05-18T18:03:00Z</updated>
-
-      <content type="html" xml:base="https://reasonablypolymorphic.com">
-        <![CDATA[
-        <p>Today I want to talk about <a href="https://github.com/martinvonz/jj">jujutsu</a>, aka <code>jj</code>, which describes itself as being “a Git-compatible VCS that is both simple and powerful”. This is selling itself short. Picking up <code>jj</code> has been the best change I’ve made to my developer workflow in over a decade.</p>
-<p>Before <code>jj</code>, I was your ordinary git user. I did things on Github and knew a handful of git commands. Sometimes I did cherry picks. <em>Very</em> occasionally I’d do a non-trivial rebase, but I had learned to stay away from that unless necessary, because rebasing things was a perfect way of fucking up the git repo. And then, God forbid, I’d have to re-learn about the reflog and try to unhose myself.</p>
-<p>You know. Just everyday git stuff.</p>
-<p>What I hadn’t realized until picking up <code>jj</code> was just how awful the whole git experience is. Like, everything about it sucks. With git, you need to pick a branch name for your feature <em>before</em> you’ve made the feature. What if while doing the work you come up with a better understanding of the problem?</p>
-<p>With git, you <em>can</em> stack PRs, but if you do, you’d better hope the reviewers don’t want any non-trivial changes in the first PR, or else you’ll be playing commit tag, trying to make sure all of your branches agree on the state of the world.</p>
-<p>With git, you can do an interactive rebase and move things relative to a merge commit, but you’d better make sure you know how <code>rerere</code> works, or else you’re going to spend the next several hours resolving the same conflicts across <strong>every single commit</strong> from the merge.</p>
-<p>We all know our commit history should tell the story of how our code has evolved. But with git, we all feel a little bit ashamed that our commit histories <em>don’t</em>, because doing so requires a huge amount of extra work after the fact, and means you’ll probably run into all of the problems listed above.</p>
-<p>Somehow, that’s just the state of the world that we all take for granted. Version control Stockholm syndrome. Git sucks.</p>
-<p>And jujutsu is the answer.</p>
-<p>The first half of this post is an amuse bouche to pique your interest, and hopefully convince you to give <code>jj</code> a go. You won’t regret it. The second half is on effective strategies I’ve found for using <code>jj</code> in my day to day job.</p>
-<h2 id="changes-vs-commits">Changes vs Commits</h2>
-<p>In git, the default unit of work is a “commit.” In <code>jj</code>, it’s a “change.” In practice, the two are interchangeable. The difference is all in the perspective.</p>
-<p>A commit is a unit of work that you’ve committed to the git log. And having done that, you’re <em>committed</em> to it. If that unit of work turns out to not have been the entire story (and it rarely is), you must make another commit on top that fixes the problem. The only choice you have is whether or not you want to squash rebase it on top of the original change.</p>
-<p>A change, on the other hand, is just a unit of work. If you want, you can pretend it’s a commit. But the difference is that you can always go back and edit it. At any time. When you’re done, <code>jj</code> automatically rebases all subsequent changes on top of it. It’s amazing, and makes you feel like a time traveler.</p>
-<p>Let’s take a real example from my day job. At work, I’m currently finessing a giant refactor, which involves reverse engineering what the code currently does, making a generic interface for that operation, pulling apart the inline code into instances of that interface, and then rewriting the original callsite against the interface. After an honest day’s work, my <code>jj log</code> looked something like this:</p>
-<pre><code>@  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-◉  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>This is the <code>jj</code> version of the <code>git log</code>. On the left, we see a (linear) ascii tree of changes, with the most recent being at the top. The current change, marked with <code>@</code> has id <code>qq</code> and description <code>Rewrite first callsite</code>. I’m now ready to add a new change, which I can do via <code>jj new -m 'Rewrite second callsite'</code>:</p>
-<pre><code>@  rr
-│  Rewrite second callsite
-◉  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-◉  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>I then went on my merry way, rewriting the second callsite. And then, suddenly, out of nowhere, DISASTER. While working on the second callsite, I realized my original <code>FileIO</code> abstraction didn’t actually help at callsite 2. I had gotten the interface wrong.</p>
-<p>In git land, situations like these are hard. Do you just add a new commit, changing the interface, and hope your coworkers don’t notice lest they look down on you? Or do you do a rebase? Or do you just abandon the branch entirely, and hope that you can cherry pick the intermediary commits.</p>
-<p>In <code>jj</code>, you just go fix the <code>Add interface for FileIO</code> change via <code>jj edit nn</code>:</p>
-<pre><code>◉  rr
-│  Rewrite second callsite
-◉  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-@  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>and then you update your interface before jumping back (<code>jj edit rr</code>) to get the job done. Honestly, time traveler stuff.</p>
-<p>Of course, sometimes doing this results in a conflict, but <code>jj</code> is happy to just keep the conflict markers around for you. It’s much, much less traumatic than in git.</p>
-<h2 id="stacked-prs">Stacked PRs</h2>
-<p>Branches play a much diminished role in <code>jj</code>. Changes don’t need to be associated to any branch, which means you’re usually working in what git calls a <em>detached head</em> state. This probably makes you nervous if you’ve still got the git Stockholm syndrome, but it’s not a big deal in <code>jj</code>. In <code>jj</code>, the only reason you need branches is to ship code off to your git-loving colleagues.</p>
-<p>Because changes don’t need to be associated to a branch, this allows for workflows that git might consider “unnatural,” or at least unwieldy. For example, I’ll often just do a bunch of work (rewriting history as I go), and figure out how to split it into PRs after the fact. Once I’m ~ten changes away from an obvious stopping point, I’ll go back, mark one of the change as the head of a branch <code>jj branch create -r rr feat-fileio</code>, and then continue on my way.</p>
-<p>This marks change <code>rr</code> as the head of a branch <code>feat-fileio</code>, but this action doesn’t otherwise have any significance to <code>jj</code>; my change tree hasn’t changed in the slightest. It now looks like this:</p>
-<pre><code>@  uu
-|  Update ObjectName
-◉  tt
-|  Changes to pubsub
-◉  ss
-|  Fix shape policy
-◉  rr feat-fileio
-│  Rewrite second callsite
-◉  qq
-│  Rewrite first callsite
-◉  pp
-│  Give vector implementation
-◉  oo
-│  Give image implementation
-◉  nn
-│  Add interface for FileIO
-◉  mm
-│  (empty) ∅
-~</code></pre>
-<p>where the only difference is the line <code>◉  rr feat-fileio</code>. Now when <code>jj</code> sends this off to git, the branch <code>feat-fileio</code> will have one commit for each change in <code>mm..rr</code>. If my colleagues ask for changes during code review, I just add the change somewhere in my change tree, and it automatically propagates downstream to the changes that will be in my next PR. No more cherry picking. No more inter-branch merge commits. I use the same workflow I would in <code>jj</code> that I would if there weren’t a PR in progress. It just works. It’s amazing.</p>
-<h2 id="the-dev-branch">The Dev Branch</h2>
-<p><a href="https://qword.net/2023/10/22/the-use-and-abuse-of-the-dev-branch">The use and abuse of the dev branch pattern</a>, makes a great argument for a particular git workflow in which you have all of your branches based on a local <code>dev</code> branch. Inside of this <code>dev</code> branch, you make any changes relevant to your local developer experience, where you change default configuration options, or add extra logging, or whatever. The idea is that you want to keep all of your private changes somewhere organized, but not have to worry about those changes accidentally ending up in your PRs.</p>
-<p>I’ve never actually used this in a git workflow, but it makes even more sense in a <code>jj</code> repository. At time of writing, my change tree at work looks something like the following:</p>
-<pre><code>◉  wq
-╷  reactor: Cleanup singleton usage
-╷ ◉  pv
-╭─╯  feat: Optimize image rendering
-╷ ◉  u
-╷ |  fix: Fix bug in networking code
-╷ | ◉  wo
-╷ ╭─╯  feat: Finish porting to FileIO
-╷ ◉  rr
-╭─╯  feat: Add interface for FileIO
-@  dev
-│  (empty) ∅
-◉  main@origin
-│  Remove unused actions (#1074)</code></pre>
-<p>Here you can see I’ve got quite a few things on the go! <code>wq</code>, <code>pv</code> and <code>rr</code> are all branched directly off of <code>dev</code>, which correspond to PRs I currently have waiting for review. <code>u</code> and <code>wo</code> are stacked changes, waiting on <code>rr</code> to land. The ascii tree here is worth its weight in gold in keeping track of where all my changes are.</p>
-<p>You’ll notice that my <code>dev</code> branch is labeled as <code>(empty)</code>, which is to say it’s a change with no diff. But even so, I’ve found it immensely helpful to keep around. Because when my coworkers’ changes land in <code>main</code>, I need only rebase <code>dev</code> on top of the new changes to <code>main</code>, and <code>jj</code> will do the rest. Let’s say <code>rr</code> now has conflicts. I can just go and edit <code>rr</code> to fix the conflicts, and that fix will be propagated to <code>u</code> and <code>wo</code>!!!!</p>
-<p>YOU JUST FIX THE CONFLICT ONCE, FOR ALL OF YOUR PULL REQUESTS. IT’S ACTUALLY AMAZING.</p>
-<h2 id="revsets">Revsets</h2>
-<p>In <code>jj</code>, sets of changes are first class objects, known (somewhat surprisingly) as <em>revsets.</em> Revsets are created algebraically by way of a little, purely functional language that manipulates sets. The id of any change is a singleton revset. We can take the union of two revsets with <code>|</code>, and the intersection with <code>&amp;</code>. We can take the complement of a revset via <code>~</code>. We can get descendants of a revset <code>x</code> via <code>x::</code>, and its ancestors in the obvious way.</p>
-<p>Revsets took me a little work to wrap my head around, but it’s been well worth the investment. Yesterday I somehow borked my <code>dev</code> change (????), so I just made <code>new-dev</code>, and then reparented the immediate children of <code>dev</code> over to <code>new-dev</code> in one go. You can get the children of a revset <code>x</code> via <code>x+</code>, so this was done via <code>jj rebase -s dev+ -d new-dev</code>.</p>
-<p>Stuff like that is kinda neat, but the best use of revsets in my opinion is to customize the <code>jj</code> experience in exactly the right way for you. For example, I do a lot of stacked PRs, and I want my <code>jj log</code> to reflect that. So my default revset for <code>jj log</code> only shows me the changes that are in my “current PR”. It’s a bit hard to explain, but it works like an accordion. I mark my PRs with branches, and my revset will only show me the changes from the most immediate ancestral branch to the most immediate descendant branch. That is, my log acts as an accordion, and collapses any changes that are not part of the PR I’m currently looking at.</p>
-<p>But, it’s helpful to keep track of where I am in the bigger change tree, so my default revset will also show me how my PR is related to all of my other PRs. The tree we looked at earlier is in fact the closed version of this accordion. When you change <code>@</code> to be inside of one of the PRs, it immediately expands to give you all of the local context, without sacrificing how it fits into the larger whole:</p>
-<pre><code>◉  wq
-╷  reactor: Cleanup singleton usage
-╷ ◉  pv
-╭─╯  feat: Optimize image rendering
-╷ ◉  u
-╷ |  fix: Fix bug in networking code
-╷ | ◉  wo
-╷ | |  feat: Finish porting to FileIO
-╷ | ◉  sn
-╷ | |  Newtype deriving for Tracker
-╷ | @  pm
-╷ | |  Add dependency on monoidal-map
-╷ | ◉  vw
-╷ | |  Fix bamboozler
-╷ | ◉  ozy
-╷ ╭─╯  update InClientRam
-╷ ◉  rr
-╭─╯  feat: Add interface for FileIO
-◉  dev
-│  (empty) ∅</code></pre>
-<p>The coolest part about the revset UI is that you can make your own named revsets, by adding them as aliases to <code>jj/config.toml</code>. Here’s the definition of my accordioning revset:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode toml"><code class="sourceCode toml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[</span><span class="dt">revsets</span><span class="kw">]</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">log</span> <span class="op">=</span> <span class="st">&quot;@ | bases | branches | curbranch::@ | @::nextbranch | downstream(@, branchesandheads)&quot;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">[</span><span class="dt">revset-aliases</span><span class="kw">]</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;bases&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">dev</span><span class="st">&#39;</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;downstream(x,y)&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">(x::y) &amp; y</span><span class="st">&#39;</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;branches&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">downstream(trunk(), branches()) &amp; mine()</span><span class="st">&#39;</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;branchesandheads&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">branches | (heads(trunk()::) &amp; mine())</span><span class="st">&#39;</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;curbranch&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">latest(branches::@- &amp; branches)</span><span class="st">&#39;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="er">&#39;nextbranch&#39;</span> <span class="op">=</span> <span class="st">&#39;</span><span class="vs">roots(@:: &amp; branchesandheads)</span><span class="st">&#39;</span></span></code></pre></div>
-<p>You can see from <code>log</code> that we always show <code>@</code> (the current edit), all of the named bases (currently just <code>dev</code>, but you might want to add <code>main</code>), and all of the named branches. It then shows everything from <code>curbranch</code> to <code>@</code>, which is to say, the changes in the branch leading up to <code>@</code>, as well as everything from <code>@</code> to the beginning of the next (stacked) branch. Finally, we show all the leafs of the change tree downstream of <code>@</code>, which is nice when you haven’t yet done enough work to consider sending off a PR.</p>
-<h2 id="conclusion">Conclusion</h2>
-<p>Jujutsu is absolutely amazing, and is well worth the four hours of your life it will take you to pick up. If you’re looking for some more introductory material, look at <a href="https://v5.chriskrycho.com/essays/jj-init/">jj init</a> and <a href="https://steveklabnik.github.io/jujutsu-tutorial/">Steve’s jujutsu tutorial</a></p>
         ]]>
       </content>
     </entry>

@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>An Algebraic Theory of Music :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/more-algebraic-music">An Algebraic Theory of Music</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/algebraic-music">&larr;</a>
+    </span>
+    <time>January  2, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/haskell.html">haskell</a>, <a href="/tags/denotational design.html">denotational design</a>, <a href="/tags/functional programming.html">functional programming</a>, <a href="/tags/types.html">types</a>
+    </span>
+</p>
+<div class="content">
+    <p>In my last post, I was <a href="/blog/algebraic-music/">struggling towards an algebraic theory of music.</a> This idea has been burning in my mind ever since, and I wanted to give some updates with where I’ve landed.</p>
+<h2 id="differentiating-voices-from-music">Differentiating Voices from Music</h2>
+<p>We begin by modeling a <a href="https://en.wikipedia.org/wiki/Part_(music)#Polyphony_and_part-writing">musical voice</a>, which is, roughly speaking, the abstract version of a human voice. The voice can be doing one thing at a time, or can choose to not be doing anything.</p>
+<p>Voices are modeled by <a href="https://hackage.haskell.org/package/step-function">step functions</a>, which are divisions of the real line into discrete chunks. We interpret each discrete chunk as a note being played by the voice for the duration of the chunk.</p>
+<p>This gives rise to a nice applicative structure that I alluded to in my previous post:</p>
+<pre><code>liftA2 f
+  |---- a ----|-- b --|
+  |-- x --|---- y ----|
+=
+  |- fax -|fay|- fby -|</code></pre>
+<p>where we take the union of the note boundaries in order to form the applicative. If either voice is resting, so too is the applicative. There is also an <code>Alternative</code> instance here, which chooses the first non-rest.</p>
+<p>There is a similar monoidal structure here, where multiplication is given by “play these two things simultaneously,” relying on an underlying <code>Semigroup</code> instance for the meaning of “play these two things:”</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Voice</span> a)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Voice</span> a)</span></code></pre></div>
+<p>If either voice is resting, we treat its value as <code>mempty</code>, and can happily combine the two parts in parallel.</p>
+<p>All of this gives rise to the following rich structure:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Voice</span> a <span class="ot">=</span> <span class="dt">Voice</span> {<span class="ot"> unVoice ::</span> <span class="dt">SF</span> <span class="dt">Time</span> (<span class="dt">Maybe</span> a) }</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Functor</span>, <span class="dt">Foldable</span>, <span class="dt">Traversable</span>, <span class="dt">Generic</span>, <span class="dt">Generic1</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Applicative</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Compose</span> (<span class="dt">SF</span> <span class="dt">Time</span>) <span class="dt">Maybe</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Filterable</span> <span class="dt">Voice</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Witherable</span> <span class="dt">Voice</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Alternative</span> <span class="dt">Voice</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Delay a voice by some amount of time.</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="ot">delayV ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Voice</span> a <span class="ot">-&gt;</span> <span class="dt">Voice</span> a</span></code></pre></div>
+<h2 id="from-voices-to-music">From Voices to Music</h2>
+<p>Voices, therefore, give us our primitive notion of monophony. But real music usually has many voices doing many things, independently. This was a point in which I got stuck in my previous post.</p>
+<p>The solution here, is surprisingly easy. Assign a <code>Voice</code> to each voice name:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Music</span> v a <span class="ot">=</span> <span class="dt">Music</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getVoices ::</span> v <span class="ot">-&gt;</span> <span class="dt">Voice</span> a</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Functor</span>, <span class="dt">Generic</span>, <span class="dt">Functor</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Applicative</span>, <span class="dt">Alternative</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Compose</span> ((<span class="ot">-&gt;</span>) v) <span class="dt">Voice</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Profunctor</span> <span class="dt">Music</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Finite</span> v <span class="ot">=&gt;</span> <span class="dt">Foldable</span> (<span class="dt">Music</span> v)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Finite</span> v <span class="ot">=&gt;</span> <span class="dt">Traversable</span> (<span class="dt">Music</span> v)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Filterable</span> (<span class="dt">Music</span> v)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Finite</span> v <span class="ot">=&gt;</span> <span class="dt">Witherable</span> (<span class="dt">Music</span> v)</span></code></pre></div>
+<p>We get an extremely rich structure here completely for free. Our monoid combines all voices in parallel; our applicative combines voices pointwise; etc. However, we also have a new <code>Profunctor Music</code> instance, whose characteristic <code>lmap :: (b -&gt; c) -&gt; Music c a -&gt; Music b a</code> method allows us to trade lines between voices.</p>
+<p>In addition to the <em>in-parallel</em> monoid instance, we can also define a <a href="https://dl.acm.org/doi/10.1145/2633638.2633649">tile product</a> operator over <code>Music v a</code>, which composes things sequentially<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">duration ::</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Time</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ot">(##) ::</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>m<span class="op">@</span>(<span class="dt">Music</span> m1) <span class="op">##</span> <span class="dt">Music</span> m2 <span class="ot">=</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Music</span> <span class="op">$</span> liftA2 (<span class="op">&lt;&gt;</span>) m1 <span class="op">$</span> <span class="fu">fmap</span> (delayV <span class="op">$</span> duration m) m2</span></code></pre></div>
+<p>The <code>Semigroup a</code> constraint on <code>(##)</code> arises from the fact that the pieces of music might extend off to infinity in either direction (which <code>pure @Voice</code> must do), and we need to deal with that.</p>
+<p>There are a few other combinators we care about. First, we can lift anonymous voices (colloquially “tunes”) into multi-part <code>Music</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">voice ::</span> <span class="dt">Eq</span> v <span class="ot">=&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Music</span> () a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>voice v (<span class="dt">Music</span> sf) <span class="ot">=</span> <span class="dt">Music</span> <span class="op">$</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  \<span class="kw">case</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    ((<span class="op">==</span> v) <span class="ot">-&gt;</span> <span class="dt">True</span>) <span class="ot">-&gt;</span> sf ()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="fu">mempty</span></span></code></pre></div>
+<p>and we can assign the same line to everyone:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">everyone ::</span> <span class="dt">Music</span> () a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>everyone (<span class="dt">Music</span> m) <span class="ot">=</span> <span class="dt">Music</span> <span class="op">$</span> <span class="fu">const</span> <span class="op">$</span> m ()</span></code></pre></div>
+<h2 id="writing-lines">Writing Lines</h2>
+<p>The primitives for building little tunes are</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">note ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> () a</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">rest ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> () a</span></code></pre></div>
+<p>which you can then compose sequentially via <code>(##)</code>, and assign to voices via <code>voice</code>.</p>
+<h2 id="harmonic-constraints">Harmonic Constraints</h2>
+<p>One of the better responses to my last blog post was a link to <a href="https://dmitri.mycpanel.princeton.edu/index.html">Dmitri Tymoczko</a>’s <a href="https://www.youtube.com/watch?v=yp5Eys2L_04">FARM 2024 talk</a>.</p>
+<p>There’s much more in this video than I can possibly due justice to here, but my big takeaway was that this guy is thinking about the same sorts of things that I am. So I dove into his work, and that lead to his <a href="https://www.madmusicalscience.com/quadruple.mp4">quadruple hierarchy</a>:</p>
+<blockquote>
+<p>Voices move within chords, which move within scales, which move within macro-harmonies.</p>
+</blockquote>
+<p>Tymoczko presents a <code>T</code> algebra which is a geometric space for reasoning about voice leadings. He’s got a lot of fun websites for exploring the ideas, but I couldn’t find an actual implementation of the idea anywhere, so I <a href="https://github.com/isovector/denomusic/blob/6a313a546cc376bb22f37cec55d76518bff40acd/src/DenoMusic/Harmony.hs">cooked one up</a> myself.</p>
+<p>The idea here is that we have some <code>T :: [Nat] -&gt; Type</code> which describes a hierarchy of abstract scales moving with respect to one another. For example, the Western traditional of having triads move within the diatonic scale, which moves within the chromatic scale, would be represented as <code>T '[3, 7, 12]</code>. <code>T</code> forms a monoid, and has some simple generators that give rise to smooth voice leadings (chord changes.)</p>
+<p>Having a model for smooth harmonic transformations means we can use it constructively. I am still working out the exact details here, but the rough shape of the idea is to build an underlying field of key changes (represented as smooth voice leadings in <code>T '[7, 12]</code>):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">keyChanges ::</span> <span class="dt">Music</span> () (<span class="dt">T</span> &#39;[<span class="dv">7</span>, <span class="dv">12</span>])</span></code></pre></div>
+<p>We can then make an underlying field of functional harmonic changes (chord changes), modeled as smooth voice leadings in <code>T '[3, 7]</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">chordChanges ::</span> <span class="dt">Music</span> () (<span class="dt">T</span> &#39;[<span class="dv">3</span>, <span class="dv">7</span>])</span></code></pre></div>
+<p>Our voices responsible for harmony can now be written as values of type</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">harmonicVoices ::</span> <span class="dt">Music</span> h (<span class="dt">Set</span> (<span class="dt">T</span> &#39;[<span class="dv">3</span>]))</span></code></pre></div>
+<p>and we can use the applicative musical structure to combine the elements together:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ApplicativeDo #-}</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ot">extend ::</span> <span class="dt">T</span> ns <span class="ot">-&gt;</span> <span class="dt">T</span> (ns <span class="op">++</span> ms)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ot">sink   ::</span> <span class="dt">T</span> ns <span class="ot">-&gt;</span> <span class="dt">T</span> (n &#39;<span class="op">:</span> ns)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">harmony ::</span> <span class="dt">Music</span> h (<span class="dt">Set</span> (<span class="dt">T</span> &#39;[<span class="dv">3</span>, <span class="dv">7</span>, <span class="dv">12</span>]))</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>harmony <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> everyone keyChanges</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  c <span class="ot">&lt;-</span> everyone chordChanges</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> harmonicVoices</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> extend m <span class="op">&lt;&gt;</span> extend c <span class="op">&lt;&gt;</span> sink k</span></code></pre></div>
+<p>which we can later <code>fmap</code> out into concrete pitches. The result is that we can completely isolate the following pieces:</p>
+<ul>
+<li>key changes</li>
+<li>chord changes</li>
+<li>how voices express the current harmony</li>
+<li>the rhythms of all of the above</li>
+</ul>
+<p>and the result is guaranteed to compose in a way that the ear can interpret as music. Not necessarily <em>good music,</em> but undeniably as <em>music.</em></p>
+<p>The type indices on <code>T</code> are purely for my book-keeping, and nothing requires them to be there. Which means we could also use the applicative structure to modulate over different sorts of harmony (eg, move from triads to seventh chords.)</p>
+<h2 id="melody-still-an-open-question">Melody: Still an Open Question</h2>
+<p>I haven’t quite gotten a feel for melody yet; I think it’s probably in <code>T '[7, 12]</code>, but it would be nice to be able to target chord tones as well. Please let me know in the comments if you have any insight here.</p>
+<p>However, I have been thinking about contouring, which is the overall “shape” of a musical line. Does it go up, and peak in the middle, and then come down again? Or maybe it smoothly descends down.</p>
+<p>We can use the discrete intervals intrinsic inside of <code>Voice</code>s to find “reasonable” times to sample them. In essence this assigns a <code>Time</code> to each segment:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">timed ::</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v (<span class="dt">Time</span>, a)</span></code></pre></div>
+<p>and we can then use these times to then sample a function <code>Time -&gt; b</code>. This then allows us to apply contours (given as regular <code>Real -&gt; Real</code> functions) to arbitrary rhythms. I currently have this typed as</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">contour ::</span> <span class="dt">Group</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> (<span class="dt">Real</span> <span class="ot">-&gt;</span> <span class="dt">Real</span>) <span class="ot">-&gt;</span> <span class="dt">Music</span> v () <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span></code></pre></div>
+<p>where <code>a ~ T something</code>, and the outputted <code>Real</code>s get rounded to their nearest integer values. I’m not deeply in love with this type, but the rough idea is great—turn arbitrary real-valued functions into musical lines. This generalizes contouring, as well as scale runs.</p>
+<h2 id="next-steps">Next Steps?</h2>
+<p>I’m writing all of this up because I go back to work on Monday and life is going to get very busy soon. I’m afraid I won’t be able to finish all of this!</p>
+<p>The types above I’m pretty certain are relatively close to perfect. They seem to capture everything I could possibly want, and nothing I don’t want. Assuming I’m right about that, they must make up the basis of musical composition.</p>
+<p>The next step therefore is to build musical combinators on top. One particular combinator I’ve got my eye on is some sort of general <code>~&gt;</code> “get from here to there” operator:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">(~&gt;) ::</span> (<span class="dt">Semigroup</span> a, <span class="op">???</span>) <span class="ot">=&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a <span class="ot">-&gt;</span> <span class="dt">Music</span> v a</span></code></pre></div>
+<p>which I imagine would bridge a gap between the end of one piece of music with beginning of another. I think this would be roughly as easy as moving each voice linearly in <code>T</code> space from where it was to where it needs to be. This might need to be a ternary operation in order to also associate a rhythmic pattern to use for the bridge.</p>
+<p>But I imagine <code>(~&gt;)</code> would be great for lots of dumb little musical things. Like when applied over the chord dimension, it would generate arpeggios. Over the scale dimension, it would generate runs. And it would make chromatic moves in the chroma dimension.</p>
+<p>Choosing exactly what moves to make for <code>T</code>s consisting of components in multiple axes might just be some bespoke order, or could do something more intelligent. I think the right approach would be to steal <code>diagrams</code>’ idea of an <code>Envelope</code>, and attach some relevant metadata to each <code>Music</code>. We could then write <code>(~&gt;)</code> as a function of those envelopes, but I must admit I don’t quite know what this would look like.</p>
+<p>As usual, I’d love any insight you have! Please leave it in the comments. Although I must admit I appreciate comments of the form “have you tried $X” much more than of the form “music is sublime and you’re an idiot for even trying this.”</p>
+<p>Happy new year!</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Strictly speaking, the tile product can also do parallel composition, as well as sychronizing composition, but that’s not super important right now.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/algebraic-music">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
