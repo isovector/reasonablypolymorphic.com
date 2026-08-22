@@ -7,13 +7,368 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2026-01-02T14:27:00Z</pubDate>
+  <pubDate>2026-08-21T23:50:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Code-Reviewing My First Monad Implementation</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/reviewing-my-first-monad/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/reviewing-my-first-monad/index.html</guid>
+      <pubDate>2026-08-21T23:50:00Z</pubDate>
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
+        <p>I’ve been wanting to get back into the habit of blogging, and thought a fun project would be to go back through my old code and review it as the programmer I am now. So let’s do that.</p>
+<p>Eleven years ago, I was so proud to written my first monad that I typed up a big ol<a href="https://sandymaguire.me/blog/jurisdiction-of-heaven/">blog post about it.</a> This seems like a fun thing to revisit, so let’s do it.</p>
+<p>To save you the trouble of reading that ancient-ass blog post, here’s the gist. Given a big piece of state, that has many smaller stateful subcomponents, for example, a <code>World</code> is full of <code>Buffer</code>s:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">World</span> <span class="ot">=</span> <span class="dt">World</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> wBuffers ::</span> [<span class="dt">Buffer</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> wCurrent ::</span> <span class="dt">Int</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> wMode    ::</span> <span class="dt">Mode</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Buffer</span> <span class="ot">=</span> <span class="dt">Buffer</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> bFilename ::</span> <span class="dt">FilePath</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> bContent  ::</span> <span class="dt">String</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>my monad acted like <code>StateT</code> except that you can restrict the piece of the state you’re allowed to manipulate <em>without losing the ability to look at the rest of the state.</em></p>
+<p>In the blog post, this monad is called <code>Jurisdiction</code>, but at some point in the <a href="https://github.com/isovector/eden">source code</a> it got renamed to <a href="https://github.com/isovector/eden/blob/master/src/Control/Monad/Jail.hs"><code>JailT</code></a>. Cool name. Furthermore, the implementation changed rather dramatically from the blog post, so let’s chase the implementation as given. I’ll reproduce it here:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">RLens</span> r s <span class="ot">=</span> <span class="dt">Lens</span> s s r r</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">JailT</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    {<span class="ot"> runJailT&#39; ::</span> <span class="dt">Bool</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> <span class="dt">RLens</span> r s</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> s</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> m (a, s, <span class="dt">RLens</span> r s, <span class="dt">Bool</span>) }</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Typeable</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Applicative</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">pure</span> (x, s, l, v)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    (<span class="op">&lt;*&gt;</span>)  <span class="ot">=</span> ap</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>   <span class="ot">=</span> <span class="fu">pure</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    ac <span class="op">&gt;&gt;=</span> k <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>            <span class="kw">then</span> <span class="kw">do</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>                (x, st&#39;, l&#39;, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; ac v l s</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>                runJailT&#39; (k x) v&#39; l&#39; st&#39;</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>            <span class="kw">else</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, v)</span></code></pre></div>
+<p>Already there’s a lot to look at. The most immediate thing that strikes me is the formatting; now I’m very much a “use two spaces for indent” kind of guy — Haskell doesn’t provide many opportunities for natural linebreaks, and our horizontal space is much more limited than our vertical space. So don’t throw away your horizontal budget on initial spacing. It’s minor, but being an artisan means caring about the minor details.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span> <span class="dt">JailT</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { runJailT&#39;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ot">      ::</span> <span class="dt">Bool</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> <span class="dt">RLens</span> r s</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> s</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> m (a, s, <span class="dt">RLens</span> r s, <span class="dt">Bool</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Typeable</span>)</span></code></pre></div>
+<p>Much nicer.</p>
+<p>The other exciting thing to see in the earlier snippet is that this code comes from before the Functor-Applicative-Monad transition. Which is to say that it’s from the long long ago before <code>Applicative</code> was a superclass on <code>Monad</code>. There’s some history for you.</p>
+<p>And then there is the elephant in the room. Whatever this <code>Bool</code> is being passed around by <code>runJailT'</code>, the <code>Monad</code> instance branches on it and returns <code>undefined</code> when it’s <code>False</code>. What the hell is that???? Digging into the <code>MonadPlus</code> instance provides some insight:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadPlus</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    mplus x y <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        x&#39;<span class="op">@</span>(xa, xs, xl, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; x v l s</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v&#39;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>           <span class="kw">then</span> <span class="fu">return</span> x&#39;</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>           <span class="kw">else</span> runJailT&#39; y v l s</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    mzero <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, <span class="dt">False</span>)</span></code></pre></div>
+<p>So <code>mzero</code> returns <code>undefined</code> and some <code>False</code> value, presumably which is there to try to warn someone that there’s an <code>undefined</code> floating around.</p>
+<p><em>This is a stupid design.</em> If you’re ever in the business of needing to store data-which-might-not-be-valid and a separate tag stating whether or not it’s valid, a much better design here would be to just use <code>Maybe a</code> instead of <code>(a, Bool)</code>.</p>
+<p>In fact, perhaps I realized this later on, because <code>runJailT</code> does exactly this logic:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> (<span class="dt">Functor</span> m)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>         <span class="ot">=&gt;</span> <span class="dt">JailT</span> s s m a</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> s</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>runJailT ac <span class="ot">=</span> <span class="fu">fmap</span> (\(a, s, _, v) <span class="ot">-&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                            <span class="kw">if</span> v <span class="kw">then</span> <span class="dt">Just</span> (a, s) <span class="kw">else</span> <span class="dt">Nothing</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                    <span class="op">.</span> runJailT&#39; ac <span class="dt">True</span> <span class="fu">id</span></span></code></pre></div>
+<p>Let’s roll back a bit. The pivotal primitive of <code>JailT</code> is the aptly-named <code>jail</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> (<span class="dt">Monad</span> m)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>     <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>jail l&#39; m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v (l <span class="op">.</span> l&#39;) s</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, s&#39;, l, v&#39;)</span></code></pre></div>
+<p>Pretty reasonable definition here. I’m not sure what the idea behind <code>RLens</code> being a flipped version of <code>Lens'</code> was for. The only odd choice here is that in the big tuple returned in <code>jail</code>, <code>l</code> gets passed along unchanged. We can tell from looking at it that <code>l</code> here is the current lens we’re looking at. But <code>jail</code> is the only primitive that changes the lens, and it takes a <code>JailT</code> as an argument. Which is all to say that there isn’t anything actually stateful going on with the <code>RLens</code>. So without looking any further, I’d bet dollars to donuts that this <code>l</code> getting returned is purely vestigial and serves absolutely no purpose. Which in turn means we should be able to chop it out of the definition of <code>JailT</code>.</p>
+<p>Speaking of stupid anti-patterns, here’s another one:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">into ::</span> <span class="dt">RLens</span> a (<span class="dt">Maybe</span> a)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>into <span class="ot">=</span> lens fromJust (<span class="fu">const</span> <span class="dt">Just</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">jailMaybe ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=&gt;</span> <span class="dt">RLens</span> (<span class="dt">Maybe</span> r&#39;) r</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> a</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>jailMaybe l d m <span class="ot">=</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    (gets <span class="op">$</span> view l) <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> _  <span class="ot">-&gt;</span> jail (l <span class="op">.</span> into) m</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> d</span></code></pre></div>
+<p>This is horrendous for a few reasons. <code>into</code> is an unsafe lens that will crash if you try to read out of a <code>Nothing</code>. But then that behavior is guarded in <code>jailMaybe</code> by checking that it isn’t already nothing. Stupid.</p>
+<p>The last function I want to point out is <code>parole</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> a</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m (<span class="dt">Maybe</span> a)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>parole d m <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    this <span class="ot">&lt;-</span> get</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    m <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="fu">return</span> a</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> put this <span class="op">&gt;&gt;</span> <span class="fu">return</span> d</span></code></pre></div>
+<p>which… does… something. I guess it attempts to run a <code>Maybe</code>-valued <code>JailT</code>, and if it fails, unwinds the state and returns some default <code>a</code>. Rearing its ugly head here, however, is the ghost of the <code>undefined</code> nonsense from <code>mzero</code>. Note that if we invoke <code>parole a mzero</code> we will get a <em>crash</em> rather than the roll-back-and-default behavior that it promises on the tin.</p>
+<p>So, all in all, I am not particularly impressed with my first monad. Here’s how I’d write it today.</p>
+<p>First, I don’t think I’ve written a “control”-y sort of monad from scratch in the last five years. Whatever behavior you want is almost always just the composition of a few monad transformers. In this case, we have a <code>Reader</code> for the current lens, a <code>State</code> for the original state, and a <code>Maybe</code> to give us <code>mzero</code> semantics.</p>
+<p>Since we want our state to roll-back when we take an alternative path, we must put <code>MaybeT</code> <em>underneath</em> our <code>StateT</code>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> This gives us the nice formulation of a <code>JailT</code> as:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span> <span class="dt">JailT</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unJailT ::</span> <span class="dt">ReaderT</span> (<span class="dt">ALens&#39;</span> s r) (<span class="dt">StateT</span> s (<span class="dt">MaybeT</span> m)) a</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>(we use <code>ALens' s r</code> here instead of <code>Lens' s r</code> since the latter requires <code>-XImpredicativeTypes</code>. Which happens to be turned on in the original implementation!)</p>
+<p>Once nice thing about defining our monad as a <code>newtype</code> over a series of monad transformers, is that it allows us to newtype-derive all of the relevant instances:</p>
+<pre><code>  deriving newtype (Functor, Applicative, Monad, MonadIO, Alternative)</code></pre>
+<p>No implementation for such things is required, and therefore we know that the derived instances must be correct. Which means we have many fewer things to worry about.</p>
+<p>I prefer to use <code>unWhatever</code> as my naming scheme for these newtypes, so that I can provide <code>runWhatever</code> as a more user-friendly function.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> s <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> s t <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>runJailT s l <span class="ot">=</span> runMaybeT <span class="op">.</span> <span class="fu">flip</span> runStateT s <span class="op">.</span> <span class="fu">flip</span> runReaderT l <span class="op">.</span> unJailT</span></code></pre></div>
+<p>What’s also nice about using standard monad transformers for your implementation is that you can reuse all of their existing combinators. For example, to implement <code>jail</code> all we need to do is invoke <code>withReaderT :: (r' -&gt; r) -&gt; ReaderT r m a -&gt; ReaderT r' m a</code>, which lets us change the type of the reader.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> <span class="dt">Lens&#39;</span> t u <span class="ot">-&gt;</span> <span class="dt">JailT</span> s u m a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>jail ltu <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">.</span> withReaderT (\lst <span class="ot">-&gt;</span> cloneLens lst <span class="op">.</span> ltu) <span class="op">.</span> unJailT</span></code></pre></div>
+<p>Notice here that I like to minimize my points without going point-free; <code>jail</code> as written is very legible, but writing it entirely pointfree is a crime against humanity:</p>
+<pre><code>-- don&#39;t do this!
+jail = (JailT .) . (. unJailT) . withReaderT . flip ((.) . cloneLens)</code></pre>
+<p>Rather than implementing <code>parole</code> directly, we can note that it is the composition of two pieces — (1) attempt something, (2) return a default if it failed. Whenever you notice de-composition opportunities like this, take them!</p>
+<p>We can write <code>attempt</code>, which is wildly general and doesn’t care one fig about jails or the legal system:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">attempt ::</span> (<span class="dt">Alternative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> m a</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>attempt m <span class="ot">=</span> <span class="fu">maybe</span> empty <span class="fu">pure</span> <span class="op">=&lt;&lt;</span> m</span></code></pre></div>
+<p>and then <code>parole</code> is merely</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>parole a0 j <span class="ot">=</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  asum</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    [ attempt j</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    , <span class="fu">pure</span> a0</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    ]</span></code></pre></div>
+<p>All in all, significantly nicer if you ask me. <a href="https://www.youtube.com/watch?v=NgUGvZkQd0M">But I’m just a TV. Don’t take my word for it.</a> Compare for yourself!</p>
+<details>
+<summary>
+Original Implementation
+</summary>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving,</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ot">             FlexibleInstances, MultiParamTypeClasses,</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ot">             DeriveFunctor, ImpredicativeTypes, LambdaCase,</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ot">             DeriveDataTypeable #-}</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Applicative</span> (<span class="dt">Alternative</span>(..))</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad</span> (ap, <span class="dt">MonadPlus</span>(..))</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.State</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Lens</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Maybe</span> (fromJust)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Typeable</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">RLens</span> r s <span class="ot">=</span> <span class="dt">Lens</span> s s r r</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">JailT</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    {<span class="ot"> runJailT&#39; ::</span> <span class="dt">Bool</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> <span class="dt">RLens</span> r s</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> s</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> m (a, s, <span class="dt">RLens</span> r s, <span class="dt">Bool</span>) }</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Typeable</span>)</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Applicative</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">pure</span> (x, s, l, v)</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    (<span class="op">&lt;*&gt;</span>)  <span class="ot">=</span> ap</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>   <span class="ot">=</span> <span class="fu">pure</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    ac <span class="op">&gt;&gt;=</span> k <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>            <span class="kw">then</span> <span class="kw">do</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>                (x, st&#39;, l&#39;, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; ac v l s</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>                runJailT&#39; (k x) v&#39; l&#39; st&#39;</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>            <span class="kw">else</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, v)</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadState</span> r (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    get   <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (view l s, s, l, v)</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    put x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> ((), set l x s, l, v)</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">MonadTrans</span> (<span class="dt">JailT</span> s r) <span class="kw">where</span></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>    lift x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> x <span class="op">&gt;&gt;=</span> (\a <span class="ot">-&gt;</span> <span class="fu">return</span> (a, s, l, v))</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadIO</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>    liftIO <span class="ot">=</span> lift <span class="op">.</span> liftIO</span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadPlus</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>    mplus x y <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>        x&#39;<span class="op">@</span>(xa, xs, xl, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; x v l s</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v&#39;</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>           <span class="kw">then</span> <span class="fu">return</span> x&#39;</span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a>           <span class="kw">else</span> runJailT&#39; y v l s</span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>    mzero <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, <span class="dt">False</span>)</span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Alternative</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a>    (<span class="op">&lt;|&gt;</span>) <span class="ot">=</span> mplus</span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a>    empty <span class="ot">=</span> mzero</span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> (<span class="dt">Functor</span> m)</span>
+<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a>         <span class="ot">=&gt;</span> <span class="dt">JailT</span> s s m a</span>
+<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> s</span>
+<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
+<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a>runJailT ac <span class="ot">=</span> <span class="fu">fmap</span> (\(a, s, _, v) <span class="ot">-&gt;</span></span>
+<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a>                            <span class="kw">if</span> v <span class="kw">then</span> <span class="dt">Just</span> (a, s) <span class="kw">else</span> <span class="dt">Nothing</span>)</span>
+<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a>                    <span class="op">.</span> runJailT&#39; ac <span class="dt">True</span> <span class="fu">id</span></span>
+<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Jail</span> s r <span class="ot">=</span> <span class="dt">JailT</span> s r <span class="dt">Identity</span></span>
+<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a><span class="ot">runJail ::</span> <span class="dt">Jail</span> s s a</span>
+<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> s</span>
+<span id="cb16-70"><a href="#cb16-70" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, s)</span>
+<span id="cb16-71"><a href="#cb16-71" aria-hidden="true" tabindex="-1"></a>runJail ac <span class="ot">=</span> runIdentity <span class="op">.</span> runJailT ac</span>
+<span id="cb16-72"><a href="#cb16-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-73"><a href="#cb16-73" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> (<span class="dt">Monad</span> m)</span>
+<span id="cb16-74"><a href="#cb16-74" aria-hidden="true" tabindex="-1"></a>     <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
+<span id="cb16-75"><a href="#cb16-75" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
+<span id="cb16-76"><a href="#cb16-76" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb16-77"><a href="#cb16-77" aria-hidden="true" tabindex="-1"></a>jail l&#39; m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb16-78"><a href="#cb16-78" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v (l <span class="op">.</span> l&#39;) s</span>
+<span id="cb16-79"><a href="#cb16-79" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, s&#39;, l, v&#39;)</span>
+<span id="cb16-80"><a href="#cb16-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-81"><a href="#cb16-81" aria-hidden="true" tabindex="-1"></a><span class="ot">into ::</span> <span class="dt">RLens</span> a (<span class="dt">Maybe</span> a)</span>
+<span id="cb16-82"><a href="#cb16-82" aria-hidden="true" tabindex="-1"></a>into <span class="ot">=</span> lens fromJust (<span class="fu">const</span> <span class="dt">Just</span>)</span>
+<span id="cb16-83"><a href="#cb16-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-84"><a href="#cb16-84" aria-hidden="true" tabindex="-1"></a><span class="ot">jailMaybe ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-85"><a href="#cb16-85" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=&gt;</span> <span class="dt">RLens</span> (<span class="dt">Maybe</span> r&#39;) r</span>
+<span id="cb16-86"><a href="#cb16-86" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> a</span>
+<span id="cb16-87"><a href="#cb16-87" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
+<span id="cb16-88"><a href="#cb16-88" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb16-89"><a href="#cb16-89" aria-hidden="true" tabindex="-1"></a>jailMaybe l d m <span class="ot">=</span></span>
+<span id="cb16-90"><a href="#cb16-90" aria-hidden="true" tabindex="-1"></a>    (gets <span class="op">$</span> view l) <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb16-91"><a href="#cb16-91" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> _  <span class="ot">-&gt;</span> jail (l <span class="op">.</span> into) m</span>
+<span id="cb16-92"><a href="#cb16-92" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> d</span>
+<span id="cb16-93"><a href="#cb16-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-94"><a href="#cb16-94" aria-hidden="true" tabindex="-1"></a><span class="ot">escape ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-95"><a href="#cb16-95" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> <span class="dt">JailT</span> s s m a</span>
+<span id="cb16-96"><a href="#cb16-96" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb16-97"><a href="#cb16-97" aria-hidden="true" tabindex="-1"></a>escape m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb16-98"><a href="#cb16-98" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v <span class="fu">id</span> s</span>
+<span id="cb16-99"><a href="#cb16-99" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, s&#39;, l, v&#39;)</span>
+<span id="cb16-100"><a href="#cb16-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-101"><a href="#cb16-101" aria-hidden="true" tabindex="-1"></a><span class="ot">freedom ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">JailT</span> s r m s</span>
+<span id="cb16-102"><a href="#cb16-102" aria-hidden="true" tabindex="-1"></a>freedom <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (s, s, l, v)</span>
+<span id="cb16-103"><a href="#cb16-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-104"><a href="#cb16-104" aria-hidden="true" tabindex="-1"></a><span class="co">-- happens to be unused, because it&#39;s kinda insane??</span></span>
+<span id="cb16-105"><a href="#cb16-105" aria-hidden="true" tabindex="-1"></a><span class="ot">overwrite ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-106"><a href="#cb16-106" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
+<span id="cb16-107"><a href="#cb16-107" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> r r&#39; m a</span>
+<span id="cb16-108"><a href="#cb16-108" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb16-109"><a href="#cb16-109" aria-hidden="true" tabindex="-1"></a>overwrite l&#39; m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb16-110"><a href="#cb16-110" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v l&#39; <span class="op">$</span> view l s</span>
+<span id="cb16-111"><a href="#cb16-111" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, set l s&#39; s, l, v&#39;)</span>
+<span id="cb16-112"><a href="#cb16-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-113"><a href="#cb16-113" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-114"><a href="#cb16-114" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> a</span>
+<span id="cb16-115"><a href="#cb16-115" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m (<span class="dt">Maybe</span> a)</span>
+<span id="cb16-116"><a href="#cb16-116" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
+<span id="cb16-117"><a href="#cb16-117" aria-hidden="true" tabindex="-1"></a>parole d m <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-118"><a href="#cb16-118" aria-hidden="true" tabindex="-1"></a>    this <span class="ot">&lt;-</span> get</span>
+<span id="cb16-119"><a href="#cb16-119" aria-hidden="true" tabindex="-1"></a>    m <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb16-120"><a href="#cb16-120" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="fu">return</span> a</span>
+<span id="cb16-121"><a href="#cb16-121" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> put this <span class="op">&gt;&gt;</span> <span class="fu">return</span> d</span>
+<span id="cb16-122"><a href="#cb16-122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-123"><a href="#cb16-123" aria-hidden="true" tabindex="-1"></a><span class="ot">inspect ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-124"><a href="#cb16-124" aria-hidden="true" tabindex="-1"></a>        <span class="ot">=&gt;</span> <span class="dt">RLens</span> i r</span>
+<span id="cb16-125"><a href="#cb16-125" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m i</span>
+<span id="cb16-126"><a href="#cb16-126" aria-hidden="true" tabindex="-1"></a>inspect l <span class="ot">=</span> gets <span class="op">$</span> view l</span>
+<span id="cb16-127"><a href="#cb16-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-128"><a href="#cb16-128" aria-hidden="true" tabindex="-1"></a><span class="ot">inquire ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-129"><a href="#cb16-129" aria-hidden="true" tabindex="-1"></a>        <span class="ot">=&gt;</span> <span class="dt">RLens</span> i s</span>
+<span id="cb16-130"><a href="#cb16-130" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m i</span>
+<span id="cb16-131"><a href="#cb16-131" aria-hidden="true" tabindex="-1"></a>inquire l <span class="ot">=</span> view l <span class="op">&lt;$&gt;</span> freedom</span>
+<span id="cb16-132"><a href="#cb16-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-133"><a href="#cb16-133" aria-hidden="true" tabindex="-1"></a><span class="ot">arrest ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-134"><a href="#cb16-134" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
+<span id="cb16-135"><a href="#cb16-135" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> r&#39;</span>
+<span id="cb16-136"><a href="#cb16-136" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m ()</span>
+<span id="cb16-137"><a href="#cb16-137" aria-hidden="true" tabindex="-1"></a>arrest l v <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-138"><a href="#cb16-138" aria-hidden="true" tabindex="-1"></a>    state <span class="ot">&lt;-</span> get</span>
+<span id="cb16-139"><a href="#cb16-139" aria-hidden="true" tabindex="-1"></a>    put <span class="op">$</span> set l v state</span>
+<span id="cb16-140"><a href="#cb16-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-141"><a href="#cb16-141" aria-hidden="true" tabindex="-1"></a><span class="ot">arrests ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
+<span id="cb16-142"><a href="#cb16-142" aria-hidden="true" tabindex="-1"></a>        <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
+<span id="cb16-143"><a href="#cb16-143" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> (r&#39; <span class="ot">-&gt;</span> r&#39;)</span>
+<span id="cb16-144"><a href="#cb16-144" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m ()</span>
+<span id="cb16-145"><a href="#cb16-145" aria-hidden="true" tabindex="-1"></a>arrests l f <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-146"><a href="#cb16-146" aria-hidden="true" tabindex="-1"></a>    state <span class="ot">&lt;-</span> get</span>
+<span id="cb16-147"><a href="#cb16-147" aria-hidden="true" tabindex="-1"></a>    put <span class="op">$</span> set l (f <span class="op">$</span> view l state) state</span></code></pre></div>
+</details>
+<p>vs the</p>
+<details>
+<summary>
+New Implementation
+</summary>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DerivingStrategies         #-}</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FlexibleInstances          #-}</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses      #-}</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE RankNTypes                 #-}</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Applicative</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Lens</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.State</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.Reader</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.Trans.Maybe</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span> <span class="dt">JailT</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unJailT ::</span> <span class="dt">ReaderT</span> (<span class="dt">ALens&#39;</span> s r) (<span class="dt">StateT</span> s (<span class="dt">MaybeT</span> m)) a</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">Alternative</span>)</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadState</span> r (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>  get <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    l <span class="ot">&lt;-</span> asks cloneLens</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    gets <span class="op">$</span> view l</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>  put r <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    l <span class="ot">&lt;-</span> asks cloneLens</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    modify <span class="op">$</span> set l r</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> s <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> s t <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>runJailT s l <span class="ot">=</span> runMaybeT <span class="op">.</span> <span class="fu">flip</span> runStateT s <span class="op">.</span> <span class="fu">flip</span> runReaderT l <span class="op">.</span> unJailT</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> <span class="dt">Lens&#39;</span> t u <span class="ot">-&gt;</span> <span class="dt">JailT</span> s u m a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>jail ltu <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">.</span> withReaderT (\lst <span class="ot">-&gt;</span> cloneLens lst <span class="op">.</span> ltu) <span class="op">.</span> unJailT</span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a><span class="ot">escape ::</span> <span class="dt">JailT</span> s s m a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>escape (<span class="dt">JailT</span> j) <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> withReaderT (<span class="fu">const</span> <span class="fu">id</span>) j</span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a><span class="ot">freedom ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">JailT</span> s t m s</span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>freedom <span class="ot">=</span> <span class="dt">JailT</span> get</span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="ot">attempt ::</span> (<span class="dt">Alternative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> m a</span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>attempt m <span class="ot">=</span> <span class="fu">maybe</span> empty <span class="fu">pure</span> <span class="op">=&lt;&lt;</span> m</span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>parole a0 j <span class="ot">=</span></span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a>  asum</span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>    [ attempt j</span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>    , <span class="fu">pure</span> a0</span>
+<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a><span class="ot">arrest ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> t u <span class="ot">-&gt;</span> u <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m ()</span>
+<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>arrest l u <span class="ot">=</span> modify <span class="op">$</span> set l u</span></code></pre></div>
+</details>
+<p>Maybe this was interesting to you. It certainly was fun for me, because I like tearing apart bad code, and I don’t get to see much of it now that I have very talented colleagues. Thankfully I have a huge amount of crap code from my past, including an even more egregious monad that we’ll tackle next time around.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Unwrap the definitions of <code>StateT s Maybe a</code> and <code>MaybeT (State s) a</code> to see why.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>An Algebraic Theory of Music</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -1825,81 +2180,6 @@ expensive -&gt; {expensive}</code></pre>
 <li id="fn1" role="doc-endnote"><p>Short of <a href="http://conal.net/papers/compiling-to-categories/compiling-to-categories.pdf">compiling to categories</a> via something like <a href="https://github.com/con-kitty/categorifier">categorifier</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Read the Code, Not the Profile</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/read-the-code/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/read-the-code/index.html</guid>
-      <pubDate>2025-01-12T15:29:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>At work a few weeks back, I found myself digging into profile reports, trying to determine why our program was running so slowly. Despite having the extremely obvious-in-retrospect data in front of me, I wasted a lot of time speeding up code that turned out to not move the needle at all.</p>
-<p>Although perhaps it will be interesting only to future me, I thought it would be a good exercise to write up the experience—if only so I learn the lesson about how to read profiles and not make the same mistake again.</p>
-<h2 id="some-context">Some Context</h2>
-<p>I’m currently employed to work on a compiler. The performance has never been stellar, in that we were usually seeing about 5s to compile programs, even trivially small ones consisting of less than a hundred instructions. It was painful, but not <em>that</em> painful, since the test suite still finished in a minute or two. It was a good opportunity to get a coffee. I always assumed that the time penalties we were seeing were constant factors; perhaps it took a second or two to connect to Z3 or something like that.</p>
-<p>But then we started unrolling loops, which turned <em>trivially</em> small programs into <em>merely</em> small programs, and our performance ballooned. Now we were looking at 45s for some of our tests! Uh oh! That’s no longer in the real of constant factors, and it was clear that something asymptotically was wrong.</p>
-<p>So I fired up GHC with the trusty old <code>-prof</code> flag, and ran the test suite in <code>+RTS -p</code> mode, which instruments the program with all sorts of profiling goodies. After a few minutes, the test suite completed, and left a <code>test-suite.prof</code> file laying around in the current directory. You can inspect such things by hand, but tools like <a href="https://github.com/jaspervdj/profiteur">profiteur</a> make the experience much nicer.</p>
-<p>Without further ado, here’s what our profile looked like:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>Well, that’s not very helpful. Of course <code>MAIN</code> takes 100% of the time. So I expanded that, and saw:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>No clearer. Opening up <code>main</code>:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>Sheesh.</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
-    └ getTest  . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>OH MY GOD. JUST TELL ME SOMETHING ALREADY.</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
-    └ getTest  . . . . . . . . . . . . . . . . . . . 100%
-      └ test . . . . . . . . . . . . . . . . . . . . 100%</code></pre>
-<p>Fast forwarding for <em>quite</em> a while, I opened up the entire stack until I got to something that <em>didn’t</em> take 100% of the program’s runtime:</p>
-<pre><code>MAIN . . . . . . . . . . . . . . . . . . . . . . . . 100%
-└ main . . . . . . . . . . . . . . . . . . . . . . . 100%
-  └ main.\ . . . . . . . . . . . . . . . . . . . . . 100%
-    └ getTest  . . . . . . . . . . . . . . . . . . . 100%
-      └ test . . . . . . . . . . . . . . . . . . . . 100%
-        └ makeTest . . . . . . . . . . . . . . . . . 100%
-          └ makeTest.\ . . . . . . . . . . . . . . . 100%
-            └ compileProgram . . . . . . . . . . . . 100%
-              └ evalAppT . . . . . . . . . . . . . . 100%
-                └ runAppT  . . . . . . . . . . . . . 100%
-                  └ runAppT&#39; . . . . . . . . . . . . 100%
-                    └ withLogging  . . . . . . . . . 100%
-                      └ transformSSA . . . . . . . . 100%
-                        └ &gt;&gt;=  . . . . . . . . . . . 100%
-                          └ &gt;&gt;&gt;= . . . . . . . . . . 100%
-                            └ ibind  . . . . . . . . 100%
-                              └ ibind.\  . . . . . . 100%
-                                └ ibind.\.\  . . . . 100%
-                                  ├ toSSA  . . . . . 15%
-                                  ├ transform1 . . . 15%
-                                  ├ transform2 . . . 10%
-                                  ├ transform3 . . . 10%
-                                  ├ transform4 . . . 20%
-                                  └ collectGarbage . 30%</code></pre>
-<p>Now we’re in business. I dutifully dug into <code>toSSA</code>, the transforms, and <code>collectGarbage</code>. I cached some things, used better data structures, stopped appending lists, you know, the usual Haskell tricks. My work was rewarded, in that I managed to shave 80% off the runtime of our program.</p>
-<p>A few months later, we wrote a bigger program and fed it to the compiler. This one didn’t stop compiling. We left it overnight.</p>
-<p>Uh oh. Turns out I hadn’t fixed the problem. I’d only papered over it.</p>
-<h2 id="retrospective">Retrospective</h2>
-<p>So what went wrong here? Quite a lot, in fact! And worse, I had all of the information all along, but managed to misinterpret it at several steps of the process.</p>
-<p>Unwinding the story stack, the most salient aspect of having not solved the problem was reducing the runtime by <em>only</em> 80%. Dramatic percentages <em>feel</em> like amazing improvements, but that’s because human brains are poorly designed for building software. In the real world, big percentages are fantastic. In software, they are <em>linear</em> improvements.</p>
-<p>That is to say that a percentage-based improvement is <span class="math inline">\(O(n)\)</span> faster in the best case. My efforts improved our runtime from 45s to 9s. Which feels great, but the <em>real</em> problem is that this program is <em>measured in seconds</em> at all.</p>
-<p>It’s more informative to think in terms of orders of magnitude. Taking 45s on a ~3GHz processor is on the order of 10<sup>11</sup> instructions, while 9s is 10<sup>10</sup>. How the <em>hell</em> is it taking us TEN BILLION instructions to compile a dinky little program? That’s the <em>real problem.</em> Improving things from one hundred billion down to ten billion is no longer very impressive at all.</p>
-<p>To get a sense of the scale here, even if we spent 1M cycles (which feels conservatively expensive) for each instruction we wanted to compile, we should <em>still</em> be looking at &lt; 0.1s. Somehow we are over 1000x worse than that.</p>
-<p>So that’s one mistake I made: being impressed by extremely marginal improvements. Bad Sandy.</p>
-<p>The other mistake came from my interpretation of the profile. As a quick pop quiz, scroll back up to the profile and see if you can spot where the problem is.</p>
-<p>After expanding a few obviously-not-the-problem call centers that each were 100% of the runtime, I turned my brain off and opened <em>all</em> of the 100% nodes. But in doing so, I accidentally breezed past the real problem. The <em>real</em> problem is either that <code>compileProgram</code> takes 100% of the time of the test, or that <code>transformSSA</code> takes 100% of compiling the program. Why’s that? Because unlike <code>main</code> and co, <code>test</code> does more work than just compiling the program. It also does non-trivial IO to produce debugging outputs, and property checks the resulting programs. Similarly for <code>compileProgram</code>, which does a great deal more than <code>transformSSA</code>.</p>
-<p>This is somewhat of a philosophical enlightenment. The program execution hasn’t changed at all, but our perspective has. Rather than micro-optimizing the code that <em>is</em> running, this new perspective suggests we should focus our effort on determining <em>why that code is running in the first place.</em></p>
-<p>Digging through <code>transformSSA</code> made it <em>very obvious</em> the problem was an algorithmic one—we were running an unbounded loop that terminated on convergence, where each step it took <span class="citation" data-cites="O">@O</span>(n^2)@ work to make a single step. When I stopped to actually <em>read</em> the code, the problem was immediate, and the solution obvious.</p>
-<p>The lesson? Don’t read the profile. Read the code. Use the profile to focus your attention.</p>
       ]]></content:encoded>
   </item>
 </channel>

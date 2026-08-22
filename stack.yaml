@@ -8,8 +8,11 @@ extra-deps:
 - MissingH-1.6.0.1
 
 resolver: lts-18.16
-
 nix:
+  path: [nixpkgs=https://github.com/NixOS/nixpkgs/archive/nixos-24.05.tar.gz]
   packages:
+    - haskell.compiler.ghc810
     - pkg-config
     - zlib
+    - unzip
+
