@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>review2 :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/reviewing-again">review2</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/reviewing-my-first-monad">&larr;</a>
+    </span>
+    <time>August 24, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/foo.html">foo</a>, <a href="/tags/bar.html">bar</a>
+    </span>
+</p>
+<div class="content">
+    <p>Last time, we took a stroll down memory lane to review some ancient code I wrote, and see what/how I’d do things differently now. That was fun, and I have a new banger for us today.</p>
+<p>Today’s example comes from the same place — a little vim-like text editor I was working on. Vim has this “repeat” operator which just does the same thing you did last time. It’s nice. Delete a word. Running repeat deletes another word. Kinda dinky in this example, but it can also rerun “increment every number in the next four paragraphs.”</p>
+<p>Anyway, so that’s the feature I was trying to duplicate. But the action I was running might have done some IO, and I didn’t want to repeat the IO (because maybe the IO was to gather some input from the user, and repeating shouldn’t ask again.)</p>
+<p>I was still <a href="https://sandymaguire.me/blog/jurisdiction-of-heaven/">high on my own supply of writing monads</a>, so I approached this problem with a custom monad. The gist of the API was:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | A monad transformer adding the ability to record the results of IO actions</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- and later replay them.</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Again</span> m a</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Again</span> m)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">MonadIO</span> (<span class="dt">Again</span> m)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">MonadTrans</span> <span class="dt">Again</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Runs an action and records all of its sampled IO. Returns a action which</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- when invoked will use the recorded IO.</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>runAgain</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Monad</span> m</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Again</span> m a</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> m (m a)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Marks an IO action to be memoized after its first invocation.</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>again</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> ( <span class="dt">MonadIO</span> m</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>       , <span class="dt">Typeable</span> r</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>       )</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">IO</span> r</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Again</span> m r</span></code></pre></div>
+<p>I’m actually pretty impressed with past-me on this one. That’s a clean API, and the implementation was pretty cute.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Again</span> m a <span class="ot">=</span> <span class="dt">Again</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> runAgain&#39; ::</span> <span class="dt">RWST</span> () [<span class="dt">Dynamic</span>] [<span class="dt">Dynamic</span>] m a</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>once</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="kw">forall</span> m r</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>     <span class="op">.</span> ( <span class="dt">MonadIO</span> m</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>       , <span class="dt">Typeable</span> r</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">IO</span> r</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Again</span> m r</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>once action <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    a <span class="ot">&lt;-</span> dequeue <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> x  <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">.</span> fromJust <span class="op">$</span> fromDynamic x</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> liftIO action</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    tell [toDyn a]</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> a</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="ot">    dequeue ::</span> <span class="dt">MonadState</span> [r] m <span class="ot">=&gt;</span> m (<span class="dt">Maybe</span> r)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    dequeue <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        get <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>            []     <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="dt">Nothing</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>            (x<span class="op">:</span>xs) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>                put xs</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>                <span class="fu">return</span> <span class="op">$</span> <span class="dt">Just</span> x</span></code></pre></div>
+<p>The trick here is to keep <code>MonadState [Dynamic]</code> and a <code>MonadWriter [Dynamic]</code> instances around. This code uses the <code>MonadState</code> to pop off IO actions it’s already run, and the <code>MonadWriter</code> to keep track of new IO actions it needs to cache. The “magic” happens in <code>runAgain</code>, which runs it through once with an empty state, and then returns a new action with the MonadWriter results moved into the state for the next time around:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>runAgain</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Monad</span> m</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Again</span> m a</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> m (m a)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>runAgain action <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    (a, w) <span class="ot">&lt;-</span> evalRWST (runAgain&#39; action) () []</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        evalRWST (runAgain&#39; action) () w</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span> a</span></code></pre></div>
+<p>Simple. Clean. Elegant. Too bad it doesn’t actually work.</p>
+<p>The following program crashes with an error coming from the unsafe use of <code>fromJust</code> in <code>once</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">oops ::</span> <span class="dt">Again</span> (<span class="dt">StateT</span> <span class="dt">Bool</span> <span class="dt">IO</span>) ()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>oops <span class="ot">=</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Branch on the StateT</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  lift get <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- The first time around...</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- Cache a unit value</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      once <span class="op">$</span> <span class="fu">print</span> ()</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- Change the state value</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      lift <span class="op">$</span> put <span class="dt">True</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Since the state changed at the end of the first branch, we will take this</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- branch the second time around...</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- Calling &#39;once&#39; the second time around gets its value from the cache,</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- which has type @()@. But at this callsite, it ought to have type</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- @Bool -&gt; Bool@. Uh oh!</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      f <span class="ot">&lt;-</span> once <span class="op">$</span> <span class="fu">pure</span> <span class="fu">not</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>      lift <span class="op">$</span> <span class="fu">print</span> (<span class="st">&quot;uh oh!&quot;</span>, f <span class="dt">True</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="ot">ohNo ::</span> <span class="dt">IO</span> ((), <span class="dt">Bool</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>ohNo <span class="ot">=</span> <span class="fu">flip</span> runStateT <span class="dt">False</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> runAgain oops</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  m</span></code></pre></div>
+<p>The attack here comes from the fact that we can force the <code>Again</code> program down a different code path its second time around. And that second time, it encounters a call to <code>once</code> which has a different type than the one it cached. Thus, trying to reuse the cache leads to what is effectively a type error at runtime.</p>
+<p>What actually went wrong here? The problem is that <a href="https://chrispenner.ca/posts/expressiveness-spectrum">monads are too powerful</a>. Since the only way to compose monads is via bind (<code>m a -&gt; (a -&gt; m b) -&gt; m b</code>), we are forced to extend a monadic value of type <code>m a</code> by a <em>function</em> of type <code>a -&gt; m b</code>. Which is to say that the “next thing to do” in a monadic computation is always going to be a function. And functions are completely opaque. So, once we’re given a monad, there’s simply no way to know what it’s going to do without actually running the continuation.</p>
+<p>The problem arises from the fact that that continuation can invisibly branch. My <code>Again</code> monad was attempting to <em>statically analyze</em> the monadic computation, and cache the IO results in a queue. But as <code>oops</code> shows, it’s trivial to break this sort of static analysis. Because the branch is hidden inside of a function, and there’s no way to determine which branches a function <em>didn’t take.</em></p>
+<p>But I didn’t know that eleven years ago, so I give myself a pass on this one. Nevertheless, let’s tackle this problem with the wisdom of ages.</p>
+<h2 id="no-more-monads">No More Monads</h2>
+<p>So if the problem with my previous implementation of <code>Again</code> is that it’s a monad, what options do we have? As it happens, there are two very nice options available to us here: <em>arrows</em> and <em>selective applicative functors.</em> We’ll discuss arrows for now, and come back to selectives.</p>
+<p>Long time readers might remember a <a href="/tags/yampa.html">series on arrows from a few years back.</a> But if you don’t, that’s OK; you’re still welcome here. A quick recap:</p>
+<p>Arrows are a generalization of functions. Like functions, they take two type parameters (an input and an output). Like functions, they come with an identity arrow. They compose “end to end” just like functions do. These three properties are expressed as a <code>Category</code> superclass, which we usually call <code>c</code> and write infix:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Category</span> (<span class="ot">c ::</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span>) <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  id  ::</span> x <span class="ot">`c`</span> x</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  (.) ::</span> (y <span class="ot">`c`</span> z) <span class="ot">-&gt;</span> (x <span class="ot">`c`</span> y) <span class="ot">-&gt;</span> (x <span class="ot">`c`</span> z)</span></code></pre></div>
+<p>In addition to being categories, arrows also come with a means of transforming regular functions into arrows, and of mapping arrows over pairs:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Category</span> c <span class="ot">=&gt;</span> <span class="dt">Arrow</span> c <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  arr ::</span> (x <span class="ot">-&gt;</span> y) <span class="ot">-&gt;</span> (x <span class="ot">`c`</span> y)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  (***) ::</span> (x <span class="ot">`c`</span> x&#39;) <span class="ot">-&gt;</span> (y <span class="ot">`c`</span> y&#39;) <span class="ot">-&gt;</span> ((x, y) <span class="ot">`c`</span> (x&#39;, y&#39;))</span></code></pre></div>
+<p>What’s neat about arrows is that their values are function-like things, rather than being <em>actually functions.</em> That means when we compose arrows, we compose values whose internals we get to choose. Which in turn, means that static analysis is possible again!</p>
+<p>Attentive readers will notice that there isn’t actually any way for arrows-as-such to be able to branch. To gain that capability, they require an additional <code>ArrowChoice</code>, which equips them with the ability to lift arrows over <code>Either</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Arrow</span> c <span class="ot">=&gt;</span> <span class="dt">ArrowChoice</span> c <span class="kw">where</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  (+++) ::</span> (x <span class="ot">`c`</span> x&#39;) <span class="ot">-&gt;</span> (y <span class="ot">`c`</span> y&#39;) <span class="ot">-&gt;</span> (<span class="dt">Either</span> x y <span class="ot">`c`</span> <span class="dt">Either</span> x&#39; y&#39;)</span></code></pre></div>
+<p>To wet our whistle, let’s write a little helper <code>Arrow</code> that shows that the composition of an applicative functor with an arrow is itself an arrow:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Static</span> m c x y <span class="ot">=</span> <span class="dt">Static</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unStatic ::</span> m (c x y)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>The arrow instances for <code>(Applicative m, Arrow c) =&gt; Static m c</code> are the usual trick of using applicative functions to lift operations into the right place. For example, identity is just <code>pure id, and composition is</code>liftA2` of composition:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Category</span> c, <span class="dt">Applicative</span> m) <span class="ot">=&gt;</span> <span class="dt">Category</span> (<span class="dt">Static</span> m c) <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">id</span> <span class="ot">=</span> <span class="dt">Static</span> <span class="op">$</span> <span class="fu">pure</span> <span class="fu">id</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Static</span> g <span class="op">.</span> <span class="dt">Static</span> f <span class="ot">=</span> <span class="dt">Static</span> <span class="op">$</span> liftA2 (<span class="op">.</span>) g f</span></code></pre></div>
+<p>We can do the same trick for <code>arr</code> and <code>(***)</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Arrow</span> c, <span class="dt">Applicative</span> m) <span class="ot">=&gt;</span> <span class="dt">Arrow</span> (<span class="dt">Static</span> m c) <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  arr <span class="ot">=</span> <span class="dt">Static</span> <span class="op">.</span> <span class="fu">pure</span> <span class="op">.</span> arr</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Static</span> f <span class="op">***</span> <span class="dt">Static</span> g <span class="ot">=</span> <span class="dt">Static</span> <span class="op">$</span> liftA2 (<span class="op">***</span>) f g</span></code></pre></div>
+<p>as well as for <code>(+++)</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">ArrowChoice</span> c, <span class="dt">Applicative</span> m) <span class="ot">=&gt;</span> <span class="dt">ArrowChoice</span> (<span class="dt">Static</span> m c) <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Static</span> f <span class="op">+++</span> <span class="dt">Static</span> g <span class="ot">=</span> <span class="dt">Static</span> <span class="op">$</span> liftA2 (<span class="op">+++</span>) f g</span></code></pre></div>
+<p>What’s nice about this <code>Static</code> construct we’ve built is that it gives us two degrees of freedom. We’re free to choose an arrow whose structure we’re going to reuse, and an underlying applicative functor (which can give us “static” effects as we’re <em>building</em> the underlying arrow.)</p>
+<p>The idea here is that we can put the cache-<em>building</em> machinery inside of the applicative functor, but the cache-<em>reading</em> machinery inside of the underlying arrow.</p>
+<h3 id="constructing-again-again">Constructing Again, Again</h3>
+<p>It’s worth knowing about the Kleisli arrow:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Kleisli</span> m a b <span class="ot">=</span> <span class="dt">Kleisli</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> runKleisli ::</span> a <span class="ot">-&gt;</span> m b</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Category</span> (<span class="dt">Kleisli</span> m)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Arrow</span> (<span class="dt">Kleisli</span> m)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">ArrowChoice</span> (<span class="dt">Kleisli</span> m)</span></code></pre></div>
+<p>which says that any monadic bind function is itself an arrow. Implementing the instances yourself is a fun exercise if you’re new to this stuff. We can reuse <code>Kleisli</code> as our underlying arrow, which when you expand everything out, we get:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Again</span> m a b <span class="ot">=</span> <span class="dt">Again</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unAgain ::</span> <span class="dt">Static</span> m (<span class="dt">Kleisli</span> m) a b</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Category</span>, <span class="dt">Arrow</span>, <span class="dt">ArrowChoice</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="ot">runAgain ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Again</span> m a b <span class="ot">-&gt;</span> m (a <span class="ot">-&gt;</span> m b)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>runAgain <span class="ot">=</span> <span class="fu">fmap</span> runKleisli <span class="op">.</span> unStatic <span class="op">.</span> unAgain</span></code></pre></div>
+<p>What I think is particularly cool about this is that <code>runAgain</code> is just the composition of the newtype unwrappers, and yet its type is extremely reminiscent of my ten-year-ago implementation:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>runAgain  <span class="co">-- the original</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Monad</span> m</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Again</span> m a</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> m (m a)</span></code></pre></div>
+<p>This is an instance of a more general principle, which is that the final “observation” you want to make of your type is always a good <em>representation</em> of that type. It’s not the only representation, but it’s always a reasonable choice. Appropriately enough, this is known as a <em>final encoding.</em></p>
+<p>Anyway. How can we implement <code>once</code>? By way of <code>onceF</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">onceF ::</span> (<span class="dt">MonadIO</span> m, <span class="dt">Ord</span> a) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">IO</span> b) <span class="ot">-&gt;</span> <span class="dt">Again</span> m a b</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>onceF m <span class="ot">=</span> <span class="dt">Again</span> <span class="op">$</span> <span class="dt">Static</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  cache <span class="ot">&lt;-</span> liftIO <span class="op">$</span> newIORef <span class="fu">mempty</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> <span class="dt">Kleisli</span> <span class="op">$</span> \a <span class="ot">-&gt;</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    cacheMap <span class="ot">&lt;-</span> readIORef cache</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">case</span> M.lookup a cacheMap <span class="kw">of</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Just</span> b <span class="ot">-&gt;</span> <span class="fu">pure</span> b</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        b <span class="ot">&lt;-</span> m a</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        modifyIORef&#39; cache <span class="op">$</span> M.insert a b</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">pure</span> b</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="ot">once ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">IO</span> b <span class="ot">-&gt;</span> <span class="dt">Again</span> m a b</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>once m <span class="ot">=</span> arr (<span class="fu">const</span> ()) <span class="op">&gt;&gt;&gt;</span> onceF (<span class="fu">const</span> m)</span></code></pre></div>
+<p><code>onceF</code> works by constructing a <code>cache :: IORef (Map a b)</code> at the <code>Static</code> level. Each call to <code>onceF</code> gets a unique cache. Then we drop into the implementation of the <code>Kleisli</code> arrow (which recall happens at <em>runtime</em>.) Inside the <code>Kleisli</code>, we check to see if the map has a value at the requested <code>a</code>, and if so, return the cached <code>b</code>. If not, we run our function and cache it.</p>
+<p>Since there’s no <code>Dynamic</code> tomfoolery here that is existentializing away our types, we don’t need to worry about the <code>oops</code> attack; Haskell’s type system guarantees we can’t construct such a thing.</p>
+<p>Because <code>Again</code> isn’t a <code>Monad</code>, it can’t be a <code>MonadIO</code> either. But it’s nice to be able to provide the equivalent of <code>liftIO</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">againF ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">IO</span> b) <span class="ot">-&gt;</span> <span class="dt">Again</span> m a b</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>againF <span class="ot">=</span> <span class="dt">Again</span> <span class="op">.</span> <span class="dt">Static</span> <span class="op">.</span> <span class="fu">pure</span> <span class="op">.</span> <span class="dt">Kleisli</span> <span class="op">.</span> <span class="fu">fmap</span> liftIO</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ot">again ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">Again</span> m x a</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>again m <span class="ot">=</span> arr (<span class="fu">const</span> ()) <span class="op">&gt;&gt;&gt;</span> againF (<span class="fu">const</span> m)</span></code></pre></div>
+<p>So that completes our arrow-based implementation of <code>Again</code>. But there’s still something left undone.</p>
+<h3 id="circling-back-to-selectives">Circling Back to Selectives</h3>
+<p>I said earlier that selective applicative functors would be an alternative approach to implementing <code>Again</code>. Selectives rightfully sit between <code>Applicative</code> and <code>Monad</code> in the functor hierarchy, but were <a href="https://dl.acm.org/doi/10.1145/3341694">discovered too late</a>, and everyone was still kind of annoyed about having had just stuck <code>Applicative</code> into the hierarchy.</p>
+<p>What, precisely is a selective functor? It’s a different solution to the problem of “monads are too powerful” which gives us a branching primitive to play with. Behold:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> <span class="dt">Selective</span> f <span class="kw">where</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  select ::</span> f (<span class="dt">Either</span> a b) <span class="ot">-&gt;</span> f (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f b</span></code></pre></div>
+<p><code>select</code> says that you might have an <code>a</code>, in which case you must run the provided <code>f (a -&gt; b)</code>. But maybe you have a <code>b</code>, in which case you <em>may</em> run the effects of the <code>f (a -&gt; b)</code>. But nobody’s forcing you to.</p>
+<p>Since there are still no raw function continuations to be seen here, we can use <code>select</code> to provide branching to our programs. But all of the branches can be identified statically, since we’re only operating on <code>f</code> values, again, whose internals we can control.</p>
+<p>In fact, by aggressively nesting <code>select</code> calls, you can get back a version of monadic bind — so long as you have a finite number of select calls you’d need to make:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>bindS</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (<span class="dt">Selective</span> f, <span class="dt">Enum</span> a, <span class="dt">Bounded</span> a, <span class="dt">Eq</span> a)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> f a</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> f b)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> f b</span></code></pre></div>
+<p>(the implementation of which is fun if you’re looking for a challenge)</p>
+<p>Anyway, all of this is to say that we could have equally structured our <code>Again</code> as a selective functor rather than as an arrow! But <code>ArrowChoice</code> is at least as powerful as <code>Selective</code>, so given all of our hard work already, we can pull out a <code>Selective</code> instance for free.</p>
+<p>What do I mean when I say “at least as powerful?” It means we can derive it for free, given an <code>ArrowChoice</code> instance. Behold, the <code>GenericArrow</code> newtype, which exists only for us to have something to attach some instances to.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">GenericArrow</span> c x a <span class="ot">=</span> <span class="dt">GenericArrow</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unGenericArrow ::</span> c x a</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Category</span>, <span class="dt">Arrow</span>, <span class="dt">ArrowChoice</span>)</span></code></pre></div>
+<p>Here we use newtype deriving to say that if <code>c</code> is a category/arrow/arrowchoice, then <code>GenericArrow c</code> is too. But now we can show that having <code>Arrow</code> is enough to get <code>Functor</code> and <code>Applicative</code> instance:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Arrow</span> c <span class="ot">=&gt;</span> <span class="dt">Functor</span> (<span class="dt">GenericArrow</span> c x) <span class="kw">where</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> f c <span class="ot">=</span> arr f <span class="op">.</span> c</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Arrow</span> c <span class="ot">=&gt;</span> <span class="dt">Applicative</span> (<span class="dt">GenericArrow</span> c x) <span class="kw">where</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="ot">=</span> arr <span class="op">.</span> <span class="fu">const</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  liftA2 f x y <span class="ot">=</span> (x <span class="op">&amp;&amp;&amp;</span> y) <span class="op">&gt;&gt;&gt;</span> arr (<span class="fu">uncurry</span> f)</span></code></pre></div>
+<p>Then, given an <code>ArrowChoice</code>, we can get an implementation of <code>select</code>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">ArrowChoice</span> c <span class="ot">=&gt;</span> <span class="dt">Selective</span> (<span class="dt">GenericArrow</span> c x) <span class="kw">where</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  select te tk <span class="ot">=</span> proc b <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    e <span class="ot">&lt;-</span> te <span class="op">-&lt;</span> b</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">case</span> e <span class="kw">of</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Left</span> x <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        k <span class="ot">&lt;-</span> tk <span class="op">-&lt;</span> b</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        returnA <span class="op">-&lt;</span> k x</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Right</span> y <span class="ot">-&gt;</span> returnA <span class="op">-&lt;</span> y</span></code></pre></div>
+<p>Here we don’t have the option of choosing to invoke <code>tk</code> in the <code>Right</code> case. But that’s OK, because in <code>Again</code>, doing so would correspond to creating caches for branches that don’t need it.</p>
+<p>Given all of this, we can now derive <code>Functor</code> up to <code>Selective</code> for <code>Again</code>:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Again</span> m a b <span class="ot">=</span> <span class="dt">Again</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unAgain ::</span> <span class="dt">Static</span> m (<span class="dt">Kleisli</span> m) a b</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Category</span>, <span class="dt">Arrow</span>, <span class="dt">ArrowChoice</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Selective</span>) via <span class="dt">GenericArrow</span> (<span class="dt">Again</span> m) a</span></code></pre></div>
+<p>which means that users can now choose between the arrow hierarchy and the functor hierarchy for how they’d like to think about building <code>Again</code> actions. And to nudge them even a little further, we can introduce something that looks like a monad transformer, removing the input parameter:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">AgainT</span> m <span class="ot">=</span> <span class="dt">Again</span> m ()</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="ot">runAgainT ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">AgainT</span> m a <span class="ot">-&gt;</span> m (m a)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>runAgainT <span class="ot">=</span> <span class="fu">fmap</span> (<span class="op">$</span> ()) <span class="op">.</span> runAgain</span></code></pre></div>
+<p>Clean. Tidy. Actually works this time around.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/reviewing-my-first-monad">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

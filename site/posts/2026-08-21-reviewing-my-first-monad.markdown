@@ -3,7 +3,7 @@ layout: post
 title: Code-Reviewing My First Monad Implementation
 date: 2026-08-21 23:50
 comments: true
-tags: code-review, haskell, monad
+tags: code-review, haskell, monads
 ---
 
 I've been wanting to get back into the habit of blogging, and thought a fun
