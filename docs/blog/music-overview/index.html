@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>An Overview of an Ambitious Music Project :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/music-overview">An Overview of an Ambitious Music Project</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/reviewing-again">&larr;</a>
+    </span>
+    <time>November  2, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/music theory.html">music theory</a>
+    </span>
+</p>
+<div class="content">
+    <p>It’s November. And you know what that means. <a href="https://nano2.org/">National Novel Writing Month</a>. Rather than writing a novel, I thought it’d be fun to do something like in 2016 when I wrote <a href="https://reasonablypolymorphic.com/book/preface">my first textbook</a>. But this time around, I’m going to bash out all of the ideas about a constructive theory of music that have been banging around in my head for a few years.</p>
+<p>Many years ago, I read <a href="https://www.microsoft.com/en-us/research/publication/composing-contracts-an-adventure-in-financial-engineering/">Composing Contracts: an adventure in financial engineering</a>, in which Haskell King Simon Peyton Jones descends unwittingly into the world of financial instruments. And being a “red-blooded functional programmer,” he designs a bunch of combinators which model the entire complexity of dozens of financial instruments, as well as an infinitely many that nobody had ever thought to ask for.</p>
+<p>This paper has always been wildly inspirational to me, and alongside <a href="https://conal.net/papers/compiling-to-categories/compiling-to-categories.pdf">Compiling to Categories</a>, is the clearest example of the power of pure, strongly-typed, functional programming, and its ability to model the wider, messier world.</p>
+<p>So, wanting to learn how to flex these muscles for myself, I set off many years ago on a quest to try to tackle the hardest problem I could think of, that I felt like I had any chance whatsoever of succeeding at — music. After all, <a href="https://www.lesswrong.com/posts/WLJwTJ7uGPA5Qphbp/trying-to-try">“so much of life’s failure consists in holding yourself to too low a standard.”</a></p>
+<p>The goal is, and has always been, to develop something equivalent to <a href="https://byorgey.github.io/blog/">Brent Yorgey’s</a> amazing <a href="https://diagrams.github.io/gallery.html">diagrams</a> library. Diagrams is a combinator library in Haskell which abstracts away the “how” of drawing a picture from the “what picture do you want to draw?” For example, here’s how you draw a <a href="triangle">Sierpinski triangle</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>sierpinski <span class="dv">1</span> <span class="ot">=</span> triangle <span class="dv">1</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sierpinski n <span class="ot">=</span>     s</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                 <span class="op">===</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>              (s <span class="op">|||</span> s) <span class="op">#</span> centerX</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span> s <span class="ot">=</span> sierpinski (n<span class="op">-</span><span class="dv">1</span>)</span></code></pre></div>
+<p>which you might notice <em>is exactly the obvious definition of what a Sierpinski triangle is</em> — recursive copies of itself arranged in a triangle.</p>
+<p>So the question I’ve been chasing for years is “what is an equivalently elegant approach to composing music?” I spent a <a href="/blog/algebraic-music/">good</a> <a href="/more-algebraic-music/">chunk</a> of my holiday season last year struggling to find a good starting point here. With the benefit of hindsight, and of being a year older and wiser, I’ve made a great deal of progress since then.</p>
+<p>But before diving into exactly what that progress means, I think it’s worth discussing what explicitly the goals here are (and what they are <em>not.</em>) Some desiderata:</p>
+<ol type="1">
+<li>The system must be capable of expressing any music, from any culture, from any time (this includes <em>music and styles that do not yet exist.</em>)</li>
+<li>It must be easy to get good results out of the system.</li>
+<li>Understanding the system should teach you something about music.</li>
+</ol>
+<p>These three desiderata are an extreme set of constraints on the solution space. Desideratum 1 means that we can’t take <em>anything</em> for granted. For example, we cannot assume that there are 12 pitch classes, since this would immediately eliminate microtonal music. Nor can we privilege <a href="https://en.wikipedia.org/wiki/Function_(music)">harmonic function</a>, since this isn’t an idea that seems to be shared by non-Western traditional music.</p>
+<p>Desideratum 2 means that we can’t be happy with only a mathematical model. Yes, to a first approximation, set theory can describe anything, but lots of things are pretty egregious to articulate in set theory! This gives rise to the need for <em>musically-meaningful combinators.</em> I think the [kaleidoscope diagram] is a striking visual example of this idea. It’s a piece of code that <em>given any image whatsoever</em> can produce a new image <em>which is a kaleidoscope of that thing.</em> With a little hand waving here, you can imagine a set of musical combinators which approach a given motif, which ramp up the tension, which introduce syncopation, which produce senses of resolution. This also means we must put a great deal of thought into how musical ideas are represented, and how they can be combined.</p>
+<p>Desideratum 3 means we can’t just hand the problem off to some LLM or some other probabilistic mechanism.</p>
+<p>Under these constraints, it’s immediately evident that almost no existing music theory is up to the task. As best I can tell, the field of music theory is primarily focused on <em>analysis of existing music</em> rather than on <em>general techniques for creating new music.</em> Perhaps an argument can be made that you must be able to spot greatness in order to produce it for yourself, but this is relatively unconvincing to me. Attempting to perform post-hoc analysis of music without a constructive theory seems analogous to decompiling computer code <em>without a language to decompile it into.</em> At best you might find some statistical patterns (V chords often go to I), but this doesn’t seem like it ought to lend itself much to <em>actually writing good music.</em> Will it out-compete a <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chain</a> trained on the same probabilities?</p>
+<p>The best we can do with most existing music theory is (to the extent that it is constructive [which is extremely few and far between]) relegate it to combinator status. A grammar of functional harmony can exist as a DSL on top of the core music structures. <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Voice leading spaces</a> ala <a href="https://dmitri.mycpanel.princeton.edu/index.html">Tymoczko</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> can be expressed by their own notions of pitch, alongside operations and elimination forms.</p>
+<p>So that’s the overview. All in all, it’s a very ambitious project. I am not interested in hearing from you if you think this cannot be done. If you’re right, I’ll end up with egg on my face, but that’s my problem. However, if this is the sort of thing that piques your interest as much as it has mine, please do get in touch.</p>
+<p>In the next post we’ll discuss the denotative elements of music.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Dmitri Tymoczko has the distinction of being the only music theorist I’ve found who is precise enough to be more than <a href="https://en.wikipedia.org/wiki/Not_even_wrong">not even wrong</a>. Rather amazingly, he also seems to be <em>right!</em> Coincidence?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/reviewing-again">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

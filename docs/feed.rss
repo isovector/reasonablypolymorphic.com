@@ -7,13 +7,53 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2026-08-24T23:26:00Z</pubDate>
+  <pubDate>2026-11-02T15:23:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>An Overview of an Ambitious Music Project</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/music-overview/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/music-overview/index.html</guid>
+      <pubDate>2026-11-02T15:23:00Z</pubDate>
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
+        <p>It’s November. And you know what that means. <a href="https://nano2.org/">National Novel Writing Month</a>. Rather than writing a novel, I thought it’d be fun to do something like in 2016 when I wrote <a href="https://reasonablypolymorphic.com/book/preface">my first textbook</a>. But this time around, I’m going to bash out all of the ideas about a constructive theory of music that have been banging around in my head for a few years.</p>
+<p>Many years ago, I read <a href="https://www.microsoft.com/en-us/research/publication/composing-contracts-an-adventure-in-financial-engineering/">Composing Contracts: an adventure in financial engineering</a>, in which Haskell King Simon Peyton Jones descends unwittingly into the world of financial instruments. And being a “red-blooded functional programmer,” he designs a bunch of combinators which model the entire complexity of dozens of financial instruments, as well as an infinitely many that nobody had ever thought to ask for.</p>
+<p>This paper has always been wildly inspirational to me, and alongside <a href="https://conal.net/papers/compiling-to-categories/compiling-to-categories.pdf">Compiling to Categories</a>, is the clearest example of the power of pure, strongly-typed, functional programming, and its ability to model the wider, messier world.</p>
+<p>So, wanting to learn how to flex these muscles for myself, I set off many years ago on a quest to try to tackle the hardest problem I could think of, that I felt like I had any chance whatsoever of succeeding at — music. After all, <a href="https://www.lesswrong.com/posts/WLJwTJ7uGPA5Qphbp/trying-to-try">“so much of life’s failure consists in holding yourself to too low a standard.”</a></p>
+<p>The goal is, and has always been, to develop something equivalent to <a href="https://byorgey.github.io/blog/">Brent Yorgey’s</a> amazing <a href="https://diagrams.github.io/gallery.html">diagrams</a> library. Diagrams is a combinator library in Haskell which abstracts away the “how” of drawing a picture from the “what picture do you want to draw?” For example, here’s how you draw a <a href="triangle">Sierpinski triangle</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>sierpinski <span class="dv">1</span> <span class="ot">=</span> triangle <span class="dv">1</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sierpinski n <span class="ot">=</span>     s</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                 <span class="op">===</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>              (s <span class="op">|||</span> s) <span class="op">#</span> centerX</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span> s <span class="ot">=</span> sierpinski (n<span class="op">-</span><span class="dv">1</span>)</span></code></pre></div>
+<p>which you might notice <em>is exactly the obvious definition of what a Sierpinski triangle is</em> — recursive copies of itself arranged in a triangle.</p>
+<p>So the question I’ve been chasing for years is “what is an equivalently elegant approach to composing music?” I spent a <a href="/blog/algebraic-music/">good</a> <a href="/more-algebraic-music/">chunk</a> of my holiday season last year struggling to find a good starting point here. With the benefit of hindsight, and of being a year older and wiser, I’ve made a great deal of progress since then.</p>
+<p>But before diving into exactly what that progress means, I think it’s worth discussing what explicitly the goals here are (and what they are <em>not.</em>) Some desiderata:</p>
+<ol type="1">
+<li>The system must be capable of expressing any music, from any culture, from any time (this includes <em>music and styles that do not yet exist.</em>)</li>
+<li>It must be easy to get good results out of the system.</li>
+<li>Understanding the system should teach you something about music.</li>
+</ol>
+<p>These three desiderata are an extreme set of constraints on the solution space. Desideratum 1 means that we can’t take <em>anything</em> for granted. For example, we cannot assume that there are 12 pitch classes, since this would immediately eliminate microtonal music. Nor can we privilege <a href="https://en.wikipedia.org/wiki/Function_(music)">harmonic function</a>, since this isn’t an idea that seems to be shared by non-Western traditional music.</p>
+<p>Desideratum 2 means that we can’t be happy with only a mathematical model. Yes, to a first approximation, set theory can describe anything, but lots of things are pretty egregious to articulate in set theory! This gives rise to the need for <em>musically-meaningful combinators.</em> I think the [kaleidoscope diagram] is a striking visual example of this idea. It’s a piece of code that <em>given any image whatsoever</em> can produce a new image <em>which is a kaleidoscope of that thing.</em> With a little hand waving here, you can imagine a set of musical combinators which approach a given motif, which ramp up the tension, which introduce syncopation, which produce senses of resolution. This also means we must put a great deal of thought into how musical ideas are represented, and how they can be combined.</p>
+<p>Desideratum 3 means we can’t just hand the problem off to some LLM or some other probabilistic mechanism.</p>
+<p>Under these constraints, it’s immediately evident that almost no existing music theory is up to the task. As best I can tell, the field of music theory is primarily focused on <em>analysis of existing music</em> rather than on <em>general techniques for creating new music.</em> Perhaps an argument can be made that you must be able to spot greatness in order to produce it for yourself, but this is relatively unconvincing to me. Attempting to perform post-hoc analysis of music without a constructive theory seems analogous to decompiling computer code <em>without a language to decompile it into.</em> At best you might find some statistical patterns (V chords often go to I), but this doesn’t seem like it ought to lend itself much to <em>actually writing good music.</em> Will it out-compete a <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chain</a> trained on the same probabilities?</p>
+<p>The best we can do with most existing music theory is (to the extent that it is constructive [which is extremely few and far between]) relegate it to combinator status. A grammar of functional harmony can exist as a DSL on top of the core music structures. <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Voice leading spaces</a> ala <a href="https://dmitri.mycpanel.princeton.edu/index.html">Tymoczko</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> can be expressed by their own notions of pitch, alongside operations and elimination forms.</p>
+<p>So that’s the overview. All in all, it’s a very ambitious project. I am not interested in hearing from you if you think this cannot be done. If you’re right, I’ll end up with egg on my face, but that’s my problem. However, if this is the sort of thing that piques your interest as much as it has mine, please do get in touch.</p>
+<p>In the next post we’ll discuss the denotative elements of music.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Dmitri Tymoczko has the distinction of being the only music theorist I’ve found who is precise enough to be more than <a href="https://en.wikipedia.org/wiki/Not_even_wrong">not even wrong</a>. Rather amazingly, he also seems to be <em>right!</em> Coincidence?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>review2</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -2175,130 +2215,6 @@ expensive -&gt; {expensive}</code></pre>
 <li id="fn1" role="doc-endnote"><p>Rhetorical question. I don’t want to hear about orphans or overlapping instances or whatever.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Use Monoids for Construction</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/use-monoids/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/use-monoids/index.html</guid>
-      <pubDate>2025-01-24T09:35:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>There’s a common anti-pattern I see in beginner-to-intermediate Haskell programmers that I wanted to discuss today. It’s the tendency to conceptualize the <em>creation</em> of an object by <em>repeated mutation.</em> Often this takes the form of repeated insertion into an empty container, but comes up under many other guises as well.</p>
-<p>This anti-pattern isn’t particularly surprising in its prevalence; after all, if you’ve got the usual imperative brainworms, this is just <em>how things get built.</em> The gang of four “builder pattern” is exactly this; you can build an empty object, and setters on such a thing change the state <em>but return the object itself.</em> Thus, you build things by chaning together setter methods:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Foo myFoo <span class="op">=</span> <span class="kw">new</span> <span class="fu">Foo</span><span class="op">().</span><span class="fu">setBar</span><span class="op">().</span><span class="fu">setQux</span><span class="op">(</span><span class="dv">17</span><span class="op">).</span><span class="fu">setZap</span><span class="op">(</span><span class="kw">true</span><span class="op">);</span></span></code></pre></div>
-<p>Even if you don’t ascribe to the whole OOP design principle thing, you’re still astronomically likely to think about building data structures like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Doodad doodad <span class="op">=</span> <span class="kw">new</span> Doodad<span class="op">;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">foreach</span> <span class="op">(</span>Widget widget in widgets<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  doodad<span class="op">.</span><span class="fu">addWidget</span><span class="op">(</span>widget<span class="op">);</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
-<p>To be more concrete, maybe instead of doodads and widgets you have <code>BST</code>s and <code>Node</code>s. Or dictionaries and key-value pairs. Or graphs and edges. Anywhere you look, you’ll probably find examples of this sort of code.</p>
-<p>Maybe you’re thinking to yourself “I’m a hairy-chested functional programmer and I scoff at patterns like these.” That might be true, but perhaps you too are guilty of writing code that looks like:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">foldr</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    (\(k, v) m <span class="ot">-&gt;</span> Map.insert k v m)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    Map.empty</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> toKVPairs something</span></code></pre></div>
-<p>Just because it’s dressed up with functional combinators <em>doesn’t mean</em> you’re not still writing C code. To my eye, the great promise of functional programming is its potential for conceptual clarity, and repeated mutation will always fall short of the mark.</p>
-<p>The complaint, as usual, is that repeated mutation tells you <em>how</em> to build something, rather than focusing on <em>what</em> it is you’re building. An algorithm cannot be correct in the absence of intention—after all, you must know what you’re trying to accomplish in order to know if you succeeded. What these builder patterns, for loops, and <code>foldr</code>s all have in common is that they are algorithms for strategies for building something.</p>
-<p>But you’ll notice none of them come with comments. And therefore we can only ever guess at what the original author intended, based on the context of the code we’re looking at.</p>
-<p>I’m sure this all sounds like splitting hairs, but that’s because the examples so far have been extremely simple. But what about this one?</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cgo ::</span> (a <span class="ot">-&gt;</span> (<span class="dt">UInt</span>, <span class="dt">UInt</span>)) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [<span class="dt">NonEmpty</span> a]</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>cgo f <span class="ot">=</span> <span class="fu">foldr</span> step []</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    step a [] <span class="ot">=</span> [<span class="fu">pure</span> a]</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    step a bss0<span class="op">@</span>((b <span class="op">:|</span> bs) <span class="op">:</span> bss)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="kw">let</span> (al, ac) <span class="ot">=</span> f a</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      , <span class="kw">let</span> (bl, bc) <span class="ot">=</span> f b</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      , al <span class="op">+</span> <span class="dv">1</span> <span class="op">==</span> bl <span class="op">&amp;&amp;</span> ac <span class="op">==</span> bc</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="ot">=</span> (a <span class="op">:|</span> b <span class="op">:</span> bs) <span class="op">:</span> bss</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> <span class="fu">pure</span> a <span class="op">:</span> bss0</span></code></pre></div>
-<p>which I found by grepping through <code>haskell-language-server</code> for <code>foldr</code>, and then mangled to remove the suggestive variable names. What does this one do? Based solely on the type we can presume it’s using that function to partition the list somehow. But how? And is it correct? We’ll never know—and the function doesn’t even come with any tests!</p>
-<h2 id="its-always-monoids">It’s Always Monoids</h2>
-<p>The shift in perspective necessary here is to reconceptualize building-by-repeated-mutation as building-by-combining. Rather than chiseling out the object you want, instead find a way of gluing it together from simple, obviously-correct pieces.</p>
-<p>The notion of “combining together” should evoke in you a cozy warm fuzzy feeling. Much like being in a secret pillow form. You must come to be one with the monoid. Once you have come to embrace monoids, you will have found inner programming happiness. Monoids are a sacred, safe place, at the fantastic intersection of “overwhelming powerful” and yet “hard to get wrong.”</p>
-<p>As an amazingly fast recap, a monoid is a collection of three things: some type <code>m</code>, some value of that type <code>mempty</code>, and binary operation over that type <code>(&lt;&gt;) :: m -&gt; m -&gt; m</code>, subject to a bunch of laws:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>∀a<span class="op">.</span> <span class="fu">mempty</span> <span class="op">&lt;&gt;</span> a <span class="ot">=</span> a <span class="ot">=</span> a <span class="op">&lt;&gt;</span> <span class="fu">mempty</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>∀a b c<span class="op">.</span> (a <span class="op">&lt;&gt;</span> b) <span class="op">&lt;&gt;</span> c <span class="ot">=</span> a <span class="op">&lt;&gt;</span> (b <span class="op">&lt;&gt;</span> c)</span></code></pre></div>
-<p>which is to say, <code>mempty</code> does nothing and <code>(&lt;&gt;)</code> doesn’t care where you stick the parentheses.</p>
-<p>If you’re going to memorize any two <em>particular</em> examples of monoids, it had better be these two:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> [a] <span class="kw">where</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> []</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  a <span class="op">&lt;&gt;</span> b <span class="ot">=</span> a <span class="op">++</span> b</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Monoid</span> a, <span class="dt">Monoid</span> b) <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (a, b) <span class="kw">where</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> (<span class="fu">mempty</span>, <span class="fu">mempty</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  (a1, b1) <span class="op">&lt;&gt;</span> (a2, b2) <span class="ot">=</span> (a1 <span class="op">&lt;&gt;</span> a2, b1 <span class="op">&lt;&gt;</span> b2)</span></code></pre></div>
-<p>The first says that lists form a monoid under the empty list and concatenation. The second says that products preserve monoids.</p>
-<p>The list monoid instance is responsible for the semantics of the ordered, “sequency” data structures. That is, if I have some sequential flavor of data structure, its monoid instance should probably satisfy the equation <code>toList a &lt;&gt; toList b = toList (a &lt;&gt; b)</code>. Sequency data structures are things like lists, vectors, queues, deques, that sort of thing. Data structures where, when you combine them, you assume there is no overlap.</p>
-<p>The second monoid instance here, over products, is responsible for pretty much all the other data structures. The first thing we can do with it is remember that functions are just really, really big product types, with one “slot” for every value in the domain. We can show an isomorphism between pairs and functions out of booleans, for example:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">from ::</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a, a)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>from f <span class="ot">=</span> (f <span class="dt">False</span>, f <span class="dt">True</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">to ::</span> (a, a) <span class="ot">-&gt;</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>to (a, _) <span class="dt">False</span> <span class="ot">=</span> a</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>to (_, a) <span class="dt">True</span>  <span class="ot">=</span> a</span></code></pre></div>
-<p>and under this isomorphism, we should thereby expect the <code>Monoid a =&gt; Monoid (Bool -&gt; a)</code> instance to agree with <code>Monoid a =&gt; Monoid (a, a)</code>. If you generalize this out, you get the following instance:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> \_ <span class="ot">-&gt;</span> <span class="fu">mempty</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  f <span class="op">&lt;&gt;</span> g <span class="ot">=</span> \x <span class="ot">-&gt;</span> f x <span class="op">&lt;&gt;</span> g x</span></code></pre></div>
-<p>which combines values in the codomain monoidally. We can show the equivalence between this monoid instance and our original product preservation:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  from f <span class="op">&lt;&gt;</span> from g</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> (f <span class="dt">False</span>,  f <span class="dt">True</span>) <span class="op">&lt;&gt;</span> (g <span class="dt">False</span>, g <span class="dt">True</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> (f <span class="dt">False</span> <span class="op">&lt;&gt;</span> g <span class="dt">False</span>, f <span class="dt">True</span> <span class="op">&lt;&gt;</span> g <span class="dt">True</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> ((f <span class="op">&lt;&gt;</span> g) <span class="dt">False</span>, (f <span class="op">&lt;&gt;</span> g) <span class="dt">True</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> from (f <span class="op">&lt;&gt;</span> g)</span></code></pre></div>
-<p>and</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  to (a11, a12) <span class="op">&lt;&gt;</span> to (a21, a22)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> to (a11, a12) x <span class="op">&lt;&gt;</span> to (a21, a22) x</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> to (a11, a12) <span class="dt">False</span> <span class="op">&lt;&gt;</span> to (a21, a22) <span class="dt">False</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> to (a11, a12) <span class="dt">True</span>  <span class="op">&lt;&gt;</span> to (a21, a22) <span class="dt">True</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> a11 <span class="op">&lt;&gt;</span> a21</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span>  <span class="ot">-&gt;</span> a12 <span class="op">&lt;&gt;</span> a22</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> \x <span class="ot">-&gt;</span> to (a11 <span class="op">&lt;&gt;</span> a21, a12 <span class="op">&lt;&gt;</span> a22) x</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> to (a11 <span class="op">&lt;&gt;</span> a21, a12 <span class="op">&lt;&gt;</span> a22)</span></code></pre></div>
-<p>which is a little proof that our function monoid agrees with the preservation-of-products monoid. The same argument works for any type <code>x</code> in the domain of the function, but showing it generically is challenging.</p>
-<p>Anyway, I digresss.</p>
-<p>The reason to memorize <em>this</em> <code>Monoid</code> instance is that it’s the monoid instance that every data structure is trying to be. Recall that <em>almost all</em> data structures are merely different encodings of functions, designed to make some operations more efficient than they would otherwise be.</p>
-<p>Don’t believe me? A <code>Map k v</code> is an encoding of the function <code>k -&gt; Maybe v</code> optimized to efficiently query which <code>k</code> values map to <code>Just</code> something. That is to say, it’s a sparse representation of a function.</p>
-<h2 id="from-theory-to-practice">From Theory to Practice</h2>
-<p>What does all of this look like in practice? Stuff like worrying about <code>foldr</code> is surely programming-in-the-small, which is worth knowing, but isn’t the sort of thing that turns the tides of a successful application.</p>
-<p>The reason I’ve been harping on about the function and product monoids is that they are compositional. The uninformed programmer will be surprised by just far one can get by composing these things.</p>
-<p>At work, we need to reduce a tree (+ nonlocal references) into an honest-to-goodness graph. While we’re doing it, we need to collect certain nodes. And the tree has a few constructors which semantically change the scope of their subtrees, so we need to preserve that information as well.</p>
-<p>It’s actually quite the exercise to sketch out an algorithm that will accomplish all of these goals when you’re thinking about explicit mutation. Our initial attempts at implementing this were clumsy. We’d fold the tree into a graph, adding fake nodes for the <code>Scope</code> construcotrs. Then we’d filter all the nodes in the graph, trying to find the ones we needed to collect. Then we’d do a graph traversal from the root, trying to find these <code>Scope</code> nodes, and propagating their information downstream.</p>
-<p>Rather amazingly, this implementation kinda sorta worked! But it was slow, and took <span class="math inline">\(O(10k)\)</span> SLOC to implement.</p>
-<p>The insight here is that everything we needed to collect was monoidal:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Solution</span> <span class="ot">=</span> <span class="dt">Solution</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> graph ::</span> <span class="dt">Graph</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> collectedNodes ::</span> <span class="dt">Set</span> <span class="dt">Node</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> metadata ::</span> <span class="dt">Map</span> <span class="dt">Node</span> <span class="dt">Metadata</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">Generically</span> <span class="dt">Solution</span></span></code></pre></div>
-<p>where the <code>deriving (Semigroup, Monoid) via Generically Solution</code> stanza gives us the semigroup and monoid instances that we’d expect from <code>Solution</code> being the product of a bunch of other monoids.</p>
-<p>And now for the <em>coup de grace</em>: we hook everything up with the <code>Writer</code> monad. <code>Writer</code> is a chronically slept-on type, because most people seem to think it’s useful only for logging, and, underwhelming at doing logging compared to a real logger type. But the charm is in the details:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> w <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Writer</span> w)</span></code></pre></div>
-<p><code>Writer w</code> is a <em>monad</em> whenever <code>w</code> is a <em>monoid</em>, which makes it the perfect monad for solving data-structure-creation problems like the one we’ve got in mind. Such a thing gives rise to a few helper functions:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">collectNode ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Node</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>collectNode n <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { collectedNodes <span class="ot">=</span> Set.singleton n }</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ot">addMetadata ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Node</span> <span class="ot">-&gt;</span> <span class="dt">Metadata</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>addMetadata n m <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { metadata <span class="ot">=</span> Map.singleton n m }</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="ot">emitGraphFragment ::</span> <span class="dt">MonadWriter</span> <span class="dt">Solution</span> m <span class="ot">=&gt;</span> <span class="dt">Graph</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>emitGraphFragment g <span class="ot">=</span> tell <span class="op">$</span> <span class="fu">mempty</span> { graph <span class="ot">=</span> g }</span></code></pre></div>
-<p>each of which is responsible for adding a little piece to the final solution. Our algorithm is thus a function of the type:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>algorithm</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Metadata</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ the current scope</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Tree</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ the tree we&#39;re reducing</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Writer</span> <span class="dt">Solution</span> <span class="dt">Node</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- ^ our partial solution, and the node corresponding to the root of the tree</span></span></code></pre></div>
-<p>which traverses the <code>Tree</code>, recursing with a different <code>Metadata</code> whenever it comes across a <code>Scope</code> constructor, and calling our helper functions as it goes. At each step of the way, the only thing it needs to return is the root <code>Node</code> of the section of the graph it just built, which recursing calls can use to break up the problem into inductive pieces.</p>
-<p>This new implementation is roughly 20x smaller, coming in at <span class="citation" data-cites="O">@O</span>(500)@ SLOC, and was free of all the bugs we’d been dilligently trying to squash under the previous implementation.</p>
-<p>Chalk it down to another win for induction!</p>
       ]]></content:encoded>
   </item>
 </channel>
