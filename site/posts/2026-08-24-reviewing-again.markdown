@@ -1,9 +1,9 @@
 ---
 layout: post
-title: review2
+title: Reviewing Again
 date: 2026-08-24 23:26
 comments: true
-tags: foo, bar
+tags: code review, haskell, monads, arrows
 ---
 
 Last time, we took a stroll down memory lane to review some ancient code I
