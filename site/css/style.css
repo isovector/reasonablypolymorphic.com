@@ -353,6 +353,10 @@ td {
   font-size: smallest;
 }
 
+figure {
+  text-align: center;
+}
+
 .figure {
   text-align: center;
 }
