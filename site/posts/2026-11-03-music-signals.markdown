@@ -10,6 +10,8 @@ The [last blog][overview] post served as an overview of my music project --- wha
 why it is, and roughly what success will look like. Today we'll get into some of
 the nitty gritty details that will help put the project onto a firm footing.
 
+[overview]: /blog/music-overview/
+
 In order to have any chance of [not confusing ourselves][deno], we must first be
 precise about what exactly it is we're talking about. That means we'll have to
 model out some types, and, importantly *what those types mean.* Recall that one
