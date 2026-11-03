@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Musical Signal Functions :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/music-arrows">Musical Signal Functions</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/musical-vision">&larr;</a>
+    </span>
+    <time>November  4, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/arrows.html">arrows</a>, <a href="/tags/haskell.html">haskell</a>
+    </span>
+</p>
+<div class="content">
+    <p>We’ve been chatting for a few days about my vision for a constructive model of music. So far it’s been rather loosey-goosey; lots of vibes, some semantics, but nothing in the way of implementation. Today let’s get our boots muddy and do enough implementation that we have something concrete to talk about.</p>
+<h2 id="events-and-signals">Events and Signals</h2>
+<p>In particular, in <a href="/blog/music-signals/">Musical Signals</a> we discussed a <code>Signal</code> type that is a continuous function of time, equipped with a set of interesting times that we actually care about. In addition, we proposed an <code>Event</code> type that we will use in conjunction with <code>Signal</code>s to signify sparse, discrete functions over time.</p>
+<p>Let’s begin with <code>Event</code>. It’s just a little newtype wrapper around <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Event</span> a <span class="ot">=</span> <span class="dt">MkEvent</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> eventToMaybe ::</span> <span class="dt">Maybe</span> a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Foldable</span>, <span class="dt">Traversable</span>, <span class="dt">Generic</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Alternative</span>, <span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# COMPLETE Event, NoEvent #-}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">pattern</span> <span class="dt">Event</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Event</span> a</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">pattern</span> <span class="dt">Event</span> a <span class="ot">=</span> <span class="dt">MkEvent</span> (<span class="dt">Just</span> a)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">pattern</span> <span class="dt">NoEvent</span><span class="ot"> ::</span> <span class="dt">Event</span> a</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">pattern</span> <span class="dt">NoEvent</span> <span class="ot">=</span> <span class="dt">MkEvent</span> <span class="dt">Nothing</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="ot">event ::</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Event</span> a <span class="ot">-&gt;</span> b</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>event b f <span class="ot">=</span> <span class="fu">maybe</span> b f <span class="op">.</span> eventToMaybe</span></code></pre></div>
+<p>As discussed in the <a href="/blog/music-signals/#fn1">footnote</a> on that page, perhaps we want to not export the <code>Event</code> pattern, the <code>MkEvent</code> constructor, or the <code>Applicative</code>/<code>Monad</code> instances. That seems likely like the way to go, but I haven’t yet put much thought into whether it solves all the problems. So let’s export them for now (because they are genuinely useful!) and circle back at some point in the future.</p>
+<p>My idea for implementing <code>Signal</code> is to keep around a bunch of continuous segments of function, each of which might have a time-of-interest at the exact instant that the segment starts. A <code>Segment</code> is defined thusly:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Segment</span> a <span class="ot">=</span> <span class="dt">Segment</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> segVal ::</span> <span class="dt">Maybe</span> a</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> segment ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- ^ Must be meaningfully defined for the *entirety* of time!</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Functor</span></span></code></pre></div>
+<p>The obvious <code>Applicative Segment</code> instance has the wrong semantics here, so we don’t provide it. The problem being that <code>segVal</code> corresponds to a value of the function at a time of interest. Which is to say, that if <code>segVal</code> is ever <code>Just</code>, it must <em>remain</em> <code>Just</code> as we <code>ap</code> our way through it! But <code>Applicative isn't powerful enough to do that, because filling in the missing data would require us to know what</code>Time` we should be sampling the function at.</p>
+<p>We address the problem with a new <code>combine</code> function:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Like &#39;liftA2&#39; for &#39;Segment&#39;, when we have a concrete time to sample at.</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">combine ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Segment</span> a <span class="ot">-&gt;</span> <span class="dt">Segment</span> b <span class="ot">-&gt;</span> <span class="dt">Segment</span> c</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>combine t f (<span class="dt">Segment</span> a fa) (<span class="dt">Segment</span> b fb) <span class="ot">=</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Segment</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    ( asum</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>       [ liftA2 f a b</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>       , <span class="fu">fmap</span> (f (fa t)) b</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>       , <span class="fu">fmap</span> (<span class="fu">flip</span> f (fb t)) a</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>       ])</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    (liftA2 f fa fb)</span></code></pre></div>
+<p>The <code>asum</code> here attempts to fill in the interesting value by combining the <code>Maybe</code>s. If that fails, it then tries to fill it in by fmapping over either individual interesting value.</p>
+<p>Collecting our <code>Segment</code>s into a <code>Signal</code> requires a few helper functions: <code>merge</code> takes two sorted lists of pairs, and computes a sorted list of <a href="https://hackage.haskell.org/package/strict-0.5.1/docs/Data-Strict-These.html#t:These"><code>These</code></a>. The idea being that if both lists have a key at the same index, we keep both of them around. If only one has a value, we tag it with which list it came from:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Specialized &#39;Data.Align.align&#39; for sorted pairs.</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">merge ::</span> <span class="dt">Ord</span> a <span class="ot">=&gt;</span> [(a, b)] <span class="ot">-&gt;</span> [(a, c)] <span class="ot">-&gt;</span> [(a, <span class="dt">These</span> b c)]</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>merge [] ys       <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">fmap</span> <span class="dt">That</span>) ys</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>merge (x <span class="op">:</span> xs) [] <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">fmap</span> <span class="dt">This</span>) (x <span class="op">:</span> xs)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>merge xx<span class="op">@</span>((tx, x) <span class="op">:</span> xs) yy<span class="op">@</span>((ty, y) <span class="op">:</span> ys) <span class="ot">=</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">compare</span> tx ty <span class="kw">of</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">LT</span> <span class="ot">-&gt;</span> (tx, <span class="dt">This</span> x) <span class="op">:</span> merge xs yy</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">GT</span> <span class="ot">-&gt;</span> (ty, <span class="dt">That</span> y) <span class="op">:</span> merge xx ys</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">EQ</span> <span class="ot">-&gt;</span> (tx, <span class="dt">These</span> x y) <span class="op">:</span> merge xs ys</span></code></pre></div>
+<p>We use <code>merge</code> to define <code>joining</code>, which does a <code>scanl</code> of two sorted lists of <code>Segment</code>s. The idea here is that the two lists are effectively interval trees, and the intervals are not guaranteed to line up. So we use a <code>scanl</code> hold onto the old value of each until it gets replaced with a new value.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>joining</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="dt">Ord</span> a</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Segment</span> b</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Segment</span> c</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> [(a, <span class="dt">Segment</span> b)]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> [(a, <span class="dt">Segment</span> c)]</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> [(a, (<span class="dt">Segment</span> b, <span class="dt">Segment</span> c))]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>joining a0 b0 as bs</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="fu">drop</span> <span class="dv">1</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> <span class="fu">scanl</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    (\(_, (a, b)) (t, th) <span class="ot">-&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> th <span class="kw">of</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">This</span> a&#39;     <span class="ot">-&gt;</span> (t, (a&#39;, open b))</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="dt">That</span> b&#39;     <span class="ot">-&gt;</span> (t, (open a, b&#39;))</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="dt">These</span> a&#39; b&#39; <span class="ot">-&gt;</span> (t, (a&#39;, b&#39;))</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    ( <span class="fu">error</span> <span class="st">&quot;unused initial time argument&quot;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    , (a0, b0)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> merge as bs</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="ot">open ::</span> <span class="dt">Segment</span> a <span class="ot">-&gt;</span> <span class="dt">Segment</span> a</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>open s <span class="ot">=</span> s { segVal <span class="ot">=</span> <span class="dt">Nothing</span> }</span></code></pre></div>
+<p>With all that ceremony out of the way, we’re ready to define <code>Signal</code>s, which contain an original <code>Time -&gt; a</code> function with no interesting timepoints, and then a sorted list of new <code>Segment</code>s.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | A piecewise function, built out of &#39;Segment&#39; intervals.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Signal</span> a</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Signal</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      (<span class="dt">Time</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- ^ The function before we have switched to any &#39;Segment&#39;.</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      [(<span class="dt">Time</span>, <span class="dt">Segment</span> a)]</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- ^ Sorted by time.</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Functor</span></span></code></pre></div>
+<p>Of course, this is not the only possible implementation of <code>Signal</code>, nor am I claiming it’s the best one. It’s just one that I came up with that satisfied all the laws and wasn’t slower than molasses. I’ve also got a relatively-fresh new baby, so a lot of this got written on very little sleep. Anyway…</p>
+<p>Despite <code>Segment</code> not admitting an <code>Applicative</code> instance, <code>Signal</code> does, because it keeps track of where each <code>Segment</code> begins.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> a <span class="ot">=</span> <span class="dt">Signal</span> (<span class="fu">pure</span> a) <span class="fu">mempty</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  liftA2 f (<span class="dt">Signal</span> a as) (<span class="dt">Signal</span> b bs)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=</span> <span class="dt">Signal</span> (liftA2 f a b)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> <span class="fu">fmap</span> (<span class="fu">uncurry</span> <span class="op">$</span> \t <span class="ot">-&gt;</span> (t,) <span class="op">.</span> <span class="fu">uncurry</span> (combine t f))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">$</span> joining (<span class="dt">Segment</span> <span class="dt">Nothing</span> a) (<span class="dt">Segment</span> <span class="dt">Nothing</span> b) as bs</span></code></pre></div>
+<p>We can show that <code>Signal</code> preserves the <a href="/blog/music-signals/">semantics we gave</a> by giving projections out of it into the semantic domain:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">sample ::</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>sample (<span class="dt">Signal</span> fa []) t <span class="ot">=</span> fa t</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>sample (<span class="dt">Signal</span> fa ((t0, sa) <span class="op">:</span> as)) t <span class="ot">=</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">compare</span> t t0 <span class="kw">of</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">LT</span> <span class="ot">-&gt;</span> fa t</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">EQ</span> <span class="ot">-&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">case</span> sa <span class="kw">of</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Segment</span> <span class="dt">Nothing</span> f <span class="ot">-&gt;</span> f t</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Segment</span> (<span class="dt">Just</span> a) _ <span class="ot">-&gt;</span> a</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">GT</span> <span class="ot">-&gt;</span> sample (<span class="dt">Signal</span> (segment sa) as) t</span></code></pre></div>
+<p>This function is the continuous-<code>μ</code> given by our semantics. The discrete-<code>μ</code> is called <code>values</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">values ::</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> [(<span class="dt">Time</span>, a)]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>values (<span class="dt">Signal</span> _ as) <span class="ot">=</span> mapMaybe (<span class="fu">traverse</span> segVal) as</span></code></pre></div>
+<p>which returns a sorted list of interesting times (and their associated values.) In the <code>Signal (Event a)</code> case, we have a more useful function, which gets only those values which <em>actually contain a discrete value</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">events ::</span> <span class="dt">Signal</span> (<span class="dt">Event</span> a) <span class="ot">-&gt;</span> [(<span class="dt">Time</span>, a)]</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>events <span class="ot">=</span> mapMaybe (<span class="fu">traverse</span> eventToMaybe) <span class="op">.</span> values</span></code></pre></div>
+<h2 id="arrows">Arrows</h2>
+<p><code>Signal</code>s are nice representations of interesting-things-over-time. But the mental model of <a href="/blog/musical-vision/">abstract modular synthesizers</a> is not about interesting-things-over-time. It’s about ways of <em>transforming and combining</em> interesting-things-over-time.</p>
+<p>Haskell has some deep-cut notation for this, namely the <code>-XArrows</code> extension and its related <code>proc</code> notation. Long-time readers of the blog will know that we’re <a href="/blog/arrowized-frp/">no</a> <a href="/blog/arrows-to-arrows/">strangers</a> to <a href="/blog/reviewing-again/">arrows</a> here!</p>
+<p>But as a <em>very</em> quick recap, given instances of <code>Category</code> and <code>Arrow</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Category</span> a <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  id  ::</span> a x x</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  (.) ::</span> a y z <span class="ot">-&gt;</span> a x y <span class="ot">-&gt;</span> a x z</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Category</span> a <span class="ot">=&gt;</span> <span class="dt">Arrow</span> a <span class="kw">where</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  arr   ::</span> (b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> a b c</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="ot">  (***) ::</span> a b c <span class="ot">-&gt;</span> a b&#39; c&#39; <span class="ot">-&gt;</span> a (b, b&#39;) (c, c&#39;)</span></code></pre></div>
+<p>we gain access to <code>proc</code> notation, which is very convenient for composing arrow values:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>proc input <span class="ot">-&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a> a <span class="ot">&lt;-</span> foo <span class="op">-&lt;</span> input</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a> b <span class="ot">&lt;-</span> bar <span class="op">-&lt;</span> (input, a)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a> <span class="kw">let</span> output <span class="ot">=</span> qux a b</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a> returnA <span class="op">-&lt;</span> output</span></code></pre></div>
+<p>This notation is syntactic sugar for the egregious:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>  arr qux</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="op">.</span> <span class="fu">id</span> <span class="op">***</span> bar</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">.</span> arr (\i <span class="ot">-&gt;</span> (<span class="fu">snd</span> i, i))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="op">.</span> <span class="fu">id</span> <span class="op">***</span> foo</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="op">.</span> arr (\i <span class="ot">-&gt;</span> (i, i))</span></code></pre></div>
+<p>which I think we can all agree is <em>slightly</em> less readable than the <code>proc</code> notation.</p>
+<p>The rough vibes here is that <code>Category a</code> abstracts the notion of what a function is. Rather than using Haskell <code>-&gt;</code> arrows, we can instead use <code>a</code>-arrows. The <code>Category</code> methods <code>(.)</code> and <code>id</code> do exactly what you’d expect — composition and identity of <code>a</code>-arrows.</p>
+<p>The <code>Arrow a</code> class extends this with some way of turning arbitrary Haskell arrows into <code>a</code>-arrows, as well as a way to run two different <code>a</code>-arrows on the <code>fst</code> and <code>snd</code> of a (Haskell) product type. The exact semantics of what that looks like depends on your <code>a</code>-arrow type (much like the exact semantics of <code>do</code> notation depend on your choice of a monad!)</p>
+<p>Anyway, to pull back to musical transformations. If we were to find some sort of music-aware <code>Arrow</code> instance, <code>proc</code>-notation is exactly what we’d want in order to “run patches” in our abstract modular synthesizer. That is to say, it provides the plumbing for moving music in and out of transformations. As a teaser for what’s to come, here’s a little example from my sandbox:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- A horizontal pattern describing an unfolding dyadic voice-leading that</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- descends by fifth, before swapping the voices by moving away from one</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- another.</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>divergence <span class="ot">=</span> replicateH <span class="dv">12</span> <span class="op">$</span> <span class="fu">foldMap</span> dnote</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  [ voiceLead <span class="dv">0</span> <span class="dv">3</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  , expand <span class="dv">0</span> <span class="dv">1</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>song <span class="ot">=</span> horizontal <span class="op">$</span> resize <span class="fl">0.25</span> <span class="op">$</span> proc i <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Compute an abstract voice leading over time</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  vl <span class="ot">&lt;-</span> liftH msumE <span class="op">&lt;&lt;&lt;</span> divergence <span class="op">-&lt;</span> i</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Apply that voice leading to the first two notes of a triad</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  ns <span class="ot">&lt;-</span> replicateH <span class="dv">12</span> <span class="op">$</span> with <span class="fu">id</span> <span class="op">-&lt;</span> applyVoiceLeading vl <span class="op">$</span> chord triad</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  returnA <span class="op">-&lt;</span> ns</span></code></pre></div>
+<p>which describes this this nice little dyad expansion:</p>
+<figure>
+<img src="/images/music2/out1.cropped.png" alt="Dyad Expansion" /><figcaption aria-hidden="true">Dyad Expansion</figcaption>
+</figure>
+<p>If we replace the last line with:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Convert the &quot;polyphony&quot; into &quot;counterpoint&quot;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> (lo <span class="op">:&gt;</span> hi <span class="op">:&gt;</span> <span class="dt">Nil</span>) <span class="ot">=</span> toV ns</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Clamp the lo voice so it stays within its register</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  lo&#39; <span class="ot">&lt;-</span> liftH <span class="op">$</span> clampOctave (<span class="op">-</span><span class="dv">9</span>, <span class="dv">0</span>) <span class="fl">0.5</span> <span class="op">-&lt;</span> lo</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Convert the &quot;counterpoint&quot; back into &quot;polyphony&quot;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  returnA <span class="op">-&lt;</span> fromV <span class="op">$</span> lo&#39; <span class="op">:&gt;</span> hi <span class="op">:&gt;</span> <span class="dt">Nil</span></span></code></pre></div>
+<p>we get this:</p>
+<figure>
+<img src="/images/music2/out2.cropped.png" alt="Clamped Dyad Expansion" /><figcaption aria-hidden="true">Clamped Dyad Expansion</figcaption>
+</figure>
+<p>and of course we can also clamp the upper voice:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Clamp the voices so they stay within their registers</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  lo&#39; <span class="ot">&lt;-</span> liftH <span class="op">$</span> clampOctave (<span class="op">-</span><span class="dv">9</span>, <span class="dv">0</span>) <span class="fl">0.5</span> <span class="op">-&lt;</span> lo</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  hi&#39; <span class="ot">&lt;-</span> liftH <span class="op">$</span> clampOctave (<span class="dv">0</span>, <span class="dv">7</span>) <span class="fl">0.5</span> <span class="op">-&lt;</span> hi</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Convert the &quot;counterpoint&quot; back into &quot;polyphony&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  returnA <span class="op">-&lt;</span> fromV <span class="op">$</span> lo&#39; <span class="op">:&gt;</span> hi&#39; <span class="op">:&gt;</span> <span class="dt">Nil</span></span></code></pre></div>
+<p>and we get this:</p>
+<figure>
+<img src="/images/music2/out3.cropped.png" alt="Doubly-Clamped Dyad Expansion" /><figcaption aria-hidden="true">Doubly-Clamped Dyad Expansion</figcaption>
+</figure>
+<p>Now I’ll be the first to admit that this is a completely unusable DSL. But it does actually work! And if you squint, you can sort of see the modular synthesizer idea at play. Inside the proc notation, we are sampling all of our <code>Signal</code>s simultaneously, but routing the output of (eg) the voice leading into the input of <code>replicateH $ with id</code>, which is what builds out the rhythmic pattern. Then we take the output of that, separate it into <code>Signal</code>s of its constituent voices, and feed those into <code>clampOctave</code>, which moves a <code>Signal</code>’s notes into the given range of scale degrees.</p>
+<p>Something cool but not pictured here, <code>clampOctave</code> takes a second argument (the <code>0.5</code>) which tells it to look <em>into the future</em> and not perform any displacement if it would need to move again within that 0.5 of a measure. This is some sort of “retro-hysteresis” where signals can depend on their future values! Which sounds crazy when you’re thinking about wiring up synthesizers, but much less crazy when you’re sitting down writing out a score. Of course the notes in your score can depend on notes that happen later on in the song! One of the many benefits of <em>explicitly modeling time</em> in <code>Signal</code>s.</p>
+<h2 id="signal-functions">Signal Functions</h2>
+<p>Hopefully you’re excited to see how we go about doing any of this acausal wizardry stuff. But it all starts from getting <code>proc</code> notation working. Which, recall, means we need a type to give an <code>Arrow</code> instance to.</p>
+<p>Behold, the signal function (<code>SF</code>):</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">SF</span> a b <span class="ot">=</span> <span class="dt">SF</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> runSF ::</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> <span class="dt">Signal</span> b</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>) via <span class="dt">WrappedArrow</span> <span class="dt">SF</span> a</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">Ap</span> (<span class="dt">SF</span> a) b</span></code></pre></div>
+<p>which you will note is <em>literally a function between <code>Signal</code>s.</em> Its <code>Category</code> instance comes immediately from Haskell functions’ instance:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Category</span> <span class="dt">SF</span> <span class="kw">where</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">id</span> <span class="ot">=</span> <span class="dt">SF</span> <span class="fu">id</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">SF</span> g <span class="op">.</span> <span class="dt">SF</span> f <span class="ot">=</span> <span class="dt">SF</span> (g <span class="op">.</span> f)</span></code></pre></div>
+<p>The <code>Arrow</code> instance is similarly straightforward — separate out the product, run the functions on each half, then use the applicative instance to combine them back into a single <code>Signal</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Arrow</span> <span class="dt">SF</span> <span class="kw">where</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  arr <span class="ot">=</span> <span class="dt">SF</span> <span class="op">.</span> <span class="fu">fmap</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">SF</span> f <span class="op">***</span> <span class="dt">SF</span> g <span class="ot">=</span> <span class="dt">SF</span> <span class="op">$</span> \sg <span class="ot">-&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    liftA2 (,) (f <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">fst</span> sg) (g <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">snd</span> sg)</span></code></pre></div>
+<p>That’s really all there is to it! We can give some means of introducing <code>SF</code>s:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ot">constS ::</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> x a</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>constS <span class="ot">=</span> <span class="dt">SF</span> <span class="op">.</span> <span class="fu">const</span></span></code></pre></div>
+<p>as well as a few primitives whose definition we don’t have time to get into:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Create a single occurrence of an Event at the given time.</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ot">at ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> x (<span class="dt">Event</span> a)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Convert a discrete stream into a continuous one, by holding the value of</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- the last event seen.</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ot">hold ::</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) a</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Like &#39;hold&#39;, but backwards in time. Hold the value of the /next/ event that</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- will occur.</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="ot">fhold ::</span> a <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) a</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Stateful folds over Events</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="ot">scanE ::</span> (s <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> (s, b)) <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) (<span class="dt">Event</span> b)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Full-scale rewrites of Event streams</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="ot">ev2ev ::</span> ([(<span class="dt">Time</span>, a)] <span class="ot">-&gt;</span> [(<span class="dt">Time</span>, b)]) <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) (<span class="dt">Event</span> b)</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Run the first SF until the &#39;Event&#39; occurs, then switch into the</span></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a><span class="co">-- continuation.</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="ot">switch ::</span> <span class="dt">SF</span> a (b, <span class="dt">Event</span> c) <span class="ot">-&gt;</span> (c <span class="ot">-&gt;</span> <span class="dt">SF</span> a b) <span class="ot">-&gt;</span> <span class="dt">SF</span> a b</span></code></pre></div>
+<p>(for completeness’ sake, there ought to be time-reverse versions of <code>scanE</code> and <code>switch</code> too!)</p>
+<p>This seems like a good place to leave it for now. In the next post we’ll discuss how to turn all of this abstract machinery into something that actually resembles music.</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/musical-vision">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
