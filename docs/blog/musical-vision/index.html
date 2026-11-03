@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>What Composing Music Could Look Like :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/musical-vision">What Composing Music Could Look Like</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/music-signals">&larr;</a>
+    </span>
+    <time>November  3, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/vision.html">vision</a>
+    </span>
+</p>
+<div class="content">
+    <p>In the last post, we discussed the <a href="/blog/music-signals/">algebraic structure of horizontal structures</a>. But I realized I haven’t actually communicated the argument behind <em>why we might care</em> about that algebraic structure. So rather than diving directly into the technical stuff I had planned for today, let’s hash that out first.</p>
+<p>If you recall, where we ended up was an abstract type <code>Signal a</code> which I claim is a precursor to horizontal musical structures, with the following common algebras:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Signal</span> a</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Signal</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Signal</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foldable</span> <span class="dt">Signal</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Signal</span> a)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Signal</span> a)</span></code></pre></div>
+<p>It’s worth considering what each of these ideas means, musically. And once we’ve sorted that out, it’s worth thinking about what other musical structure we might want on top.</p>
+<p>We can think about a <code>Signal a</code> as being a continuous function of <code>a</code>s over time, combined with a set of times that we’re <em>actually interested in.</em> So what exactly does that mean? The continuous function part is just there to fill in the details when we change our minds about what times we want to look at.</p>
+<p>With our <code>Functor</code> instance, we can do per-note (or per-whatever is held in the horizontal structure) transformations. For example, <code>fmap (+ 1)</code> transforms</p>
+<figure>
+<img src="/images/music1/out1.cropped.png" alt="C-D-E-F" /><figcaption aria-hidden="true">C-D-E-F</figcaption>
+</figure>
+<p>into</p>
+<figure>
+<img src="/images/music1/out2.cropped.png" alt="D-E-F-G" /><figcaption aria-hidden="true">D-E-F-G</figcaption>
+</figure>
+<p>But it also does more interesting things; <code>fmap (!! 1)</code> (where <code>!! n</code> selects voice <code>n</code>) transforms</p>
+<figure>
+<img src="/images/music1/out3.cropped.png" alt="Inversions of C" /><figcaption aria-hidden="true">Inversions of C</figcaption>
+</figure>
+<p>into</p>
+<figure>
+<img src="/images/music1/out4.cropped.png" alt="E-G-C-E" /><figcaption aria-hidden="true">E-G-C-E</figcaption>
+</figure>
+<p>Furthermore, nobody says the <code>a</code> in <code>Signal a</code> need be something that is musically meaningful. A <code>Signal</code> is just a function from time to something; so we could do something crazy like building a <code>Signal DayName</code> that is a week-long signal moving from <code>Monday</code> to <code>Sunday</code> at a rate of one a day. We could then use the <code>Functor</code> instance to transform these labels into something more musically meaningful — perhaps into motifs or numbers of repeats, or something like that.</p>
+<p>Our <code>Semigroup</code> instance gives us a <code>&lt;&gt;</code> operation, which combines things that happen at the same time. What it means to “combine things” depends on the things being combined. But as a little vibe check, we can use <code>&lt;&gt;</code> to smush together two little motifs:</p>
+<figure>
+<img src="/images/music1/out5.cropped.png" alt="C-x-E-x" /><figcaption aria-hidden="true">C-x-E-x</figcaption>
+</figure>
+<figure>
+<img src="/images/music1/out6.cropped.png" alt="C-F-G-x" /><figcaption aria-hidden="true">C-F-G-x</figcaption>
+</figure>
+<p>into</p>
+<figure>
+<img src="/images/music1/out7.cropped.png" alt="C-F-EG-x" /><figcaption aria-hidden="true">C-F-EG-x</figcaption>
+</figure>
+<p>This example one is very vibes, so don’t read TOO much into it. The important part is that “things that happen at the same time get smushed together.” We’ll discuss in MUCH MORE DETAIL sometime in the future what sorts of smushing might be musically meaningful.</p>
+<p>The <code>Applicative</code> structure is very similar to the <code>Semigroup</code>, except that instead of smushing things together, we can run a function that depends on the values in both things. This one is unfortunately impossible to show in standard musical notation, and wiring up some custom visualization isn’t a good use of my nanowrimo time.</p>
+<p>But let’s use our IMAGINATION instead. Imagine a voice-leading that looks like this (realized over a C-major triad):</p>
+<figure>
+<img src="/images/music1/out8.cropped.png" alt="Abstract voice leading" /><figcaption aria-hidden="true">Abstract voice leading</figcaption>
+</figure>
+<p>We can use our applicative instance to retarget the voice leading over any other chord. For example, given this one:</p>
+<figure>
+<img src="/images/music1/out9.cropped.png" alt="C-D-B" /><figcaption aria-hidden="true">C-D-B</figcaption>
+</figure>
+<p>Invoking <code>liftA2 applyVoiceLeading</code> over these two musical pieces gives us this remarkable chord progression:</p>
+<figure>
+<img src="/images/music1/out10.cropped.png" alt="Something odd" /><figcaption aria-hidden="true">Something odd</figcaption>
+</figure>
+<p>If you’re familiar with lots of harmony, you can see that both progressions are structurally equivalent — a <a href="https://en.wikipedia.org/wiki/Neo-Riemannian_theory#Triadic_transformations_and_voice_leading">neo-Riemannian P transform</a>, followed by an efficient voice leading from CM to E#M, followed by the outer two voices switching pitch classes by moving in opposite directions.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Of course, nothing requires us to use the <em>same</em> chord throughout. We can apply our same voice leading pattern to a series of changing chords, for example:</p>
+<figure>
+<img src="/images/music1/out11.cropped.png" alt="Changing chords" /><figcaption aria-hidden="true">Changing chords</figcaption>
+</figure>
+<p>which results in</p>
+<figure>
+<img src="/images/music1/out12.cropped.png" alt="Voice leading over changing chords" /><figcaption aria-hidden="true">Voice leading over changing chords</figcaption>
+</figure>
+<p>You’ll notice we’re getting <em>very interesting</em> results without doing much work at all. I picked some random voice leadings and some random chords, and the computer did all of the work of figuring out what notes I’m gesturing at.</p>
+<p>Some other things you could do with this: instead of voice leadings, put scalar modulations. Or note durations! Or put voice numberings and project chords down to individual voices (which is different than the functor case, because here we can <em>change</em> which voice gets to sound.) Better yet, do all of the above, continuously, at different time scales.</p>
+<p>What I think this ends up looking like in practice is something akin to a modular synthesizer. You can plug the outputs of different signals into the inputs of others. But unlike any modular synthesizer you’ve ever played with, here our signals are allowed to carry macroharmonies, voice leadings, modulations, tension, motifs, rhythm, registral expansion, dynamics, timbre, or even just arbitrary mathematical functions.</p>
+<p>That’s probably enough for now. In the next post we’ll actually get around to looking at the implementation of <code>Signal</code> and then giving better composable semantics around it.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>I extracted all the moves here from Tymoczko’s masterpiece <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tonality: An Owner’s Manual</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/music-signals">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
