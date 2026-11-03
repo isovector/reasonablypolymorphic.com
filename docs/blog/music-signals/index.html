@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Musical Signals :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/music-signals">Musical Signals</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/music-overview">&larr;</a>
+    </span>
+    <time>November  3, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/functional programming.html">functional programming</a>
+    </span>
+</p>
+<div class="content">
+    <p>The [last blog][overview] post served as an overview of my music project — what it is, why it is, and roughly what success will look like. Today we’ll get into some of the nitty gritty details that will help put the project onto a firm footing.</p>
+<p>In order to have any chance of <a href="https://www.youtube.com/watch?v=rlyqoYoUumc">not confusing ourselves</a>, we must first be precise about what exactly it is we’re talking about. That means we’ll have to model out some types, and, importantly <em>what those types mean.</em> Recall that one of our [desiderata][overview] is that whatever it is we’re building must be capable of expressing any music from any culture from any time period, including those times and cultures which do not yet exist.</p>
+<p>The trick then is to make a series of <em>extensible</em> types, each one providing some aspect of functionality, and letting people compose them together for themselves. Future users can add their own types with their own functionality, and reuse as much of the system that is meaningful to reuse.</p>
+<p>By my reckoning, music is made up of some combination of the following:</p>
+<ol type="1">
+<li><em>some notion of time,</em> generally considered to be rhythmic content, or “horizontal structures.”</li>
+<li><em>some notion of simultaneity,</em> generally considered to be chords, polyphony, or “vertical structures.”</li>
+<li><em>things that can happen,</em> generally considered to be musical content of some sort. Perhaps this is pitches (as in musical scores), or waveforms (as in musical playback.)</li>
+</ol>
+<p>As a placeholder to get our bearings, let’s imagine the first two elements as types:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Horizontal</span> a</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Vertical</span> a</span></code></pre></div>
+<p>and postulate both a <code>Pitch</code> and <code>Waveform</code> type for item three:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Pitch</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Waveform</span></span></code></pre></div>
+<p>By composing these types in different ways, different ideas of music fall out. Several examples:</p>
+<ol type="1">
+<li><code>Horizontal ()</code> describes purely time-based structures; eg. rhythmic ideas</li>
+<li><code>Horizontal Pitch</code> is a simple tune, the sort you can whistle</li>
+<li><code>Vertical Pitch</code> is a single chord.</li>
+<li><code>Horizontal (Vertical Pitch)</code> is what you get at a campfire from someone who only knows how to play chords on the guitar. In the jargon, this is “polyphonic” music.</li>
+<li><code>Vertical (Horizontal Pitch)</code> is multiple independent tunes happening simultaneously. In the jargon, this is <a href="https://en.wikipedia.org/wiki/Counterpoint">“contrapuntal” music</a>.</li>
+<li><code>Vertical (Horizontal Waveform)</code> is what you get in a <a href="https://en.wikipedia.org/wiki/Digital_audio_workstation">DAW</a> — independent tracks, each of which lets you move recorded samples along its own timeline.</li>
+</ol>
+<p>Of course, this is all vibes right now, since we haven’t discussed what exactly any of these types <em>actually are.</em> But this should be enough to wet your whistle; if we can deliver types that match these vibes, we clearly have an amazing starting point.</p>
+<p>As a point of note, this first step is where I went wrong in my <a href="/blog/more-algebraic-music/">last public attempt</a>. There I postulated that <em>all</em> music is what here would be described as <code>Vertical (Horizontal a)</code>. And I gave unsatisfying answers for what <code>Vertical</code> and <code>Horizontal</code> are, to boot!</p>
+<p>Shame. Sorrow.</p>
+<p>Anyway. Let’s leave <code>Vertical</code> alone for now, and focus our attention on <code>Horizontal</code>, since it seems to be the crux of the interesting stuff here. However, rather than using up the musically-relevant name <code>Horizontal</code>, let’s go with <code>Signal</code>, since we’re going to be building up this idea in several pieces.</p>
+<p>By our vibes, a <code>Signal</code> is a time-based structure. Which is to say, it ought to describe two things: 1) what happens, and 2) when it happens. That’s a pretty big constraint on the search space; the only other question is whether it ought to be continuous or discrete. In the continuous case, we have:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a</span></code></pre></div>
+<p>and in the discrete:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> [(<span class="dt">Time</span>, a)]  <span class="co">-- ordered by monotonically ascending Time</span></span></code></pre></div>
+<p>where <code>μ</code> should be read as “the meaning of.” That is to say, we’re trying to pin down the <em>semantics</em> of <code>Signal</code> without saying anything about <em>how we’re actually going to implement this thing.</em></p>
+<p><strong>This is my first point of confusion.</strong> Composition (in the programming sense) is significantly better with the <code>Time -&gt; a</code> denotation, but when I <em>listen to music</em> I “hear” it “discretely.” I think. Maybe. Like I said, I am confused.</p>
+<p>Rather than choose between these two options, I am <strong>cheating</strong> and choosing BOTH. HA HA HA. This is intellectually dishonest, but it’s a decision that needs to be made early on, and making progress seems to be dependent on choosing <em>something.</em> Hopefully when everything has clarified down the road, we can return to this decision and make a better choice.</p>
+<p>Sorry, let me back up. What the hell am I talking about? I have the advantage of knowing where I’m going, so I imagine it’s pretty disjointed without that. Concretely, I am torn between a few things:</p>
+<ol type="1">
+<li>The discrete choice <em>vibes better</em> with my classical piano training, where “music” is rendered as a score with discrete symbols on a page</li>
+<li>I have a strong bias towards being able to generate these symbols on a page with this system I’m making</li>
+<li>But the discrete choice doesn’t admit nearly as much algebraic structure. For example, it seems very desirable to have an applicative structure on <code>Signal</code>. The usual list applicative is seems musically meaningless (taking the cartesian product of all the notes in a piece? yeah ok). What seems more likely is a pointwise “zippy” applicative. But in a discrete framing, <em>there isn’t enough data</em> to combine two <code>Signal</code> structures that are out of phase with one another.</li>
+</ol>
+<p>So, the unsatisfying solution here is to just do both. Rather than picking between a discrete and a continuous representation, just keep both around:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a, <span class="dt">Set</span> <span class="dt">Time</span>)</span></code></pre></div>
+<p>That is, represent the <code>Signal</code> structure as a continuous function out of time, <em>but also keep track of a set of interesting times!</em></p>
+<p>We get quite a lot of nice algebraic structure on top of this thing:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a, <span class="dt">Set</span> <span class="dt">Time</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  μ (<span class="fu">fmap</span> f a) <span class="ot">=</span> first (<span class="fu">fmap</span> f) (μ a)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  μ (<span class="fu">pure</span> a) <span class="ot">=</span> (<span class="fu">const</span> a, <span class="fu">mempty</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  μ (liftA2 f a b) <span class="ot">=</span> (liftA2 f <span class="op">***</span> (<span class="op">&lt;&gt;</span>)) (μ a) (μ b)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Signal</span> a) <span class="kw">where</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  μ (a <span class="op">&lt;&gt;</span> b) <span class="ot">=</span> μ a <span class="op">&lt;&gt;</span> μ b</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Signal</span> a) <span class="kw">where</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  μ <span class="fu">mempty</span> <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foldable</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  μ (<span class="fu">foldMap</span> f a) <span class="ot">=</span> <span class="fu">uncurry</span> <span class="fu">foldMap</span> (μ a)</span></code></pre></div>
+<p>which I always take as a sign that I’m on the right track.</p>
+<p>Armed with <code>Signal</code>, we can give some rudimentary combinators on it. For example, we can lift functions:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">lift ::</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Signal</span> a</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>μ (lift f) <span class="ot">=</span> (f, <span class="fu">mempty</span>)</span></code></pre></div>
+<p>and we can generate stepwise signals:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">stepwise ::</span> a <span class="ot">-&gt;</span> [(<span class="dt">Time</span>, a)] <span class="ot">-&gt;</span> <span class="dt">Signal</span> a</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>μ (stepwise a0 []) <span class="ot">=</span> <span class="fu">pure</span> a0</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>μ (stepwise a0 ((t0, a) <span class="op">:</span> as)) <span class="ot">=</span> \t <span class="ot">-&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> t <span class="op">&lt;</span> t0 <span class="kw">of</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span> <span class="ot">-&gt;</span> a0</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> μ (stepwise a as)</span></code></pre></div>
+<p>Attentive readers will notice that nothing yet ever actually introduces any times-of-interest into a <code>Signal</code>. Here is where my earlier belly-aching comes back to bite. I’d LIKE VERY MUCH to be able to say “discrete <code>Signal</code>s have a different type than continuous ones.” So maybe we add an <code>Event</code> type:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Event</span> a) <span class="ot">=</span> <span class="dt">Maybe</span> a</span></code></pre></div>
+<p>and then say we can make <em>discrete</em> signals:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">discrete ::</span> [(<span class="dt">Time</span>, a)] <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> a)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>μ (discrete as) <span class="ot">=</span> (\t <span class="ot">-&gt;</span> <span class="fu">lookup</span> t as, Set.fromList <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">fst</span> as)</span></code></pre></div>
+<p>with the implicit promise that if you have a <code>Signal (Event a)</code> <em>then it must be a discrete <code>Signal</code>!</em> Unfortunately, this is not the sort of promise we can keep; it’s trivial to construct a densely packed <code>Signal</code> of <code>Event</code>s:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">notActuallyDiscrete ::</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> a)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>μ notActuallyDiscrete <span class="ot">=</span> <span class="fu">fmap</span> <span class="dt">Just</span> <span class="op">.</span> μ</span></code></pre></div>
+<p>Alas. Shame. Sorrow.</p>
+<p>Nevertheless, we are just going to <strong>ignore</strong> this issue, and <strong>pretend</strong> like any <code>Signal (Event a)</code> must be discrete and sparse! I am eminently aware of how disappointed <a href="http://conal.net/">Conal</a> would be by my motivated reasoning here. I’m disappointed in myself! Unfortunately I don’t have a better answer other than to split up the continuous and discrete cases, but that throws away a bunch of the compositionality that I want. <strong>I am confident there is a better solution here</strong> but damned if I know what it is.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Anyway, I’m writing this in the darkness at 5am before my family awakens, but I hear stirring so it’s probably time to stop. If you have any lovely ideas about how to solve this discrete/continuous discrepancy, I’d love to hear them.</p>
+<p>Next we’ll look at signal functions, and give to-my-knowledge a novel application of <code>Arrow</code>s for music.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>One titillating idea is to simply not expose any introductory forms for <code>Event</code>. I haven’t explored this much, since it would mean we don’t get an applicative functor over <code>Event</code>. Thinking about it now, it’d still be fine to expose the <code>Nothing</code>-analogous constructor, so we could still give <code>mempty</code>. And perhaps this is the first motivating case I’ve ever found for giving only a <a href="https://hackage-content.haskell.org/package/semigroupoids-6.0.2/docs/Data-Functor-Apply.html#g:2"><code>Apply</code></a> instance instead of a full <code>Applicative</code>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/music-overview">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
