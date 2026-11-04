@@ -67,7 +67,7 @@ data Segment a = Segment
 The obvious `Applicative Segment` instance has the wrong semantics here, so we
 don't provide it. The problem being that `segVal` corresponds to a value of the
 function at a time of interest. Which is to say, that if `segVal` is ever
-`Just`, it must *remain* `Just` as we `ap` our way through it! But `Applicative
+`Just`, it must *remain* `Just` as we `ap` our way through it! But `Applicative`
 isn't powerful enough to do that, because filling in the missing data would
 require us to know what `Time` we should be sampling the function at.
 
