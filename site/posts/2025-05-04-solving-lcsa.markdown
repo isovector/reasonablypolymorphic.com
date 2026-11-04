@@ -109,7 +109,7 @@ to rewrite it.](https://pages.cs.wisc.edu/~remzi/Naur.pdf)
 I went back to the problem statement, and stared at it for a long time (back to
 the think-really-hard algorithm!) Upon staring at the problem, I realized that
 what I was really trying to do was determine where diamond patterns arose in
-the propgram graph.
+the program graph.
 
 Recall our original graph:
 
