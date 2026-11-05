@@ -7,13 +7,71 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2026-11-04T12:42:00Z</pubDate>
+  <pubDate>2026-11-05T08:59:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>From Instantaneous Events to Musical Spans</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/musical-spans/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/musical-spans/index.html</guid>
+      <pubDate>2026-11-05T08:59:00Z</pubDate>
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
+        <p>We’ve been thinking a lot about musical structures over these last few posts. Today we’re going to look into some rhythmic concerns, and in particular, figure out how to turn a discrete signal of instantaneous events into something that <em>actually looks like music.</em></p>
+<p>Recall that we’ve been working with a <code>Signal a</code> type, which is a continuous function of <code>Time -&gt; a</code>, packaged along with a set of “interesting times” that we might be interested in looking at. We smuggle <em>discrete</em> events into these interesting times. But what makes a time interesting?</p>
+<p>One immediate answer, musically, is “when something happens.” That something could be a point in the meter, a chord change, the beginning of a note, the end of a note, a modulation, the return of a motif, every time an A is played, etc. Essentially, whenever you might think a time is interesting :)</p>
+<p>Of these, we’re primarily going to focus on the beginning and end of notes today. Since once we’ve sorted that bit out, we have the better part of a musical MVP. It’s not going to be anywhere close to the <a href="/blog/music-overview/">vision</a>, but it’s a necessary step along the path.</p>
+<p>So what we’ve built so far is an <code>Event</code> type, which demarks instantaneous and momentary things. We have a <code>Signal</code> type which models things-over-time. It seems likely that in order to play notes we’re going to want a <code>Signal</code> of <code>Event</code>s of something. Let’s say <a href="https://en.wikipedia.org/wiki/MIDI">MIDI notes</a> for now, since it’s an obvious sort of “computer music” interface.</p>
+<p>The problem of course is that <code>Event</code>s are instantaneous, but audible things are not; they necessarily have a duration. I played around with data structures in the style of <a href="https://en.wikipedia.org/wiki/Interval_tree">interval trees</a> for a <a href="/blog/more-algebraic-music/">long time</a> before coming to the conclusion that that way lies folly.</p>
+<p>Instead what seems to be the play is to explicitly model <code>Span</code>s:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Span</span> a <span class="ot">=</span> <span class="dt">Span</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> duration ::</span> <span class="dt">Time</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> getSpan ::</span> a</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Functor</span>, <span class="dt">Foldable</span>, <span class="dt">Traversable</span>, <span class="dt">Generic</span>)</span></code></pre></div>
+<p>and then just generate them in our <code>Signal</code>. So rather than talk about <code>Event MIDINote</code>, we instead use <code>Event (Span MIDINote)</code>. This is very much in the style of “regular old music scores” where there is <em>explicit syntax</em> for encoding the span of a note:</p>
+<figure>
+<img src="/images/music3/out1.cropped.png" alt="Rhythmic symbols" /><figcaption aria-hidden="true">Rhythmic symbols</figcaption>
+</figure>
+<p>If you’re not familiar with music notation, the top line contains (after the funny “c” thing) the symbols for sounded notes. The first symbol takes up one unit of time, the next takes half that, and so on and so forth. The bottom line, in corresponding columns, are the same durations, except for silences rather than for sounded notes.</p>
+<p>Anyway, the point here is namely that musicians are very much in the habit of thinking about “how long does this note sound for?” So attaching the <code>Span</code> to the note we want to play isn’t a very far-fetched idea at all.</p>
+<p>That being said…</p>
+<p>It turns out to be a <em>drag</em> to have to always be sticking durations on things. I suspect the pain is already internalized in some sort of Stockholm Syndrome, because every written notation and every computer program for music requires you to write down the damn durations.</p>
+<p>As it happens, writing down the durations in advance is not very compositional. For example, if we stretch the time domain of our <code>Signal</code> (which is very reasonable and possible, since it’s just a function <code>Time -&gt; a</code>), we’d expect the note durations to stretch too! But they can’t, since we’d have the type:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">stretch ::</span> <span class="dt">Rational</span> <span class="ot">-&gt;</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> <span class="dt">Signal</span> a</span></code></pre></div>
+<p>which you’ll notice is polymorphic in <code>a</code>. Of course, we could do some ad-hoc bullshit where we stick in a typeclass constraint for “stretchable things” but this is the way of madness.</p>
+<p>What if, instead, we were to <em>derive</em> the durations? After all, we already know <em>when</em> everything <em>is</em>, temporally-speaking. The first type that comes to mind for something like this would be:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">SF</span> (<span class="dt">Event</span> a)  (<span class="dt">Event</span> (<span class="dt">Span</span> a))</span></code></pre></div>
+<p>that is, a function over <code>Signal</code>s, which takes an input stream of events and outputs a stream of events with a duration attached to them. What duration? Presumably until the next event! While this is a perfectly fine type (and isn’t very hard to implement), it has the obvious downside that it can’t represent silence. If a sound spans until the next sound, then there’s nowhere to stick any silence!</p>
+<p>What I ended up with was to take <em>two</em> input event streams:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">spanning ::</span> <span class="dt">SF</span> (<span class="dt">Event</span> (), <span class="dt">Event</span> a) (<span class="dt">Event</span> (<span class="dt">Span</span> a))</span></code></pre></div>
+<p>where the <code>Event ()</code> stream indicates <em>changes</em> and the <code>Event a</code> stream indicates <em>beginnings of notes.</em> Thus a note spans until the next <code>Event a</code> or <code>Event ()</code> — whichever comes first.</p>
+<p>The implementation is not very tricky. We use our primitive</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">ev2ev ::</span> ([(<span class="dt">Time</span>, a)] <span class="ot">-&gt;</span> [(<span class="dt">Time</span>, b)]) <span class="ot">-&gt;</span> <span class="dt">SF</span> (<span class="dt">Event</span> a) (<span class="dt">Event</span> b)</span></code></pre></div>
+<p>and zip together the events with the tail of the events, taking the difference in their times. All that’s left is to combine the event streams, which is exactly what the <code>Alternative</code> instance on <code>Event</code> does:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">spanning ::</span> <span class="dt">SF</span> (<span class="dt">Event</span> (), <span class="dt">Event</span> a) (<span class="dt">Event</span> (<span class="dt">Span</span> a))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>spanning <span class="ot">=</span> proc (end, a) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> merged <span class="ot">=</span> <span class="dt">Just</span> <span class="op">&lt;$&gt;</span> a <span class="op">&lt;|&gt;</span> <span class="dt">Nothing</span> <span class="op">&lt;$</span> end</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  ev2ev</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    (\es <span class="ot">-&gt;</span> catMaybes</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">$</span> <span class="fu">zipWith</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>          (\(t1, ema) (t2, _) <span class="ot">-&gt;</span> <span class="kw">case</span> ema <span class="kw">of</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">Just</span> a <span class="ot">-&gt;</span> <span class="dt">Just</span> (t1, <span class="dt">Span</span> (t2 <span class="op">-</span> t1) a)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>          )</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>          es</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      <span class="op">$</span> <span class="fu">drop</span> <span class="dv">1</span> es</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&lt;</span> merged</span></code></pre></div>
+<p>I don’t know about you, but I think this is <a href="https://www.youtube.com/watch?v=S1gHv6jdE3E">pretty cool</a>. For two different reasons. The first is that we’ve accidentally just derived the notion of a <a href="https://en.wikipedia.org/wiki/Part_(music)">musical voice</a>, which is to say a logical grouping of musical events into something that could be sung by a person, or played on an instrument. Voices and (most) instruments only make one note at a time, which is exactly the postcondition of <code>spanning</code>.</p>
+<p>The other cool thing here is that now we can change note lengths in the same way we can change chords and modulations — namely by doing transformations in <code>SF</code>. You can imagine a <code>Signal Tension</code> which describes how much tension the composer wants you to feel through the journey of the song. By deriving an event stream out of the modulating <code>Tension</code>, where events happen frequently in high tension situations, and less often under low tension, we can automatically <em>drive note durations</em> from our <code>Tension</code> parameter! I haven’t used a lot of DAWs, but my understanding is (and the clankers agree) that almost(?) no DAWs support duration as an automation. So we might be in terra nova over here!</p>
+<p>Perhaps you’re starting to get a taste that maybe all of this <a href="/blog/music-overview/">“solving music”</a> isn’t such a pipe dream after all. There’s clearly still a huge distance to travel before we’re anywhere close to anything useful, but the primitives do seem to be pulling their weight.</p>
+<p>Of course, nobody wants to call <code>spanning</code> by hand, so next time we’ll see about finding nicer ways of generating horizontal structures.</p>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Musical Signal Functions</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -2309,49 +2367,6 @@ Ungodly Compiled SQL
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>When looking at the types of arrows in this essay, we make the distinction that <code>~&gt;</code> are arrows that we can write in catlang, while <code>-&gt;</code> exist in the metatheory.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Theorems for Free Redux</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/theorems-for-free-redux/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/theorems-for-free-redux/index.html</guid>
-      <pubDate>2025-10-09T11:27:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>A reader recently got in touch with me regarding my 2017 blog post <a href="/blog/theorems-for-free/">Review: Theorems for Free</a>. He had some questions about the paper/my review, and upon revisiting it, I realized that I had no idea how the paper worked anymore.</p>
-<p>So I decided to rehash my understanding, and came up with something much conceptually clearer about what is happening and why.</p>
-<p>A quick summary of <em>Theorems for Free</em>:</p>
-<blockquote>
-<p>For any polymorphic type, we can generate a law that must hold for any value of that type.</p>
-</blockquote>
-<p>One the examples given is for the function <code>length :: forall a. [a] -&gt; Int</code>, which states that <code>forall f l. length (fmap f l) = length l</code>—namely, that <code>fmap</code> doesn’t change the length of the list.</p>
-<p><em>Theorems for Free</em> gives a roundabout and obtuse set of rules for computing these free theorems. But, as usual, the clarity of the idea is obscured by the encoding details.</p>
-<p>The actual idea is this:</p>
-<blockquote>
-<p>Parametrically-polymorphic functions can’t branch on the specific types they are instantiated at.</p>
-</blockquote>
-<p>Because of this fact, functions must behave the same way, regardless of the type arguments passed to them. So all of the free theorems have the form “replacing the type variables <em>before</em> calling the function is the same as replacing the type variables <em>after</em> calling the function.”</p>
-<p>What does it mean to replace a type variable? Well, if we want to replace a type variable <code>a</code> with <code>a'</code>, we will generate a fresh function <code>f :: a -&gt; a'</code>, and then stick it wherever we need to.</p>
-<p>For example, given the function <code>id :: a -&gt; a</code>, we generate the free theorem:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> f a<span class="op">.</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  f (<span class="fu">id</span> a) <span class="ot">=</span> <span class="fu">id</span> (f a)</span></code></pre></div>
-<p>or, for the function <code>fromJust :: Maybe a -&gt; a</code>, we get:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span> f ma<span class="op">.</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  f (fromJust ma) <span class="ot">=</span> fromJust (<span class="fu">fmap</span> f ma)</span></code></pre></div>
-<p>This scheme also works for functions in multiple type parameters. Given the function <code>swap :: (a, b) -&gt; (b, a)</code>, we must replace both <code>a</code> and <code>b</code>, giving the free theorem:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">forall</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">f ::</span> a <span class="ot">-&gt;</span> a&#39;)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">g ::</span> b <span class="ot">-&gt;</span> b&#39;)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    (<span class="ot">p ::</span> (a, b))</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  swap (bimap f g p) <span class="ot">=</span> bimap g f (swap p)</span></code></pre></div>
-<p>In the special case where there are no type parameters, we don’t need to do anything. This is what’s happening in the <code>length</code> example given in the introduction.</p>
-<p>Simple stuff, right? The obfuscation in the paper comes from the actual technique given to figure out where to apply these type substitutions. The paper is not fully general here, in that it only gives rules for the <code>[]</code> and <code>(-&gt;)</code> type constructors (if I recall correctly.) These rules are further obscured in that they inline the definitions of <code>fmap</code>, rather than writing <code>fmap</code> directly.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> But for types in one variable, <code>fmap</code> is exactly the function that performs type substitution.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>Perhaps this paper predates typeclasses? Very possible.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
       ]]></content:encoded>

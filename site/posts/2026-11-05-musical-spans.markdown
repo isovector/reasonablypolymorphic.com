@@ -1,9 +1,9 @@
 ---
 layout: post
-title: rhythms
-date: TO_BE_DETERMINED
+title: From Instantaneous Events to Musical Spans
+date: 2026-11-05 08:59
 comments: true
-tags: foo, bar
+tags: music, rhythm, arrows, haskell
 ---
 
 We've been thinking a lot about musical structures over these last few posts.

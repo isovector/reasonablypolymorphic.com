@@ -89,7 +89,7 @@
 <p>At the time of writing, this sharing algorithm was the only source of let-binds in our entire language, which meant that it didn’t need to account for let-binds <em>in</em> the program.</p>
 <p>Of course, that invariant eventually changed. We added a way in the source langauge to introduce <code>let</code>s, which meant my algorithm was wrong. And I had written it sufficiently long ago that I no longer remembered <em>exactly why it worked.</em> Which meant the <a href="https://pages.cs.wisc.edu/~remzi/Naur.pdf">theory of my program was lost, and thus that we ought to rewrite it.</a></p>
 <h2 id="unfolding-a-solution">Unfolding a Solution</h2>
-<p>I went back to the problem statement, and stared at it for a long time (back to the think-really-hard algorithm!) Upon staring at the problem, I realized that what I was really trying to do was determine where diamond patterns arose in the propgram graph.</p>
+<p>I went back to the problem statement, and stared at it for a long time (back to the think-really-hard algorithm!) Upon staring at the problem, I realized that what I was really trying to do was determine where diamond patterns arose in the program graph.</p>
 <p>Recall our original graph:</p>
 <pre><code>      +
     /   \
