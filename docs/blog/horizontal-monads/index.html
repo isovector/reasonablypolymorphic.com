@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Musically Horizontal Monads :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/horizontal-monads">Musically Horizontal Monads</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/musical-spans">&larr;</a>
+    </span>
+    <time>November  8, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/haskell.html">haskell</a>, <a href="/tags/yoneda.html">yoneda</a>
+    </span>
+</p>
+<div class="content">
+    <p>Sorry for the delay! My household has had a couple of chaotic days of everyone-being-very-very-sick and house guests and 4:30am airport drop-offs. But we’re back! This blog post got written in several parts over several days, so it might be a little disjointed. Apologies.</p>
+<p>Anyway…</p>
+<p>In the <a href="/blog/musical-spans/">last post</a> we discussed a way of attaching durations to instantaneous musical events: just wrap them with a duration, stupid! Then we wrote a function</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">spanning ::</span> <span class="dt">SF</span> (<span class="dt">Event</span> (), <span class="dt">Event</span> a) (<span class="dt">Event</span> (<span class="dt">Span</span> a))</span></code></pre></div>
+<p>which takes an event stream of stopping points, as well as an event stream of starting points<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. It then spans each starting event until the next stop or start. The stops are there so that we can add silence if necessary.</p>
+<p>Having a function like <code>spanning</code> around is cool because it means we can just emit starting and stopping events from whatever upstream process we might like, and it will automatically turn them into “rhythm.” And of course, that upstream process is welcome to derive the stop stream from the start stream (or vice versa), if you don’t want to have to think about it.</p>
+<p>Anyway, that’s all and good. But musicians have a lot of intellectual moment behind <em>not</em> thinking about music that way. Instead they usually just think of having durations intrinsically attached to notes — that is to say, they conceive of the note and the duration at the same time. Since we have an explicit desideratum here of making it easy to get good results, we ought to provide some more conventional ways of thinking about writing lines.</p>
+<p>Writing lines is usually done as “pick a note and a duration, then after that duration, pick another note and another duration. Rinse and repeat.” Of course, there’s some wiggle room where you can instead choose to <em>not</em> select a note and leave silence in its place. Depending on how functional-programming-pilled you are, this either sounds like a monoid or a monad. Let’s explore both ideas, starting with the monoid.</p>
+<p>A horizontal monoid seems like it ought to sequence one piece of music before another, in a temporal-sense. That is, <code>a &lt;&gt; b</code> should play <code>a</code>, and then once <code>a</code> is done, it should play <code>b</code>.</p>
+<p>Recall that <code>Signal</code> already has <code>Semigroup/Monoid</code> instances, but looking at the type, they necessarily can’t be the right thing:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Signal</span> a <span class="ot">=</span> <span class="dt">Signal</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a) [(<span class="dt">Time</span>, <span class="dt">Segment</span> a)]</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock <span class="dt">Functor</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">Ap</span> <span class="dt">Signal</span> a</span></code></pre></div>
+<p>If you’re unfamiliar with the <a href="https://hackage-content.haskell.org/package/base-4.22.0.0/docs/Data-Monoid.html#t:Ap"><code>Ap</code></a> newtype, it lifts the <code>Semigroup</code> and <code>Monoid</code> instances over the <code>Applicative</code> structure. That is, we’ve effectively derived the following instances:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Signal</span> a) <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  (<span class="op">&lt;&gt;</span>) <span class="ot">=</span> liftA2 (<span class="op">&lt;&gt;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Signal</span> a) <span class="kw">where</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mempty</span> <span class="ot">=</span> <span class="fu">pure</span> <span class="fu">mempty</span></span></code></pre></div>
+<p>The clue that this is doing the wrong thing for our purposes is the <code>Semigroup a =&gt;</code> constraint. If we were putting one <code>Signal a</code> after another <em>in time</em>, we’d never need to combine <code>a</code>s, and thus we would have no need for a <code>Semigroup a</code> instance. Thus, this instance <em>must</em> be doing a point-wise zip of times. Which is all to say that this is no good to us.</p>
+<p>What we instead must do is build a wrapper type which provides the correct temporal-sequencing monoid. Let’s take a moment to pour over our primitives and see if any of them are feasible for actually making that happen.</p>
+<p>The relevant primitive happens to be <code>switchS</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">switchS ::</span> <span class="dt">Signal</span> (a, <span class="dt">Event</span> b) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> <span class="dt">Signal</span> a) <span class="ot">-&gt;</span> <span class="dt">Signal</span> a</span></code></pre></div>
+<p>which long-time readers might recall has <a href="/blog/yampa-switching/">seen some action on this blog</a> in the past. The idea is that we will run the first <code>Signal</code> until the first occurrence of the <code>Event c</code>, then use that in order to switch to the given continuation.</p>
+<p>So <code>switchS</code> gives us the “do one thing after another” semantics we want (notice its lack of a <code>Semigroup a</code> constraint!) This happens to be most of the work done, now it’s just a matter of accumulating the rest of the bits we need: the actual notes we’re playing, the start points, and the stop points. Let’s package all of that up into a little datatype:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">HState</span> a <span class="ot">=</span> <span class="dt">HState</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> hs_out ::</span> a</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> hs_starts ::</span> <span class="dt">Event</span> ()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> hs_stops ::</span> <span class="dt">Event</span> ()</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Functor</span>, <span class="dt">Generic</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">Generically</span> (<span class="dt">HState</span> a)</span></code></pre></div>
+<p>A horizontal structure then is some sort of newtype over <code>Signal (HState a)</code>. As it happens, writing the monadic horizontal structure is going to be a little more informative at this point, since we can lift the monoidal version out directly. But we can immediately put <code>HState</code> to work!</p>
+<p>In the exact style of <a href="/blog/yampa-switching/">Yampa Switching</a>, we will use the <a href="https://hackage-content.haskell.org/package/mtl-2.3.2/docs/Control-Monad-Cont.html#t:Cont"><code>Cont</code>inuation monad</a>, which allows us to bind over the <code>a</code> in some function <code>(a -&gt; b) -&gt; b</code> — in our case, this will be the <code>(a -&gt; Signal b) -&gt; Signal b</code> that curries out of <code>switchS</code>. This is already well-treaded territory on this blog, so you can go read the Yampa Switching post if you’re curious about the exact details here.</p>
+<p>As a first approximation, wrapping this up gives us the type:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Horizontal</span> o a <span class="ot">=</span> <span class="dt">Horizontal</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unHorizontal ::</span> <span class="dt">Cont</span> (<span class="dt">Signal</span> (<span class="dt">HState</span> o)) a</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
+<p>However, this is somewhat unsatisfactory. <code>Signal</code>s are covariant in their output (here <code>HState o</code>), but <code>Cont</code> is <em>invariant</em> in that parameter. Blinding moving forward with <code>Horizontal</code> as written would mean we wouldn’t have an operation <code>mapOut :: (o -&gt; o') -&gt; Horizontal o a -&gt; Horizontal o' a</code> which in practice turns out to be quite a limitation indeed!</p>
+<p>Instead we can do a little bit of a <a href="https://hackage-content.haskell.org/package/kan-extensions-5.2.8/docs/Data-Functor-Yoneda.html#t:Yoneda">Yoneda</a>-style encoding, where we hold onto a function that maps from <code>o</code> into the eventual result of the invariant <code>r</code> parameter. Check this thing out:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Yo</span> f o a <span class="ot">=</span> <span class="dt">Yo</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unYo ::</span> <span class="kw">forall</span> b<span class="op">.</span> (o <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Cont</span> (f b) a</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> stock <span class="dt">Functor</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">Ap</span> (<span class="dt">Yo</span> f o) a</span></code></pre></div>
+<p>The idea is that we delay building up our <code>Cont</code> until you hand us a way of mapping from <code>o</code> into whatever type <code>b</code> you eventually end up wanting. We usually use a trick like this to get a free <em>functor</em>, but here we’re using it to get a free <em>bifunctor</em>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Bifunctor</span> (<span class="dt">Yo</span> f) <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  bimap f g (<span class="dt">Yo</span> y) <span class="ot">=</span> <span class="dt">Yo</span> <span class="op">$</span> \k <span class="ot">-&gt;</span> <span class="fu">fmap</span> g <span class="op">$</span> y <span class="op">$</span> k <span class="op">.</span> f</span></code></pre></div>
+<p>The <code>Applicative</code> and <code>Monad</code> instances also come already-paid-for, but we must write them out ourselves:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">Yo</span> r o) <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> a <span class="ot">=</span> <span class="dt">Yo</span> <span class="op">$</span> <span class="fu">const</span> <span class="op">$</span> <span class="fu">pure</span> a</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  liftA2 f (<span class="dt">Yo</span> a) (<span class="dt">Yo</span> b) <span class="ot">=</span> <span class="dt">Yo</span> <span class="op">$</span> \k <span class="ot">-&gt;</span> liftA2 f (a k) (b k)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Yo</span> r o) <span class="kw">where</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Yo</span> m <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="dt">Yo</span> <span class="op">$</span> \k <span class="ot">-&gt;</span> m k <span class="op">&gt;&gt;=</span> \a <span class="ot">-&gt;</span> unYo (f a) k</span></code></pre></div>
+<p>This concludes our diversion into writing <code>Yo</code>. Popping the stack: recall we’re still trying to write a monadic horizontal structure. Which we can now write out as <code>Horizontal r o a</code> (with <code>r</code> being left intentionally unmotivated for the time being), getting all our relevant instances for free:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Horizontal</span> r o a <span class="ot">=</span> <span class="dt">Horizontal</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unHorizontal ::</span> <span class="kw">forall</span> b<span class="op">.</span> (o <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Cont</span> (<span class="dt">Signal</span> (<span class="dt">HState</span> b)) a</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Bifunctor</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Yo</span> (<span class="dt">Compose</span> <span class="dt">Signal</span> <span class="dt">HState</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Yo</span> (<span class="dt">Compose</span> <span class="dt">Signal</span> <span class="dt">HState</span>) o</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    via <span class="dt">Yo</span> (<span class="dt">Compose</span> <span class="dt">Signal</span> <span class="dt">HState</span>) o a</span></code></pre></div>
+<p>Take a moment to appreciate how <em>amazing</em> GHC is here; each of those deriving vias is lifting an unrelated type through a polytype <code>forall b</code> <em>and</em> through a <code>Compose</code>, the latter of which doesn’t have most instances we’re actually intersted in!<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>Our primary introduction form for <code>Horizontal</code> is <code>mkHorizontal</code>, which acts as one <code>Signal o</code> for some amount of time, before rendering a continuation of type <code>a</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ApplicativeDo #-}</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ot">mkHorizontal ::</span> <span class="dt">Signal</span> o <span class="ot">-&gt;</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> r o a</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>mkHorizontal so t a <span class="ot">=</span> <span class="dt">Horizontal</span> <span class="op">$</span> \k <span class="ot">-&gt;</span> cont <span class="op">$</span> switchS <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  o <span class="ot">&lt;-</span> so</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  start <span class="ot">&lt;-</span> atS <span class="dv">0</span> ()</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  stop <span class="ot">&lt;-</span> atS t ()</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  ea <span class="ot">&lt;-</span> atS t a</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> (<span class="dt">HState</span> (k o) start stop, ea)</span></code></pre></div>
+<p>Note that we issue a start event at time 0, and both a stop event and switch event at time <code>t</code>. From this we can derive <code>fill</code> and <code>hit</code>, both of which use a constant value across their <code>Signal o</code>, differing only in what they return as a monadic continuation:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">fill ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> r a a</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>fill t a <span class="ot">=</span> mkHorizontal (<span class="fu">pure</span> a) t a</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ot">hit ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> r a ()</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>hit t <span class="ot">=</span> void <span class="op">.</span> fill t</span></code></pre></div>
+<p>And of course, the <code>mapOut</code> function we had to invent the <code>Yo</code> machinery in order to provide:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mapOut ::</span> (o <span class="ot">-&gt;</span> o&#39;) <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> r o a <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> r o&#39; a</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>mapOut <span class="ot">=</span> <span class="fu">flip</span> bimap <span class="fu">id</span></span></code></pre></div>
+<h2 id="a-musical-aside">A Musical Aside</h2>
+<p>It’s probably worth taking a moment to discuss <em>what exactly the hell</em> is going on with all of this crazy yoneda continuation monad stuff. What does it <em>buy</em> us?</p>
+<p>Lets write a little motif:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">motif ::</span> <span class="dt">Note</span> <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> r <span class="dt">Note</span> <span class="dt">Note</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>motif n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  hit (<span class="dv">1</span><span class="op">/</span><span class="dv">4</span>) n</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  hit (<span class="dv">1</span><span class="op">/</span><span class="dv">4</span>) <span class="op">$</span> n <span class="op">+</span> <span class="dv">4</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  hit (<span class="dv">1</span><span class="op">/</span><span class="dv">4</span>) <span class="op">$</span> n <span class="op">+</span> <span class="dv">3</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> n <span class="op">+</span> <span class="dv">2</span></span></code></pre></div>
+<p>notice that this emits notes relative to its input. In somewhat-standard notation, <code>motif F</code> looks like this<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>:</p>
+<figure>
+<img src="/images/music4/out1.cropped.svg" alt="Motif" /><figcaption aria-hidden="true">Motif</figcaption>
+</figure>
+<p>using this triangle symbol to indicate the continuation. But now check this out. We can bind the result in order to build a musical sequence; <code>motif F &gt;&gt;= motif</code> looks like this:</p>
+<figure>
+<img src="/images/music4/out2.cropped.svg" alt="Sequencing Motif" /><figcaption aria-hidden="true">Sequencing Motif</figcaption>
+</figure>
+<p>This happens to be the underlying machinery in Tymoczko’s work on sequences (chapter 4 of <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tonality</a>), though it is not presented as such (and I suspect he didn’t have monads in mind when writing it.)</p>
+<h2 id="back-to-haskell">Back to Haskell</h2>
+<p>Revitalized with a real connection to real musical ideas, we press on through the mires of abstract nonsense. The most pressing problem remaining is how do we eliminate <code>Horizontal</code>? By means of <code>unsafeRunHorizontal</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>unsafeRunHorizontal</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Horizontal</span> r o a</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Signal</span> o)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">HState</span> o)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>unsafeRunHorizontal (<span class="dt">Horizontal</span> f) k</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> runCont (f <span class="fu">id</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> <span class="fu">fmap</span> (\o <span class="ot">-&gt;</span> <span class="dt">HState</span> o <span class="dt">NoEvent</span> <span class="dt">NoEvent</span>) <span class="op">.</span> k</span></code></pre></div>
+<p>which isn’t actually unsafe, but <em>will be</em> due to a few additions to our API in a second. But a nicer eliminator is <code>horizontal</code>, which as originally promised, calls <code>spanning</code> on our behalf:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">horizontal ::</span> <span class="dt">Horizontal</span> r o a <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> (<span class="dt">Span</span> o))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>horizontal h</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="fu">flip</span> runSF</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      ( unsafeRunHorizontal h</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">$</span> <span class="fu">const</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">$</span> <span class="fu">pure</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      <span class="op">$</span> <span class="fu">error</span> <span class="st">&quot;impossible: horizontal sampled too late&quot;</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> proc (<span class="dt">HState</span> o starts stops) <span class="ot">-&gt;</span> spanning <span class="op">-&lt;</span> (stops, o <span class="op">&lt;$</span> starts)</span></code></pre></div>
+<p>Here we use <code>unsafeRunHorizontal</code> and pass it a dummy continuation, since we know we’re never going to actually sample it past the duration of our <code>Horizontal</code>. Then we take the output <code>HState</code>, sample <code>o</code> <em>only at the start points</em>, and pass the stop points through unmolested.</p>
+<p>It can also be useful to turn a <code>Horizontal</code> directly into an event stream, ignoring its spans:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">getHorizontal ::</span> <span class="dt">Horizontal</span> r o a <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> o)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>getHorizontal <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">fmap</span> getSpan) <span class="op">.</span> horizontal</span></code></pre></div>
+<h2 id="putting-everything-to-rest">Putting Everything to Rest</h2>
+<p>The final two mysteries remaining are the unmotivated <code>r</code> parameter in <code>Horizontal r o a</code>, and why <code>unsafeRunHorizontal</code> is unsafe.</p>
+<p>Recall that musicians often think about periods of silence, or <em>rests.</em> While we could model rests as a <code>Nothing</code> value in a <code>Maybe</code>-typed <code>Horizontal</code>, this would get rather in the way of our nice combinators! In particular, nothing says we must interpret a <code>Horizontal</code> as a discrete function; if it’s continuous, then the <code>Nothing</code> value would make sense. But if we’re exporting discrete function, then the <code>Nothing</code>s never actually show up and the <code>Just</code>s are unnecessary.</p>
+<p>So here’s the trick; this phantom <code>r</code> type in <code>Horizontal r o a</code> corresponds to “are there any rests in this value?” We can use a <code>DataKinds</code> to get ourselves a type-level value to play with:</p>
+<pre><code>data Restful = HasRests
+
+type Horizontal :: Restful -&gt; Type -&gt; Type -&gt; Type
+
+type role Horizontal nominal representational representational</code></pre>
+<p>Our new <code>rest</code> combinator is the only thing that uses the <code>r</code> parameter:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ot">rest ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> <span class="dt">HasRests</span> a ()</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>rest t <span class="ot">=</span> <span class="dt">Horizontal</span> <span class="op">$</span> <span class="fu">const</span> <span class="op">$</span> cont <span class="op">$</span> switchS <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  stop <span class="ot">&lt;-</span> atS <span class="dv">0</span> ()</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  ea <span class="ot">&lt;-</span> atS t ()</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> ( <span class="dt">HState</span> (<span class="fu">error</span> <span class="st">&quot;impossible: rest can&#39;t be sampled&quot;</span>) <span class="dt">NoEvent</span> stop</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>       , ea</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>       )</span></code></pre></div>
+<p>Notice that <code>rest</code> sets a stop point at t=0, and doesn’t create any new start points. Furthermore, the actual value of type <code>a</code> here is an <code>error</code> value. It claims to be “impossible,” which we will enforce momentarily.</p>
+<p>Something peculiar here is that we only have a single type of kind <code>Restful</code>, namely <code>HasRests</code>. How can we differentiate <code>Horizontal</code>s that use <code>rest</code> from those that don’t? Our old friend <a href="https://wiki.haskell.org/Monad/ST#An_explanation_in_Haskell-Cafe">the ST trick</a> comes knocking, requiring that <code>r</code> remain fully polymorphic:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>switchHorizontal</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> (<span class="kw">forall</span> r<span class="op">.</span> <span class="dt">Horizontal</span> r o a)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Signal</span> o)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">HState</span> o)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>switchHorizontal h <span class="ot">=</span> unsafeRunHorizontal h</span></code></pre></div>
+<p>Now <code>switchHorizontal</code> can give us a continuous function <em>only when the <code>Horizontal</code> doesn’t contain any <code>rest</code>s!</em> Usage of <code>unsafeRunHorizontal</code> makes no such guarantees, and thus will crash with the impossible error when used on a <code>rest</code>.</p>
+<p>Note that <code>horizontal</code> has no such compunctions; it samples its function only at the designated start points, which <code>rest</code> doesn’t provide. And since our semigroup/applicative instances are all temporally end-to-end, nothing can introduce a start point inside of a <code>rest</code>.</p>
+<h2 id="our-temporal-monoid">Our Temporal Monoid</h2>
+<p>We began all of this looking for a temporal monoid whose multiplication would glue horizontal structures end-to-end. We then switched over to making a monad that did the same thing, but we don’t need to give up on our dreams of monoids!</p>
+<p>In fact, <code>Horizontal</code> is already the monoid we want, with a minor niggle in that it wants a semigroup/monoid over the continuation value. If we tie that to be <code>()</code> everything falls out for free:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">HM</span> r o <span class="ot">=</span> <span class="dt">HM</span> {<span class="ot"> unHM ::</span> <span class="dt">Horizontal</span> r o () }</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- Get a functor instance via our Bifunctor</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span> via <span class="dt">Data.Bifunnctor.Flip.Flip</span> (<span class="dt">Horizontal</span> r) ()</span></code></pre></div>
+<p>I don’t actually think this type is worth using, since it means our introduction forms need to be lifted into this newtype. But it’s nice to know that we could do such a thing if we wanted to!</p>
+<h2 id="next-time">Next Time</h2>
+<p>That’s all I have to say about rhythm for now. I don’t consider this to be the last word, but it’s as far as I’ve figured anything out. I’ve been reading a ton of textbooks on the topic, and the author who seems to be the <em>least</em> confused about it is <a href="https://en.wikipedia.org/wiki/Peter_Westergaard&#39;s_tonal_theory#Operations_on_rhythm">Peter Westergaard</a>. His formulation is in terms of “if you want a listener to mentally parse a hierarchical structure out of your notes, what properties would make that parsing easy?”</p>
+<p>That’s a thing I’d like to explore further, but I’m on a <a href="https://nano2.org/">publishing deadline</a> here, so I can’t take too much time to do research in between blog posts. Next time we’ll discuss <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tymoczko’s theory of harmony</a>, which will dramatically power up our ability to make something that sounds like <em>music.</em> Until then!</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Writing that sentence out makes it clear that I got the arguments backwards. Oops!<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>As a little aside, if you’re not <code>deriving</code> 90%+ of your instances, you should start. Good places to look for opportunities involve the wrappers in <code>Data.Monoid</code> and <code>GHC.Generics</code>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>In glorious SVG. Sorry for the shitty image quality in previous posts!<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/musical-spans">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
