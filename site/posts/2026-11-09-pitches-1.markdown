@@ -1,0 +1,253 @@
+---
+layout: post
+title: Abstract Musical Pitches
+date: 2026-11-09 10:26
+comments: true
+tags: music, haskell
+---
+
+This is my seventh blog post in a series about "solving music", in terms of
+giving it a precise and useful constructive algebra. And somehow despite 10,000
+words on the topic, we have yet to discuss any notion of the common musical
+ideas of "scales" or "harmony" or "pitches."
+
+Today we're going to tackle those things
+
+I'd like to preface this by saying: **all of the music theory here comes from
+[Dmitri Tymoczko][tymoczko].** I've spent the last year reading (and rereading,
+and re-rereading) his amazing book [Tonality][tonality] which is the clearest
+approach to music I have ever found. Shoutouts to [Dmitri Volkov][sporkl] who
+put me [onto the trail][trail].
+
+[tymoczko]: https://dmitri.mycpanel.princeton.edu/index.html
+[tonality]: https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html
+[sporkl]: https://github.com/sporkl
+[trail]: https://github.com/isovector/reasonablypolymorphic.com/issues/64#issuecomment-3621529779
+
+To the extent that I've done anything of substance on this matter, it is merely
+in finding representations of these ideas in terms of types!
+
+
+## Finite Numbers
+
+Let's set the stage with a little appetizer. Consider the finite numbers:
+
+```haskell
+type Fin :: Nat -> Type
+data Fin n
+```
+
+The type `Fin n` has `n` distinct values, which we label 0, 1, ..., n. For
+example `Fin 0` has 0 values, `Fin 3` has 3 values, and so on and so forth.
+
+Encoding `Fin` in Haskell is tricky and rather unsatisfying regardless of how
+you do it. For our purposes, we're going to do this:
+
+```haskell
+type Fin :: Nat -> Type
+data Fin n where
+  FZ :: (1 <= n) => Fin n
+  FS :: (1 <= n) => !(Fin (n - 1)) -> Fin n
+```
+
+which lets us encode 0 as `FZ`, 1 as `FS FZ`, etc. The funny `1 <= n`
+constraints are there to help GHC learn that these patterns are complete. Like I
+said, rather unsatisfying, but what are you going to do.
+
+The advantage of doing things this way is that when combined with
+[ghc-typelits-natnormalise][natnorm], GHC can deduce that eg `isOdd` is defined
+over all possible inputs:
+
+[natnorm]: https://hackage.haskell.org/package/ghc-typelits-natnormalise
+
+```haskell
+isOdd :: Fin 3 -> Bool
+isOdd FZ = True
+isOdd (FS FZ) = False
+isOdd (FS (FS FZ)) = True
+```
+
+We will give the following instances over `Fin n`:
+
+```haskell
+deriving instance Eq (Fin n)
+deriving instance Ord (Fin n)
+
+instance (...) => Num (Fin n) where
+  fromInteger = unsafeFromNum . flip mod (natSize @n)
+  n + m = fromInteger (toInteger n + toInteger m)
+  n * m = fromInteger (toInteger n * toInteger m)
+  n - m = fromInteger (toInteger n - toInteger m)
+```
+
+where the `Num` instances are up to `mod n`. That is, `(2 :: Fin 3) + 2` is
+equal to `1 :: Fin 3` (because 4 mod 3 is 1.) While GHC will happily allow us to
+use integer literals to define pattern matches against `Fin n`, it *won't* be
+able to tell that they're total. Alas. Alack. Nevertheless, for reasons of
+presentation we will pretend like GHC can. So we will prefer to write `isOdd`
+like this:
+
+```haskell
+isOdd :: Fin 3 -> Bool
+isOdd 0 = True
+isOdd 1 = False
+isOdd 2 = True
+```
+
+
+## Scalar Degrees
+
+Let's talk music now.
+
+We begin with the idea of a "scale degree", which is just an integer acting as a
+coordinate in some "musical space", to be made precise later. Our type is `Deg
+n`, where `n` is the size of the scale.
+
+```haskell
+type Deg :: Nat -> Type
+newtype Deg n = Deg
+  { getDeg :: Int
+  }
+  deriving stock (Generic)
+  deriving newtype (Eq, Ord, Show, Num, Enum, Real, Integral)
+```
+
+Really, we just keep the `n` around to ensure you don't accidentally add `Deg`s
+that belong in different coordinate systems.
+
+However, unlike `Int`, we are going to do some quotienty stuff with `Deg n`.
+Namely, we will say that `(k + n) :: Deg n` is "the same thing, only higher"
+than `k :: Deg n`.
+
+In musical terms, `n` is the number of pitch classes available to us (notes like
+A, B, C#, Db, etc.). And so our claim about `k + n` is like saying `(C4 + an
+octave) = C5` is the "same thing" as `C4` (only higher.) Except that we have
+generalized away the exact number of pitch classes.
+
+If you don't already "read music," you are likely at an advantage here, in that
+you don't need to *unlearn* things to understand what might be going on here.
+Feel free to skim for a bit if things don't make much sense --- the following is
+an attempt to disabuse classically-trained musicians of some ubiquitous points
+of confusion.
+
+We can imagine each `Deg n` space as defining an "abstract clef." For example,
+the pattern `[0, 1, -2, 3] :: Deg 3` might look something like this:
+
+![0-1-(-2)-3 in the "3 Clef"](/images/music5/out1.cropped.svg)
+
+What pitches do these correspond to? **They don't!** They are just points in
+some abstract musical scale. Without knowing the scale, we can't say anything
+about what pitches these correspond to.
+
+We'll make all of this Haskell-precise in a moment, but let's carry on. We can
+imagine a "scale" that maps `Fin 3` notes into `Fin 7` notes via "inclusion"
+(namely, just reinterpret the degree):
+
+```haskell
+inclusion :: Fin 3 -> Fin 7
+inclusion n = unsafeCoerce n
+```
+
+If we map this "scale" over our earlier pattern, we get this odd beast:
+
+![Inclusion into the "7 Clef"](/images/music5/out2.cropped.svg)
+
+What the hell is going on here? We are mapping `0 :: Deg 3` to `0 :: Deg 7`,
+which is why the first note in both is on the middle line. Similarly, `1 :: Deg
+3` maps to `1 :: Deg 7`, which is why the second note in both is the space above
+the middle line.
+
+However, we can rewrite `(-2) :: Deg 3` as `(-3) + 1 :: Deg 3`, and by our
+quotienting rule, `(-3) :: Deg` is the same pitch class as `0 :: Deg`. Thus
+`(-2) :: Deg 3` must be the same pitch class as `1 :: Deg 3`, only an "octave"
+lower. So when we include into `Deg 7`, we see that the third note is 7 degrees
+below the second note. Similarly, `3 :: Deg 3` ought to be one "octave" above `0
+:: Deg 3`. And since we map `0 :: Deg 3` to `0 :: Deg 7`, we must map `3 :: Deg
+3` to `7 :: Deg 7`.
+
+What a mouthful!
+
+All of this is to say that in `Deg n`, we have exactly `n` pitch classes, and
+if you wrap around you have to go up or down an "octave."
+
+This likely feels pretty roundabout. But it admits many cool musical phenomena.
+For example, we can (but not are not required to) interpret `Deg 3` as notes of
+a triad. Then given `[0, 1, 2, 3] :: Deg 3`:
+
+![0-1-2-3 in the "3 Clef"](/images/music5/out3.cropped.svg)
+
+and a scale that maps `Deg 3 -> Deg 7`, namely:
+
+```haskell
+triad :: Fin 3 -> Fin 7
+triad 0 = 0
+triad 1 = 2
+triad 2 = 4
+```
+
+we arpeggiate a triad:[^caveat]
+
+[^caveat]: Assuming we also have some canonical way of turning `Deg 7` into
+    actual pitches. Here we assume `0 :: Deg 7` is middle C, and that we are
+    using the diatonic scale.
+
+![Arpeggiation](/images/music5/out4.cropped.svg)
+
+How cool is that??
+
+Well, ok, you're probably not *that* impressed. But that's because you don't yet
+fully appreciate the power of this.
+
+
+## A Quick Note on Off-By-One Errors
+
+Fucking music, man. Clearly not invented by computer scientists. There are
+off-by-one errors *everywhere* in this domain. The most egregious is that the
+distance between a note and itself is considered to be 1. They call this the
+"unison."
+
+The distance between a note and its immediate neighbor is a "second." The
+distance to the note after that is a "third". Ok, fine, at least it's monotonic.
+
+But then you get into weird issues where if put a third on top of a third you
+end up with a fifth.
+
+Idiotic.
+
+To work around this there's all these rules like to *subtract* a distance you
+need to subtract it from 9 (despite the fact that there are only 7 notes),
+because now you've *double counted* the unison.
+
+BUT THE BUCK STOPS HERE. We're going to just right the wrong and make everything
+0-indexed. That's why in the definition of `triad` above, we map the "root of
+the chord" to note 0, the "third" to note 2, and the "fifth" to note 4.
+
+
+## Back to Music
+
+(In my opinion) Tymoczko's big insight is that we can generate a huge amount of
+musical phenomena simply by applying transformations at different degrees. For
+example, a musical voice might be moving up and down a `Deg 3` (which as we've
+seen, might correspond to arpeggiation). We can then transform that into a `Deg
+7`, but add a time-pointwise offset (which corresponds to [chord
+changes][chords].) We can then map that into `Deg 12`, and add a new
+time-pointwise offset (corresponding to a [scalar modulation][modulation].)
+
+[chords]: https://en.wikipedia.org/wiki/Chord_progression
+[modulation]: https://en.wikipedia.org/wiki/Modulation_(music)
+
+And if you've been following along [through the series so far][tags], you might
+consider that we could model the above as a `Signal (Event (Span (Deg 3)))`
+describing the voice moving, with a `Signal (Deg 7)` describing the chord
+change offsets and a `Signal (Deg 12)` describing the key changes.
+
+[tags]: /tags/music.html
+
+But that's just the beginning. Nobody says our mappings between `Deg m` and `Deg
+n` need to stay constant! Or that we can't stick a transformation to `Deg p` in
+between `m` and `n` for a few bars.
+
+That's enough for today. Big vibes day I guess. Next time we'll look at making
+all of this actually precise, as well as digging into some of Tymoczko's other
+interesting ideas.
+

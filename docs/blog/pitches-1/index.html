@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Abstract Musical Pitches :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/pitches-1">Abstract Musical Pitches</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/horizontal-monads">&larr;</a>
+    </span>
+    <time>November  9, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>, <a href="/tags/haskell.html">haskell</a>
+    </span>
+</p>
+<div class="content">
+    <p>This is my seventh blog post in a series about “solving music”, in terms of giving it a precise and useful constructive algebra. And somehow despite 10,000 words on the topic, we have yet to discuss any notion of the common musical ideas of “scales” or “harmony” or “pitches.”</p>
+<p>Today we’re going to tackle those things</p>
+<p>I’d like to preface this by saying: <strong>all of the music theory here comes from <a href="https://dmitri.mycpanel.princeton.edu/index.html">Dmitri Tymoczko</a>.</strong> I’ve spent the last year reading (and rereading, and re-rereading) his amazing book <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tonality</a> which is the clearest approach to music I have ever found. Shoutouts to <a href="https://github.com/sporkl">Dmitri Volkov</a> who put me <a href="https://github.com/isovector/reasonablypolymorphic.com/issues/64#issuecomment-3621529779">onto the trail</a>.</p>
+<p>To the extent that I’ve done anything of substance on this matter, it is merely in finding representations of these ideas in terms of types!</p>
+<h2 id="finite-numbers">Finite Numbers</h2>
+<p>Let’s set the stage with a little appetizer. Consider the finite numbers:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Fin</span> n</span></code></pre></div>
+<p>The type <code>Fin n</code> has <code>n</code> distinct values, which we label 0, 1, …, n. For example <code>Fin 0</code> has 0 values, <code>Fin 3</code> has 3 values, and so on and so forth.</p>
+<p>Encoding <code>Fin</code> in Haskell is tricky and rather unsatisfying regardless of how you do it. For our purposes, we’re going to do this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Fin</span> n <span class="kw">where</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">FZ</span><span class="ot"> ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> n) <span class="ot">=&gt;</span> <span class="dt">Fin</span> n</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">FS</span><span class="ot"> ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> n) <span class="ot">=&gt;</span> <span class="op">!</span>(<span class="dt">Fin</span> (n <span class="op">-</span> <span class="dv">1</span>)) <span class="ot">-&gt;</span> <span class="dt">Fin</span> n</span></code></pre></div>
+<p>which lets us encode 0 as <code>FZ</code>, 1 as <code>FS FZ</code>, etc. The funny <code>1 &lt;= n</code> constraints are there to help GHC learn that these patterns are complete. Like I said, rather unsatisfying, but what are you going to do.</p>
+<p>The advantage of doing things this way is that when combined with <a href="https://hackage.haskell.org/package/ghc-typelits-natnormalise">ghc-typelits-natnormalise</a>, GHC can deduce that eg <code>isOdd</code> is defined over all possible inputs:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">isOdd ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dt">FZ</span> <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>isOdd (<span class="dt">FS</span> <span class="dt">FZ</span>) <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>isOdd (<span class="dt">FS</span> (<span class="dt">FS</span> <span class="dt">FZ</span>)) <span class="ot">=</span> <span class="dt">True</span></span></code></pre></div>
+<p>We will give the following instances over <code>Fin n</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Eq</span> (<span class="dt">Fin</span> n)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Ord</span> (<span class="dt">Fin</span> n)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="op">...</span>) <span class="ot">=&gt;</span> <span class="dt">Num</span> (<span class="dt">Fin</span> n) <span class="kw">where</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fromInteger</span> <span class="ot">=</span> unsafeFromNum <span class="op">.</span> <span class="fu">flip</span> <span class="fu">mod</span> (natSize <span class="op">@</span>n)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  n <span class="op">+</span> m <span class="ot">=</span> <span class="fu">fromInteger</span> (<span class="fu">toInteger</span> n <span class="op">+</span> <span class="fu">toInteger</span> m)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  n <span class="op">*</span> m <span class="ot">=</span> <span class="fu">fromInteger</span> (<span class="fu">toInteger</span> n <span class="op">*</span> <span class="fu">toInteger</span> m)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  n <span class="op">-</span> m <span class="ot">=</span> <span class="fu">fromInteger</span> (<span class="fu">toInteger</span> n <span class="op">-</span> <span class="fu">toInteger</span> m)</span></code></pre></div>
+<p>where the <code>Num</code> instances are up to <code>mod n</code>. That is, <code>(2 :: Fin 3) + 2</code> is equal to <code>1 :: Fin 3</code> (because 4 mod 3 is 1.) While GHC will happily allow us to use integer literals to define pattern matches against <code>Fin n</code>, it <em>won’t</em> be able to tell that they’re total. Alas. Alack. Nevertheless, for reasons of presentation we will pretend like GHC can. So we will prefer to write <code>isOdd</code> like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">isOdd ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dv">0</span> <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dv">1</span> <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dv">2</span> <span class="ot">=</span> <span class="dt">True</span></span></code></pre></div>
+<h2 id="scalar-degrees">Scalar Degrees</h2>
+<p>Let’s talk music now.</p>
+<p>We begin with the idea of a “scale degree”, which is just an integer acting as a coordinate in some “musical space”, to be made precise later. Our type is <code>Deg n</code>, where <code>n</code> is the size of the scale.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Deg</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Deg</span> n <span class="ot">=</span> <span class="dt">Deg</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getDeg ::</span> <span class="dt">Int</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Num</span>, <span class="dt">Enum</span>, <span class="dt">Real</span>, <span class="dt">Integral</span>)</span></code></pre></div>
+<p>Really, we just keep the <code>n</code> around to ensure you don’t accidentally add <code>Deg</code>s that belong in different coordinate systems.</p>
+<p>However, unlike <code>Int</code>, we are going to do some quotienty stuff with <code>Deg n</code>. Namely, we will say that <code>(k + n) :: Deg n</code> is “the same thing, only higher” than <code>k :: Deg n</code>.</p>
+<p>In musical terms, <code>n</code> is the number of pitch classes available to us (notes like A, B, C#, Db, etc.). And so our claim about <code>k + n</code> is like saying <code>(C4 + an octave) = C5</code> is the “same thing” as <code>C4</code> (only higher.) Except that we have generalized away the exact number of pitch classes.</p>
+<p>If you don’t already “read music,” you are likely at an advantage here, in that you don’t need to <em>unlearn</em> things to understand what might be going on here. Feel free to skim for a bit if things don’t make much sense — the following is an attempt to disabuse classically-trained musicians of some ubiquitous points of confusion.</p>
+<p>We can imagine each <code>Deg n</code> space as defining an “abstract clef.” For example, the pattern <code>[0, 1, -2, 3] :: Deg 3</code> might look something like this:</p>
+<figure>
+<img src="/images/music5/out1.cropped.svg" alt="0-1-(-2)-3 in the “3 Clef”" /><figcaption aria-hidden="true">0-1-(-2)-3 in the “3 Clef”</figcaption>
+</figure>
+<p>What pitches do these correspond to? <strong>They don’t!</strong> They are just points in some abstract musical scale. Without knowing the scale, we can’t say anything about what pitches these correspond to.</p>
+<p>We’ll make all of this Haskell-precise in a moment, but let’s carry on. We can imagine a “scale” that maps <code>Fin 3</code> notes into <code>Fin 7</code> notes via “inclusion” (namely, just reinterpret the degree):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">inclusion ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Fin</span> <span class="dv">7</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>inclusion n <span class="ot">=</span> unsafeCoerce n</span></code></pre></div>
+<p>If we map this “scale” over our earlier pattern, we get this odd beast:</p>
+<figure>
+<img src="/images/music5/out2.cropped.svg" alt="Inclusion into the “7 Clef”" /><figcaption aria-hidden="true">Inclusion into the “7 Clef”</figcaption>
+</figure>
+<p>What the hell is going on here? We are mapping <code>0 :: Deg 3</code> to <code>0 :: Deg 7</code>, which is why the first note in both is on the middle line. Similarly, <code>1 :: Deg 3</code> maps to <code>1 :: Deg 7</code>, which is why the second note in both is the space above the middle line.</p>
+<p>However, we can rewrite <code>(-2) :: Deg 3</code> as <code>(-3) + 1 :: Deg 3</code>, and by our quotienting rule, <code>(-3) :: Deg</code> is the same pitch class as <code>0 :: Deg</code>. Thus <code>(-2) :: Deg 3</code> must be the same pitch class as <code>1 :: Deg 3</code>, only an “octave” lower. So when we include into <code>Deg 7</code>, we see that the third note is 7 degrees below the second note. Similarly, <code>3 :: Deg 3</code> ought to be one “octave” above <code>0 :: Deg 3</code>. And since we map <code>0 :: Deg 3</code> to <code>0 :: Deg 7</code>, we must map <code>3 :: Deg 3</code> to <code>7 :: Deg 7</code>.</p>
+<p>What a mouthful!</p>
+<p>All of this is to say that in <code>Deg n</code>, we have exactly <code>n</code> pitch classes, and if you wrap around you have to go up or down an “octave.”</p>
+<p>This likely feels pretty roundabout. But it admits many cool musical phenomena. For example, we can (but not are not required to) interpret <code>Deg 3</code> as notes of a triad. Then given <code>[0, 1, 2, 3] :: Deg 3</code>:</p>
+<figure>
+<img src="/images/music5/out3.cropped.svg" alt="0-1-2-3 in the “3 Clef”" /><figcaption aria-hidden="true">0-1-2-3 in the “3 Clef”</figcaption>
+</figure>
+<p>and a scale that maps <code>Deg 3 -&gt; Deg 7</code>, namely:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Fin</span> <span class="dv">7</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">1</span> <span class="ot">=</span> <span class="dv">2</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">2</span> <span class="ot">=</span> <span class="dv">4</span></span></code></pre></div>
+<p>we arpeggiate a triad:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<figure>
+<img src="/images/music5/out4.cropped.svg" alt="Arpeggiation" /><figcaption aria-hidden="true">Arpeggiation</figcaption>
+</figure>
+<p>How cool is that??</p>
+<p>Well, ok, you’re probably not <em>that</em> impressed. But that’s because you don’t yet fully appreciate the power of this.</p>
+<h2 id="a-quick-note-on-off-by-one-errors">A Quick Note on Off-By-One Errors</h2>
+<p>Fucking music, man. Clearly not invented by computer scientists. There are off-by-one errors <em>everywhere</em> in this domain. The most egregious is that the distance between a note and itself is considered to be 1. They call this the “unison.”</p>
+<p>The distance between a note and its immediate neighbor is a “second.” The distance to the note after that is a “third”. Ok, fine, at least it’s monotonic.</p>
+<p>But then you get into weird issues where if put a third on top of a third you end up with a fifth.</p>
+<p>Idiotic.</p>
+<p>To work around this there’s all these rules like to <em>subtract</em> a distance you need to subtract it from 9 (despite the fact that there are only 7 notes), because now you’ve <em>double counted</em> the unison.</p>
+<p>BUT THE BUCK STOPS HERE. We’re going to just right the wrong and make everything 0-indexed. That’s why in the definition of <code>triad</code> above, we map the “root of the chord” to note 0, the “third” to note 2, and the “fifth” to note 4.</p>
+<h2 id="back-to-music">Back to Music</h2>
+<p>(In my opinion) Tymoczko’s big insight is that we can generate a huge amount of musical phenomena simply by applying transformations at different degrees. For example, a musical voice might be moving up and down a <code>Deg 3</code> (which as we’ve seen, might correspond to arpeggiation). We can then transform that into a <code>Deg 7</code>, but add a time-pointwise offset (which corresponds to <a href="https://en.wikipedia.org/wiki/Chord_progression">chord changes</a>.) We can then map that into <code>Deg 12</code>, and add a new time-pointwise offset (corresponding to a <a href="https://en.wikipedia.org/wiki/Modulation_(music)">scalar modulation</a>.)</p>
+<p>And if you’ve been following along <a href="/tags/music.html">through the series so far</a>, you might consider that we could model the above as a <code>Signal (Event (Span (Deg 3)))</code> describing the voice moving, with a <code>Signal (Deg 7)</code> describing the chord change offsets and a <code>Signal (Deg 12)</code> describing the key changes.</p>
+<p>But that’s just the beginning. Nobody says our mappings between <code>Deg m</code> and <code>Deg n</code> need to stay constant! Or that we can’t stick a transformation to <code>Deg p</code> in between <code>m</code> and <code>n</code> for a few bars.</p>
+<p>That’s enough for today. Big vibes day I guess. Next time we’ll look at making all of this actually precise, as well as digging into some of Tymoczko’s other interesting ideas.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Assuming we also have some canonical way of turning <code>Deg 7</code> into actual pitches. Here we assume <code>0 :: Deg 7</code> is middle C, and that we are using the diatonic scale.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/horizontal-monads">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+

@@ -7,13 +7,118 @@
   <description>There will be math and Haskell and it will be in ya face.</description>
   <category>Life</category>
   <copyright>2018 Sandy Maguire</copyright>
-  <pubDate>2026-11-08T10:55:00Z</pubDate>
+  <pubDate>2026-11-09T10:26:00Z</pubDate>
   <language>en-us</language>
   <image>
       <url>http://reasonablypolymorphic.com/images/favicon.png</url>
     <title>Sandy Maguire</title>
     <link>http://reasonablypolymorphic.com</link>
   </image>
+  <item>
+      <title>Abstract Musical Pitches</title>
+      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
+      <link>http://reasonablypolymorphic.com/blog/pitches-1/index.html</link>
+      <guid>http://reasonablypolymorphic.com/blog/pitches-1/index.html</guid>
+      <pubDate>2026-11-09T10:26:00Z</pubDate>
+      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
+        <p>This is my seventh blog post in a series about “solving music”, in terms of giving it a precise and useful constructive algebra. And somehow despite 10,000 words on the topic, we have yet to discuss any notion of the common musical ideas of “scales” or “harmony” or “pitches.”</p>
+<p>Today we’re going to tackle those things</p>
+<p>I’d like to preface this by saying: <strong>all of the music theory here comes from <a href="https://dmitri.mycpanel.princeton.edu/index.html">Dmitri Tymoczko</a>.</strong> I’ve spent the last year reading (and rereading, and re-rereading) his amazing book <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tonality</a> which is the clearest approach to music I have ever found. Shoutouts to <a href="https://github.com/sporkl">Dmitri Volkov</a> who put me <a href="https://github.com/isovector/reasonablypolymorphic.com/issues/64#issuecomment-3621529779">onto the trail</a>.</p>
+<p>To the extent that I’ve done anything of substance on this matter, it is merely in finding representations of these ideas in terms of types!</p>
+<h2 id="finite-numbers">Finite Numbers</h2>
+<p>Let’s set the stage with a little appetizer. Consider the finite numbers:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Fin</span> n</span></code></pre></div>
+<p>The type <code>Fin n</code> has <code>n</code> distinct values, which we label 0, 1, …, n. For example <code>Fin 0</code> has 0 values, <code>Fin 3</code> has 3 values, and so on and so forth.</p>
+<p>Encoding <code>Fin</code> in Haskell is tricky and rather unsatisfying regardless of how you do it. For our purposes, we’re going to do this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Fin</span> n <span class="kw">where</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">FZ</span><span class="ot"> ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> n) <span class="ot">=&gt;</span> <span class="dt">Fin</span> n</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">FS</span><span class="ot"> ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> n) <span class="ot">=&gt;</span> <span class="op">!</span>(<span class="dt">Fin</span> (n <span class="op">-</span> <span class="dv">1</span>)) <span class="ot">-&gt;</span> <span class="dt">Fin</span> n</span></code></pre></div>
+<p>which lets us encode 0 as <code>FZ</code>, 1 as <code>FS FZ</code>, etc. The funny <code>1 &lt;= n</code> constraints are there to help GHC learn that these patterns are complete. Like I said, rather unsatisfying, but what are you going to do.</p>
+<p>The advantage of doing things this way is that when combined with <a href="https://hackage.haskell.org/package/ghc-typelits-natnormalise">ghc-typelits-natnormalise</a>, GHC can deduce that eg <code>isOdd</code> is defined over all possible inputs:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">isOdd ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dt">FZ</span> <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>isOdd (<span class="dt">FS</span> <span class="dt">FZ</span>) <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>isOdd (<span class="dt">FS</span> (<span class="dt">FS</span> <span class="dt">FZ</span>)) <span class="ot">=</span> <span class="dt">True</span></span></code></pre></div>
+<p>We will give the following instances over <code>Fin n</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Eq</span> (<span class="dt">Fin</span> n)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Ord</span> (<span class="dt">Fin</span> n)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="op">...</span>) <span class="ot">=&gt;</span> <span class="dt">Num</span> (<span class="dt">Fin</span> n) <span class="kw">where</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fromInteger</span> <span class="ot">=</span> unsafeFromNum <span class="op">.</span> <span class="fu">flip</span> <span class="fu">mod</span> (natSize <span class="op">@</span>n)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  n <span class="op">+</span> m <span class="ot">=</span> <span class="fu">fromInteger</span> (<span class="fu">toInteger</span> n <span class="op">+</span> <span class="fu">toInteger</span> m)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  n <span class="op">*</span> m <span class="ot">=</span> <span class="fu">fromInteger</span> (<span class="fu">toInteger</span> n <span class="op">*</span> <span class="fu">toInteger</span> m)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  n <span class="op">-</span> m <span class="ot">=</span> <span class="fu">fromInteger</span> (<span class="fu">toInteger</span> n <span class="op">-</span> <span class="fu">toInteger</span> m)</span></code></pre></div>
+<p>where the <code>Num</code> instances are up to <code>mod n</code>. That is, <code>(2 :: Fin 3) + 2</code> is equal to <code>1 :: Fin 3</code> (because 4 mod 3 is 1.) While GHC will happily allow us to use integer literals to define pattern matches against <code>Fin n</code>, it <em>won’t</em> be able to tell that they’re total. Alas. Alack. Nevertheless, for reasons of presentation we will pretend like GHC can. So we will prefer to write <code>isOdd</code> like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">isOdd ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dv">0</span> <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dv">1</span> <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>isOdd <span class="dv">2</span> <span class="ot">=</span> <span class="dt">True</span></span></code></pre></div>
+<h2 id="scalar-degrees">Scalar Degrees</h2>
+<p>Let’s talk music now.</p>
+<p>We begin with the idea of a “scale degree”, which is just an integer acting as a coordinate in some “musical space”, to be made precise later. Our type is <code>Deg n</code>, where <code>n</code> is the size of the scale.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Deg</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Deg</span> n <span class="ot">=</span> <span class="dt">Deg</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getDeg ::</span> <span class="dt">Int</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Num</span>, <span class="dt">Enum</span>, <span class="dt">Real</span>, <span class="dt">Integral</span>)</span></code></pre></div>
+<p>Really, we just keep the <code>n</code> around to ensure you don’t accidentally add <code>Deg</code>s that belong in different coordinate systems.</p>
+<p>However, unlike <code>Int</code>, we are going to do some quotienty stuff with <code>Deg n</code>. Namely, we will say that <code>(k + n) :: Deg n</code> is “the same thing, only higher” than <code>k :: Deg n</code>.</p>
+<p>In musical terms, <code>n</code> is the number of pitch classes available to us (notes like A, B, C#, Db, etc.). And so our claim about <code>k + n</code> is like saying <code>(C4 + an octave) = C5</code> is the “same thing” as <code>C4</code> (only higher.) Except that we have generalized away the exact number of pitch classes.</p>
+<p>If you don’t already “read music,” you are likely at an advantage here, in that you don’t need to <em>unlearn</em> things to understand what might be going on here. Feel free to skim for a bit if things don’t make much sense — the following is an attempt to disabuse classically-trained musicians of some ubiquitous points of confusion.</p>
+<p>We can imagine each <code>Deg n</code> space as defining an “abstract clef.” For example, the pattern <code>[0, 1, -2, 3] :: Deg 3</code> might look something like this:</p>
+<figure>
+<img src="/images/music5/out1.cropped.svg" alt="0-1-(-2)-3 in the “3 Clef”" /><figcaption aria-hidden="true">0-1-(-2)-3 in the “3 Clef”</figcaption>
+</figure>
+<p>What pitches do these correspond to? <strong>They don’t!</strong> They are just points in some abstract musical scale. Without knowing the scale, we can’t say anything about what pitches these correspond to.</p>
+<p>We’ll make all of this Haskell-precise in a moment, but let’s carry on. We can imagine a “scale” that maps <code>Fin 3</code> notes into <code>Fin 7</code> notes via “inclusion” (namely, just reinterpret the degree):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">inclusion ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Fin</span> <span class="dv">7</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>inclusion n <span class="ot">=</span> unsafeCoerce n</span></code></pre></div>
+<p>If we map this “scale” over our earlier pattern, we get this odd beast:</p>
+<figure>
+<img src="/images/music5/out2.cropped.svg" alt="Inclusion into the “7 Clef”" /><figcaption aria-hidden="true">Inclusion into the “7 Clef”</figcaption>
+</figure>
+<p>What the hell is going on here? We are mapping <code>0 :: Deg 3</code> to <code>0 :: Deg 7</code>, which is why the first note in both is on the middle line. Similarly, <code>1 :: Deg 3</code> maps to <code>1 :: Deg 7</code>, which is why the second note in both is the space above the middle line.</p>
+<p>However, we can rewrite <code>(-2) :: Deg 3</code> as <code>(-3) + 1 :: Deg 3</code>, and by our quotienting rule, <code>(-3) :: Deg</code> is the same pitch class as <code>0 :: Deg</code>. Thus <code>(-2) :: Deg 3</code> must be the same pitch class as <code>1 :: Deg 3</code>, only an “octave” lower. So when we include into <code>Deg 7</code>, we see that the third note is 7 degrees below the second note. Similarly, <code>3 :: Deg 3</code> ought to be one “octave” above <code>0 :: Deg 3</code>. And since we map <code>0 :: Deg 3</code> to <code>0 :: Deg 7</code>, we must map <code>3 :: Deg 3</code> to <code>7 :: Deg 7</code>.</p>
+<p>What a mouthful!</p>
+<p>All of this is to say that in <code>Deg n</code>, we have exactly <code>n</code> pitch classes, and if you wrap around you have to go up or down an “octave.”</p>
+<p>This likely feels pretty roundabout. But it admits many cool musical phenomena. For example, we can (but not are not required to) interpret <code>Deg 3</code> as notes of a triad. Then given <code>[0, 1, 2, 3] :: Deg 3</code>:</p>
+<figure>
+<img src="/images/music5/out3.cropped.svg" alt="0-1-2-3 in the “3 Clef”" /><figcaption aria-hidden="true">0-1-2-3 in the “3 Clef”</figcaption>
+</figure>
+<p>and a scale that maps <code>Deg 3 -&gt; Deg 7</code>, namely:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Fin</span> <span class="dv">7</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">1</span> <span class="ot">=</span> <span class="dv">2</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">2</span> <span class="ot">=</span> <span class="dv">4</span></span></code></pre></div>
+<p>we arpeggiate a triad:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<figure>
+<img src="/images/music5/out4.cropped.svg" alt="Arpeggiation" /><figcaption aria-hidden="true">Arpeggiation</figcaption>
+</figure>
+<p>How cool is that??</p>
+<p>Well, ok, you’re probably not <em>that</em> impressed. But that’s because you don’t yet fully appreciate the power of this.</p>
+<h2 id="a-quick-note-on-off-by-one-errors">A Quick Note on Off-By-One Errors</h2>
+<p>Fucking music, man. Clearly not invented by computer scientists. There are off-by-one errors <em>everywhere</em> in this domain. The most egregious is that the distance between a note and itself is considered to be 1. They call this the “unison.”</p>
+<p>The distance between a note and its immediate neighbor is a “second.” The distance to the note after that is a “third”. Ok, fine, at least it’s monotonic.</p>
+<p>But then you get into weird issues where if put a third on top of a third you end up with a fifth.</p>
+<p>Idiotic.</p>
+<p>To work around this there’s all these rules like to <em>subtract</em> a distance you need to subtract it from 9 (despite the fact that there are only 7 notes), because now you’ve <em>double counted</em> the unison.</p>
+<p>BUT THE BUCK STOPS HERE. We’re going to just right the wrong and make everything 0-indexed. That’s why in the definition of <code>triad</code> above, we map the “root of the chord” to note 0, the “third” to note 2, and the “fifth” to note 4.</p>
+<h2 id="back-to-music">Back to Music</h2>
+<p>(In my opinion) Tymoczko’s big insight is that we can generate a huge amount of musical phenomena simply by applying transformations at different degrees. For example, a musical voice might be moving up and down a <code>Deg 3</code> (which as we’ve seen, might correspond to arpeggiation). We can then transform that into a <code>Deg 7</code>, but add a time-pointwise offset (which corresponds to <a href="https://en.wikipedia.org/wiki/Chord_progression">chord changes</a>.) We can then map that into <code>Deg 12</code>, and add a new time-pointwise offset (corresponding to a <a href="https://en.wikipedia.org/wiki/Modulation_(music)">scalar modulation</a>.)</p>
+<p>And if you’ve been following along <a href="/tags/music.html">through the series so far</a>, you might consider that we could model the above as a <code>Signal (Event (Span (Deg 3)))</code> describing the voice moving, with a <code>Signal (Deg 7)</code> describing the chord change offsets and a <code>Signal (Deg 12)</code> describing the key changes.</p>
+<p>But that’s just the beginning. Nobody says our mappings between <code>Deg m</code> and <code>Deg n</code> need to stay constant! Or that we can’t stick a transformation to <code>Deg p</code> in between <code>m</code> and <code>n</code> for a few bars.</p>
+<p>That’s enough for today. Big vibes day I guess. Next time we’ll look at making all of this actually precise, as well as digging into some of Tymoczko’s other interesting ideas.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Assuming we also have some canonical way of turning <code>Deg 7</code> into actual pitches. Here we assume <code>0 :: Deg 7</code> is middle C, and that we are using the diatonic scale.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+      ]]></content:encoded>
+  </item>
   <item>
       <title>Musically Horizontal Monads</title>
       <author>sandy@sandymaguire.me (Sandy Maguire)</author>
@@ -151,11 +256,11 @@
 <p>The final two mysteries remaining are the unmotivated <code>r</code> parameter in <code>Horizontal r o a</code>, and why <code>unsafeRunHorizontal</code> is unsafe.</p>
 <p>Recall that musicians often think about periods of silence, or <em>rests.</em> While we could model rests as a <code>Nothing</code> value in a <code>Maybe</code>-typed <code>Horizontal</code>, this would get rather in the way of our nice combinators! In particular, nothing says we must interpret a <code>Horizontal</code> as a discrete function; if it’s continuous, then the <code>Nothing</code> value would make sense. But if we’re exporting discrete function, then the <code>Nothing</code>s never actually show up and the <code>Just</code>s are unnecessary.</p>
 <p>So here’s the trick; this phantom <code>r</code> type in <code>Horizontal r o a</code> corresponds to “are there any rests in this value?” We can use a <code>DataKinds</code> to get ourselves a type-level value to play with:</p>
-<pre><code>data Restful = HasRests
-
-type Horizontal :: Restful -&gt; Type -&gt; Type -&gt; Type
-
-type role Horizontal nominal representational representational</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Restful</span> <span class="ot">=</span> <span class="dt">HasRests</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Horizontal</span><span class="ot"> ::</span> <span class="dt">Restful</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> role <span class="dt">Horizontal</span> nominal representational representational</span></code></pre></div>
 <p>Our new <code>rest</code> combinator is the only thing that uses the <code>r</code> parameter:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ot">rest ::</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Horizontal</span> <span class="dt">HasRests</span> a ()</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>rest t <span class="ot">=</span> <span class="dt">Horizontal</span> <span class="op">$</span> <span class="fu">const</span> <span class="op">$</span> cont <span class="op">$</span> switchS <span class="op">$</span> <span class="kw">do</span></span>
@@ -1427,79 +1532,6 @@ New Implementation
 <li id="fn1" role="doc-endnote"><p>Strictly speaking, the tile product can also do parallel composition, as well as sychronizing composition, but that’s not super important right now.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-      ]]></content:encoded>
-  </item>
-  <item>
-      <title>Struggling Towards an Algebraic Theory of Music</title>
-      <author>sandy@sandymaguire.me (Sandy Maguire)</author>
-      <link>http://reasonablypolymorphic.com/blog/algebraic-music/index.html</link>
-      <guid>http://reasonablypolymorphic.com/blog/algebraic-music/index.html</guid>
-      <pubDate>2025-12-04T20:15:00Z</pubDate>
-      <content:encoded xml:base="https://reasonablypolymorphic.com"><![CDATA[
-        <p>For the last few months, I’ve been trying to come up with a nice, denotational basis for what music <em>is.</em> But I’m running out of steam on the project, so I thought I’d write what I’ve figured out, and what I’ve tried but doesn’t work. Hopefully this will inspire someone to come tell me what I’m being stupid about and help get the whole process unstuck.</p>
-<h2 id="what-music-is-not">What Music Is Not</h2>
-<p>It’s tempting to gesticulate wildly, saying that music is merely a function from time to wave amplitudes, eg something of the form:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>μ <span class="dt">Music</span> <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Amplitude</span></span></code></pre></div>
-<p>While I think it’s fair to say that this is indeed the underlying denotation of <em>sound,</em> this is clearly not the denotation of <em>music.</em> For example, we can transpose a song up a semitone without changing the speed—something that’s very challenging without a great deal of in the waveform representation. And we can play a musical phrase backwards, which is probably impossible in a waveform for any timbral envelope.</p>
-<p>Since we have now two examples of “reasonable to want to do” with musical objects, which cannot be expressed in terms of a function <code>Time -&gt; Amplitude</code>, we must conceed that waveforms-over-time cannot be the denotation of music.</p>
-<h2 id="what-music-might-be">What Music Might Be</h2>
-<p>Music is obviously temporal, so keeping the “function from time” part seems relevant. But a function from time to what? As a first attempt:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Note</span> <span class="ot">=</span> <span class="dt">Note</span> <span class="dt">Pitch</span> <span class="dt">Timbre</span> <span class="dt">Volume</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>μ <span class="dt">Music</span> <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Duration</span>, <span class="dt">Note</span>)</span></code></pre></div>
-<p>which, for a given time, returns a set of notes starting at that time, and how long they ought to be played for. An immediate improvement would be to parameterize the above over notes:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Duration</span>, a)</span></code></pre></div>
-<p>It’s tempting to try to eliminate more of the structure here with our parametricity, but I was unable to do so. In contrapuntal music, we will want to be able to express two notes starting at the same moment, but ending at different times.</p>
-<p>One alluring path here could to write monophonic voices, and combine them together for polyphony:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Voice</span> a) <span class="ot">=</span> <span class="co">{- something like -}</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> (<span class="dt">Duration</span>, a)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Voice</span> a)</span></code></pre></div>
-<p>Such an encoding has many unfavorable traits. First, it just feels yucky. Why are there two layers of <code>Time</code>? Second, now I-as-a-composer need to make a choice of which voice I put each note in, despite the fact that this is merely an encoding quirk. So no, I don’t think this is a viable path forward.</p>
-<p>So let’s return to our best contender:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> <span class="dt">Set</span> (<span class="dt">Duration</span>, a)</span></code></pre></div>
-<p>This definition is trivially a monoid, pointwise over the time structure:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Music</span> a <span class="op">&lt;&gt;</span> <span class="dt">Music</span> b) <span class="ot">=</span> <span class="dt">Music</span> (μ a <span class="op">&lt;&gt;</span> μ b)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>μ <span class="fu">mempty</span> <span class="ot">=</span> <span class="dt">Music</span> <span class="fu">mempty</span></span></code></pre></div>
-<p>If we think about abstract sets here, rather than <code>Data.Set.Set</code>, such an object is clearly a functor. There are many possible applicatives here, but the pointwise zipper seems most compelling to me. Pictorally:</p>
-<pre><code>pure a
-=
-  |----- a ----forever...
-
-
-liftA2 f
-  |---- a ----|-- b --|
-  |-- x --|---- y ----|
-=
-  |- fax -|fay|- fby -|</code></pre>
-<p>Such an applicative structure is quite nice! It would allow us to “stamp” a rhythm on top of a pure representation of a melody.</p>
-<p>However, the desirability of this instance is a point <em>against</em> <code>μ (Music a) = Time -&gt; Set (Duration, a)</code>, since by <a href="http://conal.net/papers/type-class-morphisms/">Conal Elliott’s typeclass morphism rule</a>, the meaning of the applicative here ought to be the applicative of the meaning. Nevertheless, any other applicative structure would be effecitvely useless, since it would require the notes on one side to begin at the same time as the notes on the other. To sketch:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- bad instance!</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>liftA2 f (<span class="dt">Music</span> a) (<span class="dt">Music</span> b) <span class="ot">=</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Music</span> (liftA2 (\(d1, m) (d2, n) <span class="ot">-&gt;</span> (d1 <span class="op">&lt;&gt;</span> d2, f m n)) a b)</span></code></pre></div>
-<p>Good luck finding a musically meaningful <code>pure</code> for such a thing!</p>
-<p>Ok, so let’s say we commit to the pointwise zippy instance as our applicative instance. Is there a corresponding monad? Such a thing would substitute notes with more music. My first idea of what to do with such a thing would be to replace chords with texture. For example, we could replace chords with broken chords, or with basslines that target the same notes.</p>
-<p>Anyway, the answer is yes, there is such a monad. But it’s musically kinda troublesome. Assume we have the following function:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">notes ::</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> [(<span class="dt">Maybe</span> <span class="dt">Interval</span>, a)]</span></code></pre></div>
-<p>which will convert a <code>Music a</code> into its notes and an optional temporal interval (optional because <code>pure</code> goes on forever.) Then, we can write our bind as:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>m <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="fu">flip</span> <span class="fu">foldMap</span> (notes m) \<span class="kw">case</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">Nothing</span>, a) <span class="ot">-&gt;</span> f a</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">Just</span> (start, duration), a) <span class="ot">-&gt;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    offset start <span class="op">$</span> _ duration <span class="op">$</span> f a</span></code></pre></div>
-<p>where <code>offset</code> changes when a piece of music occurs. We are left with a hole of type:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Duration</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> a</span></code></pre></div>
-<p>whose semantics sure better be that it forces the given <code>Music</code> to fit in the alotted time. There are two reasonable candidates here:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">scaleTo  ::</span> <span class="dt">Duration</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> a</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">truncate</span><span class="ot"> ::</span> <span class="dt">Duration</span> <span class="ot">-&gt;</span> <span class="dt">Music</span> a <span class="ot">-&gt;</span> <span class="dt">Music</span> a</span></code></pre></div>
-<p>where <code>scaleTo</code> changes the local interpretation of time such that the entire musical argument is played within the given duration, and <code>truncate</code> just takes the first <code>Duration</code>’s worth of time. Truncate is too obviously unhelpful here, since the <code>&gt;&gt;=</code> continuation doesn’t know how much time it’s been given, and thus most binds will drop almost all of their resulting music.</p>
-<p>Therefore we will go with <code>scaleTo</code>. Which satisfies all of the algebraic (monad) laws, but results in some truly mystifying tunes. The problem here is that this is not an operation which respects musical meter. Each subsequent bind results in a correspondingly smaller share of the pie. Thus by using only bind and mconcat, it’s easy to get a bar full of quarter notes, followed by a bar of sixty-fourth notes, followed by two bars full of of 13-tuplets. If you want to get a steady rhythm out of the whole thing, you need a global view on how many binds deep you’re ever going to go, and you need to ensure locally that you only produce a small powers-of-two number of notes, or else you will accidentally introduce tuplets.</p>
-<p>It’s a mess. But algebraically it’s fine.</p>
-<h2 id="what-music-seems-like-it-should-be">What Music Seems Like It Should Be</h2>
-<p>The above foray into monads seems tentatively promising for amateur would-be algorithmic composers (read: people like me.) But I have been reading <a href="https://www.goodreads.com/book/show/36288013-musical-composition">several</a> <a href="https://www.goodreads.com/book/show/890009.Twentieth_Century_Harmony">books</a> on musical composition lately, and my big takeaway from them is <em>just how damn contextual notes are.</em></p>
-<p>So maybe this means we want more of a comonadic interface. One in which you can <code>extend</code> every note, by taking into account all of the notes in its local vicinity. This feels just as right as the monadic approach does, albeit in a completely different way. Being able to give a comonad instance for <code>Music</code> would require us to somehow reckon with having only a single <code>a</code> at any given time. Which appeals to my functional programmer soul, but again, I don’t know how to do it.</p>
-<p>But imagine if we did have a comonadic instance. We could perform voice leading by inspecting what the next note was, and by futzing around with our pitch. We could do some sort of reharmonization by shifting notes around according to what else is happening.</p>
-<p>But maybe all of this is just folly.</p>
-<p>Music as it’s actually practiced doesn’t seem to have much of the functionaly-compositional properties we like—ie, that we can abstract and encapsulate. But music doesn’t appear to be like that! Instead, a happy melody takes a different character when played on major vs minor chords. Adding a dissonant interval can completely reconceptualize other notes.</p>
-<p>It feels like a bit of a bummer to end like this, but I don’t really know where to go from here. I’ve worked something like six completely-different approaches over the last few months, and what’s documented here is the most promising bits and pieces. My next thought is that maybe music actually forms a <a href="https://reasonablypolymorphic.com/blog/review-sheafs/">sheaf</a>, which is to say that it is a global solution that respects many local constraints.</p>
-<p>All of this research into music has given me much more thoughts about <em>music qua music</em> which I will try to articulate the next time I have an evening to myself. Until then.</p>
       ]]></content:encoded>
   </item>
 </channel>

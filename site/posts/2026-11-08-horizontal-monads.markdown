@@ -344,7 +344,7 @@ So here's the trick; this phantom `r` type in `Horizontal r o a` corresponds to
 "are there any rests in this value?" We can use a `DataKinds` to get ourselves a
 type-level value to play with:
 
-```
+```haskell
 data Restful = HasRests
 
 type Horizontal :: Restful -> Type -> Type -> Type
