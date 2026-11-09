@@ -285,16 +285,22 @@ suspect he didn't have monads in mind when writing it.)
 
 Revitalized with a real connection to real musical ideas, we press on through
 the mires of abstract nonsense. The most pressing problem remaining is how do we
-eliminate `Horizontal`? By means of `unsafeRunHorizontal`:
+eliminate `Horizontal`? By means of `unsafeRunHorizontal`[^oops]:
+
+[^oops]: Edited 2026-11-09. The original code had a bug that accidentally forgot
+    a final stop point, which in turn swallowed the last note of the monad.
 
 ```haskell
 unsafeRunHorizontal
   :: Horizontal r o a
   -> (a -> Signal o)
   -> Signal (HState o)
-unsafeRunHorizontal (Horizontal f) k
-  = runCont (f id)
-  $ fmap (\o -> HState o NoEvent NoEvent) . k
+unsafeRunHorizontal (Horizontal f) k =
+  runCont (f id) $ \a -> do
+    -- Add a final stop point at the beginning of our switch.
+    stop <- atS 0 ()
+    o <- k a
+    pure $ HState o NoEvent stop
 ```
 
 which isn't actually unsafe, but *will be* due to a few additions to our API in
