@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Voice Leadings on Abstract Musical Pitches
-date: TO_BE_DETERMINED
+date: 2026-11-10 06:18
 comments: true
 tags: haskell, music, scales
 ---
