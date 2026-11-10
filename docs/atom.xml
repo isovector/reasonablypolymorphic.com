@@ -1,11 +1,237 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2026-11-10T06:18:00Z</updated>
+  <updated>2026-11-15T11:39:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com'/>
 
+    <entry>
+      <title>Musical Notes and Scales</title>
+      <id>blog/notes-scales/index.html</id>
+      <link href='blog/notes-scales/index.html'/>
+      <published>2026-11-15T11:39:00Z</published>
+      <updated>2026-11-15T11:39:00Z</updated>
+
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
+        <![CDATA[
+        <p>Sorry for the delay. Everyone in my household came down with egregious sicknesses. And I had a bunch of unsatisfying things in my music theory that needed to get worked out. But we’re mostly better and the theoretical issues are resolved, so we’re BACK baby.</p>
+<hr />
+<p>Over the last two posts we discussed <a href="/blog/pitches-1/">abstract musical pitches</a> and (some) <a href="/blog/voice-leadings/">efficient voice leadings</a> which help move us smoothly between different configurations in musical space.</p>
+<p>It’s been all very interesting <em>musically</em>, but you must admit there hasn’t been much in the way of functional programming going on. Today we’re going to get back to brass tacks and see about making all of these notions precise, compositional, and fun to work with.</p>
+<p>Where we left things is with a <code>Fin n</code> type:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Fin</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Fin</span> n</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span>  <span class="dt">KnownNat</span> n          <span class="ot">=&gt;</span> <span class="dt">Enum</span>    (<span class="dt">Fin</span> n)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">KnownNat</span> n, <span class="dv">1</span> <span class="op">&lt;=</span> n) <span class="ot">=&gt;</span> <span class="dt">Bounded</span> (<span class="dt">Fin</span> n)</span></code></pre></div>
+<p>which has exactly <code>n</code> distinct values. We then made a <code>Deg n</code> type, whose semantics are “exactly one of <code>n</code> distinct values, with an octave component.” We represent this implicitly by way of an <code>Int</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Deg</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Deg</span> n <span class="ot">=</span> <span class="dt">Deg</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getDeg ::</span> <span class="dt">Int</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>, <span class="dt">Num</span>, <span class="dt">Enum</span>, <span class="dt">Real</span>, <span class="dt">Integral</span>)</span></code></pre></div>
+<p>and give its semantics by way of a function:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">degToPC ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Deg</span> n <span class="ot">-&gt;</span> (<span class="dt">Int</span>, <span class="dt">Fin</span> n)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>degToPC (<span class="dt">Deg</span> d) <span class="ot">=</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> (oct, pc) <span class="ot">=</span> <span class="fu">divMod</span> d n</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> (oct, <span class="fu">toEnum</span> pc)</span></code></pre></div>
+<p>where the output <code>Int</code> is which octave the degree ended up in.</p>
+<p>We have then been discussing “scales” as mappings of the form <code>Fin m -&gt; Fin n</code>. These have always been in scare quotes because this is not really how musicians traditionally think about scales! Whatever this mapping concept <em>is,</em> it doesn’t really have a standard name in musical vocabulary. But scales are the closest thing semantically, so we’re going to just shadow that name and go about our business.</p>
+<p>It’s a bit of a tricky line to balance. So whenever we’re talking about the loose musical idea, we’ll use the word “scale.” And whenever we mean this mapping, we’ll go with <code>Scale</code>.</p>
+<h2 id="some-failed-attempts-at-pinnning-down-scales">Some Failed Attempts at Pinnning Down Scales</h2>
+<p>However, it’s been a bit of a simplification to say a <code>Scale</code> is a mapping <code>Fin n -&gt; Fin m</code>. We’d like our <code>Scale</code>s to be <em>monotone mappings,</em> which is to say that if <code>i :: Deg m &lt;= j :: Deg m</code>, then <code>(applyScale sc i) :: Deg n &lt;= (applyScale sc j) :: Deg n</code>. Enforcing monotonicity on <code>Fin</code>-to-<code>Fin</code> mappings is possible, but it requires us to preserve the ordering of pitch classes <em>within a single octave.</em> That is to say, it means we can’t do any sort of permutation.</p>
+<p>Thus, perhaps we should think about <code>Scale</code>s as mappings <code>Fin m -&gt; Deg n</code>. This is much closer to what we want (although it has some shortcomings that we will see shortly.) But let’s move forward with this attempt in order to motivate some of the later decisions:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Scale</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Scale</span> m n <span class="ot">=</span> <span class="dt">Scale</span> (<span class="dt">Fin</span> m <span class="ot">-&gt;</span> <span class="dt">Deg</span> n)</span></code></pre></div>
+<p>We can introduce a new scale by way of <code>mkScale</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mkScale ::</span> (<span class="dt">KnownNat</span> m, <span class="dv">1</span> <span class="op">&lt;=</span> m) <span class="ot">=&gt;</span> (<span class="dt">Fin</span> m <span class="ot">-&gt;</span> <span class="dt">Deg</span> n) <span class="ot">-&gt;</span> <span class="dt">Scale</span> m n</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>mkScale f <span class="ot">=</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> image <span class="ot">=</span> <span class="fu">sort</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        m <span class="ot">&lt;-</span> [<span class="dv">0</span> <span class="op">..</span> <span class="fu">maxBound</span> <span class="op">@</span>(<span class="dt">Fin</span> m)]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">pure</span> <span class="op">$</span> f m</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="dt">Scale</span> <span class="op">$</span> \m <span class="ot">-&gt;</span> image <span class="op">!!</span> <span class="fu">fromEnum</span> m</span></code></pre></div>
+<p>which enumerates all values in <code>f</code>, sorts them (in order to ensure monotonicity), and then builds a <code>Scale</code> that uses the <code>Fin m</code> to select from the sorted values.</p>
+<p>We can apply a scale to a <code>Deg</code> by way of <code>applyScale</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>applyScale</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="kw">forall</span> m n</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>     <span class="op">.</span> <span class="dt">Scale</span> m n</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Deg</span> m</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Deg</span> n</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>applyScale (<span class="dt">Scale</span> f) (<span class="dt">Deg</span> dm) <span class="ot">=</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> (oct, pc) <span class="ot">=</span> <span class="fu">divMod</span> dm <span class="op">$</span> scaleSize <span class="op">@</span>m</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Deg</span> dn <span class="ot">=</span> f <span class="op">$</span> <span class="fu">toEnum</span> pc</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="dt">Deg</span> (dn <span class="op">+</span> oct <span class="op">*</span> scaleSize <span class="op">@</span>n)</span></code></pre></div>
+<p>which ensures we preserve the necessary semantics of <code>degToPC</code> given earlier.</p>
+<p>All is so far well and good. But not for long.</p>
+<p>In some cases we might want to reverse a <code>Scale</code>’s mapping, eg going from <code>Deg 7</code> to <code>Deg 3</code>. This makes a lot of sense musically. For example, we might want to include a <a href="https://en.wikipedia.org/wiki/Nonchord_tone#Neighbor_tone">neighbor note</a>, or a <a href="https://en.wikipedia.org/wiki/Nonchord_tone#Passing_tone">passing tone</a> when writing out otherwise-triadic music. More directly, projecting down to a smaller abstract pitch class is the exact mechanism of <a href="https://en.wikipedia.org/wiki/Tintinnabuli">tintinnabuli</a>.</p>
+<p>Unfortunately however, reversing a mapping <code>Fin m -&gt; Deg n</code> is obvious hogwash from the perspective of our functional programming ivory tower. In the usual case that <code>m &lt;= n</code>, this is a very non-injective function, so we have no chance of turning it around.</p>
+<p>And yet, it’s musically meaningful. So, regardless of whether we <em>can</em> do it in Haskell, we somehow <strong>must.</strong> Otherwise whatever it is we’ve built is modeling the wrong thing.</p>
+<p>Our mental pattern matchers that say “you can’t reverse a non-bijective function” are absolutely correct. But it’s worth taking a moment to think about <em>why exactly</em> we can’t in this case. Consider the musically-common case of working in a <code>Scale 3 7 = Fin 3 -&gt; Deg 7</code>. Here, some of the <code>Deg 7</code>s are targeted by the <code>Fin 3</code>. In particular, <code>0, 2, 4 :: Deg 7</code> get targeted by the <code>triad</code> scale introduced in a previous post.</p>
+<p>So reversing <code>0, 2, 4 :: Fin 7</code> is easy enough — we just send them to <code>0, 1, 2 :: Deg 3</code>. The hard part is deciding where ought we send <code>1, 3, 5, 6 :: Fin 7</code>. Well, why don’t we just send them to <em>themselves</em>?</p>
+<p>Sounds a little crazy, I know, but check this out. If we could attach <em>other scalar degree offsets</em> to each note, we could invert a scale by mapping the image directly to the domain whenever possible. And when it’s not possible, we could represent it as an offset from the nearest thing in the domain.</p>
+<p>A little example might help. Say we have <code>0..7 :: Fin 7</code> and we’d like to reverse them across a <code>Scale 3 7</code>. If we represent exact points in <code>Deg 3</code> as white note heads, and “offsets” as black note heads, one possible reverse mapping looks like this:</p>
+<figure>
+<img src="/images/music7/out1.cropped.png" alt="Offsets Above" /><figcaption aria-hidden="true">Offsets Above</figcaption>
+</figure>
+<!-- \header { tagline = "" } -->
+<!-- \absolute -->
+<!--   \new Staff = "up" -->
+<!--   << -->
+<!--     \accidentalStyle piano-cautionary -->
+<!--     \new Voice -->
+<!--     { \omit Staff.TimeSignature -->
+<!--       \cadenzaOn -->
+<!--       \fixed c { <c'>2 -->
+<!--                  <c' \tweak duration-log #2 d'> -->
+<!--                  <e'> -->
+<!--                  <e' \tweak duration-log #2 f'> -->
+<!--                  <g'> -->
+<!--                  <g' \tweak duration-log #2 a'> -->
+<!--                  <g' \tweak duration-log #2 b'> -->
+<!--                  <c''> -->
+<!--                  } } -->
+<!--   >> -->
+<!-- \paper { -->
+<!-- ragged-last = ##t -->
+<!-- } -->
+<p>If we assume we have some operation <code>(/+) :: Fin 3 -&gt; Deg 7 -&gt; Note 3</code>, this diagram corresponds to:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>[<span class="dv">0</span>, <span class="dv">0</span> <span class="op">/+</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span> <span class="op">/+</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span> <span class="op">/+</span> <span class="dv">1</span>, <span class="dv">2</span> <span class="op">/+</span> <span class="dv">2</span>, <span class="dv">3</span>]</span></code></pre></div>
+<p>Of course, such a mapping is not unique. For example, we can also do a “round up, offset down” approach:</p>
+<figure>
+<img src="/images/music7/out2.cropped.png" alt="Offsets Below" /><figcaption aria-hidden="true">Offsets Below</figcaption>
+</figure>
+<p>which is similarly:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>[<span class="dv">0</span>, <span class="dv">1</span> <span class="op">/-</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">2</span> <span class="op">/-</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span> <span class="op">/-</span> <span class="dv">2</span>, <span class="dv">3</span> <span class="op">/-</span> <span class="dv">1</span>, <span class="dv">3</span>]</span></code></pre></div>
+<p>All of this is to say that <code>Deg</code>s aren’t quite what we’re looking for!</p>
+<h2 id="enter-notes">Enter Notes</h2>
+<p>As we’ve seen, <code>Deg</code>s aren’t quite powerful enough to represent these offsets. So we’ll first need to make a type to hold the offsets. The closest standard-musical terminology here is “ornamentation,” so that’s what we’ll go with.</p>
+<p>An <code>Ornaments</code> is a mapping from scalar sizes to offsets. Rather than keeping the scalar sizes around in the type system (as we have done for <code>Fin</code> and <code>Deg</code> and <code>Scale</code>), here we’re going to simplify things down to an <code>IntMap</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Ornaments</span> a <span class="ot">=</span> <span class="dt">Ornaments</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> getOrnaments ::</span> <span class="dt">IntMap</span> a</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>, <span class="dt">Functor</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Show</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Semigroup</span>, <span class="dt">Monoid</span>) via <span class="dt">MonoidalIntMap</span> (<span class="dt">Sum</span> a)</span></code></pre></div>
+<p>Two <code>Ornaments</code> are equal when they have the same non-zero elements:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">normalizeOrnaments ::</span> (<span class="dt">Num</span> a, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> <span class="dt">Ornaments</span> a <span class="ot">-&gt;</span> <span class="dt">Ornaments</span> a</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>normalizeOrnaments <span class="ot">=</span> <span class="dt">Ornaments</span> <span class="op">.</span> IM.filter (<span class="op">/=</span> <span class="dv">0</span>) <span class="op">.</span> getOrnaments</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Eq</span> a, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (<span class="dt">Ornaments</span> a) <span class="kw">where</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  (<span class="op">==</span>) <span class="ot">=</span> on (<span class="op">==</span>) (getOrnaments <span class="op">.</span> normalizeOrnaments)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Ord</span> a, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">Ord</span> (<span class="dt">Ornaments</span> a) <span class="kw">where</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">compare</span> <span class="ot">=</span> on <span class="fu">compare</span> (getOrnaments <span class="op">.</span> normalizeOrnaments)</span></code></pre></div>
+<p>We can also introduce <code>Ornaments</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">ornament ::</span> <span class="kw">forall</span> n a<span class="op">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Ornaments</span> a</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ornament <span class="ot">=</span> <span class="dt">Ornaments</span> <span class="op">.</span> IM.singleton (scaleSize <span class="op">@</span>n)</span></code></pre></div>
+<p>and eliminate them:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>decompOrnament</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="kw">forall</span> n</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>     <span class="op">.</span> <span class="dt">KnownNat</span> n</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> <span class="dt">Ornaments</span> <span class="dt">Int</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> (<span class="dt">Ornaments</span> <span class="dt">Int</span>, <span class="dt">Deg</span> n)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>decompOrnament o</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="fu">maybe</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>      (o, <span class="dv">0</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>      ( (coerce (IM.filterWithKey <span class="op">@</span><span class="dt">Int</span> (\k _ <span class="ot">-&gt;</span> k <span class="op">/=</span> scaleSize <span class="op">@</span>n)) o, )</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span> <span class="dt">Deg</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> IM.lookup (scaleSize <span class="op">@</span>n)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> getOrnaments o</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="ot">getOrnament ::</span> <span class="kw">forall</span> n<span class="op">.</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Ornaments</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Deg</span> n</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>getOrnament <span class="ot">=</span> <span class="fu">snd</span> <span class="op">.</span> decompOrnament</span></code></pre></div>
+<p>Here <code>decompOrnament @n</code> returns the <code>Deg n</code> ornament, and returns a new <code>Ornaments</code> with that scale degree removed. If you don’t care about the removal, you’re welcome to call <code>getOrnament</code> directly.</p>
+<p>Armed with <code>Ornaments</code>, we can now make <code>Note</code>, which wraps a degree with ornaments:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Note</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Note</span> n <span class="ot">=</span> <span class="dt">Note</span> (<span class="dt">Deg</span> n) (<span class="dt">Ornaments</span> <span class="dt">Int</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> stock (<span class="dt">Generic</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)</span></code></pre></div>
+<p><code>Note</code>s admit a <code>Num</code> instance, which combines ornaments pointwise:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Num</span> (<span class="dt">Note</span> n) <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fromInteger</span> n <span class="ot">=</span> <span class="dt">Note</span> (<span class="fu">fromInteger</span> n) <span class="fu">mempty</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Note</span> a as <span class="op">+</span> <span class="dt">Note</span> b bs <span class="ot">=</span> <span class="dt">Note</span> (a <span class="op">+</span> b) <span class="op">$</span> as <span class="op">&lt;&gt;</span> bs</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Note</span> a as <span class="op">-</span> <span class="dt">Note</span> b bs <span class="ot">=</span> <span class="dt">Note</span> (a <span class="op">-</span> b) <span class="op">$</span> as <span class="op">&lt;&gt;</span> <span class="fu">fmap</span> <span class="fu">negate</span> bs</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Note</span> a (<span class="dt">Ornaments</span> as) <span class="op">*</span> <span class="dt">Note</span> b (<span class="dt">Ornaments</span> bs) <span class="ot">=</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Note</span> (a <span class="op">*</span> b) <span class="op">$</span> <span class="dt">Ornaments</span> <span class="op">$</span> IM.intersectionWith (<span class="op">*</span>) as bs</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abs</span>    (<span class="dt">Note</span> a as) <span class="ot">=</span> <span class="dt">Note</span> (<span class="fu">abs</span> a)    <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">abs</span>    as</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">signum</span> (<span class="dt">Note</span> a as) <span class="ot">=</span> <span class="dt">Note</span> (<span class="fu">signum</span> a) <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">signum</span> as</span></code></pre></div>
+<p>and we can add an ornamental offset to a <code>Note</code> by way of <code>stepIn @c</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">stepIn ::</span> <span class="kw">forall</span> c n<span class="op">.</span> (<span class="dt">KnownNat</span> c, <span class="dt">KnownNat</span> n) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Note</span> n <span class="ot">-&gt;</span> <span class="dt">Note</span> n</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>stepIn k (<span class="dt">Note</span> a as) <span class="ot">=</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> scaleSize <span class="op">@</span>c <span class="op">==</span> scaleSize <span class="op">@</span>n <span class="kw">of</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span> <span class="ot">-&gt;</span> <span class="dt">Note</span> (a <span class="op">+</span> <span class="dt">Deg</span> k) as</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Note</span> a <span class="op">$</span> as <span class="op">&lt;&gt;</span> ornament <span class="op">@</span>c k</span></code></pre></div>
+<p>An invariant enforced by <code>stepIn</code> is that you never have an ornament of size <code>n</code> attached to a note also of size <code>n</code>. If you attempt to, we just change the <code>Deg n</code> instead.</p>
+<h2 id="scales-revisited">Scales Revisited</h2>
+<p>Now that we have <code>Note</code>s, we can define <code>Scale</code>s in terms of them, and we are rewarded with a convenient place to stick offsets when we invert scales. <code>Scale</code> and <code>mkScale</code> change only in that we reference <code>Note</code> instead of <code>Deg</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Scale</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Scale</span> m n <span class="ot">=</span> <span class="dt">Scale</span> (<span class="dt">Fin</span> m <span class="ot">-&gt;</span> <span class="dt">Note</span> n)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mkScale ::</span> (<span class="dt">KnownNat</span> m, <span class="dv">1</span> <span class="op">&lt;=</span> m) <span class="ot">=&gt;</span> (<span class="dt">Fin</span> m <span class="ot">-&gt;</span> <span class="dt">Note</span> n) <span class="ot">-&gt;</span> <span class="dt">Scale</span> m n</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>mkScale f <span class="ot">=</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> image <span class="ot">=</span> <span class="fu">sort</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        m <span class="ot">&lt;-</span> [<span class="dv">0</span> <span class="op">..</span> <span class="fu">maxBound</span> <span class="op">@</span>(<span class="dt">Fin</span> m)]</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">pure</span> <span class="op">$</span> f m</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="dt">Scale</span> <span class="op">$</span> \m <span class="ot">-&gt;</span> image <span class="op">!!</span> <span class="fu">fromEnum</span> m</span></code></pre></div>
+<p>However, <code>applyScale</code> needs to do slightly more work: it must respect incoming and outgoing ornamentation. The <code>Note m</code> might have a <code>n</code>-sized ornament, in which case we must add it immediately. And then we must combine the remaining ornaments with any which might arise from the <code>Scale</code>’s mapping:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>applyScale</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="kw">forall</span> m n</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>     <span class="op">.</span> <span class="dt">Scale</span> m n</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Note</span> m</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Note</span> n</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>applyScale (<span class="dt">Scale</span> f) (<span class="dt">Note</span> (<span class="dt">Deg</span> dm) os) <span class="ot">=</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> (oct, pc) <span class="ot">=</span> <span class="fu">divMod</span> dm <span class="op">$</span> scaleSize <span class="op">@</span>m</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>      (<span class="dt">Note</span> (<span class="dt">Deg</span> dn) os&#39;) <span class="ot">=</span> f <span class="op">$</span> <span class="fu">toEnum</span> pc</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>      (os&#39;&#39;, od) <span class="ot">=</span> decompOrnament <span class="op">@</span>n os</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="dt">Note</span> (od <span class="op">+</span> <span class="dt">Deg</span> (dn <span class="op">+</span> oct <span class="op">*</span> scaleSize <span class="op">@</span>n)) <span class="op">$</span> os&#39; <span class="op">&lt;&gt;</span> os&#39;&#39;</span></code></pre></div>
+<p>With all of this work, we’re now ready to tackle inverting scales. The thrust of the idea here is a relatively simple algorithm:</p>
+<ol type="1">
+<li>Compute the image of the scale. Take the resulting pitch class, and associate it with the corresponding input pitch class. Negate the octave and ornaments when doing this.</li>
+<li>Check if the inverse pitch class exist directly in your image map. If so, return it directly.</li>
+<li>If not, select the best candidate of the image with respect to the inverse pitch class. Compute how far the best candidate is away from the input, and add that distance as an extra ornament.</li>
+</ol>
+<p>Of course, the devil is in the details. Getting the “best candidate” might require looking in a different octave. We wrap the candidate logic into a chooser:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>(<span class="kw">forall</span> x<span class="op">.</span> <span class="dt">Ord</span> x <span class="ot">=&gt;</span> <span class="dt">Fin</span> b <span class="ot">-&gt;</span> [(<span class="dt">Fin</span> b, x)] <span class="ot">-&gt;</span> (<span class="dt">Int</span>, x))</span></code></pre></div>
+<p>which receives the desired pitch class, the image, and must return one element of the image along with an octave displacement. Since the entire thing is stuck in a <code>forall x</code>, the chooser is allowed only to look at the <code>Fin b</code>s to determine what is the best candidate. As a little illustration here, we might want to round up to the nearest pitch class in the image. So we’d want to filter the image by anything <code>&gt;= pc</code>. But if <code>pc</code> is already the largest thing in the image, we’d instead want to return the smallest thing in the image with a +1 octave offset.</p>
+<p>If you’re curious, the logic in its full glory is thus:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>invertScale</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    ::</span> <span class="kw">forall</span> a b</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>     <span class="op">.</span> (<span class="dv">1</span> <span class="op">&lt;=</span> a)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> <span class="dt">Ord</span> x <span class="ot">=&gt;</span> <span class="dt">Fin</span> b <span class="ot">-&gt;</span> [(<span class="dt">Fin</span> b, x)] <span class="ot">-&gt;</span> (<span class="dt">Int</span>, x))</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Scale</span> a b</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>invertScale choose (<span class="dt">Scale</span> f) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span><span class="ot"> img ::</span> [(<span class="dt">Fin</span> b, <span class="dt">Note</span> a)]</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>      img <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>        a <span class="ot">&lt;-</span> [<span class="dv">0</span> <span class="op">..</span> <span class="fu">maxBound</span> <span class="op">@</span>(<span class="dt">Fin</span> a)]</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> (<span class="dt">Note</span> (<span class="dt">Deg</span> db) os) <span class="ot">=</span> f a</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> (o, pc) <span class="ot">=</span> <span class="fu">divMod</span> db <span class="op">$</span> scaleSize <span class="op">@</span>b</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> b <span class="ot">=</span> <span class="fu">toEnum</span> <span class="op">@</span>(<span class="dt">Fin</span> b) pc</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>        <span class="fu">pure</span> ( b</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>             , <span class="dt">Note</span> (<span class="fu">fromIntegral</span> a <span class="op">-</span> <span class="dt">Deg</span> (scaleSize <span class="op">@</span>a <span class="op">*</span> o))</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>                 <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">negate</span> os</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>             )</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Scale</span> <span class="op">$</span> \b <span class="ot">-&gt;</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">case</span> <span class="fu">lookup</span> b img <span class="kw">of</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Just</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> (ox, chosen) <span class="ot">=</span> choose b img</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>            (b&#39;, <span class="dt">Note</span> da os) <span class="ot">=</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>              <span class="kw">case</span> find ((<span class="op">==</span> chosen) <span class="op">.</span> <span class="fu">snd</span>) img <span class="kw">of</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>                <span class="dt">Just</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>                <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">error</span> <span class="st">&quot;impossible&quot;</span></span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>            diff <span class="ot">=</span> <span class="fu">fromIntegral</span> b <span class="op">-</span> (<span class="fu">fromIntegral</span> b&#39; <span class="op">+</span> ox <span class="op">*</span> scaleSize <span class="op">@</span>b)</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Note</span> (da <span class="op">+</span> <span class="dt">Deg</span> (ox <span class="op">*</span> scaleSize <span class="op">@</span>a)) <span class="op">$</span> os <span class="op">&lt;&gt;</span> ornament <span class="op">@</span>b diff</span></code></pre></div>
+<p>which we specialize with a few different choices of chooser:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ot">invertScaleAbove   ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> a) <span class="ot">=&gt;</span> <span class="dt">Scale</span> a b <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ot">invertScaleBelow   ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> a) <span class="ot">=&gt;</span> <span class="dt">Scale</span> a b <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="ot">invertScaleNearest ::</span> (<span class="dv">1</span> <span class="op">&lt;=</span> a) <span class="ot">=&gt;</span> <span class="dt">Scale</span> a b <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span></code></pre></div>
+<p>As a little aside, I haven’t found a great way of naming the first two functions. Here “above” means “round down and offset up”, and below is the opposite. Any suggestions for more obvious names here would be greatly appreciated.</p>
+<p>That’s all for today. In the next post we’ll investigate the types behind voice leadings, with a similar attention to precision.</p>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Voice Leadings on Abstract Musical Pitches</title>
       <id>blog/voice-leadings/index.html</id>
@@ -1224,364 +1450,6 @@ threeClef = {
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="ot">runAgainT ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">AgainT</span> m a <span class="ot">-&gt;</span> m (m a)</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>runAgainT <span class="ot">=</span> <span class="fu">fmap</span> (<span class="op">$</span> ()) <span class="op">.</span> runAgain</span></code></pre></div>
 <p>Clean. Tidy. Actually works this time around.</p>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Code-Reviewing My First Monad Implementation</title>
-      <id>blog/reviewing-my-first-monad/index.html</id>
-      <link href='blog/reviewing-my-first-monad/index.html'/>
-      <published>2026-08-21T23:50:00Z</published>
-      <updated>2026-08-21T23:50:00Z</updated>
-
-      <content type="html" xml:base="https://reasonablypolymorphic.com">
-        <![CDATA[
-        <p>I’ve been wanting to get back into the habit of blogging, and thought a fun project would be to go back through my old code and review it as the programmer I am now. So let’s do that.</p>
-<p>Eleven years ago, I was so proud to written my first monad that I typed up a big ol<a href="https://sandymaguire.me/blog/jurisdiction-of-heaven/">blog post about it.</a> This seems like a fun thing to revisit, so let’s do it.</p>
-<p>To save you the trouble of reading that ancient-ass blog post, here’s the gist. Given a big piece of state, that has many smaller stateful subcomponents, for example, a <code>World</code> is full of <code>Buffer</code>s:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">World</span> <span class="ot">=</span> <span class="dt">World</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> wBuffers ::</span> [<span class="dt">Buffer</span>]</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> wCurrent ::</span> <span class="dt">Int</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> wMode    ::</span> <span class="dt">Mode</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Buffer</span> <span class="ot">=</span> <span class="dt">Buffer</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> bFilename ::</span> <span class="dt">FilePath</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  ,<span class="ot"> bContent  ::</span> <span class="dt">String</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>my monad acted like <code>StateT</code> except that you can restrict the piece of the state you’re allowed to manipulate <em>without losing the ability to look at the rest of the state.</em></p>
-<p>In the blog post, this monad is called <code>Jurisdiction</code>, but at some point in the <a href="https://github.com/isovector/eden">source code</a> it got renamed to <a href="https://github.com/isovector/eden/blob/master/src/Control/Monad/Jail.hs"><code>JailT</code></a>. Cool name. Furthermore, the implementation changed rather dramatically from the blog post, so let’s chase the implementation as given. I’ll reproduce it here:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">RLens</span> r s <span class="ot">=</span> <span class="dt">Lens</span> s s r r</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">JailT</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    {<span class="ot"> runJailT&#39; ::</span> <span class="dt">Bool</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> <span class="dt">RLens</span> r s</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> s</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> m (a, s, <span class="dt">RLens</span> r s, <span class="dt">Bool</span>) }</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Typeable</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Applicative</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">pure</span> (x, s, l, v)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    (<span class="op">&lt;*&gt;</span>)  <span class="ot">=</span> ap</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>   <span class="ot">=</span> <span class="fu">pure</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    ac <span class="op">&gt;&gt;=</span> k <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>            <span class="kw">then</span> <span class="kw">do</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>                (x, st&#39;, l&#39;, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; ac v l s</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>                runJailT&#39; (k x) v&#39; l&#39; st&#39;</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>            <span class="kw">else</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, v)</span></code></pre></div>
-<p>Already there’s a lot to look at. The most immediate thing that strikes me is the formatting; now I’m very much a “use two spaces for indent” kind of guy — Haskell doesn’t provide many opportunities for natural linebreaks, and our horizontal space is much more limited than our vertical space. So don’t throw away your horizontal budget on initial spacing. It’s minor, but being an artisan means caring about the minor details.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span> <span class="dt">JailT</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { runJailT&#39;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ot">      ::</span> <span class="dt">Bool</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> <span class="dt">RLens</span> r s</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> s</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="ot">-&gt;</span> m (a, s, <span class="dt">RLens</span> r s, <span class="dt">Bool</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Typeable</span>)</span></code></pre></div>
-<p>Much nicer.</p>
-<p>The other exciting thing to see in the earlier snippet is that this code comes from before the Functor-Applicative-Monad transition. Which is to say that it’s from the long long ago before <code>Applicative</code> was a superclass on <code>Monad</code>. There’s some history for you.</p>
-<p>And then there is the elephant in the room. Whatever this <code>Bool</code> is being passed around by <code>runJailT'</code>, the <code>Monad</code> instance branches on it and returns <code>undefined</code> when it’s <code>False</code>. What the hell is that???? Digging into the <code>MonadPlus</code> instance provides some insight:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadPlus</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    mplus x y <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        x&#39;<span class="op">@</span>(xa, xs, xl, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; x v l s</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v&#39;</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>           <span class="kw">then</span> <span class="fu">return</span> x&#39;</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>           <span class="kw">else</span> runJailT&#39; y v l s</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    mzero <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, <span class="dt">False</span>)</span></code></pre></div>
-<p>So <code>mzero</code> returns <code>undefined</code> and some <code>False</code> value, presumably which is there to try to warn someone that there’s an <code>undefined</code> floating around.</p>
-<p><em>This is a stupid design.</em> If you’re ever in the business of needing to store data-which-might-not-be-valid and a separate tag stating whether or not it’s valid, a much better design here would be to just use <code>Maybe a</code> instead of <code>(a, Bool)</code>.</p>
-<p>In fact, perhaps I realized this later on, because <code>runJailT</code> does exactly this logic:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> (<span class="dt">Functor</span> m)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>         <span class="ot">=&gt;</span> <span class="dt">JailT</span> s s m a</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> s</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>runJailT ac <span class="ot">=</span> <span class="fu">fmap</span> (\(a, s, _, v) <span class="ot">-&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                            <span class="kw">if</span> v <span class="kw">then</span> <span class="dt">Just</span> (a, s) <span class="kw">else</span> <span class="dt">Nothing</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                    <span class="op">.</span> runJailT&#39; ac <span class="dt">True</span> <span class="fu">id</span></span></code></pre></div>
-<p>Let’s roll back a bit. The pivotal primitive of <code>JailT</code> is the aptly-named <code>jail</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> (<span class="dt">Monad</span> m)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>     <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>jail l&#39; m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v (l <span class="op">.</span> l&#39;) s</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, s&#39;, l, v&#39;)</span></code></pre></div>
-<p>Pretty reasonable definition here. I’m not sure what the idea behind <code>RLens</code> being a flipped version of <code>Lens'</code> was for. The only odd choice here is that in the big tuple returned in <code>jail</code>, <code>l</code> gets passed along unchanged. We can tell from looking at it that <code>l</code> here is the current lens we’re looking at. But <code>jail</code> is the only primitive that changes the lens, and it takes a <code>JailT</code> as an argument. Which is all to say that there isn’t anything actually stateful going on with the <code>RLens</code>. So without looking any further, I’d bet dollars to donuts that this <code>l</code> getting returned is purely vestigial and serves absolutely no purpose. Which in turn means we should be able to chop it out of the definition of <code>JailT</code>.</p>
-<p>Speaking of stupid anti-patterns, here’s another one:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">into ::</span> <span class="dt">RLens</span> a (<span class="dt">Maybe</span> a)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>into <span class="ot">=</span> lens fromJust (<span class="fu">const</span> <span class="dt">Just</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ot">jailMaybe ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=&gt;</span> <span class="dt">RLens</span> (<span class="dt">Maybe</span> r&#39;) r</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> a</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>jailMaybe l d m <span class="ot">=</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    (gets <span class="op">$</span> view l) <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> _  <span class="ot">-&gt;</span> jail (l <span class="op">.</span> into) m</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> d</span></code></pre></div>
-<p>This is horrendous for a few reasons. <code>into</code> is an unsafe lens that will crash if you try to read out of a <code>Nothing</code>. But then that behavior is guarded in <code>jailMaybe</code> by checking that it isn’t already nothing. Stupid.</p>
-<p>The last function I want to point out is <code>parole</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> a</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m (<span class="dt">Maybe</span> a)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>parole d m <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    this <span class="ot">&lt;-</span> get</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    m <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="fu">return</span> a</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> put this <span class="op">&gt;&gt;</span> <span class="fu">return</span> d</span></code></pre></div>
-<p>which… does… something. I guess it attempts to run a <code>Maybe</code>-valued <code>JailT</code>, and if it fails, unwinds the state and returns some default <code>a</code>. Rearing its ugly head here, however, is the ghost of the <code>undefined</code> nonsense from <code>mzero</code>. Note that if we invoke <code>parole a mzero</code> we will get a <em>crash</em> rather than the roll-back-and-default behavior that it promises on the tin.</p>
-<p>So, all in all, I am not particularly impressed with my first monad. Here’s how I’d write it today.</p>
-<p>First, I don’t think I’ve written a “control”-y sort of monad from scratch in the last five years. Whatever behavior you want is almost always just the composition of a few monad transformers. In this case, we have a <code>Reader</code> for the current lens, a <code>State</code> for the original state, and a <code>Maybe</code> to give us <code>mzero</code> semantics.</p>
-<p>Since we want our state to roll-back when we take an alternative path, we must put <code>MaybeT</code> <em>underneath</em> our <code>StateT</code>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> This gives us the nice formulation of a <code>JailT</code> as:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span> <span class="dt">JailT</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unJailT ::</span> <span class="dt">ReaderT</span> (<span class="dt">ALens&#39;</span> s r) (<span class="dt">StateT</span> s (<span class="dt">MaybeT</span> m)) a</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  }</span></code></pre></div>
-<p>(we use <code>ALens' s r</code> here instead of <code>Lens' s r</code> since the latter requires <code>-XImpredicativeTypes</code>. Which happens to be turned on in the original implementation!)</p>
-<p>Once nice thing about defining our monad as a <code>newtype</code> over a series of monad transformers, is that it allows us to newtype-derive all of the relevant instances:</p>
-<pre><code>  deriving newtype (Functor, Applicative, Monad, MonadIO, Alternative)</code></pre>
-<p>No implementation for such things is required, and therefore we know that the derived instances must be correct. Which means we have many fewer things to worry about.</p>
-<p>I prefer to use <code>unWhatever</code> as my naming scheme for these newtypes, so that I can provide <code>runWhatever</code> as a more user-friendly function.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> s <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> s t <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>runJailT s l <span class="ot">=</span> runMaybeT <span class="op">.</span> <span class="fu">flip</span> runStateT s <span class="op">.</span> <span class="fu">flip</span> runReaderT l <span class="op">.</span> unJailT</span></code></pre></div>
-<p>What’s also nice about using standard monad transformers for your implementation is that you can reuse all of their existing combinators. For example, to implement <code>jail</code> all we need to do is invoke <code>withReaderT :: (r' -&gt; r) -&gt; ReaderT r m a -&gt; ReaderT r' m a</code>, which lets us change the type of the reader.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> <span class="dt">Lens&#39;</span> t u <span class="ot">-&gt;</span> <span class="dt">JailT</span> s u m a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>jail ltu <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">.</span> withReaderT (\lst <span class="ot">-&gt;</span> cloneLens lst <span class="op">.</span> ltu) <span class="op">.</span> unJailT</span></code></pre></div>
-<p>Notice here that I like to minimize my points without going point-free; <code>jail</code> as written is very legible, but writing it entirely pointfree is a crime against humanity:</p>
-<pre><code>-- don&#39;t do this!
-jail = (JailT .) . (. unJailT) . withReaderT . flip ((.) . cloneLens)</code></pre>
-<p>Rather than implementing <code>parole</code> directly, we can note that it is the composition of two pieces — (1) attempt something, (2) return a default if it failed. Whenever you notice de-composition opportunities like this, take them!</p>
-<p>We can write <code>attempt</code>, which is wildly general and doesn’t care one fig about jails or the legal system:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">attempt ::</span> (<span class="dt">Alternative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> m a</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>attempt m <span class="ot">=</span> <span class="fu">maybe</span> empty <span class="fu">pure</span> <span class="op">=&lt;&lt;</span> m</span></code></pre></div>
-<p>and then <code>parole</code> is merely</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>parole a0 j <span class="ot">=</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  asum</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    [ attempt j</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    , <span class="fu">pure</span> a0</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    ]</span></code></pre></div>
-<p>All in all, significantly nicer if you ask me. <a href="https://www.youtube.com/watch?v=NgUGvZkQd0M">But I’m just a TV. Don’t take my word for it.</a> Compare for yourself!</p>
-<details>
-<summary>
-Original Implementation
-</summary>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving,</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ot">             FlexibleInstances, MultiParamTypeClasses,</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ot">             DeriveFunctor, ImpredicativeTypes, LambdaCase,</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ot">             DeriveDataTypeable #-}</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Applicative</span> (<span class="dt">Alternative</span>(..))</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad</span> (ap, <span class="dt">MonadPlus</span>(..))</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.State</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Lens</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Maybe</span> (fromJust)</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Typeable</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">RLens</span> r s <span class="ot">=</span> <span class="dt">Lens</span> s s r r</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">JailT</span></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    {<span class="ot"> runJailT&#39; ::</span> <span class="dt">Bool</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> <span class="dt">RLens</span> r s</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> s</span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>                <span class="ot">-&gt;</span> m (a, s, <span class="dt">RLens</span> r s, <span class="dt">Bool</span>) }</span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Typeable</span>)</span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Applicative</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">pure</span> (x, s, l, v)</span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    (<span class="op">&lt;*&gt;</span>)  <span class="ot">=</span> ap</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>   <span class="ot">=</span> <span class="fu">pure</span></span>
-<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    ac <span class="op">&gt;&gt;=</span> k <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span></span>
-<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v</span>
-<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>            <span class="kw">then</span> <span class="kw">do</span></span>
-<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>                (x, st&#39;, l&#39;, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; ac v l s</span>
-<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>                runJailT&#39; (k x) v&#39; l&#39; st&#39;</span>
-<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>            <span class="kw">else</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, v)</span>
-<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadState</span> r (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    get   <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (view l s, s, l, v)</span>
-<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    put x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> ((), set l x s, l, v)</span>
-<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">MonadTrans</span> (<span class="dt">JailT</span> s r) <span class="kw">where</span></span>
-<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>    lift x <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> x <span class="op">&gt;&gt;=</span> (\a <span class="ot">-&gt;</span> <span class="fu">return</span> (a, s, l, v))</span>
-<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadIO</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>    liftIO <span class="ot">=</span> lift <span class="op">.</span> liftIO</span>
-<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadPlus</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>    mplus x y <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>        x&#39;<span class="op">@</span>(xa, xs, xl, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; x v l s</span>
-<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> v&#39;</span>
-<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>           <span class="kw">then</span> <span class="fu">return</span> x&#39;</span>
-<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a>           <span class="kw">else</span> runJailT&#39; y v l s</span>
-<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>    mzero <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (<span class="fu">undefined</span>, s, l, <span class="dt">False</span>)</span>
-<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Alternative</span> (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a>    (<span class="op">&lt;|&gt;</span>) <span class="ot">=</span> mplus</span>
-<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a>    empty <span class="ot">=</span> mzero</span>
-<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> (<span class="dt">Functor</span> m)</span>
-<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a>         <span class="ot">=&gt;</span> <span class="dt">JailT</span> s s m a</span>
-<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> s</span>
-<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
-<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a>runJailT ac <span class="ot">=</span> <span class="fu">fmap</span> (\(a, s, _, v) <span class="ot">-&gt;</span></span>
-<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a>                            <span class="kw">if</span> v <span class="kw">then</span> <span class="dt">Just</span> (a, s) <span class="kw">else</span> <span class="dt">Nothing</span>)</span>
-<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a>                    <span class="op">.</span> runJailT&#39; ac <span class="dt">True</span> <span class="fu">id</span></span>
-<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Jail</span> s r <span class="ot">=</span> <span class="dt">JailT</span> s r <span class="dt">Identity</span></span>
-<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a><span class="ot">runJail ::</span> <span class="dt">Jail</span> s s a</span>
-<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> s</span>
-<span id="cb16-70"><a href="#cb16-70" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, s)</span>
-<span id="cb16-71"><a href="#cb16-71" aria-hidden="true" tabindex="-1"></a>runJail ac <span class="ot">=</span> runIdentity <span class="op">.</span> runJailT ac</span>
-<span id="cb16-72"><a href="#cb16-72" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-73"><a href="#cb16-73" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> (<span class="dt">Monad</span> m)</span>
-<span id="cb16-74"><a href="#cb16-74" aria-hidden="true" tabindex="-1"></a>     <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
-<span id="cb16-75"><a href="#cb16-75" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
-<span id="cb16-76"><a href="#cb16-76" aria-hidden="true" tabindex="-1"></a>     <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb16-77"><a href="#cb16-77" aria-hidden="true" tabindex="-1"></a>jail l&#39; m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb16-78"><a href="#cb16-78" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v (l <span class="op">.</span> l&#39;) s</span>
-<span id="cb16-79"><a href="#cb16-79" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, s&#39;, l, v&#39;)</span>
-<span id="cb16-80"><a href="#cb16-80" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-81"><a href="#cb16-81" aria-hidden="true" tabindex="-1"></a><span class="ot">into ::</span> <span class="dt">RLens</span> a (<span class="dt">Maybe</span> a)</span>
-<span id="cb16-82"><a href="#cb16-82" aria-hidden="true" tabindex="-1"></a>into <span class="ot">=</span> lens fromJust (<span class="fu">const</span> <span class="dt">Just</span>)</span>
-<span id="cb16-83"><a href="#cb16-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-84"><a href="#cb16-84" aria-hidden="true" tabindex="-1"></a><span class="ot">jailMaybe ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-85"><a href="#cb16-85" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=&gt;</span> <span class="dt">RLens</span> (<span class="dt">Maybe</span> r&#39;) r</span>
-<span id="cb16-86"><a href="#cb16-86" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> a</span>
-<span id="cb16-87"><a href="#cb16-87" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r&#39; m a</span>
-<span id="cb16-88"><a href="#cb16-88" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb16-89"><a href="#cb16-89" aria-hidden="true" tabindex="-1"></a>jailMaybe l d m <span class="ot">=</span></span>
-<span id="cb16-90"><a href="#cb16-90" aria-hidden="true" tabindex="-1"></a>    (gets <span class="op">$</span> view l) <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
-<span id="cb16-91"><a href="#cb16-91" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> _  <span class="ot">-&gt;</span> jail (l <span class="op">.</span> into) m</span>
-<span id="cb16-92"><a href="#cb16-92" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> d</span>
-<span id="cb16-93"><a href="#cb16-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-94"><a href="#cb16-94" aria-hidden="true" tabindex="-1"></a><span class="ot">escape ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-95"><a href="#cb16-95" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> <span class="dt">JailT</span> s s m a</span>
-<span id="cb16-96"><a href="#cb16-96" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb16-97"><a href="#cb16-97" aria-hidden="true" tabindex="-1"></a>escape m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb16-98"><a href="#cb16-98" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v <span class="fu">id</span> s</span>
-<span id="cb16-99"><a href="#cb16-99" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, s&#39;, l, v&#39;)</span>
-<span id="cb16-100"><a href="#cb16-100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-101"><a href="#cb16-101" aria-hidden="true" tabindex="-1"></a><span class="ot">freedom ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">JailT</span> s r m s</span>
-<span id="cb16-102"><a href="#cb16-102" aria-hidden="true" tabindex="-1"></a>freedom <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="fu">return</span> (s, s, l, v)</span>
-<span id="cb16-103"><a href="#cb16-103" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-104"><a href="#cb16-104" aria-hidden="true" tabindex="-1"></a><span class="co">-- happens to be unused, because it&#39;s kinda insane??</span></span>
-<span id="cb16-105"><a href="#cb16-105" aria-hidden="true" tabindex="-1"></a><span class="ot">overwrite ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-106"><a href="#cb16-106" aria-hidden="true" tabindex="-1"></a>          <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
-<span id="cb16-107"><a href="#cb16-107" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> r r&#39; m a</span>
-<span id="cb16-108"><a href="#cb16-108" aria-hidden="true" tabindex="-1"></a>          <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb16-109"><a href="#cb16-109" aria-hidden="true" tabindex="-1"></a>overwrite l&#39; m <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> \v l s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb16-110"><a href="#cb16-110" aria-hidden="true" tabindex="-1"></a>    (a, s&#39;, _, v&#39;) <span class="ot">&lt;-</span> runJailT&#39; m v l&#39; <span class="op">$</span> view l s</span>
-<span id="cb16-111"><a href="#cb16-111" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (a, set l s&#39; s, l, v&#39;)</span>
-<span id="cb16-112"><a href="#cb16-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-113"><a href="#cb16-113" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-114"><a href="#cb16-114" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> a</span>
-<span id="cb16-115"><a href="#cb16-115" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m (<span class="dt">Maybe</span> a)</span>
-<span id="cb16-116"><a href="#cb16-116" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m a</span>
-<span id="cb16-117"><a href="#cb16-117" aria-hidden="true" tabindex="-1"></a>parole d m <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb16-118"><a href="#cb16-118" aria-hidden="true" tabindex="-1"></a>    this <span class="ot">&lt;-</span> get</span>
-<span id="cb16-119"><a href="#cb16-119" aria-hidden="true" tabindex="-1"></a>    m <span class="op">&gt;&gt;=</span> \<span class="kw">case</span></span>
-<span id="cb16-120"><a href="#cb16-120" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Just</span> a  <span class="ot">-&gt;</span> <span class="fu">return</span> a</span>
-<span id="cb16-121"><a href="#cb16-121" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> put this <span class="op">&gt;&gt;</span> <span class="fu">return</span> d</span>
-<span id="cb16-122"><a href="#cb16-122" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-123"><a href="#cb16-123" aria-hidden="true" tabindex="-1"></a><span class="ot">inspect ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-124"><a href="#cb16-124" aria-hidden="true" tabindex="-1"></a>        <span class="ot">=&gt;</span> <span class="dt">RLens</span> i r</span>
-<span id="cb16-125"><a href="#cb16-125" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m i</span>
-<span id="cb16-126"><a href="#cb16-126" aria-hidden="true" tabindex="-1"></a>inspect l <span class="ot">=</span> gets <span class="op">$</span> view l</span>
-<span id="cb16-127"><a href="#cb16-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-128"><a href="#cb16-128" aria-hidden="true" tabindex="-1"></a><span class="ot">inquire ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-129"><a href="#cb16-129" aria-hidden="true" tabindex="-1"></a>        <span class="ot">=&gt;</span> <span class="dt">RLens</span> i s</span>
-<span id="cb16-130"><a href="#cb16-130" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m i</span>
-<span id="cb16-131"><a href="#cb16-131" aria-hidden="true" tabindex="-1"></a>inquire l <span class="ot">=</span> view l <span class="op">&lt;$&gt;</span> freedom</span>
-<span id="cb16-132"><a href="#cb16-132" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-133"><a href="#cb16-133" aria-hidden="true" tabindex="-1"></a><span class="ot">arrest ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-134"><a href="#cb16-134" aria-hidden="true" tabindex="-1"></a>       <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
-<span id="cb16-135"><a href="#cb16-135" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> r&#39;</span>
-<span id="cb16-136"><a href="#cb16-136" aria-hidden="true" tabindex="-1"></a>       <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m ()</span>
-<span id="cb16-137"><a href="#cb16-137" aria-hidden="true" tabindex="-1"></a>arrest l v <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb16-138"><a href="#cb16-138" aria-hidden="true" tabindex="-1"></a>    state <span class="ot">&lt;-</span> get</span>
-<span id="cb16-139"><a href="#cb16-139" aria-hidden="true" tabindex="-1"></a>    put <span class="op">$</span> set l v state</span>
-<span id="cb16-140"><a href="#cb16-140" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-141"><a href="#cb16-141" aria-hidden="true" tabindex="-1"></a><span class="ot">arrests ::</span> (<span class="dt">Applicative</span> m, <span class="dt">Monad</span> m)</span>
-<span id="cb16-142"><a href="#cb16-142" aria-hidden="true" tabindex="-1"></a>        <span class="ot">=&gt;</span> <span class="dt">RLens</span> r&#39; r</span>
-<span id="cb16-143"><a href="#cb16-143" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> (r&#39; <span class="ot">-&gt;</span> r&#39;)</span>
-<span id="cb16-144"><a href="#cb16-144" aria-hidden="true" tabindex="-1"></a>        <span class="ot">-&gt;</span> <span class="dt">JailT</span> s r m ()</span>
-<span id="cb16-145"><a href="#cb16-145" aria-hidden="true" tabindex="-1"></a>arrests l f <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb16-146"><a href="#cb16-146" aria-hidden="true" tabindex="-1"></a>    state <span class="ot">&lt;-</span> get</span>
-<span id="cb16-147"><a href="#cb16-147" aria-hidden="true" tabindex="-1"></a>    put <span class="op">$</span> set l (f <span class="op">$</span> view l state) state</span></code></pre></div>
-</details>
-<p>vs the</p>
-<details>
-<summary>
-New Implementation
-</summary>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DerivingStrategies         #-}</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FlexibleInstances          #-}</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses      #-}</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE RankNTypes                 #-}</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Applicative</span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Lens</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.State</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.Reader</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.Trans.Maybe</span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">JailT</span> s r m a <span class="ot">=</span> <span class="dt">JailT</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unJailT ::</span> <span class="dt">ReaderT</span> (<span class="dt">ALens&#39;</span> s r) (<span class="dt">StateT</span> s (<span class="dt">MaybeT</span> m)) a</span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> <span class="kw">newtype</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">Alternative</span>)</span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadState</span> r (<span class="dt">JailT</span> s r m) <span class="kw">where</span></span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>  get <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    l <span class="ot">&lt;-</span> asks cloneLens</span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    gets <span class="op">$</span> view l</span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>  put r <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    l <span class="ot">&lt;-</span> asks cloneLens</span>
-<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    modify <span class="op">$</span> set l r</span>
-<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="ot">runJailT ::</span> s <span class="ot">-&gt;</span> <span class="dt">Lens&#39;</span> s t <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a <span class="ot">-&gt;</span> m (<span class="dt">Maybe</span> (a, s))</span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>runJailT s l <span class="ot">=</span> runMaybeT <span class="op">.</span> <span class="fu">flip</span> runStateT s <span class="op">.</span> <span class="fu">flip</span> runReaderT l <span class="op">.</span> unJailT</span>
-<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="ot">jail ::</span> <span class="dt">Lens&#39;</span> t u <span class="ot">-&gt;</span> <span class="dt">JailT</span> s u m a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
-<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>jail ltu <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">.</span> withReaderT (\lst <span class="ot">-&gt;</span> cloneLens lst <span class="op">.</span> ltu) <span class="op">.</span> unJailT</span>
-<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a><span class="ot">escape ::</span> <span class="dt">JailT</span> s s m a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
-<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>escape (<span class="dt">JailT</span> j) <span class="ot">=</span> <span class="dt">JailT</span> <span class="op">$</span> withReaderT (<span class="fu">const</span> <span class="fu">id</span>) j</span>
-<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a><span class="ot">freedom ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">JailT</span> s t m s</span>
-<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>freedom <span class="ot">=</span> <span class="dt">JailT</span> get</span>
-<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="ot">attempt ::</span> (<span class="dt">Alternative</span> m, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> m a</span>
-<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>attempt m <span class="ot">=</span> <span class="fu">maybe</span> empty <span class="fu">pure</span> <span class="op">=&lt;&lt;</span> m</span>
-<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a><span class="ot">parole ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m (<span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m a</span>
-<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>parole a0 j <span class="ot">=</span></span>
-<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a>  asum</span>
-<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>    [ attempt j</span>
-<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>    , <span class="fu">pure</span> a0</span>
-<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a><span class="ot">arrest ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Lens&#39;</span> t u <span class="ot">-&gt;</span> u <span class="ot">-&gt;</span> <span class="dt">JailT</span> s t m ()</span>
-<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>arrest l u <span class="ot">=</span> modify <span class="op">$</span> set l u</span></code></pre></div>
-</details>
-<p>Maybe this was interesting to you. It certainly was fun for me, because I like tearing apart bad code, and I don’t get to see much of it now that I have very talented colleagues. Thankfully I have a huge amount of crap code from my past, including an even more egregious monad that we’ll tackle next time around.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>Unwrap the definitions of <code>StateT s Maybe a</code> and <code>MaybeT (State s) a</code> to see why.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
         ]]>
       </content>
     </entry>
