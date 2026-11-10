@@ -112,8 +112,7 @@ this neat little take on Star Wars:
 !["Developed" Star Wars Theme](/images/music6/out4.cropped.svg)
 
 <audio controls>
-  <source src="/images/music6/starwars2.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
+<source src="/images/music6/starwars2.mp3" type="audio/mpeg">
 </audio>
 
 Not as good as John Williams' to be sure, but it's interesting that we can do
@@ -232,8 +231,7 @@ In fact, if we remove the in-between black notes, we end up with this:
 which sounds like this:
 
 <audio controls>
-  <source src="/images/music6/voiceleading.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
+<source src="/images/music6/voiceleading.mp3" type="audio/mpeg">
 </audio>
 
 This is likely the sort of thing which is pretty exciting if you're a musician,
