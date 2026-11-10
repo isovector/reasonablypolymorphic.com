@@ -159,14 +159,17 @@
 </figure>
 <p>This happens to be the underlying machinery in Tymoczko’s work on sequences (chapter 4 of <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tonality</a>), though it is not presented as such (and I suspect he didn’t have monads in mind when writing it.)</p>
 <h2 id="back-to-haskell">Back to Haskell</h2>
-<p>Revitalized with a real connection to real musical ideas, we press on through the mires of abstract nonsense. The most pressing problem remaining is how do we eliminate <code>Horizontal</code>? By means of <code>unsafeRunHorizontal</code>:</p>
+<p>Revitalized with a real connection to real musical ideas, we press on through the mires of abstract nonsense. The most pressing problem remaining is how do we eliminate <code>Horizontal</code>? By means of <code>unsafeRunHorizontal</code><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>unsafeRunHorizontal</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> <span class="dt">Horizontal</span> r o a</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Signal</span> o)</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">HState</span> o)</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>unsafeRunHorizontal (<span class="dt">Horizontal</span> f) k</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> runCont (f <span class="fu">id</span>)</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">$</span> <span class="fu">fmap</span> (\o <span class="ot">-&gt;</span> <span class="dt">HState</span> o <span class="dt">NoEvent</span> <span class="dt">NoEvent</span>) <span class="op">.</span> k</span></code></pre></div>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>unsafeRunHorizontal (<span class="dt">Horizontal</span> f) k <span class="ot">=</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  runCont (f <span class="fu">id</span>) <span class="op">$</span> \a <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Add a final stop point at the beginning of our switch.</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    stop <span class="ot">&lt;-</span> atS <span class="dv">0</span> ()</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    o <span class="ot">&lt;-</span> k a</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pure</span> <span class="op">$</span> <span class="dt">HState</span> o <span class="dt">NoEvent</span> stop</span></code></pre></div>
 <p>which isn’t actually unsafe, but <em>will be</em> due to a few additions to our API in a second. But a nicer eliminator is <code>horizontal</code>, which as originally promised, calls <code>spanning</code> on our behalf:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">horizontal ::</span> <span class="dt">Horizontal</span> r o a <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> (<span class="dt">Span</span> o))</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>horizontal h</span>
@@ -221,9 +224,10 @@
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1" role="doc-endnote"><p>Writing that sentence out makes it clear that I got the arguments backwards. Oops!<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Edited 2026-11-09. The original code had a bug that accidentally forgot a final stop point, which in turn swallowed the last note of the monad.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn2" role="doc-endnote"><p>As a little aside, if you’re not <code>deriving</code> 90%+ of your instances, you should start. Good places to look for opportunities involve the wrappers in <code>Data.Monoid</code> and <code>GHC.Generics</code>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn3" role="doc-endnote"><p>In glorious SVG. Sorry for the shitty image quality in previous posts!<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>Edited 2026-11-09. The original code had a bug that accidentally forgot a final stop point, which in turn swallowed the last note of the monad.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
