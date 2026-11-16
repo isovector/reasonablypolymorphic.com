@@ -7,6 +7,12 @@ test:
 	stack exec build
 	mv _site _live/reasonably-polymorphic
 
+serve:
+	stack build
+	stack exec poly
+	@echo "Serving dist/ on http://localhost:8080"
+	stack exec --package wai-app-static -- warp -d dist -p 8080
+
 deploy:
 	@./scripts/deploy.sh
 
@@ -19,5 +25,5 @@ newpost:
 clippings:
 	flip -ub clippings/*
 
-.PHONY: deploy test newpost clippings
+.PHONY: serve deploy test newpost clippings
 
