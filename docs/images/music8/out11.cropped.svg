@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" width="43.56mm" height="9.46mm" viewBox="8.5358 -0.0000 24.7865 5.3833">
+<style type="text/css">
+<![CDATA[
+tspan { white-space: pre; }
+]]>
+</style>
+<g transform="translate(8.5358, 4.0500)">
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="24.7365" y2="0"/>
+</g>
+<g transform="translate(8.5358, 3.0500)">
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="24.7365" y2="0"/>
+</g>
+<g transform="translate(8.5358, 2.0500)">
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="24.7365" y2="0"/>
+</g>
+<g transform="translate(8.5358, 1.0500)">
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="24.7365" y2="0"/>
+</g>
+<g transform="translate(8.5358, 0.0500)">
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="24.7365" y2="0"/>
+</g>
+<g transform="translate(33.1324, 2.0500)">
+<rect x="0.0000" y="-2.0000" width="0.1900" height="4.0000" ry="0.0000" fill="currentColor"/>
+</g>
+<g transform="translate(29.6942, 2.0500)">
+<rect x="-0.0650" y="-0.8139" width="0.1300" height="3.3139" ry="0.0400" fill="currentColor"/>
+</g>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:53:15:16">
+<g transform="translate(29.6292, 1.0500)">
+<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+</g>
+</a>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(24.3215, 1.0500)">
+<rect x="-0.1500" y="-0.9761" width="1.8023" height="1.9521" ry="0.0000" fill="currentColor"/>
+</g>
+</g>
+<g transform="translate(24.4751, 1.0261)">
+<text font-family="sans-serif" font-weight="bold" font-size="1.1006" text-anchor="start" fill="currentColor">
+<tspan>-1</tspan>
+</text>
+</g>
+<g transform="translate(24.3215, 1.8761)">
+<text font-family="sans-serif" font-weight="bold" font-size="1.1006" text-anchor="start" fill="currentColor">
+<tspan>12</tspan>
+</text>
+</g>
+<g transform="translate(26.3888, 2.0500)">
+<rect x="-0.0650" y="-0.8139" width="0.1300" height="2.8168" ry="0.0400" fill="currentColor"/>
+</g>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:53:10:11">
+<g transform="translate(26.3238, 1.0500)">
+<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+</g>
+</a>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(20.0943, 1.5500)">
+<rect x="-0.1500" y="-0.9761" width="1.9730" height="1.9521" ry="0.0000" fill="currentColor"/>
+</g>
+</g>
+<g transform="translate(20.0943, 1.5261)">
+<text font-family="sans-serif" font-weight="bold" font-size="1.1006" text-anchor="start" fill="currentColor">
+<tspan>+1</tspan>
+</text>
+</g>
+<g transform="translate(20.5552, 2.3761)">
+<text font-family="sans-serif" font-weight="bold" font-size="1.1006" text-anchor="start" fill="currentColor">
+<tspan>7</tspan>
+</text>
+</g>
+<g transform="translate(22.2673, 4.2400)">
+<polygon stroke-linejoin="round" stroke-linecap="round" stroke-width="0.0800" fill="currentColor" stroke="currentColor" points="4.1465 -0.3900 4.1465 0.0100 0.0400 0.2000 0.0400 -0.2000"/>
+</g>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(28.3780, 1.0500)">
+<rect x="-0.1500" y="-0.5661" width="1.0512" height="1.1322" ry="0.0000" fill="currentColor"/>
+</g>
+</g>
+<g transform="translate(28.3780, 1.4505)">
+<text font-family="sans-serif" font-weight="bold" font-size="1.1006" text-anchor="start" fill="currentColor">
+<tspan>0</tspan>
+</text>
+</g>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:53:0:1">
+<g transform="translate(14.3358, 2.0500)">
+<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+</g>
+</a>
+<g transform="translate(9.3358, 3.6517)">
+<text font-family="serif" font-weight="bold" font-size="4.3999" text-anchor="start" fill="currentColor">
+<tspan>3</tspan>
+</text>
+</g>
+<g transform="translate(14.4008, 2.0500)">
+<rect x="-0.0650" y="0.1861" width="0.1300" height="3.1472" ry="0.0400" fill="currentColor"/>
+</g>
+<g transform="translate(22.3323, 2.0500)">
+<rect x="-0.0650" y="-0.3139" width="0.1300" height="2.5009" ry="0.0400" fill="currentColor"/>
+</g>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:53:5:6">
+<g transform="translate(22.2673, 1.5500)">
+<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+</g>
+</a>
+<g transform="translate(18.1050, 2.0500)">
+<rect x="-0.0650" y="-0.3139" width="0.1300" height="3.3139" ry="0.0400" fill="currentColor"/>
+</g>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:53:3:4">
+<g transform="translate(18.0400, 1.5500)">
+<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+</g>
+</a>
+</svg>

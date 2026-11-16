@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Generalized Accidentals :: Reasonably Polymorphic</title>
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <link href="/atom.xml" rel="alternate" title="Reasonably Polymorphic - Atom" type="application/atom+xml" />
+        <link href="/feed.rss" rel="alternate" title="Reasonably Polymorphic - RSS" type="application/rss+xml" />
+
+        <link href='https://fonts.googleapis.com/css?family=Amiri|Muli' rel='stylesheet' type='text/css' />
+        <link href="/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/css/syntax.css" type="text/css" rel="stylesheet" />
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                    "HTML-CSS": {
+                        scale: 100
+                    },
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+  TeX: {extensions: [ "AMSmath.js"
+                    , "AMSsymbols.js"
+                    , "color.js"
+                    , "cancel.js"
+                    , "http://sonoisa.github.io/xyjax_ext/xypic.js"
+                    ]}
+            });
+        </script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+        </head>
+        <body>
+<div class="main">
+
+<article>
+<header>
+  <h1><a href="/blog/accidentals">Generalized Accidentals</a></h1>
+</header>
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/notes-scales">&larr;</a>
+    </span>
+    <time>November 16, 2026</time>
+
+    <span class="tags">
+        <a href="/tags/music.html">music</a>
+    </span>
+</p>
+<div class="content">
+    <p>Just a little note on yesterday’s <a href="/blog/notes-scales/#some-failed-attempts-at-pinnning-down-scales">ornamental offsets</a>. I realized overnight that this idea is way less weird to musicians than originally thought. The offset idea is really just <em>generalized accidentals.</em></p>
+<p>Check it out: standard music notation, without ever saying so, assumes a <code>Fin 7</code> scale. The notation maps these degrees alternatingly between lines and spaces-between-lines. Thus <code>0..6 :: Deg 7</code> look like this:</p>
+<figure>
+<img src="/images/music8/out3.cropped.svg" alt="The Diatonic Scale" /><figcaption aria-hidden="true">The Diatonic Scale</figcaption>
+</figure>
+<p>which correspond to seven contiguous white keys on the piano. But the piano also has five black keys between any seven contiguous white keys. Adding in the black keys gets us an additional five pitch classes, which brings us up to the <code>Fin 12</code> scale that Western music is based around.</p>
+<p>Modulo some technicalities, there’s no way to notate these black keys directly. The black key between C and D is known either as “C sharp” or “D flat” — sharps moving one offset up in <code>Deg 12</code>, and flats moving one offset down. Thus the twelve pitch classes of the chromatic scale are notated either as sharps:</p>
+<figure>
+<img src="/images/music8/out4.cropped.svg" alt="Chromatic Sharps" /><figcaption aria-hidden="true">Chromatic Sharps</figcaption>
+</figure>
+<p>or equivalently, as flats:</p>
+<figure>
+<img src="/images/music8/out2.cropped.svg" alt="Chromatic Flats" /><figcaption aria-hidden="true">Chromatic Flats</figcaption>
+</figure>
+<p>Although it is usually omitted, there is also a “natural” symbol, to indicate the <em>absence</em> of a sharp or a flat. If we include these symbols into our sharps example, we get this:</p>
+<figure>
+<img src="/images/music8/out5.cropped.svg" alt="Chromatic Naturals and Sharps" /><figcaption aria-hidden="true">Chromatic Naturals and Sharps</figcaption>
+</figure>
+<p>which represents exactly the same thing as the “Chromatic Sharps” figure. We’re just being a little more pedantic here.</p>
+<p>To drive everything home, these accidental symbols are <em>exactly</em> the <code>Deg 12</code> ornaments on a <code>Note 7</code> that we were investigating last time. If we change the <code>♮</code> symbol to <code>0</code>, the <code>♯</code> to <code>+1</code> and the <code>♭</code> to <code>-1</code>, our chromatic scales look like this:</p>
+<figure>
+<img src="/images/music8/out6.cropped.svg" alt="Explicit Accidental Sharps" /><figcaption aria-hidden="true">Explicit Accidental Sharps</figcaption>
+</figure>
+<figure>
+<img src="/images/music9/out8.cropped.svg" alt="Explicit Accidental Flats" /><figcaption aria-hidden="true">Explicit Accidental Flats</figcaption>
+</figure>
+<p>Both examples now have “obvious” encodings as <code>Note 7</code>s: use the notated pitch as the <code>Deg 7</code>, and the offset as a <code>stepIn @12</code>. Thus “Explicit Accidental Sharps” is encoded as:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>[ <span class="dv">0</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>, stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">0</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>, <span class="dv">1</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>, stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">1</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>, <span class="dv">2</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>, <span class="dv">3</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>, stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">3</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>, <span class="dv">4</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>, stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">4</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>, <span class="dv">5</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>, stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">5</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>, <span class="dv">6</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>]<span class="ot"> ::</span> [<span class="dt">Note</span> <span class="dv">7</span>]</span></code></pre></div>
+<p>Rather unsurprisingly, when we <code>applyScale diatonic</code> over this collection, we get <code>[0..11] :: Note 12</code>, which is just to say that this enumerates all of the pitch classes in the chromatic scale. And of course it does, because we designed it that way in the first place!</p>
+<p>So this all brings us back to yesterday’s <code>Ornaments</code> type, which allows us to express offsets at <em>any</em> scale degree — not just <code>Deg 12</code> like sharps and flats in standard musical notation allow us to target. So let’s broaden our visualization a little more, making it explicit that our chromatic offsets are in <code>Deg 12</code>:</p>
+<figure>
+<img src="/images/music8/out9.cropped.svg" alt="Deg 12 Explicit Accidentals" /><figcaption aria-hidden="true">Deg 12 Explicit Accidentals</figcaption>
+</figure>
+<p>Now that this has been made explicit, there’s no reason why we can’t add <em>multiple</em> accidentals to any given note. For example, we could make put a <code>stepIn @10 2</code> on the second note, <em>in addition to</em> a <code>stepsIn @12 (-1)</code>!</p>
+<figure>
+<img src="/images/music8/out10.cropped.svg" alt="Mixing Accidentals" /><figcaption aria-hidden="true">Mixing Accidentals</figcaption>
+</figure>
+<p>This one says that if we were to map our <code>Note 7</code> into <code>Note 10</code>, we’d move the second note up by <code>2 :: Deg 10</code>. Then when we mapped the resulting <code>Note 10</code>s into <code>Note 12</code>, we’d move that note again — this time down by <code>-1 :: Deg 12</code>.</p>
+<!-- \version "2.24.0" -->
+<!-- #(define (parenthesize-naturals grob) -->
+<!--    (if (equal? (ly:grob-property grob 'alteration) 0) -->
+<!--        (ly:grob-set-property! grob 'parenthesized #t))) -->
+<!-- #(define (edo12-accidental-stencil grob) -->
+<!--    (let ((alt (ly:grob-property grob 'alteration))) -->
+<!--      (cond -->
+<!--       ((equal? alt 1/2) -->
+<!--        (grob-interpret-markup grob -->
+<!--          #{ -->
+<!--            \markup \whiteout \pad-markup #0.15 -->
+<!--            \sans \bold \fontsize #-6 -->
+<!--            \vcenter \override #'(baseline-skip . 0.85) -->
+<!--            \center-column { "+1" "12"} -->
+<!--          #})) -->
+<!--       ((equal? alt -1/2) -->
+<!--        (grob-interpret-markup grob -->
+<!--          #{ -->
+<!--            \markup \whiteout \pad-markup #0.15 -->
+<!--            \sans \bold \fontsize #-6 -->
+<!--            \vcenter \override #'(baseline-skip . 0.85) -->
+<!--            \center-column { "-1" "12"} -->
+<!--          #})) -->
+<!--       ((equal? alt 0) -->
+<!--        (grob-interpret-markup grob -->
+<!--          #{ -->
+<!--            \markup \whiteout \pad-markup #0.15 -->
+<!--            \sans \bold \fontsize #-6 -->
+<!--            \vcenter \override #'(baseline-skip . 0.85) -->
+<!--            \center-column { "0" "12" } -->
+<!--          #})) -->
+<!--       (else -->
+<!--        (ly:accidental-interface::print grob))))) -->
+<!-- \relative c' { -->
+<!--   \cadenzaOn -->
+<!--   \omit Staff.TimeSignature -->
+<!-- % \accidentalStyle dodecaphonic -->
+<!-- \override Staff.Accidental.stencil = #edo12-accidental-stencil -->
+<!-- c4 -->
+<!--   \once \override Accidental.stencil = #ly:text-interface::print -->
+<!--   \once \override Accidental.text = \markup { -->
+<!--     \concat { -->
+<!--         \whiteout \pad-markup #0.15 -->
+<!--         \sans \bold \fontsize #-6 -->
+<!--         \vcenter \override #'(baseline-skip . 0.85) -->
+<!--         \center-column { "+2" "10"} -->
+<!--       \hspace #0.2 -->
+<!--         \whiteout \pad-markup #0.15 -->
+<!--         \sans \bold \fontsize #-6 -->
+<!--         \vcenter \override #'(baseline-skip . 0.85) -->
+<!--         \center-column { "-1" "12"} -->
+<!--     } -->
+<!--   } -->
+<!-- cis d dis -->
+<!-- e f fis g -->
+<!-- gis a ais b -->
+<!--  % c' b bes a -->
+<!--  % aes g ges f -->
+<!--  % e es d des -->
+<!-- } -->
+<p>So the ideas here really <em>are</em> familiar to musicians — the standard notation just makes it hard to see what it is we’re talking about.</p>
+<p>To give a bit more of a musical example, we can give a little triadic motif:</p>
+<figure>
+<img src="/images/music8/out11.cropped.svg" alt="Triadic Motif" /><figcaption aria-hidden="true">Triadic Motif</figcaption>
+</figure>
+<p>Notice that the third note here is one <code>Deg 7</code> above the <code>Note 3</code>, while the fourth note is one <code>Deg 12</code> <em>below</em> the <code>Note 3</code>. In musical terms, we’re arpeggiating a triad, but inserting a diatonic note above the “third” and a chromatic note below the “fifth” (scare quotes because the thirds and fifths move!)</p>
+<p>If we then repeat this motif twice more, each time one <code>Deg 3</code> up, we get this:</p>
+<figure>
+<img src="/images/music8/out12.cropped.svg" alt="Triadic Motif Sequence" /><figcaption aria-hidden="true">Triadic Motif Sequence</figcaption>
+</figure>
+<!-- \version "2.24.0" -->
+<!-- intrinsicClef = { -->
+<!--   \override Staff.Clef.stencil = #ly:text-interface::print -->
+<!--   \override Staff.Clef.text = \markup { -->
+<!--     \vcenter \fontsize #6 \bold "3" -->
+<!--   } -->
+<!--   \set Staff.clefPosition = 0 -->
+<!--   \set Staff.middleCPosition = 0 -->
+<!-- } -->
+<!-- #(define (parenthesize-naturals grob) -->
+<!--    (if (equal? (ly:grob-property grob 'alteration) 0) -->
+<!--        (ly:grob-set-property! grob 'parenthesized #t))) -->
+<!-- #(define (edo7-accidental-stencil grob) -->
+<!--    (let* ((alt (ly:grob-property grob 'alteration)) -->
+<!--           (markup -->
+<!--            (cond -->
+<!--             ((equal? alt 1/2) #{ -->
+<!--               \markup \whiteout \pad-markup #0.15 -->
+<!--               \sans \bold \fontsize #-6 -->
+<!--               \vcenter \override #'(baseline-skip . 0.85) -->
+<!--               \center-column { "+1" "7"} -->
+<!--             #}) -->
+<!--             ((equal? alt -1/2) #{ -->
+<!--               \markup \whiteout \pad-markup #0.15 -->
+<!--               \sans \bold \fontsize #-6 -->
+<!--               \vcenter \override #'(baseline-skip . 0.85) -->
+<!--               \center-column { "-1" "12"} -->
+<!--             #}) -->
+<!--             ((equal? alt 0) #{ -->
+<!--               \markup \whiteout \pad-markup #0.15 -->
+<!--               \sans \bold \fontsize #-6 -->
+<!--               \vcenter \override #'(baseline-skip . 0.85) -->
+<!--               \center-column { "0"} -->
+<!--             #}) -->
+<!--             (else #f)))) -->
+<!--      (if markup -->
+<!--          (grob-interpret-markup grob -->
+<!--            (if (ly:grob-property grob 'parenthesized #f) -->
+<!--                (make-parenthesize-markup markup) -->
+<!--                markup)) -->
+<!--          (ly:accidental-interface::print grob)))) -->
+<!-- \relative c' { -->
+<!--   \intrinsicClef -->
+<!--   \omit Staff.TimeSignature -->
+<!-- \override Staff.Accidental.stencil = #edo7-accidental-stencil -->
+<!-- \override Staff.AccidentalCautionary.stencil = #edo7-accidental-stencil -->
+<!-- \accidentalStyle neo-modern-cautionary -->
+<!-- c4 d dis8 ees8 e4 -->
+<!-- d4 e eis8 fes8 f4 -->
+<!-- e4 f fis8 ges8 g4 -->
+<!-- } -->
+<p>Finally, mapping this sequence into standard notation (assuming we map via <code>triad</code> and <code>diatonic</code>) produces this rather pleasing melody:</p>
+<figure>
+<img src="/images/music8/out13.cropped.svg" alt="Melody" /><figcaption aria-hidden="true">Melody</figcaption>
+</figure>
+<!-- \version "2.24.0" -->
+<!-- \relative c' { -->
+<!--   \omit Staff.TimeSignature -->
+<!-- \accidentalStyle neo-modern-cautionary -->
+<!-- c4 e f8 ges8 g4 -->
+<!-- e g a8 b8 c4 -->
+<!-- g c d8 ees e4 -->
+<!-- } -->
+<audio controls>
+<source src="/images/music8/melody.mp3" type="audio/mpeg">
+</audio>
+<p>Notice how what was a completely regular pattern in <code>Note 3</code> expands out unevenly each time around, producing interesting motific development.</p>
+<p>Hopefully this gives a taste of what all that <code>Note</code> and <code>Ornaments</code> nonsense from yesterday is all about. Not only are these ideas already familiar to musicians, they also immediately produce musically interesting results!</p>
+
+<p class="meta">
+    <span class="prev">
+        <a href="/blog/notes-scales">&larr;</a>
+    </span>
+</p>
+
+</div>
+
+<div class="comments">
+  <script src="https://utteranc.es/client.js"
+        repo="isovector/reasonablypolymorphic.com"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+  </script>
+</div>
+</article>
+
+</div>
+    <nav>
+        <h1><a href="/">REASONABLY<br/>POLYMORPHIC</a></h1>
+    
+        <p> Hi there. I'm <strong>Sandy Maguire</strong>. I like improving life and
+        making cool things.</p>
+    
+        <p>If you want to get in touch, I'd love to hear from you! Send me an
+        email; you can contact me via <tt><b>hello</b></tt> at <tt><b>sandymaguire.me</b></tt>.</p>
+    
+        <h2>SITE LINKS</h2>
+        <ul>
+            <li><a href="/blog/archives/">Archives</a></li>
+            <li><a href="/talks">Talks</a></li>
+        </ul>
+    
+        <h2>THINGS I MAKE</h2>
+        <ul>
+            <li>Code on <a href="http://github.com/isovector">github</a></li>
+            <li>Books I've <a href="https://leanpub.com/u/sandy-maguire">written</a></li>
+            <li>My other <a href="http://sandymaguire.me">blog</a></li>
+        </ul>
+    
+        <h2>WHAT I'M DOING</h2>
+        <ul>
+            <li>Books at <a href="https://www.goodreads.com/review/list/14945161-sandy-maguire?shelf=currently-reading">goodreads</a></li>
+        </ul>
+    
+        <p>
+        &copy; 2015-2026 Sandy Maguire
+        </p>
+    </nav>
+
+    <div id="smallnav">
+      <div class="smallhome"><a href="/">REASONABLY POLYMORPHIC</a></div>
+      <div class="smallarchives"><a href="/blog/archives/">ARCHIVES</a></div>
+    </div>
+</body>
+</html>
+
