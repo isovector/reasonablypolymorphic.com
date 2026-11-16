@@ -39,7 +39,7 @@
 <img src="/images/music8/out6.cropped.svg" alt="Explicit Accidental Sharps" /><figcaption aria-hidden="true">Explicit Accidental Sharps</figcaption>
 </figure>
 <figure>
-<img src="/images/music9/out8.cropped.svg" alt="Explicit Accidental Flats" /><figcaption aria-hidden="true">Explicit Accidental Flats</figcaption>
+<img src="/images/music8/out8.cropped.svg" alt="Explicit Accidental Flats" /><figcaption aria-hidden="true">Explicit Accidental Flats</figcaption>
 </figure>
 <p>Both examples now have “obvious” encodings as <code>Note 7</code>s: use the notated pitch as the <code>Deg 7</code>, and the offset as a <code>stepIn @12</code>. Thus “Explicit Accidental Sharps” is encoded as:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>[ <span class="dv">0</span></span>

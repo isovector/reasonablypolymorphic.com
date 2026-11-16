@@ -50,7 +50,7 @@ look like this:
 
 ![Explicit Accidental Sharps](/images/music8/out6.cropped.svg)
 
-![Explicit Accidental Flats](/images/music9/out8.cropped.svg)
+![Explicit Accidental Flats](/images/music8/out8.cropped.svg)
 
 Both examples now have "obvious" encodings as `Note 7`s: use the notated pitch
 as the `Deg 7`, and the offset as a `stepIn @12`. Thus "Explicit Accidental
