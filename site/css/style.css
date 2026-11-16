@@ -87,6 +87,12 @@ p > img:only-child, figure img {
     margin: 0 auto;
 }
 
+/* Scale figures up 20%, capped at the container width. zoom multiplies the
+   resolved max-width too, so divide by the zoom factor to cap at 100%. */
+p > img:only-child, figure img, .figure img {
+    zoom: 1.5;
+}
+
 .caption {
     text-align: center;
     text-transform: uppercase;
