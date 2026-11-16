@@ -164,7 +164,7 @@ reverse them across a `Scale 3 7`. If we represent exact points in `Deg 3` as
 white note heads, and "offsets" as black note heads, one possible reverse
 mapping looks like this:
 
-![Offsets Above](/images/music7/out1.cropped.png)
+![Offsets Above](/images/music7/out1.cropped.svg)
 
 <!-- \header { tagline = "" } -->
 <!-- \absolute -->
@@ -199,7 +199,7 @@ diagram corresponds to:
 Of course, such a mapping is not unique. For example, we can also do a "round
 up, offset down" approach:
 
-![Offsets Below](/images/music7/out2.cropped.png)
+![Offsets Below](/images/music7/out2.cropped.svg)
 
 which is similarly:
 

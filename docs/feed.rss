@@ -79,7 +79,7 @@
 <p>Sounds a little crazy, I know, but check this out. If we could attach <em>other scalar degree offsets</em> to each note, we could invert a scale by mapping the image directly to the domain whenever possible. And when it’s not possible, we could represent it as an offset from the nearest thing in the domain.</p>
 <p>A little example might help. Say we have <code>0..7 :: Fin 7</code> and we’d like to reverse them across a <code>Scale 3 7</code>. If we represent exact points in <code>Deg 3</code> as white note heads, and “offsets” as black note heads, one possible reverse mapping looks like this:</p>
 <figure>
-<img src="/images/music7/out1.cropped.png" alt="Offsets Above" /><figcaption aria-hidden="true">Offsets Above</figcaption>
+<img src="/images/music7/out1.cropped.svg" alt="Offsets Above" /><figcaption aria-hidden="true">Offsets Above</figcaption>
 </figure>
 <!-- \header { tagline = "" } -->
 <!-- \absolute -->
@@ -106,7 +106,7 @@
 <div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>[<span class="dv">0</span>, <span class="dv">0</span> <span class="op">/+</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span> <span class="op">/+</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span> <span class="op">/+</span> <span class="dv">1</span>, <span class="dv">2</span> <span class="op">/+</span> <span class="dv">2</span>, <span class="dv">3</span>]</span></code></pre></div>
 <p>Of course, such a mapping is not unique. For example, we can also do a “round up, offset down” approach:</p>
 <figure>
-<img src="/images/music7/out2.cropped.png" alt="Offsets Below" /><figcaption aria-hidden="true">Offsets Below</figcaption>
+<img src="/images/music7/out2.cropped.svg" alt="Offsets Below" /><figcaption aria-hidden="true">Offsets Below</figcaption>
 </figure>
 <p>which is similarly:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>[<span class="dv">0</span>, <span class="dv">1</span> <span class="op">/-</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">2</span> <span class="op">/-</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span> <span class="op">/-</span> <span class="dv">2</span>, <span class="dv">3</span> <span class="op">/-</span> <span class="dv">1</span>, <span class="dv">3</span>]</span></code></pre></div>
