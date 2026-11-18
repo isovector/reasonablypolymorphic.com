@@ -495,3 +495,9 @@ figure {
 .figure {
   text-align: center;
 }
+
+@media (prefers-color-scheme: dark) {
+  img[src^="/images/music"][src$=".svg"] {
+    filter: invert(1);
+  }
+}
