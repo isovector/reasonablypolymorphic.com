@@ -497,6 +497,43 @@ figure {
 }
 
 @media (prefers-color-scheme: dark) {
+  body, .main {
+    background-color: #1b1b1b;
+    color: #ddd;
+  }
+
+  a {
+    color: #8fb3f0;
+  }
+
+  h1 a, h2 a {
+    color: #e8c9a0;
+  }
+
+  p code, li code {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Invert code blocks; hue-rotate keeps syntax colours roughly the same hue.
+     Border is pre-inverted so it renders as #555. */
+  pre {
+    filter: invert(1) hue-rotate(180deg);
+    color: #222;
+  }
+
+  .content pre {
+    border-color: #aaa;
+  }
+
+  nav {
+    background-color: #0a0a0a;
+    border-right: 1px solid #333;
+  }
+
+  nav a {
+    color: #f6f;
+  }
+
   img[src^="/images/music"][src$=".svg"] {
     filter: invert(1);
   }
