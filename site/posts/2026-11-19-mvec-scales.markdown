@@ -111,7 +111,7 @@ spelling][spelling] is attempting to solve.
 [spelling]: https://en.wikipedia.org/wiki/Enharmonic_equivalence
 
 <style type="text/css">
-.digraph {
+.music-digraph {
   display: inline-block;
   letter-spacing: -0.15em;
   transform: scaleX(0.85);
