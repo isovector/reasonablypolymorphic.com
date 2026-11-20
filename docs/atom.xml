@@ -1,11 +1,197 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2026-11-16T11:09:00Z</updated>
+  <updated>2026-11-19T21:55:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com'/>
 
+    <entry>
+      <title>The Third Scale Encoding is Hopepfully the Charm</title>
+      <id>blog/mvec-scales/index.html</id>
+      <link href='blog/mvec-scales/index.html'/>
+      <published>2026-11-19T21:55:00Z</published>
+      <updated>2026-11-19T21:55:00Z</updated>
+
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
+        <![CDATA[
+        <p>Well, unfortunately time has run out, and I am not going to make the NaNoWriMo writing goal! I’m off to Japan on Monday and promised my wife that I’d do at least a little thinking about the trip before we head off. So that means I’m putting a (temporary) close on the music stuff for a few weeks. But don’t worry; I can’t get this stuff off my brain, so some time off is likely only going to stoke the flames.</p>
+<p>With that being said…</p>
+<p>My plan today was to write about vertical configurations and voice leadings. But I realized my notion of voice leadings didn’t agree with <a href="https://dmitri.mycpanel.princeton.edu/index.html">Tymoczko</a>’s. And while there are a lot of music theorists whose opinions I don’t put much stock into, Tymoczko is one whose thoughts I value very much.</p>
+<p>While trying to answer those questions, I looked at my implementation of <a href="https://en.wikipedia.org/wiki/Neo-Riemannian_theory">Neo-Riemannian transformations</a> and realized it was convoluted as all hell (which I knew). Furthermore I noticed that our work on scales the <a href="/blog/notes-scales/">other day</a> did almost everything I was doing by hand in the Neo-Riemannian case. So I swapped out the bespoke stuff for everyday scale things, and the tests stayed green.</p>
+<p>Happy days. But then I changed my test generators (so that notes would include <a href="/blog/accidentals/">generalized accidentals</a>) and the tests went red! For reasons unrelated to Neo-Riemannian transformations, but for darker, scarier reasons. <em>Scales</em> were doing the wrong thing.</p>
+<p>Oh man. Not so good. The problem is that under our previous encoding, <em>not all scales are <a href="https://en.wikipedia.org/wiki/Section_(category_theory)">retractable</a>.</em> Check it out:</p>
+<p>We previously left <code>Scale</code>s defined thusly:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Scale</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Scale</span> m n <span class="ot">=</span> <span class="dt">Scale</span> (<span class="dt">Fin</span> m <span class="ot">-&gt;</span> <span class="dt">Note</span> n)</span></code></pre></div>
+<p>The codomain being <code>Note n</code> was so that we had a place to stick a scale degree and an accidental. We really only wanted to store a pitch class and an accidental, but you could rotate the pitch classes in a scale and then the lower pitch classes might only be reachable an octave up. Thus the degrees.</p>
+<p>OK fine. But look at this mapping:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">weird ::</span> <span class="dt">Scale</span> <span class="dv">2</span> <span class="dv">7</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>weird <span class="ot">=</span> <span class="dt">Scale</span> <span class="op">$</span> \<span class="kw">case</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="dv">0</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span> <span class="ot">-&gt;</span> stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">0</span></span></code></pre></div>
+<p>Here we’ve defined a scale that maps both pitch classes in <code>Fin 2</code> to <code>0 :: Deg 7</code>, but the second pitch class also carries a (chromatic) sharp. All is well and good, until we go to invert this thing. Inverting the image of the first pitch class is fine:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> weirder <span class="ot">=</span> invertScaleAbove weird</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>applyScale weirder (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Note</span> <span class="dv">7</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">==</span> (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Deg</span> <span class="dv">2</span>)</span></code></pre></div>
+<p>but inverting the image of the second, well…</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>applyScale weirder (stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Note</span> <span class="dv">7</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">==</span> stepIn <span class="op">@</span><span class="dv">12</span> <span class="dv">1</span> <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Deg</span> <span class="dv">2</span></span></code></pre></div>
+<p>Because application of scales dispatches only on pitch classes, it can’t branch on the accidental here. So what was once in the image of <code>weird</code> is now somehow getting smuggled along when we apply the inverse of <code>weird</code>. Weird!</p>
+<p>This is a fundamental problem with our scales as written. They simply do not always admit left inverses!</p>
+<p>To be clear, the problem here is that <code>weird</code> isn’t injective in its mappings from <code>Fin 2</code> to <code>Fin 7</code> (both <code>0, 1 :: Fin 2</code> end up at <code>0 :: Fin 7</code>.) So if we could force the scale to be injective, then the error conditions wouldn’t apply, and we <em>always would</em> be able to find a left inverse.</p>
+<p>So then, <em>how do we ensure we have an injective mapping between finite numbers?</em></p>
+<h2 id="a-quick-musical-note">A Quick Musical Note</h2>
+<p>As an aside to the main thrust of this blog post, I found it quite elucidating to think about what this “injective mapping of pitch classes” constraint <em>actually means</em> in terms of music.</p>
+<p>And I THINK that this is the underlying constraint that <a href="https://en.wikipedia.org/wiki/Enharmonic_equivalence">enharmonic spelling</a> is attempting to solve.</p>
+<style type="text/css">
+.digraph {
+  display: inline-block;
+  letter-spacing: -0.15em;
+  transform: scaleX(0.85);
+  font-weight: 600;
+}
+</style>
+<p><a href="/blog/accidentals/">Recall</a> that the standard musical staff notates the diatonic scale (<code>Fin 7</code>), which corresponds (roughly) to the white keys on the piano. For time immemorial we have been working in <code>Fin 7</code>, and this is why the black keys <em>don’t have their own names</em> – because the black keys are the five notes that you need to add in to get to <code>Fin 12</code>. We happily talk about the white notes as A, B, C, D, E, F, G, but the black notes are relegated to mere modifiers — sometimes as D#, other times as Eb. But never as <span class="music-digraph">DE</span>.</p>
+<p>Anyway, since we can’t call it the note between D and E as <span class="music-digraph">DE</span>, what can we do? Well we need to project this note down to <code>Fin 7</code>. Which of course can’t be done in general, but we cheat by adding an accidental. Is it either D# or Eb? It depends! What does it depend on?</p>
+<p>Conventional spelling rules say that it ought to be offset from “the scale note it is acting in place of.” Which is to say that it must be <em>temporarily replacing</em> some note in the scale, and it steals that note’s pitch class!</p>
+<p>If we pull this back to injective mapping of finite numbers, the weird historical rule makes sense. <em>In order to preserve this injective mapping</em> you <strong>must</strong> remove any other notes which would otherwise map to the same pitch class!</p>
+<p>I feel like I am not articulating this very well. Maybe some diagrams would help. But I’d actually like to go to bed sometime tonight and there is still too much to write down before I need to put the book ends on my music project for a few weeks. Alas.</p>
+<p>Let me know in the comments if any of this section makes a lick of sense. Or if it doesn’t. That’s what we call <tt>e n g a g e m e n t</tt>, baby.</p>
+<h2 id="dependently-typed-programming-to-the-rescue">Dependently-Typed Programming to the Rescue</h2>
+<p>OK so anyway, back to trying to enforce injectivity of finite maps.</p>
+<p>Thankfully I wrote a <a href="https://leanpub.com/certainty-by-construction">book on Agda</a> which happens to be pretty helpful for working out solutions to stuff like this.</p>
+<p>Recall that functions <code>Fin n -&gt; a</code> are isomorphic to vectors <code>Vec n a</code> (which is to say, a product of <code>n</code> copies of <code>a</code>.) This fact will come up again when I eventually get around to writing about voice leadings. But you will notice that functions <code>Fin n -&gt; a</code> are not injective functions between <code>Fin</code>s!</p>
+<p>To be concrete, let’s say we’re looking for mappings of the form <code>Fin m -&gt; (Fin n, a)</code>. Which solves our scale problem (because we can put our accidentals in <code>a</code>.) So as a first step, we could consider encoding this mapping as:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Vec</span> m (<span class="dt">Maybe</span> a)</span></code></pre></div>
+<p>with the invariant that there be exactly <code>n</code> elements that contain <code>a</code>s. For example, <code>triad :: Scale 3 7</code> would look like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad&#39; ::</span> <span class="dt">Vec</span> <span class="dv">7</span> (<span class="dt">Maybe</span> (<span class="dt">Accidentals</span> <span class="dt">Int</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>triad&#39; <span class="ot">=</span> <span class="kw">let</span> a <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span> <span class="dt">Just</span> a</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Just</span> a</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Just</span> a</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nil</span></span></code></pre></div>
+<p>Here we have filled exactly 3 of the 7 total slots. We can then recover the mapping by traversing over the <code>Just</code>s and pairing each with the next <code>Fin 3</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad&#39;&#39; ::</span> <span class="dt">Vec</span> <span class="dv">7</span> (<span class="dt">Maybe</span> (<span class="dt">Fin</span> <span class="dv">3</span>, <span class="dt">Accidentals</span> <span class="dt">Int</span>))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>triad&#39;&#39; <span class="ot">=</span> <span class="kw">let</span> a <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span> <span class="dt">Just</span> (<span class="dv">0</span>, a)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Just</span> (<span class="dv">1</span>, a)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Just</span> (<span class="dv">2</span>, a)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nil</span></span></code></pre></div>
+<p>Now if we zip this vector with its own indices, we get this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad&#39;&#39;&#39; ::</span> <span class="dt">Vec</span> <span class="dv">7</span> (<span class="dt">Fin</span> <span class="dv">7</span>, <span class="dt">Maybe</span> (<span class="dt">Fin</span> <span class="dv">3</span>, <span class="dt">Accidentals</span> <span class="dt">Int</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>triad&#39;&#39;&#39; <span class="ot">=</span> <span class="kw">let</span> a <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span> (<span class="dv">0</span>, <span class="dt">Just</span> (<span class="dv">0</span>, a))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> (<span class="dv">1</span>, <span class="dt">Nothing</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> (<span class="dv">2</span>, <span class="dt">Just</span> (<span class="dv">1</span>, a))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> (<span class="dv">3</span>, <span class="dt">Nothing</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> (<span class="dv">4</span>, <span class="dt">Just</span> (<span class="dv">2</span>, a))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> (<span class="dv">5</span>, <span class="dt">Nothing</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> (<span class="dv">6</span>, <span class="dt">Nothing</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">:&gt;</span> <span class="dt">Nil</span></span></code></pre></div>
+<p>Finally, filter out the <code>Nothing</code>s, and you’re left with (he said, gesticulating wildly) exactly three values, and their corresponding indices in both <code>Fin 3</code> and <code>Fin 7</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad&#39;&#39;&#39;&#39; ::</span> [(<span class="dt">Fin</span> <span class="dv">7</span>, (<span class="dt">Fin</span> <span class="dv">3</span>, <span class="dt">Accidentals</span> <span class="dt">Int</span>))]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>triad&#39;&#39;&#39;&#39; <span class="ot">=</span> <span class="kw">let</span> a <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span> [ (<span class="dv">0</span>, (<span class="dv">0</span>, a))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>     , (<span class="dv">2</span>, (<span class="dv">1</span>, a))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>     , (<span class="dv">4</span>, (<span class="dv">2</span>, a))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>     ]</span></code></pre></div>
+<p>Since you and I both “know” that there are three elements in this list, we can give a “total” function:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad ::</span> <span class="dt">Fin</span> <span class="dv">3</span> <span class="ot">-&gt;</span> (<span class="dt">Fin</span> <span class="dv">7</span>, <span class="dt">Accidentals</span> <span class="dt">Int</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>triad n <span class="ot">=</span> triad&#39;&#39;&#39;&#39; <span class="op">!!</span> <span class="fu">fromIntegral</span> n</span></code></pre></div>
+<p>Sure enough this does work! But it only works because of our invariant that there are exactly<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> 3 <code>Just</code>s in our original vector. That’s cool and all, but it seems like the sort of thing that would be easy to get wrong. And then you’d be crashing at runtime, and that’s not the Haskell Ethos.</p>
+<p>So what can we do instead? Let’s make a type that is like a <code>Vec</code>, but which counts slots separately from filled slots. I needed a name so I called it an <code>MVec</code>, but the <code>M</code> doesn’t actually stand for anything. Behold:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">MVec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">MVec</span> slots filled a <span class="kw">where</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">MNil</span><span class="ot"> ::</span>                              <span class="dt">MVec</span>  <span class="dv">0</span>           <span class="dv">0</span>           a</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">MCons</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">MVec</span> slots filled a <span class="ot">-&gt;</span> <span class="dt">MVec</span> (slots <span class="op">+</span> <span class="dv">1</span>) (filled <span class="op">+</span> <span class="dv">1</span>) a</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">MSkip</span><span class="ot"> ::</span>      <span class="dt">MVec</span> slots filled a <span class="ot">-&gt;</span> <span class="dt">MVec</span> (slots <span class="op">+</span> <span class="dv">1</span>)  filled      a</span></code></pre></div>
+<p>Here, <code>MCons</code> acts exactly like <code>:&gt;</code> did in our vector example — it sticks an element in front of another <code>MVec</code>. But in doing so, it increases the slots and the fill count both by one. However, there’s also <code>MSkip</code> which only increases the slots (and correspondingly doesn’t have a place to put an <code>a</code>.)</p>
+<p>This structure thus perfectly encodes our <code>m</code> slots of which exactly <code>n</code> are filled semantics. Very cool. As a little proof, we can project a <code>MVec m n a</code> down to either a <code>Vec n a</code> or a <code>Vec m (Maybe a)</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">embedMVec ::</span> <span class="dt">MVec</span> m n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>embedMVec <span class="dt">MNil</span> <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>embedMVec (<span class="dt">MCons</span> a as) <span class="ot">=</span> a <span class="op">:&gt;</span> embedMVec as</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>embedMVec (<span class="dt">MSkip</span> as) <span class="ot">=</span> embedMVec as</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">projectMVec ::</span> <span class="dt">MVec</span> m n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m (<span class="dt">Maybe</span> a)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>projectMVec <span class="dt">MNil</span> <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>projectMVec (<span class="dt">MCons</span> a as) <span class="ot">=</span> <span class="dt">Just</span> a <span class="op">:&gt;</span> projectMVec as</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>projectMVec (<span class="dt">MSkip</span> as) <span class="ot">=</span> <span class="dt">Nothing</span> <span class="op">:&gt;</span> projectMVec as</span></code></pre></div>
+<p>So that’s all well and good. But we can also <em>actually find things</em> in this data structure, as given by <code>mlookup</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ot">mlookup ::</span> <span class="dt">MVec</span> m n a <span class="ot">-&gt;</span> <span class="dt">Fin</span> n <span class="ot">-&gt;</span> (<span class="dt">Fin</span> m, a)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>mlookup (<span class="dt">MCons</span> a _) <span class="dt">FZ</span> <span class="ot">=</span> (<span class="dt">FZ</span>, a)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>mlookup (<span class="dt">MCons</span> _ mn) (<span class="dt">FS</span> n) <span class="ot">=</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> mlookup mn n <span class="kw">of</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    (m, a) <span class="ot">-&gt;</span> (<span class="dt">FS</span> m, a)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>mlookup (<span class="dt">MSkip</span> mn) n <span class="ot">=</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> mlookup mn n <span class="kw">of</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    (m, a) <span class="ot">-&gt;</span> (<span class="dt">FS</span> m, a)</span></code></pre></div>
+<p>which you will happily note follows the same logic we worked through for <code>triad</code>, and is exactly the function we want to use for making <code>Scale</code>s.</p>
+<p>We can also go the other way, and search on the <code>Fin m</code> indices:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">msearch ::</span> <span class="dt">MVec</span> m n a <span class="ot">-&gt;</span> <span class="dt">Fin</span> m <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Fin</span> n, a)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>msearch <span class="dt">MNil</span> a <span class="ot">=</span> <span class="kw">case</span> a <span class="kw">of</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>msearch (<span class="dt">MCons</span> a _) <span class="dt">FZ</span> <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">FZ</span>, a)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>msearch (<span class="dt">MCons</span> _ as) (<span class="dt">FS</span> n) <span class="ot">=</span> <span class="fu">fmap</span> (first <span class="dt">FS</span>) <span class="op">$</span> msearch as n</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>msearch (<span class="dt">MSkip</span> _) <span class="dt">FZ</span> <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>msearch (<span class="dt">MSkip</span> as) (<span class="dt">FS</span> n) <span class="ot">=</span> msearch as n</span></code></pre></div>
+<p>which I’m not super sure is important, but it was fun to write.</p>
+<p>The real reason for calling this thing <code>MVec</code> was so that I could put <code>m</code>s in front of all its functions’ names. Which finally pays off when we get to the <code>MVec</code> composition function:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>malign</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  ::</span> (x <span class="ot">-&gt;</span> y <span class="ot">-&gt;</span> z)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">MVec</span> c b x</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">MVec</span> b a y</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">-&gt;</span> <span class="dt">MVec</span> c a z</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>malign _ <span class="dt">MNil</span> <span class="dt">MNil</span> <span class="ot">=</span> <span class="dt">MNil</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>malign f (<span class="dt">MSkip</span> bc) ab <span class="ot">=</span> <span class="dt">MSkip</span> <span class="op">$</span> malign f bc ab</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>malign f (<span class="dt">MCons</span> x bc) (<span class="dt">MCons</span> y ab) <span class="ot">=</span> <span class="dt">MCons</span> (f x y) <span class="op">$</span> malign f bc ab</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>malign f (<span class="dt">MCons</span> _ bc) (<span class="dt">MSkip</span> ab) <span class="ot">=</span> <span class="dt">MSkip</span> <span class="op">$</span> malign f bc ab</span></code></pre></div>
+<p>This function does end-wise composition of <code>MVec</code>s. If you have one <code>MVec</code> that has <code>c</code> slots and <code>b</code> items, and another which has <code>b</code> slots and <code>a</code> items (sorry for the type variable shuffling!), then we ought to be able to make an <code>MVec</code> with <code>c</code> slots and only <code>a</code> items. This corresponds to composition of scales, so it’s really quite important!</p>
+<p>The trick is we traverse over the b-in-c collection. Whenever we find an item there, we consider it to be a potential slot of the a-in-b collection. If a-in-b says to skip, then we skip it. But if they’re both cons cells, we can use the given function to combine their values into a <code>z</code>.</p>
+<p>Quite nice if you ask me.</p>
+<h2 id="back-to-scales">Back To Scales</h2>
+<p>Now that we have <code>MVec</code>s, it’s pretty trivial to implement the small-to-big scale mapping that we’ve been thinking about. Really we just need to keep an <code>MVec m n</code> around, convert it into the old representation via <code>mlookup</code>, and then all of the last post’s machinery around scales works just fine.</p>
+<p>Except, how do you invert them? Remember that we did all of this work to invert them. If an <code>MVec m n</code> has <code>m</code> slots of which <code>n</code> are full, it necessarily means that <code>n &lt;= m</code>. Which is to say that it’s slightly more complicated than just keeping a <code>MVec m n</code> around.</p>
+<p>The trick of course is that if you invert a scale, <em>it’s still the same <code>MVec</code> you need!</em> Thus a <code>Scale a b</code> is either an embedding from <code>a</code> to <code>b</code>, or a projection from <code>b</code> back to <code>a</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Scale</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Scale</span> a b <span class="kw">where</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Embed</span><span class="ot">   ::</span>                 <span class="dt">MVec</span> b a (<span class="dt">Accidentals</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Scale</span> a b</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Project</span><span class="ot"> ::</span> <span class="dt">Quantization</span> <span class="ot">-&gt;</span> <span class="dt">MVec</span> b a (<span class="dt">Accidentals</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span></code></pre></div>
+<p>Notice that it’s the same <code>MVec</code> in both constructors, the only difference is which direction the scale goes. This <code>Quantization</code> thing is a little enum:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Quantization</span> <span class="ot">=</span> <span class="dt">Below</span> <span class="op">|</span> <span class="dt">Above</span> <span class="op">|</span> <span class="dt">Nearest</span></span></code></pre></div>
+<p>which corresponds exactly to the three <code>invertScale*</code> functions from last time. Really it means “if you’re looking at a scale degree which doesn’t fit, which note should we add offsets to?” I don’t think I like having this field, and when I’m back from Japan I’ll explore just sticking the chooser in there.</p>
+<p>Once we’ve added <code>Project</code>, however, I don’t think scales compose anymore. Not to fear, we’ll just <em>make</em> them compose by adding a new constructor:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Scale</span> a b <span class="kw">where</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Embed</span><span class="ot">   ::</span>                 <span class="dt">MVec</span> b a (<span class="dt">Accidentals</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Scale</span> a b</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Project</span><span class="ot"> ::</span> <span class="dt">Quantization</span> <span class="ot">-&gt;</span> <span class="dt">MVec</span> b a (<span class="dt">Accidentals</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Compose</span><span class="ot"> ::</span> <span class="dt">Scale</span> x b <span class="ot">-&gt;</span> <span class="dt">Scale</span> a x                     <span class="ot">-&gt;</span> <span class="dt">Scale</span> a b</span></code></pre></div>
+<p>Composition of scales tries to <code>malign</code> when possible:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ot">compScale ::</span> <span class="dt">Scale</span> b c <span class="ot">-&gt;</span> <span class="dt">Scale</span> a b <span class="ot">-&gt;</span> <span class="dt">Scale</span> a c</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>compScale (<span class="dt">Embed</span> bc) (<span class="dt">Embed</span> ab) <span class="ot">=</span> <span class="dt">Embed</span> <span class="op">$</span> malign (<span class="op">&lt;&gt;</span>) bc ab</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>compScale bc ab <span class="ot">=</span> <span class="dt">Compose</span> bc ab</span></code></pre></div>
+<p>and inversion is now a little swap-er-oo of our constructors:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ot">invertScale ::</span> <span class="dt">Quantization</span> <span class="ot">-&gt;</span> <span class="dt">Scale</span> a b <span class="ot">-&gt;</span> <span class="dt">Scale</span> b a</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>invertScale q (<span class="dt">Embed</span> slots) <span class="ot">=</span> <span class="dt">Project</span> q slots</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>invertScale _ (<span class="dt">Project</span> _ slots) <span class="ot">=</span> <span class="dt">Embed</span> slots</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>invertScale q (<span class="dt">Compose</span> f g) <span class="ot">=</span> <span class="dt">Compose</span> (invertScale q g) (invertScale q f)</span></code></pre></div>
+<p>So that’s the thrust of today’s work. Having sorted out all of these details has dramatically simplified up the codebase (and found a bunch of bugs), which I always consider to be a harbinger of being on the right track. Making any of this stuff usable is its own exercise in existential types and type reflection shenanigans, but maybe we’ll cover that another day if there’s sufficient interest.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Well technically it works because there are at least 3 elements…<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>Generalized Accidentals</title>
       <id>blog/accidentals/index.html</id>
@@ -1373,49 +1559,6 @@ threeClef = {
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>One titillating idea is to simply not expose any introductory forms for <code>Event</code>. I haven’t explored this much, since it would mean we don’t get an applicative functor over <code>Event</code>. Thinking about it now, it’d still be fine to expose the <code>Nothing</code>-analogous constructor, so we could still give <code>mempty</code>. And perhaps this is the first motivating case I’ve ever found for giving only a <a href="https://hackage-content.haskell.org/package/semigroupoids-6.0.2/docs/Data-Functor-Apply.html#g:2"><code>Apply</code></a> instance instead of a full <code>Applicative</code>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>An Overview of an Ambitious Music Project</title>
-      <id>blog/music-overview/index.html</id>
-      <link href='blog/music-overview/index.html'/>
-      <published>2026-11-02T15:23:00Z</published>
-      <updated>2026-11-02T15:23:00Z</updated>
-
-      <content type="html" xml:base="https://reasonablypolymorphic.com">
-        <![CDATA[
-        <p>It’s November. And you know what that means. <a href="https://nano2.org/">National Novel Writing Month</a>. Rather than writing a novel, I thought it’d be fun to do something like in 2016 when I wrote <a href="https://reasonablypolymorphic.com/book/preface">my first textbook</a>. But this time around, I’m going to bash out all of the ideas about a constructive theory of music that have been banging around in my head for a few years.</p>
-<p>Many years ago, I read <a href="https://www.microsoft.com/en-us/research/publication/composing-contracts-an-adventure-in-financial-engineering/">Composing Contracts: an adventure in financial engineering</a>, in which Haskell King Simon Peyton Jones descends unwittingly into the world of financial instruments. And being a “red-blooded functional programmer,” he designs a bunch of combinators which model the entire complexity of dozens of financial instruments, as well as an infinitely many that nobody had ever thought to ask for.</p>
-<p>This paper has always been wildly inspirational to me, and alongside <a href="https://conal.net/papers/compiling-to-categories/compiling-to-categories.pdf">Compiling to Categories</a>, is the clearest example of the power of pure, strongly-typed, functional programming, and its ability to model the wider, messier world.</p>
-<p>So, wanting to learn how to flex these muscles for myself, I set off many years ago on a quest to try to tackle the hardest problem I could think of, that I felt like I had any chance whatsoever of succeeding at — music. After all, <a href="https://www.lesswrong.com/posts/WLJwTJ7uGPA5Qphbp/trying-to-try">“so much of life’s failure consists in holding yourself to too low a standard.”</a></p>
-<p>The goal is, and has always been, to develop something equivalent to <a href="https://byorgey.github.io/blog/">Brent Yorgey’s</a> amazing <a href="https://diagrams.github.io/gallery.html">diagrams</a> library. Diagrams is a combinator library in Haskell which abstracts away the “how” of drawing a picture from the “what picture do you want to draw?” For example, here’s how you draw a <a href="triangle">Sierpinski triangle</a>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>sierpinski <span class="dv">1</span> <span class="ot">=</span> triangle <span class="dv">1</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sierpinski n <span class="ot">=</span>     s</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                 <span class="op">===</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>              (s <span class="op">|||</span> s) <span class="op">#</span> centerX</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span> s <span class="ot">=</span> sierpinski (n<span class="op">-</span><span class="dv">1</span>)</span></code></pre></div>
-<p>which you might notice <em>is exactly the obvious definition of what a Sierpinski triangle is</em> — recursive copies of itself arranged in a triangle.</p>
-<p>So the question I’ve been chasing for years is “what is an equivalently elegant approach to composing music?” I spent a <a href="/blog/algebraic-music/">good</a> <a href="/more-algebraic-music/">chunk</a> of my holiday season last year struggling to find a good starting point here. With the benefit of hindsight, and of being a year older and wiser, I’ve made a great deal of progress since then.</p>
-<p>But before diving into exactly what that progress means, I think it’s worth discussing what explicitly the goals here are (and what they are <em>not.</em>) Some desiderata:</p>
-<ol type="1">
-<li>The system must be capable of expressing any music, from any culture, from any time (this includes <em>music and styles that do not yet exist.</em>)</li>
-<li>It must be easy to get good results out of the system.</li>
-<li>Understanding the system should teach you something about music.</li>
-</ol>
-<p>These three desiderata are an extreme set of constraints on the solution space. Desideratum 1 means that we can’t take <em>anything</em> for granted. For example, we cannot assume that there are 12 pitch classes, since this would immediately eliminate microtonal music. Nor can we privilege <a href="https://en.wikipedia.org/wiki/Function_(music)">harmonic function</a>, since this isn’t an idea that seems to be shared by non-Western traditional music.</p>
-<p>Desideratum 2 means that we can’t be happy with only a mathematical model. Yes, to a first approximation, set theory can describe anything, but lots of things are pretty egregious to articulate in set theory! This gives rise to the need for <em>musically-meaningful combinators.</em> I think the [kaleidoscope diagram] is a striking visual example of this idea. It’s a piece of code that <em>given any image whatsoever</em> can produce a new image <em>which is a kaleidoscope of that thing.</em> With a little hand waving here, you can imagine a set of musical combinators which approach a given motif, which ramp up the tension, which introduce syncopation, which produce senses of resolution. This also means we must put a great deal of thought into how musical ideas are represented, and how they can be combined.</p>
-<p>Desideratum 3 means we can’t just hand the problem off to some LLM or some other probabilistic mechanism.</p>
-<p>Under these constraints, it’s immediately evident that almost no existing music theory is up to the task. As best I can tell, the field of music theory is primarily focused on <em>analysis of existing music</em> rather than on <em>general techniques for creating new music.</em> Perhaps an argument can be made that you must be able to spot greatness in order to produce it for yourself, but this is relatively unconvincing to me. Attempting to perform post-hoc analysis of music without a constructive theory seems analogous to decompiling computer code <em>without a language to decompile it into.</em> At best you might find some statistical patterns (V chords often go to I), but this doesn’t seem like it ought to lend itself much to <em>actually writing good music.</em> Will it out-compete a <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chain</a> trained on the same probabilities?</p>
-<p>The best we can do with most existing music theory is (to the extent that it is constructive [which is extremely few and far between]) relegate it to combinator status. A grammar of functional harmony can exist as a DSL on top of the core music structures. <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Voice leading spaces</a> ala <a href="https://dmitri.mycpanel.princeton.edu/index.html">Tymoczko</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> can be expressed by their own notions of pitch, alongside operations and elimination forms.</p>
-<p>So that’s the overview. All in all, it’s a very ambitious project. I am not interested in hearing from you if you think this cannot be done. If you’re right, I’ll end up with egg on my face, but that’s my problem. However, if this is the sort of thing that piques your interest as much as it has mine, please do get in touch.</p>
-<p>In the next post we’ll discuss the denotative elements of music.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>Dmitri Tymoczko has the distinction of being the only music theorist I’ve found who is precise enough to be more than <a href="https://en.wikipedia.org/wiki/Not_even_wrong">not even wrong</a>. Rather amazingly, he also seems to be <em>right!</em> Coincidence?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
         ]]>
