@@ -1,11 +1,205 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <feed xmlns='http://www.w3.org/2005/Atom' xmlns:g='http://base.google.com/ns/1.0'>
   <title>Reasonably Polymorphic</title>
-  <updated>2026-11-19T21:55:00Z</updated>
+  <updated>2026-11-21T16:33:00Z</updated>
   <author><name>Sandy Maguire</name></author>
   <id>http://reasonablypolymorphic.com</id>
   <link rel='self' href='https://reasonablypolymorphic.com'/>
 
+    <entry>
+      <title>New Notation for Abstract Scales</title>
+      <id>blog/new-notation/index.html</id>
+      <link href='blog/new-notation/index.html'/>
+      <published>2026-11-21T16:33:00Z</published>
+      <updated>2026-11-21T16:33:00Z</updated>
+
+      <content type="html" xml:base="https://reasonablypolymorphic.com">
+        <![CDATA[
+        <p>HA HA HA I SNUCK OUT AND DID SOME MUSIC!!! (after some encouragement from my wife!)</p>
+<p>Anyway, just a quick little update on some new notation I’ve been working on. Hopefully this will more clearly elucidate the points I’m trying to make with these <a href="/blog/notes-scales/">abstract scales</a> and <a href="/blog/accidentals/">generalized accidentals</a>.</p>
+<p>Here’s what the new notation looks like:</p>
+<figure>
+<img src="/images/music8_2/out8.cropped.svg" alt="3 Octaves of a 4-Note Scale" /><figcaption aria-hidden="true">3 Octaves of a 4-Note Scale</figcaption>
+</figure>
+<p>This is a 3-octave run in a 4-note scale. How can you tell it’s in a 4-note scale? Because the clef is a big “4”.</p>
+<p>In the first bar, we have an <code>-4</code> ottava bracket, which means we ought to read this bar to be one octave lower than it’s notated. The second bar is missing this bracket, and is therefore one octave up. And the third bar is an octave higher again.</p>
+<p>As a couple of landmarks: the bottom staff line is always a “root” or a “tonic” in this scale. That’s why both the first and second bars start on the bottom staff line. There is always a second octave notated, as indicated by the line straddled by the <code>}:</code> symbol in the clef. If you look, this line is where the third measure starts.</p>
+<p>What exactly does this scale “sound” like, you might be wondering? It doesn’t sound like anything; it’s just twelve steps in some arbitrary 4-note scale. We’d have to pin down exactly what that scale was in order to be able to realize it into something audible.</p>
+<p>Let’s take another example. This next one is a 5-octave run in a 3-note scale:</p>
+<figure>
+<img src="/images/music8_2/out5.cropped.svg" alt="5 Octaves of a 3-Note Scale" /><figcaption aria-hidden="true">5 Octaves of a 3-Note Scale</figcaption>
+</figure>
+<p>The conventions are exactly the same here. Each measure spans an octave, and each measure is an octave above the previous one. The bottom staff line is still the tonic, but here, the <em>second staff space</em> is the one straddled by the <code>}:</code>. Again, this acts as a little landmark for where the next octave lands. Notice that bar 3 begins on this space.</p>
+<p>The only other thing to notice here is we have a +6 ottava in the last two bars. This is indicate it’s <em>two octaves</em> above what’s notated. It’s +6 because we’re two octaves above in a 3-note scale, and you shouldn’t be surprised to learn that <code>3 * 2 = 6</code>.</p>
+<p>Let’s take this same 5-octave in a 3-note scale and <em>transform</em> it into a 7-note scale. The way we’re going to do that is via this mapping:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">triad ::</span> <span class="dt">Note</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Note</span> <span class="dv">7</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">1</span> <span class="ot">=</span> <span class="dv">2</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>triad <span class="dv">2</span> <span class="ot">=</span> <span class="dv">4</span></span></code></pre></div>
+<p>Here you should read <code>0</code> is the root of the scale, <code>1</code> as the next note above that, <code>2</code> as the next note again, etc. In our 3-note scale, we only have three notes, so giving a mapping for each of <code>0</code>, <code>1</code>, and <code>2</code> is sufficient to map every pitch class out of the scale. Here we’re mapping to <em>every other</em> note in a 7-note scale, which when you look at it, is exactly how we build diatonic triads. Take every second note in the 7-note scale, and that gives you a triad!</p>
+<p>So when we apply this mapping over our 3-note scale example, we end up with <em>arpeggiation of a triad</em> over 5 octaves:</p>
+<figure>
+<img src="/images/music8_2/out6.cropped.svg" alt="5 Arpeggiations in a 7-Note Scale" /><figcaption aria-hidden="true">5 Arpeggiations in a 7-Note Scale</figcaption>
+</figure>
+<p>Technically this is an <em>abstract</em> 7-note scale, but we can choose to interpret it as the usual diatonic scale. As a matter of convention, we will map the tonic of our abstract 7-note to C in the diatonic scale. This brings us back to everyday musical notation that should be familiar to practitioners:</p>
+<figure>
+<img src="/images/music8_2/out7.cropped.svg" alt="5 Arpeggiations in the Diatonic Scale" /><figcaption aria-hidden="true">5 Arpeggiations in the Diatonic Scale</figcaption>
+</figure>
+<p>Notice that this diagram carries <em>exactly the same information</em> as the previous one, so it can be useful as a sort-of Rosetta Stone to help get an intuition for what the abstract notation is trying to articulate.</p>
+<h2 id="a-more-musical-example">A More Musical Example</h2>
+<p>So that’s a quick little primer on the notation. But now let’s try something a little more musical. We can bring in the same motif that we <a href="/blog/accidentals/">used previously</a>:</p>
+<figure>
+<img src="/images/music8_2/out1.cropped.svg" alt="Motif in a 3-Note Scale" /><figcaption aria-hidden="true">Motif in a 3-Note Scale</figcaption>
+</figure>
+<p>You’ll notice the familiar “abstract 3 clef”. The only new thing in this example are the accidentals. Unlike in a previous post, they are now using standard sharps/flats/natural symbols. But they also have little subscripts — the third note has a subscript 7 and the fourth note has a subscript 12.</p>
+<p>These subscripts express <em>which scale</em> we want to apply the accidental to. The <code>#/7</code> means “move up one scale degree in a 7-note (diatonic) scale”. The “b/12” means “move down one scale degree in a 12-note (chromatic) scale.”</p>
+<p>We’ll expand this out momentarily to get some intuition as to what this means musically.</p>
+<p>Let’s repeat the motif 3 times, each time up a single scale degree:</p>
+<figure>
+<img src="/images/music8_2/out2.cropped.svg" alt="Repeated Motif in a 3-Note Scale" /><figcaption aria-hidden="true">Repeated Motif in a 3-Note Scale</figcaption>
+</figure>
+<p>Using the same <code>triad</code> mapping as before, we can move this repeated motif into an abstract 7-note scale:</p>
+<figure>
+<img src="/images/music8_2/out3.cropped.svg" alt="Repeated Motif in a 7-Note Scale" /><figcaption aria-hidden="true">Repeated Motif in a 7-Note Scale</figcaption>
+</figure>
+<p>There are two things to notice here. The first is that this thing looks much less like an arpeggiation than our first example. And the second is that the <code>#/7</code>s are gone! These two facts are related to one another.</p>
+<p>Recall that <code>#/7</code> was notation for “move up one note in a 7-note scale”. And so now that we’re <em>in</em> a 7-note scale, we can drop the notation and <em>just move up one note.</em> But since we haven’t yet moved into a 12-note scale, we can’t do the same procedure to the <code>b/12</code>s, and so those accidentals remain.</p>
+<p>Let’s now reinterpret this abstract 7-note scale as the usual diatonic scale:</p>
+<figure>
+<img src="/images/music8_2/out4.cropped.svg" alt="Repeated Motif in the Diatonic Scale" /><figcaption aria-hidden="true">Repeated Motif in the Diatonic Scale</figcaption>
+</figure>
+<p>which again should be familiar ground to musicians. You’ll notice that the <code>b/12</code> have been replaced by simple flats, because standard music notation actually expresses the diatonic scale, and uses accidentals to express chromatic moves.</p>
+<p>Check out this music we’ve composed! What was once a very simple pattern in <code>Note 3</code> now has some character!</p>
+<h2 id="by-way-of-some-other-mappings">By Way Of Some Other Mappings</h2>
+<p>Of course, nobody says we need to interpret our 3-note scale as <em>triads</em>. We could instead take our same repeated motif and map it into a 5-note scale. To pick a mapping at random, let’s go with:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ot">toFive ::</span> <span class="dt">Note</span> <span class="dv">3</span> <span class="ot">-&gt;</span> <span class="dt">Note</span> <span class="dv">5</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>toFive <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>toFive <span class="dv">1</span> <span class="ot">=</span> <span class="dv">3</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>toFive <span class="dv">2</span> <span class="ot">=</span> <span class="dv">4</span></span></code></pre></div>
+<p>Applying this mapping gives us the “same motif” but now in a 5-note scale:</p>
+<figure>
+<img src="/images/music8_2/out9.cropped.svg" alt="Repeated Motif in a 5-Note Scale" /><figcaption aria-hidden="true">Repeated Motif in a 5-Note Scale</figcaption>
+</figure>
+<p>We can interpret this 5-note scale as a major pentatonic, which then gives us</p>
+<figure>
+<img src="/images/music8_2/out10.cropped.svg" alt="Repeated Motif in Major Pentatonic" /><figcaption aria-hidden="true">Repeated Motif in Major Pentatonic</figcaption>
+</figure>
+<p>Or we could interpret it as the minor pentatonic:</p>
+<figure>
+<img src="/images/music8_2/out11.cropped.svg" alt="Repeated Motif in Minor Pentatonic" /><figcaption aria-hidden="true">Repeated Motif in Minor Pentatonic</figcaption>
+</figure>
+<p>We keep using that same 3-note scale motif, but we keep getting different results because we keep taking it through different paths on its way up to the diatonic scale.</p>
+<h2 id="using-a-chord-as-a-scale">Using a Chord as a Scale</h2>
+<p>Let’s try another trick. Let’s take our repeated motif and this time map it into a 4-note scale. So far all of our transformations have preserved octave relationships (that is to say, if two notes are one octave apart before we map them, they are one octave apart after we map them.) But music is supposed to be <em>free, man.</em> There are no rules here. So let’s just reinterpret the motif as a 4-note scale:</p>
+<figure>
+<img src="/images/music8_2/out12.cropped.svg" alt="Reinterpreted Motif in a 4-Note Scale" /><figcaption aria-hidden="true">Reinterpreted Motif in a 4-Note Scale</figcaption>
+</figure>
+<p>Now instead of giving a constant mapping from our 4-note scale into something playable, let’s instead give a dynamic mapping. For example, here’s a nice chord progression:</p>
+<figure>
+<img src="/images/music8_2/out13.cropped.svg" alt="A Nice Chord Progression" /><figcaption aria-hidden="true">A Nice Chord Progression</figcaption>
+</figure>
+<p>You’ll notice that each of these chords has four notes. And we have a motif that is in a 4-note scale… so what if we to map our motif to the notes of the progression?</p>
+<p>The details here are pretty finicky, so I’ve notated this one as a grand staff. The first system is the chord progression, the second is the 4-note scale motif. The third system is the chord tones that get targeted by each note in the motif, and the final system is after we have applied all the accidentals from the motif to the targeted chord tones.</p>
+<figure>
+<img src="/images/music8_2/out14.cropped.svg" alt="Derivation of Our Motif Over Chords" /><figcaption aria-hidden="true">Derivation of Our Motif Over Chords</figcaption>
+</figure>
+<p>Remember that the bottom line on the 4-note staff represents the “tonic” note, which is the lowest note of each chord. So because the first note of the motif is on the tonic, and the lowest note of the first chord is F, the resulting note is F.</p>
+<p>The note in our motif is just the next 4-note above the tonic, which is the second note in our chord, thus we get an Ab.</p>
+<p>But the third note of the motif is a <code>#/7</code> above the second note in the chord. So since the second note in our chord is Ab (third system), one diatonic step above that is Bb (fourth system).</p>
+<p>The fourth note of the motif is a <code>b/12</code> below the next note in the chord. The next note of the chord is C, so we lower it by a flat and get Cb. And then the last note of the motif is just the same note of the chord, but this time without the flat — thus C.</p>
+<p>That’s the derivation of the first bar. So far, so good. The second bar makes things a little trickier. This time the motif starts on the first space, which is to say it begins on the <em>second</em> note up the chord. Since the motif only touches three notes of the chord, in the second bar we will be ignoring the root note of the chord (the low F).</p>
+<p>It’s worth tracing through the details on this example. It’s finicky, but really makes you appreciate why we might want to use computers to calculate this stuff on our behalf.</p>
+<p>As one final step, we might want to take the last system of our derivation and “renormalize” it — changing the spelling of the notes so they feel a little more natural:</p>
+<figure>
+<img src="/images/music8_2/out15.cropped.svg" alt="Renormalized Results" /><figcaption aria-hidden="true">Renormalized Results</figcaption>
+</figure>
+<p>Whew! We made it to the end!</p>
+<p>If you’re been paying attention to the <a href="/tags/music.html">whole series</a> of blog posts, there’s nothing <em>new</em> here, but perhaps having a few more worked examples might help some of the ideas land. And again, none of these are <em>my</em> ideas — they all come from <a href="https://www.foyles.co.uk/book/tonality/dmitri-tymoczko/9780197577103">Tonality</a>.</p>
+<p>What is mine is the notation, which I think can help with understanding. Of course, you’d never actually <em>want</em> to do any of these transformations by hand, but seeing them illustrated in full might perhaps pull back the curtains on composition.</p>
+<p>Perhaps what set apart the great composers of yore was not their musical genius, but their patience to work through the details of all these fiddly transformations.</p>
+<!-- \new GrandStaff -->
+<!-- { -->
+<!-- << -->
+<!-- \new Staff -->
+<!-- { -->
+<!--   { \clef treble \accidentalStyle modern-cautionary -->
+<!--     \fixed c { <f' aes' c'' des''>1 -->
+<!--                | -->
+<!--                <f' ges' b' des''>1 -->
+<!--                | -->
+<!--                <d' ges' a' cis''>1 } } -->
+<!-- } -->
+<!-- \new Staff -->
+<!--   { \finStaff #4 -->
+<!--     \finClef #4 -->
+<!--     \accidentalStyle modern-cautionary -->
+<!--     \fixed c { c'4 -->
+<!--                d'4 -->
+<!--                \acc #'((7 . 1)) d'8 -->
+<!--                \acc #'((12 . -1)) e'8 -->
+<!--                e'4 -->
+<!--                | -->
+<!--                d'4 -->
+<!--                e'4 -->
+<!--                \acc #'((7 . 1)) e'8 -->
+<!--                \acc #'((12 . -1)) f'8 -->
+<!--                f'4 -->
+<!--                | -->
+<!--                e'4 -->
+<!--                f'4 -->
+<!--                \acc #'((7 . 1)) f'8 -->
+<!--                \acc #'((12 . -1)) g'8 -->
+<!--                g'4 } -->
+<!--   } -->
+<!-- \new Staff -->
+<!-- { -->
+<!--   { \clef treble \accidentalStyle modern-cautionary -->
+<!--     \fixed c { f'4 -->
+<!--                aes' -->
+<!--                aes'8 -->
+<!--                c''8 -->
+<!--                c''4 -->
+<!--                | -->
+<!--                ges' -->
+<!--                b' -->
+<!--                b'8 -->
+<!--                des''8 -->
+<!--                des''4 -->
+<!--                | -->
+<!--                a' -->
+<!--                cis'' -->
+<!--                cis''8 -->
+<!--                d'' -->
+<!--                d''4 -->
+<!--                } } -->
+<!-- } -->
+<!-- \new Staff -->
+<!--   { \clef treble \accidentalStyle modern-cautionary -->
+<!--     \fixed c { f'4 -->
+<!--                aes'4 -->
+<!--                bes'8 -->
+<!--                ces''8 -->
+<!--                c''4 -->
+<!--                | -->
+<!--                ges'4 -->
+<!--                b'4 -->
+<!--                c''8 -->
+<!--                deses''8 -->
+<!--                des''4 -->
+<!--                | -->
+<!--                a'4 -->
+<!--                cis''4 -->
+<!--                dis''8 -->
+<!--                des''8 -->
+<!--                d''4 } } -->
+<!-- >> -->
+<!-- } -->
+<!-- \paper { -->
+<!-- ragged-last = ##t -->
+<!-- } -->
+        ]]>
+      </content>
+    </entry>
     <entry>
       <title>The Third Scale Encoding is Hopepfully the Charm</title>
       <id>blog/mvec-scales/index.html</id>
@@ -1456,109 +1650,6 @@ threeClef = {
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>I extracted all the moves here from Tymoczko’s masterpiece <a href="https://dmitri.mycpanel.princeton.edu/tonality-an-owners-manual.html">Tonality: An Owner’s Manual</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-        ]]>
-      </content>
-    </entry>
-    <entry>
-      <title>Musical Signals</title>
-      <id>blog/music-signals/index.html</id>
-      <link href='blog/music-signals/index.html'/>
-      <published>2026-11-03T05:01:00Z</published>
-      <updated>2026-11-03T05:01:00Z</updated>
-
-      <content type="html" xml:base="https://reasonablypolymorphic.com">
-        <![CDATA[
-        <p>The <a href="/blog/music-overview/">last blog</a> post served as an overview of my music project — what it is, why it is, and roughly what success will look like. Today we’ll get into some of the nitty gritty details that will help put the project onto a firm footing.</p>
-<p>In order to have any chance of <a href="https://www.youtube.com/watch?v=rlyqoYoUumc">not confusing ourselves</a>, we must first be precise about what exactly it is we’re talking about. That means we’ll have to model out some types, and, importantly <em>what those types mean.</em> Recall that one of our <a href="/blog/music-overview/">desiderata</a> is that whatever it is we’re building must be capable of expressing any music from any culture from any time period, including those times and cultures which do not yet exist.</p>
-<p>The trick then is to make a series of <em>extensible</em> types, each one providing some aspect of functionality, and letting people compose them together for themselves. Future users can add their own types with their own functionality, and reuse as much of the system that is meaningful to reuse.</p>
-<p>By my reckoning, music is made up of some combination of the following:</p>
-<ol type="1">
-<li><em>some notion of time,</em> generally considered to be rhythmic content, or “horizontal structures.”</li>
-<li><em>some notion of simultaneity,</em> generally considered to be chords, polyphony, or “vertical structures.”</li>
-<li><em>things that can happen,</em> generally considered to be musical content of some sort. Perhaps this is pitches (as in musical scores), or waveforms (as in musical playback.)</li>
-</ol>
-<p>As a placeholder to get our bearings, let’s imagine the first two elements as types:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Horizontal</span> a</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Vertical</span> a</span></code></pre></div>
-<p>and postulate both a <code>Pitch</code> and <code>Waveform</code> type for item three:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Pitch</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Waveform</span></span></code></pre></div>
-<p>By composing these types in different ways, different ideas of music fall out. Several examples:</p>
-<ol type="1">
-<li><code>Horizontal ()</code> describes purely time-based structures; eg. rhythmic ideas</li>
-<li><code>Horizontal Pitch</code> is a simple tune, the sort you can whistle</li>
-<li><code>Vertical Pitch</code> is a single chord.</li>
-<li><code>Horizontal (Vertical Pitch)</code> is what you get at a campfire from someone who only knows how to play chords on the guitar. In the jargon, this is “polyphonic” music.</li>
-<li><code>Vertical (Horizontal Pitch)</code> is multiple independent tunes happening simultaneously. In the jargon, this is <a href="https://en.wikipedia.org/wiki/Counterpoint">“contrapuntal” music</a>.</li>
-<li><code>Vertical (Horizontal Waveform)</code> is what you get in a <a href="https://en.wikipedia.org/wiki/Digital_audio_workstation">DAW</a> — independent tracks, each of which lets you move recorded samples along its own timeline.</li>
-</ol>
-<p>Of course, this is all vibes right now, since we haven’t discussed what exactly any of these types <em>actually are.</em> But this should be enough to wet your whistle; if we can deliver types that match these vibes, we clearly have an amazing starting point.</p>
-<p>As a point of note, this first step is where I went wrong in my <a href="/blog/more-algebraic-music/">last public attempt</a>. There I postulated that <em>all</em> music is what here would be described as <code>Vertical (Horizontal a)</code>. And I gave unsatisfying answers for what <code>Vertical</code> and <code>Horizontal</code> are, to boot!</p>
-<p>Shame. Sorrow.</p>
-<p>Anyway. Let’s leave <code>Vertical</code> alone for now, and focus our attention on <code>Horizontal</code>, since it seems to be the crux of the interesting stuff here. However, rather than using up the musically-relevant name <code>Horizontal</code>, let’s go with <code>Signal</code>, since we’re going to be building up this idea in several pieces.</p>
-<p>By our vibes, a <code>Signal</code> is a time-based structure. Which is to say, it ought to describe two things: 1) what happens, and 2) when it happens. That’s a pretty big constraint on the search space; the only other question is whether it ought to be continuous or discrete. In the continuous case, we have:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> <span class="dt">Time</span> <span class="ot">-&gt;</span> a</span></code></pre></div>
-<p>and in the discrete:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> [(<span class="dt">Time</span>, a)]  <span class="co">-- ordered by monotonically ascending Time</span></span></code></pre></div>
-<p>where <code>μ</code> should be read as “the meaning of.” That is to say, we’re trying to pin down the <em>semantics</em> of <code>Signal</code> without saying anything about <em>how we’re actually going to implement this thing.</em></p>
-<p><strong>This is my first point of confusion.</strong> Composition (in the programming sense) is significantly better with the <code>Time -&gt; a</code> denotation, but when I <em>listen to music</em> I “hear” it “discretely.” I think. Maybe. Like I said, I am confused.</p>
-<p>Rather than choose between these two options, I am <strong>cheating</strong> and choosing BOTH. HA HA HA. This is intellectually dishonest, but it’s a decision that needs to be made early on, and making progress seems to be dependent on choosing <em>something.</em> Hopefully when everything has clarified down the road, we can return to this decision and make a better choice.</p>
-<p>Sorry, let me back up. What the hell am I talking about? I have the advantage of knowing where I’m going, so I imagine it’s pretty disjointed without that. Concretely, I am torn between a few things:</p>
-<ol type="1">
-<li>The discrete choice <em>vibes better</em> with my classical piano training, where “music” is rendered as a score with discrete symbols on a page</li>
-<li>I have a strong bias towards being able to generate these symbols on a page with this system I’m making</li>
-<li>But the discrete choice doesn’t admit nearly as much algebraic structure. For example, it seems very desirable to have an applicative structure on <code>Signal</code>. The usual list applicative is seems musically meaningless (taking the cartesian product of all the notes in a piece? yeah ok). What seems more likely is a pointwise “zippy” applicative. But in a discrete framing, <em>there isn’t enough data</em> to combine two <code>Signal</code> structures that are out of phase with one another.</li>
-</ol>
-<p>So, the unsatisfying solution here is to just do both. Rather than picking between a discrete and a continuous representation, just keep both around:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a, <span class="dt">Set</span> <span class="dt">Time</span>)</span></code></pre></div>
-<p>That is, represent the <code>Signal</code> structure as a continuous function out of time, <em>but also keep track of a set of interesting times!</em></p>
-<p>We get quite a lot of nice algebraic structure on top of this thing:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Signal</span> a) <span class="ot">=</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a, <span class="dt">Set</span> <span class="dt">Time</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  μ (<span class="fu">fmap</span> f a) <span class="ot">=</span> first (<span class="fu">fmap</span> f) (μ a)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  μ (<span class="fu">pure</span> a) <span class="ot">=</span> (<span class="fu">const</span> a, <span class="fu">mempty</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  μ (liftA2 f a b) <span class="ot">=</span> (liftA2 f <span class="op">***</span> (<span class="op">&lt;&gt;</span>)) (μ a) (μ b)</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> a <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Signal</span> a) <span class="kw">where</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  μ (a <span class="op">&lt;&gt;</span> b) <span class="ot">=</span> μ a <span class="op">&lt;&gt;</span> μ b</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monoid</span> a <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Signal</span> a) <span class="kw">where</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  μ <span class="fu">mempty</span> <span class="ot">=</span> <span class="fu">mempty</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Foldable</span> <span class="dt">Signal</span> <span class="kw">where</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  μ (<span class="fu">foldMap</span> f a) <span class="ot">=</span> <span class="fu">uncurry</span> <span class="fu">foldMap</span> (μ a)</span></code></pre></div>
-<p>which I always take as a sign that I’m on the right track.</p>
-<p>Armed with <code>Signal</code>, we can give some rudimentary combinators on it. For example, we can lift functions:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">lift ::</span> (<span class="dt">Time</span> <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Signal</span> a</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>μ (lift f) <span class="ot">=</span> (f, <span class="fu">mempty</span>)</span></code></pre></div>
-<p>and we can generate stepwise signals:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">stepwise ::</span> a <span class="ot">-&gt;</span> [(<span class="dt">Time</span>, a)] <span class="ot">-&gt;</span> <span class="dt">Signal</span> a</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>μ (stepwise a0 []) <span class="ot">=</span> <span class="fu">pure</span> a0</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>μ (stepwise a0 ((t0, a) <span class="op">:</span> as)) <span class="ot">=</span> \t <span class="ot">-&gt;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> t <span class="op">&lt;</span> t0 <span class="kw">of</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">True</span> <span class="ot">-&gt;</span> a0</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">False</span> <span class="ot">-&gt;</span> μ (stepwise a as)</span></code></pre></div>
-<p>Attentive readers will notice that nothing yet ever actually introduces any times-of-interest into a <code>Signal</code>. Here is where my earlier belly-aching comes back to bite. I’d LIKE VERY MUCH to be able to say “discrete <code>Signal</code>s have a different type than continuous ones.” So maybe we add an <code>Event</code> type:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>μ (<span class="dt">Event</span> a) <span class="ot">=</span> <span class="dt">Maybe</span> a</span></code></pre></div>
-<p>and then say we can make <em>discrete</em> signals:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">discrete ::</span> [(<span class="dt">Time</span>, a)] <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> a)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>μ (discrete as) <span class="ot">=</span> (\t <span class="ot">-&gt;</span> <span class="fu">lookup</span> t as, Set.fromList <span class="op">$</span> <span class="fu">fmap</span> <span class="fu">fst</span> as)</span></code></pre></div>
-<p>with the implicit promise that if you have a <code>Signal (Event a)</code> <em>then it must be a discrete <code>Signal</code>!</em> Unfortunately, this is not the sort of promise we can keep; it’s trivial to construct a densely packed <code>Signal</code> of <code>Event</code>s:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ot">notActuallyDiscrete ::</span> <span class="dt">Signal</span> a <span class="ot">-&gt;</span> <span class="dt">Signal</span> (<span class="dt">Event</span> a)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>μ notActuallyDiscrete <span class="ot">=</span> <span class="fu">fmap</span> <span class="dt">Just</span> <span class="op">.</span> μ</span></code></pre></div>
-<p>Alas. Shame. Sorrow.</p>
-<p>Nevertheless, we are just going to <strong>ignore</strong> this issue, and <strong>pretend</strong> like any <code>Signal (Event a)</code> must be discrete and sparse! I am eminently aware of how disappointed <a href="http://conal.net/">Conal</a> would be by my motivated reasoning here. I’m disappointed in myself! Unfortunately I don’t have a better answer other than to split up the continuous and discrete cases, but that throws away a bunch of the compositionality that I want. <strong>I am confident there is a better solution here</strong> but damned if I know what it is.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<p>Anyway, I’m writing this in the darkness at 5am before my family awakens, but I hear stirring so it’s probably time to stop. If you have any lovely ideas about how to solve this discrete/continuous discrepancy, I’d love to hear them.</p>
-<p>Next we’ll look at signal functions, and give to-my-knowledge a novel application of <code>Arrow</code>s for music.</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>One titillating idea is to simply not expose any introductory forms for <code>Event</code>. I haven’t explored this much, since it would mean we don’t get an applicative functor over <code>Event</code>. Thinking about it now, it’d still be fine to expose the <code>Nothing</code>-analogous constructor, so we could still give <code>mempty</code>. And perhaps this is the first motivating case I’ve ever found for giving only a <a href="https://hackage-content.haskell.org/package/semigroupoids-6.0.2/docs/Data-Functor-Apply.html#g:2"><code>Apply</code></a> instance instead of a full <code>Applicative</code>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
         ]]>
