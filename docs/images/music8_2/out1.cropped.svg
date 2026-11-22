@@ -1,74 +1,95 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" width="52.44mm" height="11.24mm" viewBox="8.5358 -0.0000 29.8437 6.3940">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" width="45.77mm" height="11.24mm" viewBox="8.5358 -0.0000 26.0471 6.3940">
 <style type="text/css">
 <![CDATA[
 tspan { white-space: pre; }
 ]]>
 </style>
 <g transform="translate(8.5358, 2.3333)">
-<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="29.7937" y2="0"/>
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="25.9971" y2="0"/>
 </g>
 <g transform="translate(8.5358, 3.3333)">
-<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="29.7937" y2="0"/>
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="25.9971" y2="0"/>
 </g>
 <g transform="translate(8.5358, 4.3333)">
-<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="29.7937" y2="0"/>
+<line stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="0" x2="25.9971" y2="0"/>
 </g>
-<g transform="translate(38.1895, 3.3333)">
+<g transform="translate(34.3929, 3.3333)">
 <rect x="0.0000" y="-1.0000" width="0.1900" height="2.0000" ry="0.0000" fill="currentColor"/>
 </g>
-<g transform="translate(35.6664, 3.3333)">
-<rect x="-0.0650" y="-3.3333" width="0.1300" height="3.1472" ry="0.0400" fill="currentColor"/>
+<g transform="translate(31.8699, 3.3333)">
+<rect x="-0.0650" y="-3.3333" width="0.1300" height="3.1455" ry="0.0400" fill="currentColor"/>
 </g>
-<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:294:15:16">
-<g transform="translate(34.4272, 3.3333)">
-<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:315:15:16">
+<g transform="translate(31.3849, 3.3333)">
+<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.5500"/>
+</g>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(31.0776, 3.6573)">
+<text font-family="sans-serif" font-weight="bold" font-size="0.8729" text-anchor="start" fill="currentColor">
+<tspan>2</tspan>
+</text>
+</g>
 </g>
 </a>
-<g transform="translate(29.9817, 3.3333)">
+<g transform="translate(26.5936, 3.3333)">
 <path transform="scale(0.0032, -0.0032)" d="M31 37l-2 -62v-11c0 -22 2 -43 5 -64c43 38 89 80 89 137c0 32 -14 65 -42 65c-31 0 -49 -32 -50 -65zM-30 450c9 5 20 8 30 8s21 -3 30 -8l-8 -340c25 24 59 38 94 38c50 0 84 -50 84 -104c0 -78 -83 -117 -141 -169c-17 -15 -25 -44 -49 -44c-15 0 -26 13 -26 29z" fill="currentColor"/>
 </g>
 <g color="rgb(100.0000%, 100.0000%, 100.0000%)">
-<g transform="translate(29.3081, 4.9774)">
+<g transform="translate(25.9200, 4.9774)">
 <rect x="-0.1100" y="-1.0264" width="1.7906" height="1.1364" ry="0.0000" fill="currentColor"/>
 </g>
 </g>
-<g transform="translate(29.3081, 4.9774)">
+<g transform="translate(25.9200, 4.9774)">
 <text font-family="sans-serif" font-size="1.2348" text-anchor="start" fill="currentColor">
 <tspan>12</tspan>
 </text>
 </g>
-<g transform="translate(32.7279, 3.3333)">
-<rect x="-0.0650" y="-2.8055" width="0.1300" height="2.6194" ry="0.0400" fill="currentColor"/>
+<g transform="translate(29.1356, 3.3333)">
+<rect x="-0.0650" y="-2.8053" width="0.1300" height="2.6175" ry="0.0400" fill="currentColor"/>
 </g>
-<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:293:15:16">
-<g transform="translate(31.4887, 3.3333)">
-<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:314:15:16">
+<g transform="translate(28.6506, 3.3333)">
+<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.5500"/>
+</g>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(28.3433, 3.6573)">
+<text font-family="sans-serif" font-weight="bold" font-size="0.8729" text-anchor="start" fill="currentColor">
+<tspan>2</tspan>
+</text>
+</g>
 </g>
 </a>
-<g transform="translate(25.7047, 3.8333)">
+<g transform="translate(22.5208, 3.8333)">
 <path transform="scale(0.0032, -0.0032)" d="M0 116c0 10 6 19 16 23l40 15v154c0 12 9 21 21 21s21 -9 21 -21v-138l79 30v154c0 12 9 21 21 21s21 -9 21 -21v-138l22 8c3 1 6 2 9 2c13 0 25 -11 25 -25v-54c0 -10 -6 -20 -16 -24l-40 -15v-155l22 9c3 1 6 1 9 1c13 0 25 -11 25 -25v-54c0 -10 -6 -19 -16 -23
 l-40 -15v-154c0 -12 -9 -21 -21 -21s-21 9 -21 21v138l-79 -30v-154c0 -12 -9 -21 -21 -21s-21 9 -21 21v138l-22 -8c-3 -1 -6 -2 -9 -2c-13 0 -25 11 -25 25v54c0 10 6 20 16 24l40 15v155l-22 -9c-3 -1 -6 -1 -9 -1c-13 0 -25 11 -25 25v54zM177 92l-79 -30v-154l79 30
 v154z" fill="currentColor"/>
 </g>
 <g color="rgb(100.0000%, 100.0000%, 100.0000%)">
-<g transform="translate(25.7486, 6.1340)">
+<g transform="translate(22.5647, 6.1340)">
 <rect x="-0.1100" y="-1.0102" width="1.0053" height="1.1202" ry="0.0000" fill="currentColor"/>
 </g>
 </g>
-<g transform="translate(25.7486, 6.1340)">
+<g transform="translate(22.5647, 6.1340)">
 <text font-family="sans-serif" font-size="1.2348" text-anchor="start" fill="currentColor">
 <tspan>7</tspan>
 </text>
 </g>
-<g transform="translate(28.3181, 0.8333)">
-<polygon stroke-linejoin="round" stroke-linecap="round" stroke-width="0.0800" fill="currentColor" stroke="currentColor" points="4.4348 -0.5100 4.4348 -0.1100 0.0400 0.2000 0.0400 -0.2000"/>
+<g transform="translate(24.9300, 0.8333)">
+<polygon stroke-linejoin="round" stroke-linecap="round" stroke-width="0.0800" fill="currentColor" stroke="currentColor" points="4.2306 -0.5100 4.2306 -0.1100 0.0400 0.2000 0.0400 -0.2000"/>
 </g>
-<g transform="translate(33.3929, 3.3333)">
+<g transform="translate(29.8006, 3.3333)">
 <path transform="scale(0.0040, -0.0040)" d="M-7 375c8 4 17 7 25 7s16 -3 24 -7l-2 -183l106 20h3c10 0 18 -7 18 -17l7 -570c-8 -4 -17 -7 -25 -7s-16 3 -24 7l2 183l-106 -20h-3c-10 0 -18 7 -18 17zM131 112l-92 -17l-3 -207l92 17z" fill="currentColor"/>
 </g>
-<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:290:15:16">
-<g transform="translate(19.7354, 4.3333)">
-<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:311:15:16">
+<g transform="translate(17.5100, 4.3333)">
+<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.5500"/>
+</g>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(17.2027, 4.6511)">
+<text font-family="sans-serif" font-weight="bold" font-size="0.8729" text-anchor="start" fill="currentColor">
+<tspan>0</tspan>
+</text>
+</g>
 </g>
 </a>
 <g transform="translate(9.3358, 4.6056)">
@@ -76,38 +97,41 @@ v154z" fill="currentColor"/>
 <tspan>𝟛</tspan>
 </text>
 </g>
-<g transform="translate(12.2600, 3.6603)">
-<text font-family="serif" font-size="2.7719" text-anchor="start" fill="currentColor">
-<tspan>}</tspan>
-</text>
-</g>
-<g transform="translate(14.3355, 3.3333)">
-<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.2000"/>
-</g>
-<g transform="translate(14.3355, 2.3333)">
-<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.2000"/>
-</g>
-<g transform="translate(16.0355, 3.3333)">
+<g transform="translate(13.2600, 3.3333)">
 <path transform="scale(0.0040, -0.0040)" d="M250 262c116 0 176 -106 176 -163c0 -40 -30 -72 -67 -72c-31 0 -75 25 -75 75c0 38 27 77 72 77c4 0 9 0 14 -1c-28 37 -72 59 -120 59c-106 0 -113 -73 -113 -186v-51v-51c0 -113 7 -187 113 -187c80 0 139 70 158 151c2 7 7 10 12 10c6 0 13 -4 13 -12
 c0 -22 -50 -174 -183 -174c-59 0 -250 19 -250 263c0 62 18 262 250 262z" fill="currentColor"/>
 </g>
-<g transform="translate(20.9747, 3.3333)">
-<rect x="-0.0650" y="-2.5000" width="0.1300" height="3.3139" ry="0.0400" fill="currentColor"/>
+<g transform="translate(17.9950, 3.3333)">
+<rect x="-0.0650" y="-2.5000" width="0.1300" height="3.3122" ry="0.0400" fill="currentColor"/>
 </g>
-<g transform="translate(28.3831, 3.3333)">
-<rect x="-0.0650" y="-2.5045" width="0.1300" height="2.8184" ry="0.0400" fill="currentColor"/>
+<g transform="translate(24.9950, 3.3333)">
+<rect x="-0.0650" y="-2.5047" width="0.1300" height="2.8169" ry="0.0400" fill="currentColor"/>
 </g>
-<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:292:15:16">
-<g transform="translate(27.1439, 3.8333)">
-<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:313:15:16">
+<g transform="translate(24.5100, 3.8333)">
+<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.5500"/>
+</g>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(24.2027, 4.1516)">
+<text font-family="sans-serif" font-weight="bold" font-size="0.8729" text-anchor="start" fill="currentColor">
+<tspan>1</tspan>
+</text>
+</g>
 </g>
 </a>
-<g transform="translate(24.6789, 3.3333)">
-<rect x="-0.0650" y="-3.0000" width="0.1300" height="3.3139" ry="0.0400" fill="currentColor"/>
+<g transform="translate(21.4950, 3.3333)">
+<rect x="-0.0650" y="-3.0000" width="0.1300" height="3.3122" ry="0.0400" fill="currentColor"/>
 </g>
-<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:291:15:16">
-<g transform="translate(23.4397, 3.8333)">
-<path transform="scale(0.0040, -0.0040)" d="M218 136c66 0 108 -36 108 -89c0 -89 -113 -183 -218 -183c-66 0 -108 36 -108 89c0 89 113 183 218 183z" fill="currentColor"/>
+<a style="color:inherit;" xlink:href="textedit:///tmp/out.lily:312:15:16">
+<g transform="translate(21.0100, 3.8333)">
+<circle stroke-linejoin="round" stroke-linecap="round" fill="currentColor" stroke="currentColor" stroke-width="0" r="0.5500"/>
+</g>
+<g color="rgb(100.0000%, 100.0000%, 100.0000%)">
+<g transform="translate(20.7027, 4.1516)">
+<text font-family="sans-serif" font-weight="bold" font-size="0.8729" text-anchor="start" fill="currentColor">
+<tspan>1</tspan>
+</text>
+</g>
 </g>
 </a>
 </svg>
