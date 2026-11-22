@@ -6,6 +6,9 @@ comments: true
 tags: music, notation
 ---
 
+(edited early 2026-11-22; the new notation now has pitch classes on the note
+heads)
+
 HA HA HA I SNUCK OUT AND DID SOME MUSIC!!! (after some encouragement from my
 wife!)
 
@@ -28,11 +31,12 @@ this bar to be one octave lower than it's notated. The second bar is missing
 this bracket, and is therefore one octave up. And the third bar is an octave
 higher again.
 
-As a couple of landmarks: the bottom staff line is always a "root" or a "tonic"
-in this scale. That's why both the first and second bars start on the bottom
-staff line. There is always a second octave notated, as indicated by the line
-straddled by the `}:` symbol in the clef. If you look, this line is where the
-third measure starts.
+You'll notice that each note head has a little number inside it. These are the
+pitch classes of the scale. Rather than labeling these abstract pitch classes
+things like "C", "D", "E", "F", "G", "A", "B", we instead label them by number.
+The "tonic" of any abstract scale is named 0, and they go up from there. The
+pitch class *below* the tonic is always named `n - 1`. So in this example,
+because we're in a 4-note scale, the pitch classes are 0, 1, 2, 3.
 
 What exactly does this scale "sound" like, you might be wondering? It doesn't
 sound like anything; it's just twelve steps in some arbitrary 4-note scale. We'd
@@ -44,15 +48,12 @@ Let's take another example. This next one is a 5-octave run in a 3-note scale:
 ![5 Octaves of a 3-Note Scale](/images/music8_2/out5.cropped.svg)
 
 The conventions are exactly the same here. Each measure spans an octave, and
-each measure is an octave above the previous one. The bottom staff line is still
-the tonic, but here, the *second staff space* is the one straddled by the `}:`.
-Again, this acts as a little landmark for where the next octave lands. Notice
-that bar 3 begins on this space.
+each measure is an octave above the previous one.
 
-The only other thing to notice here is we have a +6 ottava in the last two bars.
-This is indicate it's *two octaves* above what's notated. It's +6 because we're
-two octaves above in a 3-note scale, and you shouldn't be surprised to learn
-that `3 * 2 = 6`.
+The only thing to notice here is we have a +6 ottava in the last two bars. This
+is indicate it's *two octaves* above what's notated. It's +6 because we're two
+octaves above in a 3-note scale, and you shouldn't be surprised to learn that `3
+* 2 = 6`.
 
 Let's take this same 5-octave in a 3-note scale and *transform* it into a 7-note
 scale. The way we're going to do that is via this mapping:
@@ -64,17 +65,18 @@ triad 1 = 2
 triad 2 = 4
 ```
 
-Here you should read `0` is the root of the scale, `1` as the next note above
-that, `2` as the next note again, etc. In our 3-note scale, we only have three
-notes, so giving a mapping for each of `0`, `1`, and `2` is sufficient to map
-every pitch class out of the scale. Here we're mapping to *every other* note in
-a 7-note scale, which when you look at it, is exactly how we build diatonic
-triads. Take every second note in the 7-note scale, and that gives you a triad!
+In our 3-note scale, we only have three notes, so giving a mapping for each of
+`0`, `1`, and `2` is sufficient to map every pitch class out of the scale. Here
+we're mapping to *every other* note in a 7-note scale, which when you look at
+it, is exactly how we build diatonic triads. Take every second note in the
+7-note scale, and that gives you a triad!
 
 So when we apply this mapping over our 3-note scale example, we end up with
 *arpeggiation of a triad* over 5 octaves:
 
 ![5 Arpeggiations in a 7-Note Scale](/images/music8_2/out6.cropped.svg)
+
+Note that `triad` has changed the names on the note heads.
 
 Technically this is an *abstract* 7-note scale, but we can choose to interpret
 it as the usual diatonic scale. As a matter of convention, we will map the tonic
@@ -123,7 +125,11 @@ less like an arpeggiation than our first example. And the second is that the
 
 Recall that `#/7` was notation for "move up one note in a 7-note scale". And so
 now that we're *in* a 7-note scale, we can drop the notation and *just move up
-one note.* But since we haven't yet moved into a 12-note scale, we can't do the
+one note.* So our `triad` mapped pitch class 1 (in the 3-note scale) to pitch
+class 2 (in the 7-note scale). And then the `#/7` causes it to move up to pitch
+class 3.
+
+But since we haven't yet moved into a 12-note scale, we can't do the
 same procedure to the `b/12`s, and so those accidentals remain.
 
 Let's now reinterpret this abstract 7-note scale as the usual diatonic scale:
@@ -156,6 +162,10 @@ Applying this mapping gives us the "same motif" but now in a 5-note scale:
 
 ![Repeated Motif in a 5-Note Scale](/images/music8_2/out9.cropped.svg)
 
+Notice now, unlike before, that since we moved into the 5 note scale, our `#/7`
+hasn't triggered yet. We hold onto all accidentals until we move into a
+correspondly-sized scale.
+
 We can interpret this 5-note scale as a major pentatonic, which then gives us
 
 ![Repeated Motif in Major Pentatonic](/images/music8_2/out10.cropped.svg)
@@ -179,6 +189,11 @@ be *free, man.* There are no rules here. So let's just reinterpret the motif as
 a 4-note scale:
 
 ![Reinterpreted Motif in a 4-Note Scale](/images/music8_2/out12.cropped.svg)
+
+In our original motif, the last notes in the second bar were pitch class 0. But
+in this example, we have mapped them to pitch class 3. That's exactly the
+lack of octave-preservation we mentioned. But I am sure you will agree the
+*contour* of this motif is the same!
 
 Now instead of giving a constant mapping from our 4-note scale into something
 playable, let's instead give a dynamic mapping. For example, here's a nice chord
